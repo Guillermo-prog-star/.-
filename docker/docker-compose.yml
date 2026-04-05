@@ -1,0 +1,81 @@
+services:
+  # Base de Datos (MySQL 8.4)
+  if-mysql:
+    image: mysql:8.4
+    container_name: if-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: integrity_family
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - if_mysql_data:/var/lib/mysql
+
+  # Servidor de Mensajería (RabbitMQ)
+  if-rabbit:
+    image: rabbitmq:3-management
+    container_name: if-rabbit
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  # Administrador Visual de DB (Cambiado a puerto 8082)
+  if-phpmyadmin:
+    image: phpmyadmin
+    container_name: if-phpmyadmin
+    restart: always
+    ports:
+      - "8082:80"
+    environment:
+      PMA_HOST: if-mysql
+      MYSQL_ROOT_PASSWORD: root
+    depends_on:
+      - if-mysql
+
+volumes:
+  if_mysql_data:
+
+
+
+  services:
+  if-backend:
+    build: ./backend
+    container_name: if-backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - if-net
+    depends_on:
+      if-mysql:
+        condition: service_healthy
+
+  if-frontend:
+    build: ./frontend
+    container_name: if-frontend
+    ports:
+      - "4200:4200"
+    networks:
+      - if-net
+
+  if-mysql:
+    image: mysql:8.4
+    container_name: if-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: integrity_family
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      retries: 5
+    networks:
+      - if-net
+
+networks:
+  if-net:
+    driver: bridge

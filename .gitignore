@@ -1,0 +1,44 @@
+# === IDEs (Limpieza de IntelliJ y Windsurf) ===
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# === Java / Maven (Backend) ===
+**/target/
+*.class
+*.jar
+*.war
+*.ear
+.mvn/
+mvnw
+mvnw.cmd
+
+# === Node / Angular (Frontend) ===
+**/node_modules/
+**/dist/
+**/.angular/
+.npm/
+package-lock.json
+
+# === Docker & Bases de Datos ===
+docker/data/
+*.sql.gz
+*.log
+
+# === Sistema Operativo ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Archivos Temporales ===
+*.tmp
+*.bak
+*.swp
+
+# === Variables de Entorno y Secrets ===
+.env
+.env.local
+.env.production

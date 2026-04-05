@@ -1,0 +1,8 @@
+@Autowired
+private QuestionLoaderService questionLoaderService;
+
+@PostMapping("/import")
+public ResponseEntity<String> importQuestions() {
+    questionLoaderService.loadQuestionsFromCSV();
+    return ResponseEntity.ok("Proceso de importación masiva iniciado. Revisa la consola del backend.");
+}

@@ -1,0 +1,25 @@
+<div class="assessment-container" *ngIf="questions.length > 0; else loading">
+  <div class="progress-bar">
+    <div class="progress-fill" [style.width.%]="(currentIndex + 1) * 100 / questions.length"></div>
+    <p>Pregunta {{ currentIndex + 1 }} de {{ questions.length }}</p>
+  </div>
+
+  <div class="question-card">
+    <span class="badge">{{ questions[currentIndex].dimension }}</span>
+    <h2>{{ questions[currentIndex].questionText }}</h2>
+    
+    <div class="options-grid">
+      <button *ngFor="let score of [1,2,3,4,5]" 
+              (click)="selectAnswer(score)"
+              class="score-btn btn-{{score}}">
+        {{ score }}
+      </button>
+    </div>
+    
+    <p class="legend">1: Casi nunca | 5: Siempre</p>
+  </div>
+</div>
+
+<ng-template #loading>
+  <div class="loader">Cargando test de integridad...</div>
+</ng-template>

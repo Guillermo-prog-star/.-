@@ -21,12 +21,17 @@ import java.io.IOException;
  */
 @RestController
 @RequestMapping("/api/chat")
-@RequiredArgsConstructor
 public class ChatController {
 
     private final AiService ai;
     private final FamilyRepository famRepo;
     private final EvaluationRepository evaluationRepo;
+
+    public ChatController(AiService ai, FamilyRepository famRepo, EvaluationRepository evaluationRepo) {
+        this.ai = ai;
+        this.famRepo = famRepo;
+        this.evaluationRepo = evaluationRepo;
+    }
 
     /**
      * Procesa mensajes de chat integrando el contexto real de la familia.

@@ -1,5 +1,6 @@
 package com.integrityfamily.plan.controller;
 
+import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.plan.domain.Plan;
 import com.integrityfamily.plan.domain.PlanTask;
 import com.integrityfamily.plan.service.PlanService;
@@ -7,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/plans")
@@ -15,53 +17,74 @@ public class PlanController {
 
     private final PlanService planService;
 
+    // ── Planes ────────────────────────────────────────────────────────────────
+
     @GetMapping
-    public List<Plan> getAllPlans() {
-        return planService.findAllPlans();
+    public ApiResponse<List<Plan>> getAllPlans() {
+        return ApiResponse.ok(planService.findAllPlans());
+    }
+
+    /** Endpoint que usa el frontend: GET /api/plans/family/{familyId} */
+    @GetMapping("/family/{familyId}")
+    public ApiResponse<List<Plan>> getPlansByFamily(@PathVariable Long familyId) {
+        return ApiResponse.ok(planService.findByFamilyId(familyId));
     }
 
     @GetMapping("/{id}")
-    public Plan getPlanById(@PathVariable Long id) {
-        return planService.findPlanById(id);
+    public ApiResponse<Plan> getPlanById(@PathVariable Long id) {
+        return ApiResponse.ok(planService.findPlanById(id));
     }
 
     @PostMapping
-    public Plan createPlan(@RequestBody Plan plan) {
-        return planService.createPlan(plan);
+    public ApiResponse<Plan> createPlan(@RequestBody Plan plan) {
+        return ApiResponse.ok(planService.createPlan(plan));
     }
 
     @PutMapping("/{id}")
-    public Plan updatePlan(@PathVariable Long id, @RequestBody Plan plan) {
-        return planService.updatePlan(id, plan);
+    public ApiResponse<Plan> updatePlan(@PathVariable Long id, @RequestBody Plan plan) {
+        return ApiResponse.ok(planService.updatePlan(id, plan));
     }
 
     @DeleteMapping("/{id}")
-    public void deletePlan(@PathVariable Long id) {
+    public ApiResponse<Void> deletePlan(@PathVariable Long id) {
         planService.deletePlan(id);
+        return ApiResponse.ok(null);
     }
 
+    // ── Tareas ────────────────────────────────────────────────────────────────
+
     @GetMapping("/tasks")
-    public List<PlanTask> getAllTasks() {
-        return planService.findAllTasks();
+    public ApiResponse<List<PlanTask>> getAllTasks() {
+        return ApiResponse.ok(planService.findAllTasks());
     }
 
     @GetMapping("/tasks/{id}")
-    public PlanTask getTaskById(@PathVariable Long id) {
-        return planService.findTaskById(id);
+    public ApiResponse<PlanTask> getTaskById(@PathVariable Long id) {
+        return ApiResponse.ok(planService.findTaskById(id));
     }
 
     @PostMapping("/tasks")
-    public PlanTask createTask(@RequestBody PlanTask task) {
-        return planService.createTask(task);
+    public ApiResponse<PlanTask> createTask(@RequestBody PlanTask task) {
+        return ApiResponse.ok(planService.createTask(task));
     }
 
     @PutMapping("/tasks/{id}")
-    public PlanTask updateTask(@PathVariable Long id, @RequestBody PlanTask task) {
-        return planService.updateTask(id, task);
+    public ApiResponse<PlanTask> updateTask(@PathVariable Long id, @RequestBody PlanTask task) {
+        return ApiResponse.ok(planService.updateTask(id, task));
+    }
+
+    /** Endpoint que usa el frontend: PUT /api/plans/tasks/{taskId}/complete */
+    @PutMapping("/tasks/{id}/complete")
+    public ApiResponse<PlanTask> completeTask(
+            @PathVariable Long id,
+            @RequestBody Map<String, Boolean> body) {
+        boolean completed = Boolean.TRUE.equals(body.get("completed"));
+        return ApiResponse.ok(planService.completeTask(id, completed));
     }
 
     @DeleteMapping("/tasks/{id}")
-    public void deleteTask(@PathVariable Long id) {
+    public ApiResponse<Void> deleteTask(@PathVariable Long id) {
         planService.deleteTask(id);
+        return ApiResponse.ok(null);
     }
 }

@@ -2,20 +2,17 @@ package com.integrityfamily.member.controller;
 
 import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.family.domain.Member;
+import com.integrityfamily.member.dto.MemberRequest;
 import com.integrityfamily.member.service.MemberService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * MemberController: Gestión de Integrantes del Nodo Familiar.
- * Optimizado para responder siempre en el formato ApiResponse.
- */
 @RestController
 @RequestMapping("/api/members")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Permite la comunicación con el Frontend de Angular
 public class MemberController {
 
     private final MemberService memberService;
@@ -31,13 +28,14 @@ public class MemberController {
     }
 
     /**
-     * Crea un integrante vinculado a una familia.
-     * Se elimina setFamilyId(Long) para evitar el error de compilación.
+     * Crea un integrante usando el DTO MemberRequest que envía el frontend.
+     * POST /api/members/family/{familyId}
      */
     @PostMapping("/family/{familyId}")
-    public ApiResponse<Member> createInFamily(@PathVariable Long familyId, @RequestBody Member member) {
-        // La lógica de vinculación con la familia se delega al Service para mantener el Controller limpio
-        return ApiResponse.ok(memberService.createInFamily(familyId, member));
+    public ApiResponse<Member> createInFamily(
+            @PathVariable Long familyId,
+            @Valid @RequestBody MemberRequest request) {
+        return ApiResponse.ok(memberService.createFromRequest(familyId, request));
     }
 
     @GetMapping("/{id}")

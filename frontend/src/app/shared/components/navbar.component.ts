@@ -16,59 +16,53 @@ import { AuthService } from '../../core/services/auth.service';
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 14px 28px;
-      background: #fff;
-      border-bottom: 1px solid #e2e8f0;
+      padding: 0 32px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
       height: 64px;
+      font-family: 'Inter', sans-serif;
     }
-    .brand-context {
-      display: flex;
-      flex-direction: column;
-    }
-    .user-area {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .brand-context { display: flex; flex-direction: column; gap: 2px; }
+    .title-context { font-size: 14px; font-weight: 700; color: var(--primary); letter-spacing: -0.01em; }
+    .f-context { font-size: 11px; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+    
+    .user-area { display: flex; align-items: center; gap: 12px; }
     .chip {
-      background: #F5F4F0;
-      border: 1px solid #e2e8f0;
+      background: var(--surface-alt);
+      border: 1px solid var(--border);
       border-radius: 999px;
       padding: 6px 16px;
       font-size: 13px;
-      font-weight: 600;
-      color: #1A3A2A; 
+      font-weight: 700;
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     .btn-exit {
       font-size: 13px;
-      padding: 6px 14px;
-      border: 1px solid #fee2e2;
-      background: #fef2f2;
-      color: #dc2626;
-      border-radius: 8px;
+      padding: 8px 16px;
+      background: var(--error-light);
+      color: var(--error);
+      border-radius: 10px;
       cursor: pointer;
-      font-weight: 600;
+      font-weight: 700;
       transition: all 0.2s;
     }
-    .btn-exit:hover {
-      background: #dc2626;
-      color: #fff;
-    }
+    .btn-exit:hover { background: var(--error); color: #fff; transform: scale(1.05); }
   `],
   template: `
     <div class="topbar">
       <div class="brand-context">
-        <strong style="font-size: 14px; color: #1e293b;">Bienestar, autonomía y progreso familiar</strong>
+        <div class="title-context">Bienestar, autonomía y progreso familiar</div>
         
-        @if (familyName) {
-          <div style="font-size: 11px; color: #64748b; font-weight: 500;">
-            📍 Contexto: {{ familyName }}
-          </div>
-        } @else {
-          <div style="font-size: 11px; color: #94a3b8; font-style: italic;">
-            Selecciona una familia para comenzar
-          </div>
-        }
+        <div class="f-context">
+          @if (familyName) {
+            <span style="color: var(--accent);">📍</span> Familia: {{ familyName }}
+          } @else {
+            <span style="font-style: italic; opacity: 0.7;">Selecciona una familia para comenzar</span>
+          }
+        </div>
       </div>
 
       <div class="user-area">

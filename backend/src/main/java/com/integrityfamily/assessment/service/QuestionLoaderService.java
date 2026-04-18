@@ -40,12 +40,10 @@ public class QuestionLoaderService {
     @Transactional
     public void loadQuestionsIfNeeded() {
         try {
-            if (questionRepository.count() > 0) {
-                log.info(">>>> [NODO ARMENIA] Banco de preguntas ya detectado en MySQL. Omitiendo carga.");
-                return;
-            }
-
-            log.info(">>>> [NODO ARMENIA] Iniciando lectura de 1,000 reactivos desde 'questions-bank.json'...");
+            log.info(">>>> [NODO ARMENIA] Sincronizando Banco de 1.000 Reactivos (Modo Transformación)...");
+            
+            // William Lopez: Limpiamos para asegurar coherencia total con los nuevos escenarios reales
+            questionRepository.deleteAll();
 
             InputStream inputStream = new ClassPathResource("questions-bank.json").getInputStream();
             JsonNode rootNode = objectMapper.readTree(inputStream);

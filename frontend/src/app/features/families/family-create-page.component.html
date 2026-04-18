@@ -1,0 +1,54 @@
+<div class="page-container">
+  <div class="create-card">
+    <h1>Crear Familia</h1>
+    <p>Registra un nuevo núcleo familiar para iniciar la transformación.</p>
+
+    <form (ngSubmit)="submit()" class="form-grid">
+      <div class="input-group">
+        <label>Nombre de la familia *</label>
+        <input [(ngModel)]="name" name="name" placeholder="Ej: Familia López Rivera" required />
+      </div>
+
+      <div class="input-group">
+        <label>Descripción pedagógica</label>
+        <textarea [(ngModel)]="desc" name="desc" placeholder="Describe brevemente el propósito de tu núcleo familiar..."></textarea>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div class="input-group">
+          <label>Municipio</label>
+          <input [(ngModel)]="municipio" name="mun" placeholder="Ej: Armenia" />
+        </div>
+
+        <div class="input-group">
+          <label>WhatsApp</label>
+          <input [(ngModel)]="whatsapp" name="wa" placeholder="+57 322..." />
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label>PIN de acceso (4 dígitos)</label>
+        <input [(ngModel)]="pin" name="pin" type="password" maxlength="4" placeholder="••••" />
+      </div>
+
+      @if (error) {
+        <div class="error-message">
+          <strong>Opps!</strong> {{ error }}
+        </div>
+      }
+
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 20px;">
+        <button type="submit" class="btn-primary" [disabled]="loading">
+          @if (loading) {
+            <span>Procesando...</span>
+          } @else {
+            <span>Crear familia</span>
+          }
+        </button>
+        <button type="button" class="btn-ghost" (click)="router.navigate(['/families'])">
+          Cancelar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

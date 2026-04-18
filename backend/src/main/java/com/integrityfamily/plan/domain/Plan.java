@@ -1,25 +1,14 @@
 package com.integrityfamily.plan.domain;
 
-import com.integrityfamily.evaluation.domain.Evaluation;
 import com.integrityfamily.family.domain.Family;
+import com.integrityfamily.evaluation.domain.Evaluation;
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Entidad Plan: Define la hoja de ruta de bienestar familiar.
- * Se ha añadido 'createdAt' para dar soporte al ordenamiento requerido por PlanRepository.
- */
 @Entity
 @Table(name = "plans")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Plan {
 
     @Id
@@ -27,7 +16,7 @@ public class Plan {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "family_id")
+    @JoinColumn(name = "family_id", nullable = false)
     private Family family;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -37,24 +26,34 @@ public class Plan {
     @Column(name = "title", nullable = false, length = 160)
     private String title;
 
-    @Column(name = "description", length = 500)
+    @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
-    // CAMPO REQUERIDO POR EL REPOSITORIO (Soluciona el error de arranque)
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = false)
-    @Builder.Default
+    @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PlanTask> tasks = new ArrayList<>();
 
-    /**
-     * Establece automáticamente la fecha de creación antes de insertar en MySQL.
-     */
+    public Plan() {}
+
     @PrePersist
-    protected void onCreate() {
-        if (this.createdAt == null) {
-            this.createdAt = LocalDateTime.now();
-        }
+    public void prePersist() {
+        if (createdAt == null) createdAt = LocalDateTime.now();
     }
+
+    // Manual Getters and Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Family getFamily() { return family; }
+    public void setFamily(Family family) { this.family = family; }
+    public Evaluation getEvaluation() { return evaluation; }
+    public void setEvaluation(Evaluation evaluation) { this.evaluation = evaluation; }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public List<PlanTask> getTasks() { return tasks; }
+    public void setTasks(List<PlanTask> tasks) { this.tasks = tasks; }
 }

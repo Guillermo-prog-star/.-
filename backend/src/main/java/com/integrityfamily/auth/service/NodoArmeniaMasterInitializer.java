@@ -19,9 +19,9 @@ public class NodoArmeniaMasterInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        log.info(">>>> [NODO ARMENIA] Verificando usuario maestro...");
-        
-        // Lógica de inicialización
+        log.info(">>>> [NODO ARMENIA] Verificando usuarios maestros...");
+
+        // Usuario William (propietario del nodo)
         if (userRepository.findByEmail("william@integrity.family").isEmpty()) {
             User master = new User();
             master.setFullName("William Lopez");
@@ -30,6 +30,17 @@ public class NodoArmeniaMasterInitializer implements CommandLineRunner {
             master.setActive(true);
             userRepository.save(master);
             log.info(">>>> [NODO ARMENIA] William Lopez sincronizado.");
+        }
+
+        // Usuario admin demo (credenciales que muestra el login)
+        if (userRepository.findByEmail("admin@integrityfamily.com").isEmpty()) {
+            User admin = new User();
+            admin.setFullName("Administrador Demo");
+            admin.setEmail("admin@integrityfamily.com");
+            admin.setPassword(passwordEncoder.encode("Admin123*"));
+            admin.setActive(true);
+            userRepository.save(admin);
+            log.info(">>>> [NODO ARMENIA] Admin demo sincronizado.");
         }
     }
 }

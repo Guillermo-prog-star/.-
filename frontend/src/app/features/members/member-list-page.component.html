@@ -1,0 +1,79 @@
+<div class="page-header">
+  <div>
+    <h1>Equipo Familiar</h1>
+    <p>Define a los integrantes para el diagnóstico de autonomía y transformación.</p>
+  </div>
+  @if (members.length > 0) {
+    <button (click)="goToEvaluation()" class="btn-accent">
+      Comenzar Diagnóstico →
+    </button>
+  }
+</div>
+
+<div class="glass-card" style="margin-bottom:40px;">
+  <h3 style="margin-bottom:20px; color: var(--accent); font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+    ✨ Agregar nuevo integrante
+  </h3>
+  <form (ngSubmit)="create()" class="member-form">
+    <div class="form-group">
+      <label>Nombre Completo</label>
+      <input [(ngModel)]="fn" name="fn" placeholder="Ej: Juan Pérez" required/>
+    </div>
+    <div class="form-group">
+      <label>Rol / Parentesco</label>
+      <select [(ngModel)]="role" name="role">
+        <option>PADRE</option>
+        <option>MADRE</option>
+        <option>HIJO</option>
+        <option>HIJA</option>
+        <option>ABUELO</option>
+        <option>ABUELA</option>
+        <option>OTRO</option>
+      </select>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; grid-column: span 1;">
+      <div class="form-group"><label>Edad</label><input [(ngModel)]="age" name="age" type="number" placeholder="0"/></div>
+      <div class="form-group"><label>Autonomía</label><input [(ngModel)]="aut" name="aut" type="number" placeholder="50%"/></div>
+    </div>
+    
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" [disabled]="saving" style="width:100%; height: 42px;">
+        {{ saving ? 'Guardando...' : 'Añadir al equipo' }}
+      </button>
+    </div>
+  </form>
+</div>
+
+@if (members.length === 0) {
+    <div class="glass-card" style="text-align: center; padding: 60px; border-style: dashed; background: rgba(255,255,255,0.01);">
+        <div style="font-size: 48px; margin-bottom: 20px; filter: grayscale(1) opacity(0.2);">👥</div>
+        <h3 style="color: #94a3b8;">No hay miembros registrados</h3>
+        <p style="color: #64748b;">Comienza agregando a los integrantes de la familia arriba.</p>
+    </div>
+} @else {
+    <div class="grid-3">
+      @for (m of members; track m.id) {
+        <div class="member-card">
+          <div class="member-header">
+            <div class="member-avatar">{{ m.fullName[0] }}</div>
+            <div class="member-info">
+              <div class="member-name">{{ m.fullName }}</div>
+              <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">{{ m.roleType }} · {{ m.age }} años</span>
+            </div>
+            <button (click)="remove(m.id)" class="btn-remove" title="Eliminar">✕</button>
+          </div>
+          
+          <div class="member-stats">
+            <div class="stat-row">
+              <div class="stat-label"><span>Nivel de Autonomía</span><strong>{{ m.autonomyLevel }}%</strong></div>
+              <div class="progress-track"><div class="progress-fill accent-bar" [style.width]="m.autonomyLevel+'%'"></div></div>
+            </div>
+            <div class="stat-row" style="opacity: 0.7;">
+              <div class="stat-label"><span>Responsabilidad</span><strong>{{ m.responsibilityLevel }}%</strong></div>
+              <div class="progress-track"><div class="progress-fill primary-bar" [style.width]="m.responsibilityLevel+'%'"></div></div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+}

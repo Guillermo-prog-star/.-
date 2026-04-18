@@ -1,9 +1,10 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
 import { AssessmentService } from '../../core/services/assessment.service';
+import { FamilyStateService } from '../../core/services/family-state.service';
 import { DashboardSummary } from '../../core/models/models';
 import { forkJoin } from 'rxjs';
 
@@ -11,131 +12,67 @@ import { forkJoin } from 'rxjs';
   selector: 'app-dashboard-page',
   standalone: true,
   imports: [CommonModule, RouterLink],
-  template: `
-    <div class="page-header">
-      <div>
-        <h1>Dashboard ejecutivo</h1>
-        <p>Estado actual de {{ summary?.familyName ?? 'la familia' }}</p>
-      </div>
-      <div class="header-actions">
-        <span class="badge" [class]="systemHealthy ? 'bg-success' : 'bg-warning'">
-          {{ totalQuestions }} Reactivos en Sistema
-        </span>
-        @if (!summary) { <a routerLink="/families" class="btn">Seleccionar familia →</a> }
-      </div>
-    </div>
-
-    @if (loading) { <div class="loading">Cargando datos del Nodo Armenia...</div> }
-    
-    @else if (!familyId) {
-      <div class="card" style="text-align:center;padding:48px;">
-        <div style="font-size:48px;margin-bottom:16px;">⌂</div>
-        <h2>Selecciona una familia para comenzar</h2>
-        <p style="margin:8px 0 24px;">Elige el núcleo familiar para visualizar su nivel de riesgo y planes.</p>
-        <a routerLink="/families" class="btn btn-primary">Ir a Gestión de Familias</a>
-      </div>
-    }
-
-    @else if (summary) {
-      <div class="grid-4">
-        <div class="card">
-          <div class="stat-label">Miembros</div>
-          <div class="stat-value">{{ summary.totalMembers }}</div>
-        </div>
-        <div class="card">
-          <div class="stat-label">Evaluaciones</div>
-          <div class="stat-value">{{ summary.totalEvaluations }}</div>
-        </div>
-        <div class="card">
-          <div class="stat-label">Planes Activos</div>
-          <div class="stat-value">{{ summary.totalPlans }}</div>
-        </div>
-        <div class="card">
-          <div class="stat-label">Cumplimiento Checklist</div>
-          <div class="stat-value">{{ summary.completedChecklistItems }}/{{ summary.totalChecklistItems }}</div>
-        </div>
-      </div>
-
-      <div class="grid-2">
-        <div class="card">
-          <h3 style="margin-bottom:16px;">Riesgo familiar</h3>
-          @if (summary.latestRiskLevel) {
-            <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-              <span class="badge" [class]="'risk-' + summary.latestRiskLevel">
-                Riesgo {{ riskLabel(summary.latestRiskLevel) }}
-              </span>
-              <span style="font-size:28px;font-weight:800;">{{ summary.latestGlobalScore }}</span>
-              <span class="muted">/ 100</span>
-            </div>
-            
-            <div class="progress-section">
-              <div class="progress-info"><span>Tareas del plan</span><strong>{{ taskPct }}%</strong></div>
-              <div class="progress-track"><div class="progress-fill" [style.width.%]="taskPct"></div></div>
-            </div>
-
-            <div class="progress-section">
-              <div class="progress-info"><span>Checklist Diario</span><strong>{{ chkPct }}%</strong></div>
-              <div class="progress-track"><div class="progress-fill" [style.width.%]="chkPct" style="background:var(--amber);"></div></div>
-            </div>
-          } @else {
-            <div style="text-align:center;padding:24px;color:var(--muted);">
-              <p>No hay evaluaciones recientes para esta familia.</p>
-              <a routerLink="/evaluations/start" class="btn btn-primary">Iniciar Diagnóstico</a>
-            </div>
-          }
-        </div>
-
-        <div class="card">
-          <h3 style="margin-bottom:16px;">Acciones rápidas</h3>
-          <div class="action-grid">
-            <a routerLink="/evaluations/start" class="btn-action">◈ Nueva evaluación</a>
-            <a routerLink="/plans" class="btn-action">▦ Ver planes activos</a>
-            <a routerLink="/checklist" class="btn-action">☑ Checklist diario</a>
-            <a routerLink="/chat" class="btn-action">◉ Consultar IA</a>
-            <a routerLink="/members" class="btn-action">◑ Gestionar miembros</a>
-          </div>
-        </div>
-      </div>
-    }
-  `,
-  styles: [`
-    .stat-label { font-size:12px; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px; }
-    .stat-value { font-size:28px; font-weight:700; }
-    .progress-section { margin-bottom:15px; }
-    .progress-info { display:flex; justify-content:space-between; font-size:13px; margin-bottom:4px; }
-    .btn-action { display: flex; justify-content: flex-start; padding: 10px; border: 1px solid #eee; border-radius: 8px; text-decoration: none; color: inherit; transition: background 0.2s; }
-    .btn-action:hover { background: #f8f9fa; }
-  `]
+  templateUrl: './dashboard-page.component.html',
+  styleUrls: ['./dashboard-page.component.css']
 })
 export class DashboardPageComponent implements OnInit {
   private http = inject(HttpClient);
   private api = inject(ApiService);
   private assessmentService = inject(AssessmentService);
+  private familyState = inject(FamilyStateService);
 
   summary: DashboardSummary | null = null;
   loading = false;
   totalQuestions = 0;
   systemHealthy = false;
-  familyId = Number(localStorage.getItem('selectedFamilyId') ?? 0);
-
+  
+  milestones = [
+    { key: 'MES_00_DIAGNOSTICO_BASE', label: 'Inicio', icon: '📍' },
+    { key: 'MES_03_PRIMEROS_CAMBIOS', label: '3 Meses', icon: '🌱' },
+    { key: 'MES_06_CONSOLIDACION_INICIAL', label: '6 Meses', icon: '🌳' },
+    { key: 'MES_12_PRIMERA_TRANSFORMACION', label: '12 Meses', icon: '🛡️' },
+    { key: 'MES_18_PROFUNDIZACION', label: '18 Meses', icon: '🚀' },
+    { key: 'MES_24_MADUREZ_SISTEMA', label: '24 Meses', icon: '💎' },
+    { key: 'MES_30_CIERRE_SOSTENIMIENTO', label: '30 Meses', icon: '📊' },
+    { key: 'MES_36_TRANSFORMACION_COMPLETA', label: 'Completa', icon: '🌟' }
+  ];
+  
+  get familyId() { return this.familyState.currentFamilyId(); }
   get taskPct() { return this.summary?.totalPlanTasks ? Math.round((this.summary.completedPlanTasks / this.summary.totalPlanTasks) * 100) : 0; }
   get chkPct() { return this.summary?.totalChecklistItems ? Math.round((this.summary.completedChecklistItems / this.summary.totalChecklistItems) * 100) : 0; }
 
+  constructor() {
+    effect(() => {
+      // Re-cargar datos automáticamente cuando cambie la familia
+      if (this.familyId) {
+        this.loadDashboardData();
+      }
+    });
+  }
+
   ngOnInit() {
-    this.loadDashboardData();
+    // Primera carga garantizada por el effect() si hay ID, 
+    // pero si no hay, al menos cargamos estadísticas
+    if (!this.familyId) {
+      this.loadStatsOnly();
+    }
+  }
+
+  loadStatsOnly() {
+    this.assessmentService.getQuestionStats().subscribe(stats => {
+      this.totalQuestions = stats.reduce((acc: number, curr: any) => acc + curr.count, 0);
+      this.systemHealthy = this.totalQuestions >= 1000;
+    });
   }
 
   loadDashboardData() {
     this.loading = true;
     
-    // Ejecutamos ambas peticiones en paralelo para optimizar la carga del Nodo Armenia
+    // Ejecutamos ambas peticiones en paralelo
     const requests = {
-      stats: this.assessmentService.getQuestionStats()
+      stats: this.assessmentService.getQuestionStats(),
+      family: this.http.get<any>(`${this.api.base}/analytics/dashboard/family/${this.familyId}`)
     };
-
-    if (this.familyId) {
-      (requests as any).family = this.http.get<any>(`${this.api.base}/analytics/dashboard/family/${this.familyId}`);
-    }
 
     forkJoin(requests).subscribe({
       next: (res: any) => {
@@ -143,7 +80,7 @@ export class DashboardPageComponent implements OnInit {
         this.totalQuestions = res.stats.reduce((acc: number, curr: any) => acc + curr.count, 0);
         this.systemHealthy = this.totalQuestions >= 1000;
 
-        // 2. Procesar datos de la familia si existen
+        // 2. Procesar datos de la familia
         if (res.family) {
           this.summary = res.family.data;
         }
@@ -151,6 +88,47 @@ export class DashboardPageComponent implements OnInit {
       },
       error: () => this.loading = false
     });
+  }
+
+  getChartPath(): string {
+    if (!this.summary?.riskHistory || this.summary.riskHistory.length < 2) return '';
+    const history = [...this.summary.riskHistory].reverse();
+    const width = 400;
+    const height = 150;
+    const step = width / (history.length - 1);
+    
+    return history.map((s: any, i: number) => {
+      const x = i * step;
+      const y = height - (s.globalScore * height / 100);
+      return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
+    }).join(' ');
+  }
+
+  getRadarPoints(): string {
+    // Si no hay datos, mostramos un cuadrado base
+    if (!this.summary?.riskHistory || this.summary.riskHistory.length === 0) {
+      return '100,50 150,100 100,150 50,100'; 
+    }
+    const latest = this.summary.riskHistory[0];
+    const center = 100;
+    const radius = 80;
+
+    // 0: Arriba (Emociones), 1: Derecha (Comunicación), 2: Abajo (Hábitos), 3: Izquierda (Tiempos)
+    const points = [
+      { x: center, y: center - (radius * (latest.scoreEmotions || 50) / 100) },
+      { x: center + (radius * (latest.scoreCommunication || 50) / 100), y: center },
+      { x: center, y: center + (radius * (latest.scoreHabits || 50) / 100) },
+      { x: center - (radius * (latest.scoreTimes || 50) / 100), y: center }
+    ];
+
+    return points.map(p => `${p.x},${p.y}`).join(' ');
+  }
+
+  isMilestoneActive(key: string): boolean {
+    if (!this.summary) return false;
+    const currentIdx = this.milestones.findIndex(m => m.key === this.summary?.currentMilestone);
+    const itemIdx = this.milestones.findIndex(m => m.key === key);
+    return itemIdx <= currentIdx;
   }
 
   riskLabel(r: string) { return { LOW: 'Bajo', MEDIUM: 'Medio', HIGH: 'Alto' }[r] ?? r; }

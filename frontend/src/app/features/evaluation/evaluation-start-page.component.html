@@ -1,0 +1,35 @@
+<div class="page-header">
+  <div>
+    <h1>Nueva Evaluación Premium</h1>
+    <p>Hito: {{ milestone }}</p>
+  </div>
+</div>
+
+<div class="start-card" style="max-width:600px;">
+  <h3>¿Quién inicia este proceso de conciencia?</h3>
+  
+  <div style="margin-bottom:32px;">
+    
+    <label class="selector-label" [class.selector-active]="!selectedMember">
+      <input type="radio" [value]="null" [(ngModel)]="selectedMember" name="member" class="custom-radio"/>
+      <div>
+        <div class="member-name">Evaluación Familiar Global</div>
+        <div class="member-info">Diagnóstico sistémico de todo el núcleo familiar</div>
+      </div>
+    </label>
+
+    @for (m of members; track m.id) {
+      <label class="selector-label" [class.selector-active]="selectedMember===m.id">
+        <input type="radio" [value]="m.id" [(ngModel)]="selectedMember" name="member" class="custom-radio"/>
+        <div>
+          <div class="member-name">{{ m.fullName }}</div>
+          <div class="member-info">{{ m.roleType | titlecase }} · {{ m.age }} años</div>
+        </div>
+      </label>
+    }
+  </div>
+
+  <button class="btn-start" style="width:100%;" (click)="start()" [disabled]="loading">
+    {{ loading ? 'SINCRONIZANDO...' : 'INICIAR TEST DE CONCIENCIA →' }}
+  </button>
+</div>

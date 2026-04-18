@@ -6,53 +6,34 @@ import { HttpClient } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
 import { Member } from '../../core/models/models';
 
+import { FamilyStateService } from '../../core/services/family-state.service';
+
 @Component({
   selector: 'app-evaluation-start-page',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  template: `
-    <div class="page-header"><div><h1>Nueva evaluación</h1><p>Hito actual: {{ milestone }}</p></div></div>
-    <div class="card" style="max-width:480px;">
-      <h3 style="margin-bottom:16px;">¿Quién responde esta evaluación?</h3>
-      <div style="display:grid;gap:10px;margin-bottom:24px;">
-        <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid var(--border);border-radius:10px;cursor:pointer;"
-               [style.border-color]="!selectedMember ? 'var(--green)' : 'var(--border)'"
-               [style.background]="!selectedMember ? 'var(--greenLt)' : ''">
-          <input type="radio" [value]="null" [(ngModel)]="selectedMember" name="member"/>
-          <div><div style="font-weight:600;">Evaluación familiar general</div><div class="muted">Todos los miembros participan</div></div>
-        </label>
-        @for (m of members; track m.id) {
-          <label style="display:flex;align-items:center;gap:10px;padding:12px;border:2px solid var(--border);border-radius:10px;cursor:pointer;"
-                 [style.border-color]="selectedMember===m.id ? 'var(--green)' : 'var(--border)'"
-                 [style.background]="selectedMember===m.id ? 'var(--greenLt)' : ''">
-            <input type="radio" [value]="m.id" [(ngModel)]="selectedMember" name="member"/>
-            <div><div style="font-weight:600;">{{ m.fullName }}</div><div class="muted">{{ m.roleType }} · {{ m.age }} años</div></div>
-          </label>
-        }
-      </div>
-      <button class="btn btn-primary" style="width:100%;justify-content:center;padding:13px;" (click)="start()" [disabled]="loading">
-        {{ loading ? 'Iniciando...' : 'Iniciar evaluación →' }}
-      </button>
-    </div>`
+  templateUrl: './evaluation-start-page.component.html',
+  styleUrls: ['./evaluation-start-page.component.css']
 })
 export class EvaluationStartPageComponent implements OnInit {
   private http = inject(HttpClient);
   private api = inject(ApiService);
   private router = inject(Router);
+  private familyState = inject(FamilyStateService);
 
   members: Member[] = [];
   selectedMember: number | null = null;
   loading = false;
 
-  get familyId() { return Number(localStorage.getItem('selectedFamilyId') ?? 0); }
+  get familyId() { return this.familyState.currentFamilyId(); }
   get milestone() { return localStorage.getItem('currentMilestone') ?? 'inicio'; }
 
   ngOnInit() {
     if (this.familyId > 0) {
       this.http.get<any>(`${this.api.base}/members/family/${this.familyId}`)
         .subscribe({ 
-          next: ({ data }) => this.members = data,
-          error: (err) => console.error('Error cargando miembros:', err)
+          next: ({ data }: any) => this.members = data,
+          error: (err: any) => console.error('Error cargando miembros:', err)
         });
     }
   }
@@ -68,7 +49,7 @@ export class EvaluationStartPageComponent implements OnInit {
 
     this.http.post<any>(`${this.api.base}/evaluations/start`, payload)
       .subscribe({
-        next: (response) => {
+        next: (response: any) => {
           this.loading = false;
           console.log('Respuesta del servidor:', response);
 
@@ -84,7 +65,7 @@ export class EvaluationStartPageComponent implements OnInit {
             console.error('No se recibió ID de evaluación');
           }
         },
-        error: (err) => {
+        error: (err: any) => {
           this.loading = false;
           console.error('Error en POST /evaluations/start:', err);
           alert('No se pudo iniciar la evaluación. Revisa la consola.');

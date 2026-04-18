@@ -3,7 +3,9 @@ const fs = require('fs');
 const path = require('path');
 
 const PORT = 4200;
-// Buscamos la carpeta donde Angular deja el index.html (suele ser dist/frontend/browser o dist)
+const BACKEND_URL = process.env.BACKEND_URL || 'if-backend';
+const BACKEND_PORT = 8080;
+
 const findDistPath = (dir) => {
     const files = fs.readdirSync(dir);
     if (files.includes('index.html')) return dir;
@@ -27,20 +29,45 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
+    // 🚀 LÓGICA DE PROXY PARA API
+    if (req.url.startsWith('/api')) {
+        const proxyReq = http.request({
+            host: BACKEND_URL,
+            port: BACKEND_PORT,
+            path: req.url,
+            method: req.method,
+            headers: req.headers
+        }, (proxyRes) => {
+            res.writeHead(proxyRes.statusCode, proxyRes.headers);
+            proxyRes.pipe(res);
+        });
+
+        req.pipe(proxyReq);
+        proxyReq.on('error', (err) => {
+            console.error('❌ Proxy error:', err.message);
+            res.writeHead(502);
+            res.end('Backend no alcanzable');
+        });
+        return;
+    }
+
     let filePath = path.join(STATIC_PATH, req.url === '/' ? 'index.html' : req.url);
-    
-    // Lógica SPA: Si el archivo no existe, servimos index.html para que el Router de Angular decida
     if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
         filePath = path.join(STATIC_PATH, 'index.html');
     }
 
     const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, { 'Content-Type': MIME_TYPES[ext] || 'application/octet-stream' });
+    res.writeHead(200, { 
+        'Content-Type': MIME_TYPES[ext] || 'application/octet-stream',
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Surrogate-Control': 'no-store'
+    });
     fs.createReadStream(filePath).pipe(res);
 });
 
-// BINDING CRÍTICO A 0.0.0.0 PARA DOCKER
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ Frontend disponible en: http://localhost:${PORT}`);
-    console.log(`📂 Sirviendo desde: ${STATIC_PATH}`);
+    console.log(`📡 Proxy configurado hacia: http://${BACKEND_URL}:${BACKEND_PORT}`);
 });

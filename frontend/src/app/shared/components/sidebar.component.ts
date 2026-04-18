@@ -1,98 +1,73 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
-import { ApiService } from '../../core/services/api.service';
-import { DashboardSummary } from '../../core/models/models';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive],
   styles: [`
-    .sidebar { background: #1A3A2A; height: 100vh; padding: 20px 0; display: flex; flex-direction: column; position: sticky; top: 0; }
-    .brand { display: flex; align-items: center; gap: 12px; padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,.1); margin-bottom: 12px; }
-    .brand-mark { width: 40px; height: 40px; background: rgba(255,255,255,.15); border-radius: 10px; display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 14px; flex-shrink: 0; }
-    .brand-name { color: #fff; font-size: 14px; font-weight: 600; line-height: 1.3; }
-    .brand-sub { color: rgba(255,255,255,.5); font-size: 11px; }
-    nav { flex: 1; padding: 0 12px; }
-    a { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; color: rgba(255,255,255,.7); font-size: 14px; margin-bottom: 2px; transition: all .15s; position: relative; text-decoration: none; }
-    a:hover, a.active { background: rgba(255,255,255,0.1); color: #fff; }
-    .icon { font-size: 16px; width: 20px; text-align: center; }
-    .badge-red { position: absolute; right: 10px; width: 8px; height: 8px; background: #EF4444; border-radius: 50%; box-shadow: 0 0 8px rgba(239, 68, 68, 0.6); animation: pulse 2s infinite; }
-    .badge-num { position: absolute; right: 8px; background: #22C55E; color: white; font-size: 10px; font-weight: 800; padding: 2px 6px; border-radius: 10px; }
-    @keyframes pulse { 0% { transform: scale(0.9); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.5; } 100% { transform: scale(0.9); opacity: 1; } }
-    .family-info { margin: 12px; padding: 12px; background: rgba(255,255,255,.07); border-radius: 10px; border-top: 1px solid rgba(255,255,255,.1); }
-    .fi-name { color: #fff; font-size: 12px; font-weight: 600; }
-    .fi-code { color: rgba(255,255,255,.45); font-size: 10px; margin-top: 2px; }
-    .fi-hito { margin-top: 8px; background: rgba(255,255,255,.1); border-radius: 5px; padding: 3px 8px; color: rgba(255,255,255,.65); font-size: 10px; }
+    .sidebar { 
+      width: 280px;
+      background: var(--primary); 
+      height: 100vh; 
+      padding: 32px 0; 
+      display: flex; 
+      flex-direction: column; 
+      position: fixed; /* Ahora es estático respecto a la pantalla */
+      top: 0; 
+      left: 0;
+      font-family: 'Inter', sans-serif; 
+      border-right: 1px solid rgba(255,255,255,0.05); 
+      z-index: 1000;
+      overflow-y: auto; /* Permite scroll si hay pantallas pequeñas */
+    }
+    /* Ocultar barra de scroll para estética premium */
+    .sidebar::-webkit-scrollbar { width: 0; }
+    
+    .brand { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px; }
+    .logo-circle { width: 64px; height: 64px; background: linear-gradient(135deg, var(--accent), var(--primary-light)); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 28px; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+    .brand-title { color: #fff; font-size: 15px; font-weight: 800; letter-spacing: 2px; margin-top: 14px;}
+    .version-tag { font-size: 9px; color: var(--accent); font-weight: bold; background: var(--accent-glow); padding: 4px 12px; border-radius: 20px; margin-top: 6px; border: 1px solid var(--accent-glow); }
+    
+    nav { flex: 1; padding: 0 16px; }
+    .nav-item { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-radius: 12px; color: rgba(255,255,255,.5); font-size: 15px; font-weight: 500; margin-bottom: 6px; transition: all .3s cubic-bezier(0.4, 0, 0.2, 1); text-decoration: none; }
+    .nav-item:hover { color: #fff; background: rgba(255,255,255,0.05); transform: translateX(6px); }
+    .nav-item.active { background: var(--accent-glow); color: var(--accent); border: 1px solid hsla(239, 84%, 67%, 0.2); }
+    .icon { font-size: 20px; filter: grayscale(1) brightness(2); }
+    .active .icon { filter: none; }
+    
+    .divider { height: 1px; background: rgba(255,255,255,0.05); margin: 24px 32px; }
+    .family-box { margin: 24px; padding: 20px; background: rgba(255,255,255,0.03); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); backdrop-filter: blur(10px); }
+    .f-name { color: #fff; font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .f-milestone { color: var(--accent); font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; font-weight: bold; }
   `],
   template: `
     <div class="sidebar">
       <div class="brand">
-        <div class="brand-mark">IF</div>
-        <div>
-          <div class="brand-name">Integrity Family</div>
-          <div class="brand-sub">v1.0 MVP</div>
-        </div>
+        <div class="logo-circle">IF</div>
+        <div class="brand-title">INTEGRITY FAMILY</div>
+        <div class="version-tag">SISTEMA INTEGRAL v4.1</div>
       </div>
       
       <nav>
-        <a routerLink="/dashboard" routerLinkActive="active"><span class="icon">◎</span> Dashboard</a>
-        <a routerLink="/families"  routerLinkActive="active"><span class="icon">⌂</span> Familias</a>
-        <a routerLink="/members"   routerLinkActive="active"><span class="icon">◑</span> Miembros</a>
-        
-        <a routerLink="/evaluations/start" routerLinkActive="active">
-          <span class="icon">◈</span> Evaluación
-          @if (needsEvaluation) { <span class="badge-red"></span> }
-        </a>
-        
-        <a routerLink="/plans" routerLinkActive="active"><span class="icon">▦</span> Planes</a>
-        
-        <a routerLink="/checklist" routerLinkActive="active">
-          <span class="icon">☑</span> Checklist
-          @if (pendingTasks > 0) { <span class="badge-num">{{ pendingTasks }}</span> }
-        </a>
-        
-        <a routerLink="/chat" routerLinkActive="active"><span class="icon">◉</span> Consultor IA</a>
+        <a routerLink="/dashboard" class="nav-item" routerLinkActive="active"><span class="icon">📊</span> Dashboard</a>
+        <div class="divider"></div>
+        <a routerLink="/families"  class="nav-item" routerLinkActive="active"><span class="icon">👨‍👩‍👧‍👦</span> 1. Familias</a>
+        <a routerLink="/members"   class="nav-item" routerLinkActive="active"><span class="icon">👥</span> 2. Miembros (Equipo)</a>
+        <a routerLink="/evaluations/start" class="nav-item" routerLinkActive="active"><span class="icon">◈</span> 3. Diagnóstico</a>
+        <a routerLink="/plans"      class="nav-item" routerLinkActive="active"><span class="icon">📜</span> 4. Planes de Acción</a>
+        <a routerLink="/checklist"  class="nav-item" routerLinkActive="active"><span class="icon">☑</span> 5. Mi Ruta (Hábitos)</a>
+        <a routerLink="/chat"       class="nav-item" routerLinkActive="active"><span class="icon">✨</span> 6. Consultor IA</a>
       </nav>
 
-      <div class="family-info">
-        <div class="fi-name">{{ familyName }}</div>
-        <div class="fi-code">{{ familyCode }}</div>
-        <div class="fi-hito">🔵 {{ milestone }}</div>
+      <div class="family-box">
+        <div class="f-name">{{ familyName }}</div>
+        <div class="f-milestone">● {{ milestone }}</div>
       </div>
     </div>`
 })
-export class SidebarComponent implements OnInit {
-  private http = inject(HttpClient);
-  private api = inject(ApiService);
-
-  pendingTasks = 0;
-  needsEvaluation = false;
-
-  get familyName() { return localStorage.getItem('selectedFamilyName') ?? 'Sin familia'; }
-  get familyCode()  { return localStorage.getItem('selectedFamilyCode') ?? '---'; }
-  get milestone()   { return localStorage.getItem('currentMilestone')   ?? 'Inicio'; }
-
-  ngOnInit() {
-    this.refreshAlerts();
-  }
-
-  refreshAlerts() {
-    const familyId = localStorage.getItem('selectedFamilyId');
-    if (!familyId || familyId === 'undefined') return;
-
-    this.http.get<{data: DashboardSummary}>(`${this.api.base}/analytics/dashboard/family/${familyId}`)
-      .subscribe({
-        next: (response) => {
-          if (response && response.data) {
-            const summary = response.data;
-            this.pendingTasks = Math.max(0, (summary.totalChecklistItems || 0) - (summary.completedChecklistItems || 0));
-            this.needsEvaluation = (summary.latestGlobalScore ?? 0) === 0;
-          }
-        },
-        error: (err) => console.error('Error al sincronizar alertas del Sidebar:', err)
-      });
-  }
+export class SidebarComponent {
+  get familyName() { return localStorage.getItem('selectedFamilyName') ?? 'Sin Familia'; }
+  get milestone()  { return localStorage.getItem('currentMilestone')   ?? 'Inicio'; }
 }

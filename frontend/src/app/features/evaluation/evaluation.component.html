@@ -1,25 +1,46 @@
-<div class="assessment-container" *ngIf="questions.length > 0; else loading">
-  <div class="progress-bar">
-    <div class="progress-fill" [style.width.%]="(currentIndex + 1) * 100 / questions.length"></div>
-    <p>Pregunta {{ currentIndex + 1 }} de {{ questions.length }}</p>
+<div class="assessment-container" *ngIf="questions && questions.length > 0; else loading">
+  
+  <div class="progress-container">
+    <div class="progress-track">
+      <div class="progress-bar-fill" [style.width.%]="(currentIndex + 1) * 100 / questions.length"></div>
+    </div>
+    <div class="meta-info">
+      <span>{{ questions[currentIndex].dimension }} · Vertice {{ questions[currentIndex].vertice }}</span>
+      <span>Paso {{ currentIndex + 1 }} de {{ questions.length }}</span>
+    </div>
   </div>
 
   <div class="question-card">
-    <span class="badge">{{ questions[currentIndex].dimension }}</span>
-    <h2>{{ questions[currentIndex].questionText }}</h2>
+    <div class="version-badge">DIAGNÓSTICO V4.2</div>
+
+    <h2 class="question-text">
+      {{ questions[currentIndex].text }}
+    </h2>
     
-    <div class="options-grid">
-      <button *ngFor="let score of [1,2,3,4,5]" 
-              (click)="selectAnswer(score)"
-              class="score-btn btn-{{score}}">
-        {{ score }}
-      </button>
+    <div class="scale-grid">
+        <div *ngFor="let i of [1,2,3,4,5]" class="scale-item">
+            <button type="button" 
+                    (click)="selectAnswer(i)"
+                    class="scale-button"
+                    [class.active]="answers.get(questions[currentIndex].id) === i">
+                {{ i }}
+            </button>
+            <span class="scale-label">
+                {{ getScoreLabel(i) }}
+            </span>
+        </div>
     </div>
     
-    <p class="legend">1: Casi nunca | 5: Siempre</p>
+    <div class="form-footer">
+        <p>Selecciona el nivel de conciencia que mejor describa la realidad de tu hogar en este momento.</p>
+    </div>
   </div>
+
 </div>
 
 <ng-template #loading>
-  <div class="loader">Cargando test de integridad...</div>
+  <div class="assessment-container" style="text-align: center; padding: 100px;">
+    <div class="custom-spinner"></div>
+    <p style="font-weight: 700; color: var(--accent); margin-top: 24px;">Conectando con la sabiduría familiar...</p>
+  </div>
 </ng-template>

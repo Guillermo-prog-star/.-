@@ -1,6 +1,7 @@
 package com.integrityfamily.assessment.controller;
 
 import com.integrityfamily.assessment.domain.Assessment;
+import com.integrityfamily.assessment.domain.Question;
 import com.integrityfamily.assessment.service.AssessmentService;
 import com.integrityfamily.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,20 @@ import java.util.Map;
 public class AssessmentController {
 
     private final AssessmentService assessmentService;
+
+    @GetMapping("/questions/stats")
+    public ResponseEntity<ApiResponse<List<com.integrityfamily.assessment.dto.QuestionStatDTO>>> getStats() {
+        return ResponseEntity.ok(ApiResponse.ok(assessmentService.getQuestionStats()));
+    }
+
+    /**
+     * MOTOR ALEATORIO: Genera un diagnóstico de 20 reactivos (5 por área) filtrados por dimensión temporal.
+     * GET /api/assessments/random?familyId=XXX
+     */
+    @GetMapping("/random")
+    public ResponseEntity<ApiResponse<List<Question>>> getRandom(@RequestParam Long familyId) {
+        return ResponseEntity.ok(ApiResponse.ok(assessmentService.generateRandomAssessment(familyId)));
+    }
 
     /**
      * NUEVO MÉTODO: Obtiene preguntas del banco de 1000 preguntas.

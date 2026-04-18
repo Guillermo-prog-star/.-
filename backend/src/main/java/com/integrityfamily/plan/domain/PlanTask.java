@@ -1,21 +1,10 @@
 package com.integrityfamily.plan.domain;
 
 import jakarta.persistence.*;
-import lombok.*;
-
 import java.time.LocalDateTime;
 
-/**
- * Entidad PlanTask: Define una acción específica dentro del plan de bienestar.
- * Se añade 'createdAt' para habilitar el ordenamiento cronológico en los repositorios.
- */
 @Entity
 @Table(name = "plan_tasks")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class PlanTask {
 
     @Id
@@ -24,6 +13,7 @@ public class PlanTask {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Plan plan;
 
     @Column(name = "title", nullable = false, length = 160)
@@ -35,20 +25,35 @@ public class PlanTask {
     @Column(name = "completed")
     private Boolean completed;
 
-    // CAMPO DE AUDITORÍA: Vital para evitar el PropertyReferenceException
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    /**
-     * Lógica Automática: Asegura el estado inicial de la tarea y su marca de tiempo.
-     */
+    @Column(name = "due_date")
+    private LocalDateTime dueDate;
+
+    @Column(name = "assigned_member_id")
+    private Long assignedMemberId;
+
+    public PlanTask() {}
+
     @PrePersist
     public void prePersist() {
-        if (completed == null) {
-            completed = false;
-        }
-        if (createdAt == null) {
-            createdAt = LocalDateTime.now();
-        }
+        if (completed == null) completed = false;
+        if (createdAt == null) createdAt = LocalDateTime.now();
     }
+
+    // Manual Getters/Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Plan getPlan() { return plan; }
+    public void setPlan(Plan plan) { this.plan = plan; }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public Boolean getCompleted() { return completed; }
+    public void setCompleted(Boolean completed) { this.completed = completed; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getDueDate() { return dueDate; }
+    public void setDueDate(LocalDateTime dueDate) { this.dueDate = dueDate; }
 }

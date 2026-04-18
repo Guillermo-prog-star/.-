@@ -6,11 +6,11 @@ import { NavbarComponent } from '../shared/components/navbar.component';
   selector: 'app-shell', standalone: true,
   imports: [RouterOutlet, SidebarComponent, NavbarComponent],
   template: `
-    <div style="display:grid;grid-template-columns:240px 1fr;min-height:100vh;">
+    <div style="display: flex; min-height: 100vh;">
       <app-sidebar/>
-      <div style="display:flex;flex-direction:column;min-width:0;">
+      <div style="flex: 1; margin-left: 280px; display: flex; flex-direction: column; min-width: 0; background: var(--bg-main);">
         <app-navbar/>
-        <main style="padding:28px;flex:1;overflow-y:auto;">
+        <main style="padding: 40px; flex: 1; overflow-y: auto;">
           <router-outlet/>
         </main>
       </div>

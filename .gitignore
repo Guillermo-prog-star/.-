@@ -42,3 +42,10 @@ desktop.ini
 .env
 .env.local
 .env.production
+
+# === Específicos de Integrity Family ===
+exporting/
+*.pdf
+*.csv
+
+# Excepto las plantillas si existieran

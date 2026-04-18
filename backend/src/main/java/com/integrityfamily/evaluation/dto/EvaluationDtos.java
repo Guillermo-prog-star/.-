@@ -11,11 +11,17 @@ public class EvaluationDtos {
     public record EvaluationFinalizeRequest(@NotEmpty List<@Valid AnswerItem> answers) {}
     public record EvaluationResponse(Long id, Long familyId, Long memberId, EvaluationStatus status, LocalDateTime startedAt, LocalDateTime finalizedAt) {}
     public record QuestionResponse(Long id, String questionText, String dimension, String bloque) {}
+    public record DimensionScoreDto(String dimension, Double score, Double percentage) {}
+
     public record EvaluationResultResponse(
-            Long evaluationId, Long familyId, RiskLevel riskLevel,
-            BigDecimal scoreEmotions, BigDecimal scoreCommunication,
-            BigDecimal scoreHabits, BigDecimal scoreTimes,
-            BigDecimal globalScore, Long riskSnapshotId, String aiReport) {}
+            Long evaluationId, 
+            Long familyId, 
+            String riskLevel,
+            List<DimensionScoreDto> dimensionScores,
+            Double globalScore, 
+            Long riskSnapshotId, 
+            String aiReport, 
+            Boolean hasCrisis) {}
     public record EvaluationHistoryResponse(
             Long id, Long familyId, Long memberId, String memberName,
             EvaluationStatus status, LocalDateTime startedAt, LocalDateTime finalizedAt) {}

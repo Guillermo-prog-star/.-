@@ -35,6 +35,7 @@ export interface EvaluationResultResponse {
   evaluationId: number; familyId: number; riskLevel: RiskLevel;
   scoreEmotions: number; scoreCommunication: number; scoreHabits: number; scoreTimes: number;
   globalScore: number; riskSnapshotId: number; aiReport: string | null;
+  hasCrisis: boolean;
 }
 export interface QuestionResponse { id: number; questionText: string; dimension: string; bloque: string; }
 export interface EvaluationHistory { id: number; familyId: number; memberId: number|null; memberName: string|null; status: string; startedAt: string; finalizedAt: string|null; }
@@ -56,6 +57,26 @@ export interface DashboardSummary {
   totalChecklistItems: number; completedChecklistItems: number;
   totalPlanTasks: number; completedPlanTasks: number;
   latestRiskLevel: RiskLevel | null; latestGlobalScore: number;
+  latestConsciousnessLevel: number; latestConsciousnessLabel: string;
+  hasCrisis: boolean;
+  baselineScore: number; awarenessGrowth: number;
+  nextEvaluationAt: string | null;
+  isQuarterlyMilestone: boolean;
+  riskHistory: RiskHistory[];
+}
+
+export interface RiskHistory { 
+  id: number; 
+  evaluationId: number; 
+  riskLevel: RiskLevel; 
+  scoreEmotions: number; 
+  scoreCommunication: number; 
+  scoreHabits: number; 
+  scoreTimes: number; 
+  globalScore: number; 
+  consciousnessLevel?: number;
+  hasCrisis?: boolean;
+  createdAt: string; 
 }
 
 // Chat

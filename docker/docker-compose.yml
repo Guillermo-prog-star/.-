@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # Base de Datos (MySQL 8.4)
   if-mysql:
@@ -11,6 +13,13 @@ services:
       - "3307:3306"
     volumes:
       - if_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - if-net
 
   # Servidor de Mensajería (RabbitMQ)
   if-rabbit:
@@ -23,8 +32,10 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - if-net
 
-  # Administrador Visual de DB (Cambiado a puerto 8082)
+  # Administrador Visual de DB (Puerto 8082)
   if-phpmyadmin:
     image: phpmyadmin
     container_name: if-phpmyadmin
@@ -36,45 +47,40 @@ services:
       MYSQL_ROOT_PASSWORD: root
     depends_on:
       - if-mysql
+    networks:
+      - if-net
 
-volumes:
-  if_mysql_data:
-
-
-
-  services:
+  # Backend (Spring Boot)
   if-backend:
     build: ./backend
     container_name: if-backend
     restart: unless-stopped
     ports:
       - "8080:8080"
-    networks:
-      - if-net
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://if-mysql:3306/integrity_family?createDatabaseIfNotExist=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=root
+      - SPRING_RABBITMQ_HOST=if-rabbit
     depends_on:
       if-mysql:
         condition: service_healthy
+    networks:
+      - if-net
 
+  # Frontend (Angular)
   if-frontend:
     build: ./frontend
     container_name: if-frontend
     ports:
       - "4200:4200"
+    depends_on:
+      - if-backend
     networks:
       - if-net
 
-  if-mysql:
-    image: mysql:8.4
-    container_name: if-mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: root123
-      MYSQL_DATABASE: integrity_family
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
-      retries: 5
-    networks:
-      - if-net
+volumes:
+  if_mysql_data:
 
 networks:
   if-net:

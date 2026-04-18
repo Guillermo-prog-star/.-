@@ -1,0 +1,38 @@
+<div class="page-header">
+  <div>
+    <h1>Familias</h1>
+    <p>Selecciona el núcleo familiar de trabajo</p>
+  </div>
+  <a routerLink="/families/create" class="btn btn-primary">+ Crear familia</a>
+</div>
+
+@if (loading) { 
+  <div class="loading">Cargando...</div> 
+} @else {
+  <div class="grid-3">
+    @for (f of families; track f.id) {
+      <div class="card card-f" [class.card-selected]="isSelected(f)" (click)="select(f)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+          <div class="icon-box">
+            {{ f.name[0] }}
+          </div>
+          @if (isSelected(f)) { <span class="badge badge-success">Activa</span> }
+        </div>
+        
+        <h3 style="margin-bottom:6px; color: var(--text-main);">{{ f.name }}</h3>
+        <p style="font-size:14px; color: var(--text-muted); margin-bottom:16px; flex: 1;">{{ f.description }}</p>
+        
+        <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+          <div style="font-size:11px;color:var(--text-muted); letter-spacing: 1px; margin-bottom:4px;">CÓDIGO: {{ f.familyCode }}</div>
+          <div style="font-size:12px;color:var(--primary); font-weight: 600;">{{ f.municipio }} · Hito: {{ f.currentMilestone }}</div>
+        </div>
+
+        <button class="btn btn-use" 
+                [class.btn-primary]="!isSelected(f)"
+                [class.btn-outline]="isSelected(f)">
+          {{ isSelected(f) ? '✓ Familia Seleccionada' : 'Gestionar esta familia →' }}
+        </button>
+      </div>
+    }
+  </div>
+}

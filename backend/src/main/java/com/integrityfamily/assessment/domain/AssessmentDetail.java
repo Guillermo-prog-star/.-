@@ -1,26 +1,35 @@
 package com.integrityfamily.assessment.domain;
 
 import jakarta.persistence.*;
-import lombok.*;
 
 @Entity
 @Table(name = "assessment_details")
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class AssessmentDetail {
-    @Id 
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "assessment_id")
+    @JoinColumn(name = "assessment_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Assessment assessment;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "question_id")
-    private Question question;
+    @Column(name = "dimension_name", nullable = false)
+    private String dimensionName;
 
-    private String questionKey; // Referencia rápida a la pregunta
-    private String category;
-    private Integer selectedOption;
-    private Integer score;
+    @Column(name = "score", nullable = false)
+    private Double score;
+
+    public AssessmentDetail() {}
+
+    // Manual Getters/Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public Assessment getAssessment() { return assessment; }
+    public void setAssessment(Assessment a) { this.assessment = a; }
+    public String getDimensionName() { return dimensionName; }
+    public void setDimensionName(String name) { this.dimensionName = name; }
+    public Double getScore() { return score; }
+    public void setScore(Double s) { this.score = s; }
 }

@@ -16,14 +16,18 @@ import java.util.UUID;
  * Optimizado para carga masiva de integrantes y trazabilidad con IA.
  */
 @Service
-@RequiredArgsConstructor
 public class FamilyService {
 
     private final FamilyRepository familyRepository;
     private final UserRepository userRepository;
 
+    public FamilyService(FamilyRepository familyRepository, UserRepository userRepository) {
+        this.familyRepository = familyRepository;
+        this.userRepository = userRepository;
+    }
+
     /**
-     * Recupera el núcleo familiar completo (William) con todos sus integrantes.
+     * Recupera el núcleo familiar completo con todos sus integrantes.
      * Utiliza la consulta optimizada JOIN FETCH para evitar latencia.
      */
     @Transactional(readOnly = true)
@@ -43,6 +47,7 @@ public class FamilyService {
 
     /**
      * Crea un nuevo núcleo familiar vinculándolo al usuario y generando el código de nodo.
+     * Formato requerido: IF-CO-QUI-{YEAR}-{SEQUENCE}
      */
     @Transactional
     public Family create(Family family, String creatorEmail) {
@@ -53,11 +58,15 @@ public class FamilyService {
             throw new RuntimeException("El usuario ya posee un núcleo familiar registrado.");
         }
 
-        // Generación de código único FAM-XXXX para trazabilidad con IA
-        String shortCode = UUID.randomUUID().toString().substring(0, 4).toUpperCase();
-        family.setFamilyCode("FAM-" + shortCode);
+        // Generación de código regional estratégico
+        int currentYear = java.time.Year.now().getValue();
+        long count = familyRepository.count() + 1;
+        String sequence = String.format("%04d", count);
+        String familyCode = "IF-CO-QUI-" + currentYear + "-" + sequence;
+        
+        family.setFamilyCode(familyCode);
         family.setCreatedBy(creator);
-        family.setCurrentMilestone("DIAGNOSTICO_INICIAL");
+        family.setCurrentMilestone("MES_00_DIAGNOSTICO_BASE");
         
         return familyRepository.save(family);
     }

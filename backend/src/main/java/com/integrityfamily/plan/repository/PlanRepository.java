@@ -28,4 +28,5 @@ public interface PlanRepository extends JpaRepository<Plan, Long> {
      * Verifica si existe algún plan para una familia específica.
      */
     boolean existsByFamilyId(Long familyId);
+    boolean existsByEvaluationId(Long evaluationId);
 }

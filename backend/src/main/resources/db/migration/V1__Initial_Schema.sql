@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS families (
     municipio         VARCHAR(80),
     created_by        BIGINT NOT NULL,
     created_at        TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    next_evaluation_at TIMESTAMP NULL,
     CONSTRAINT fk_fam_u FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
@@ -72,6 +73,9 @@ CREATE TABLE IF NOT EXISTS evaluations (
     status       VARCHAR(30) NOT NULL DEFAULT 'STARTED',
     started_at   TIMESTAMP NULL,
     finalized_at TIMESTAMP NULL,
+    has_crisis   BOOLEAN DEFAULT FALSE,
+    icf          DECIMAL(5,2),
+    milestone_key VARCHAR(50),
     CONSTRAINT fk_ev_f FOREIGN KEY (family_id) REFERENCES families(id),
     CONSTRAINT fk_ev_m FOREIGN KEY (member_id) REFERENCES family_members(id)
 );
@@ -81,6 +85,7 @@ CREATE TABLE IF NOT EXISTS evaluation_answers (
     evaluation_id BIGINT NOT NULL,
     question_id   BIGINT NOT NULL,
     answer_value  INT NOT NULL,
+    comment       VARCHAR(500) NULL,
     CONSTRAINT fk_ea_e FOREIGN KEY (evaluation_id) REFERENCES evaluations(id),
     CONSTRAINT fk_ea_q FOREIGN KEY (question_id)   REFERENCES questions(id)
 );

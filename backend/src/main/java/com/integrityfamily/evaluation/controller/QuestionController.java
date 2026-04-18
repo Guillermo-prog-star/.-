@@ -19,11 +19,13 @@ public class QuestionController {
 
     /**
      * Endpoint Maestro para el Test de 20 Reactivos
-     * GET /api/questions/random
+     * GET /api/questions/random?familyId=XXX
      */
     @GetMapping("/random")
-    public List<Question> getRandomAssessment() {
-        return assessmentService.generateRandomAssessment();
+    public List<Question> getRandomAssessment(@RequestParam(required = false) Long familyId) {
+        // William Lopez: Si no viene familyId, usamos una lógica base o retornamos vacío para evitar fallos
+        if (familyId == null) return java.util.Collections.emptyList();
+        return assessmentService.generateRandomAssessment(familyId);
     }
 
     /**

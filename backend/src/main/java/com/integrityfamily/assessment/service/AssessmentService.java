@@ -5,103 +5,87 @@ import com.integrityfamily.assessment.domain.AssessmentDetail;
 import com.integrityfamily.assessment.domain.Question;
 import com.integrityfamily.assessment.repository.AssessmentRepository;
 import com.integrityfamily.assessment.repository.QuestionRepository;
+import com.integrityfamily.common.service.AiService;
 import com.integrityfamily.family.domain.Family;
 import com.integrityfamily.family.repository.FamilyRepository;
-import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
 public class AssessmentService {
 
+    private static final Logger log = LoggerFactory.getLogger(AssessmentService.class);
+
+    private final QuestionRepository questionRepository;
     private final AssessmentRepository assessmentRepository;
     private final FamilyRepository familyRepository;
-    private final QuestionRepository questionRepository;
+    private final AiService aiService;
 
-    // --- 1. GENERACIÓN DE EVALUACIÓN (20 reactivos aleatorios) ---
-    
-    public List<Question> generateRandomAssessment() {
-        List<Question> fullAssessment = new ArrayList<>();
-        String[] dimensions = {"EMOCIONES", "COMUNICACION", "HABITOS", "TIEMPOS"};
+    public AssessmentService(QuestionRepository questionRepository,
+                             AssessmentRepository assessmentRepository,
+                             FamilyRepository familyRepository,
+                             AiService aiService) {
+        this.questionRepository = questionRepository;
+        this.assessmentRepository = assessmentRepository;
+        this.familyRepository = familyRepository;
+        this.aiService = aiService;
+    }
 
-        for (String dim : dimensions) {
-            fullAssessment.addAll(questionRepository.findRandomQuestionsByDimension(dim, 5));
+    public List<Question> getQuestionsForFamily(Long familyId) {
+        Family family = familyRepository.findById(familyId).orElseThrow();
+        String milestone = family.getCurrentMilestone();
+        log.info("🎯 Cargando preguntas para hito: {}", milestone);
+        
+        if (milestone == null || milestone.equals("MES_00_DIAGNOSTICO_BASE")) {
+            return questionRepository.findByDimension("RECONOCIMIENTO");
         }
         
-        Collections.shuffle(fullAssessment);
-        return fullAssessment;
-    }
+        if (milestone.contains("MES_12") || milestone.contains("MES_24")) {
+            return questionRepository.findAll(); // Carga completa para hitos mayores
+        }
 
-    // --- 2. MÉTODO FILTRADO (El que causó el error de Maven) ---
-
-    public List<Question> getFilteredQuestions(String dimension, String area) {
-        // William, este método ahora permite al Controller compilar. 
-        // Trae 10 preguntas por dimensión como base.
-        return questionRepository.findRandomQuestionsByDimension(dimension, 10);
-    }
-
-    // --- 3. MÉTODOS DE CONSULTA E HISTORIAL ---
-
-    public Assessment getLatestByFamily(Long familyId) {
-        return assessmentRepository.findFirstByFamilyIdOrderByCreatedAtDesc(familyId)
-                .orElse(null);
+        return questionRepository.findByDimension("AMOR"); // Por defecto para transición
     }
 
     public List<Assessment> getHistoryByFamily(Long familyId) {
-        return assessmentRepository.findByFamilyIdOrderByCreatedAtAsc(familyId);
+        return assessmentRepository.findByFamilyIdOrderByAssessmentDateDesc(familyId);
     }
 
     public Map<String, Object> generateSpiritualSummary(Long familyId) {
-        // Método requerido por el flujo de análisis
-        return new HashMap<>(); 
+        Family family = familyRepository.findById(familyId).orElseThrow();
+        Map<String, Object> context = new HashMap<>();
+        context.put("familyName", family.getName());
+        context.put("milestone", family.getCurrentMilestone());
+        
+        String synthesis = aiService.generateSynthesis(context);
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("synthesis", synthesis);
+        response.put("milestone", family.getCurrentMilestone());
+        response.put("generatedAt", java.time.LocalDateTime.now());
+        
+        return response;
     }
 
-    // --- 4. LÓGICA DE GUARDADO (Cálculos William Lopez) ---
-
-    @Transactional
-    public Assessment saveAssessment(Long familyId, Map<String, Integer> responses) {
-        Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada en el Nodo Armenia"));
-
-        Assessment assessment = Assessment.builder()
-                .family(family)
-                .build();
-
-        double emotionalSum = 0, financialSum = 0;
-        int emotionalCount = 0, financialCount = 0;
-
-        List<AssessmentDetail> details = new ArrayList<>();
+    public Assessment saveAssessment(Long familyId, Map<String, Double> scores) {
+        Family family = familyRepository.findById(familyId).orElseThrow();
         
-        for (Map.Entry<String, Integer> entry : responses.entrySet()) {
-            String category = entry.getKey().startsWith("EMO") ? "EMOCIONAL" : "FINANCIERO";
-            
-            details.add(AssessmentDetail.builder()
-                    .assessment(assessment)
-                    .category(category)
-                    .questionKey(entry.getKey())
-                    .score(entry.getValue())
-                    .build());
-
-            if (category.equals("EMOCIONAL")) {
-                emotionalSum += entry.getValue();
-                emotionalCount++;
-            } else {
-                financialSum += entry.getValue();
-                financialCount++;
-            }
+        Assessment assessment = new Assessment();
+        assessment.setFamily(family);
+        
+        for (Map.Entry<String, Double> entry : scores.entrySet()) {
+            AssessmentDetail detail = new AssessmentDetail();
+            detail.setAssessment(assessment);
+            detail.setDimensionName(entry.getKey());
+            detail.setScore(entry.getValue());
+            assessment.getDetails().add(detail);
         }
-
-        // Cálculos sobre base 5 (William Lopez)
-        double eScore = emotionalCount > 0 ? (emotionalSum / (emotionalCount * 5)) * 100 : 0;
-        double fScore = financialCount > 0 ? (financialSum / (financialCount * 5)) * 100 : 0;
-
-        assessment.setEmotionalScore(eScore);
-        assessment.setFinancialScore(fScore);
-        assessment.setGlobalScore((eScore + fScore) / 2);
-        assessment.setDetails(details);
 
         return assessmentRepository.save(assessment);
     }

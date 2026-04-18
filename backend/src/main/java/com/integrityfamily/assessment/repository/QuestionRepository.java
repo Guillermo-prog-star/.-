@@ -28,6 +28,18 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     List<Question> findRandomQuestionsByDimension(@Param("dimension") String dimension, @Param("limit") int limit);
 
     /**
+     * Obtiene reactivos aleatorios filtrados por área (EMOCIONES, COMUNICACION, etc.)
+     */
+    @Query(value = "SELECT * FROM questions WHERE area = :area AND active = true ORDER BY RAND() LIMIT :limit", nativeQuery = true)
+    List<Question> findRandomQuestionsByArea(@Param("area") String area, @Param("limit") int limit);
+
+    /**
+     * FILTRO MAESTRO: Obtiene preguntas que coinciden con la DIMENSIÓN de la etapa familiar y el ÁREA específica.
+     */
+    @Query(value = "SELECT * FROM questions WHERE dimension = :dimension AND area = :area AND active = true ORDER BY RAND() LIMIT :limit", nativeQuery = true)
+    List<Question> findRandomQuestionsByDimensionAndArea(@Param("dimension") String dimension, @Param("area") String area, @Param("limit") int limit);
+
+    /**
      * Consulta de Control de Calidad: Agrupa y cuenta preguntas por jerarquía.
      * Utiliza proyección sobre el DTO QuestionStatDTO.
      */

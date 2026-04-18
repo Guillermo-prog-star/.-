@@ -1,43 +1,41 @@
 package com.integrityfamily.family.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.*;
 
-/**
- * Member: Entidad sincronizada con MemberService.
- * Define la estructura de datos para los integrantes de Integrity Family en Armenia.
- */
 @Entity
-@Table(name = "members")
-@Getter 
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Table(name = "family_members")
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Member {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private String firstName; 
+    @Column(name = "full_name", nullable = false, length = 120)
+    private String fullName;
 
-    @Column(nullable = false)
-    private String lastName;  
+    @Column(name = "role_type", length = 50)
+    private String roleType;
 
-    @Column(nullable = false)
-    private String relationship; 
-
+    @Column(name = "age")
     private Integer age;
-    private String gender;
-    private String occupation;
-    private String role;      // Crucial para la lógica del Service
-    private boolean active;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "family_id")
-    @JsonIgnore 
+    @JoinColumn(name = "family_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Family family;
+
+    public Member() {}
+
+    // Manual Getters/Setters para compatibilidad total con el sistema actual
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getFullName() { return fullName; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public String getRoleType() { return roleType; }
+    public void setRoleType(String roleType) { this.roleType = roleType; }
+    public Integer getAge() { return age; }
+    public void setAge(Integer age) { this.age = age; }
+    public Family getFamily() { return family; }
+    public void setFamily(Family family) { this.family = family; }
 }

@@ -1,7 +1,9 @@
 export interface Question {
   id: number;
   dimension: string;
-  vertice: string;
-  questionText: string;
+  area: string;      // Nuevo: coincide con Backend Entity
+  vertice?: string;  // Deprecated: antes se llamaba así
+  text: string;      // Nuevo: coincide con Backend Entity
+  questionText?: string; // Deprecated: antes se llamaba así
   active: boolean;
 }

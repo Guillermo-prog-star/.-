@@ -23,18 +23,18 @@ export class AssessmentService {
 
   /**
    * 1. Auditoría: Obtiene el resumen de carga del banco de preguntas.
-   * Útil para el Dashboard de William en el Nodo Armenia.
    */
   getQuestionStats(): Observable<QuestionStat[]> {
-    return this.http.get<ApiResponse<QuestionStat[]>>(`${this.api.base}/assessment/questions/stats`)
+    return this.http.get<ApiResponse<QuestionStat[]>>(`${this.api.base}/assessments/questions/stats`)
       .pipe(map(response => response.data));
   }
 
   /**
-   * 2. Diagnóstico: Obtiene 20 preguntas aleatorias procesadas desde el banco.
+   * 2. Diagnóstico: Obtiene 20 preguntas aleatorias filtradas por la etapa de la familia (6 meses, 2 años, etc).
    */
-  getRandomQuestions(): Observable<Question[]> {
-    return this.http.get<Question[]>(`${this.api.base}/assessment/random`);
+  getRandomQuestions(familyId: number): Observable<Question[]> {
+    return this.http.get<ApiResponse<Question[]>>(`${this.api.base}/assessments/random?familyId=${familyId}`)
+      .pipe(map(response => response.data));
   }
 
   /**
@@ -42,6 +42,13 @@ export class AssessmentService {
    * @param payload { familyId: number, responses: Map<string, number> }
    */
   submitEvaluation(payload: any): Observable<any> {
-    return this.http.post(`${this.api.base}/assessment/submit`, payload);
+    return this.http.post(`${this.api.base}/assessments/submit`, payload);
+  }
+
+  /**
+   * 4. Finalización: Envía las respuestas finales y dispara RabbitMQ.
+   */
+  finalizeEvaluation(id: number, payload: any): Observable<any> {
+    return this.http.post(`${this.api.base}/evaluations/${id}/finalize`, payload);
   }
 }

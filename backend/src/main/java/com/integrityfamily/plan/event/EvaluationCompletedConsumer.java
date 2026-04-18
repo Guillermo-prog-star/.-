@@ -16,6 +16,7 @@ public class EvaluationCompletedConsumer {
         if (evaluationId == null) {
             return;
         }
-        planGenerationService.generatePlanFromEvaluation(evaluationId);
+        // OBSOLETO: El enrutamiento ahora se hace nativamente con RabbitMQ escuchando Map<String,Object>
+        // planGenerationService.generatePlanFromEvaluation(evaluationId);
     }
 }

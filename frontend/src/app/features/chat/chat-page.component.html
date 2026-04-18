@@ -1,0 +1,51 @@
+<div class="page-header">
+  <div>
+    <h1 class="gradient-text">Consultor de Integridad</h1>
+    <p class="text-muted">Potenciado por Gemini AI · {{ familyName }} · {{ milestone }}</p>
+  </div>
+</div>
+
+<div class="glass-card chat-wrapper" style="height:calc(100vh - 250px);">
+  <div class="chat-messages" #msgBox>
+    @if (msgs.length === 0) {
+      <div class="welcome-chat">
+        <div class="ai-avatar-large">✨</div>
+        <h2>¡Hola! Soy tu Consultor de Integridad</h2>
+        <p>Estoy aquí para acompañar la transformación de tu hogar. Pregúntame sobre el diagnóstico, las misiones diarias o cómo elevar el bienestar de tu familia.</p>
+      </div>
+    }
+
+    @for (m of msgs; track $index) {
+      <div class="msg-group" [class.user]="m.role === 'user'">
+        <div class="msg-avatar" *ngIf="m.role === 'ai'">IF</div>
+        <div class="msg-bubble-container">
+          <div class="msg-info" *ngIf="m.role === 'ai'">Consultor · {{ m.time }}</div>
+          <div class="msg-bubble" [class]="m.role">{{ m.text }}</div>
+          <div class="msg-info" *ngIf="m.role === 'user'">Tú · {{ m.time }}</div>
+        </div>
+      </div>
+    }
+
+    @if (loading) {
+      <div class="msg-group">
+        <div class="msg-avatar">IF</div>
+        <div class="msg-bubble ai typing">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </div>
+      </div>
+    }
+    <div #anchor></div>
+  </div>
+
+  <div class="chat-input-area">
+    <input [(ngModel)]="input" 
+           name="msg" 
+           placeholder="¿En qué puedo orientar tu camino familiar hoy?..."
+           class="premium-input"
+           (keyup.enter)="send()" 
+           [disabled]="loading"/>
+    <button class="btn-primary btn-round" (click)="send()" [disabled]="loading || !input.trim()">
+      <span class="icon">➤</span>
+    </button>
+  </div>
+</div>

@@ -1,38 +1,58 @@
+version: '3.8'
+
 services:
-  if-frontend:
-    build: ./frontend
-    container_name: if-frontend
-    ports:
-      - "4200:4200" # Mismo puerto fuera y dentro
-    restart: always
-    networks:
-      - if-net
-
-  if-backend:
-    build: ./backend
-    container_name: if-backend
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:mysql://if-mysql:3306/integrity_family
-    networks:
-      - if-net
-    depends_on:
-      if-mysql:
-        condition: service_healthy
-
   if-mysql:
     image: mysql:8.4
     container_name: if-mysql
-    ports:
-      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: integrity_family
+    ports:
+      - "3307:3306"
+    networks:
+      - if-net
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 5s
       retries: 5
+
+  if-rabbitmq:
+    image: rabbitmq:3-management
+    container_name: if-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    networks:
+      - if-net
+
+  if-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: if-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://if-mysql:3306/integrity_family
+      SPRING_RABBITMQ_HOST: if-rabbitmq
+      APP_AI_GEMINI_API_KEY: ${GEMINI_API_KEY:-YOUR_KEY_HERE}
+    depends_on:
+      if-mysql:
+        condition: service_healthy
+    networks:
+      - if-net
+
+  if-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: if-frontend
+    restart: always
+    ports:
+      - "4200:4200"
     networks:
       - if-net
 

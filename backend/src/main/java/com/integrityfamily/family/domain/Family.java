@@ -2,22 +2,13 @@ package com.integrityfamily.family.domain;
 
 import com.integrityfamily.auth.domain.User;
 import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Entidad Family: Representa el Nodo Familiar en el sistema.
- * Centraliza la información del núcleo y su relación con los integrantes.
- */
 @Entity
 @Table(name = "families")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Family {
 
     @Id
@@ -36,7 +27,7 @@ public class Family {
     @Column(name = "whatsapp", length = 30)
     private String whatsapp;
 
-    @Column(name = "pin", length = 4, nullable = false)
+    @Column(name = "pin_hash", length = 255)
     private String pin;
 
     @Column(name = "family_code", length = 50, unique = true)
@@ -48,22 +39,18 @@ public class Family {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @Column(name = "next_evaluation_at")
+    private LocalDateTime nextEvaluationAt;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;
 
-    /**
-     * RELACIÓN CON INTEGRANTES:
-     * cascade = ALL: Operaciones sobre Family se replican en los Members.
-     * orphanRemoval = true: Eliminar de la lista borra el registro en MySQL.
-     */
     @OneToMany(mappedBy = "family", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private List<Member> members = new ArrayList<>();
 
-    /**
-     * Ciclo de vida JPA: Metadatos automáticos.
-     */
+    public Family() {}
+
     @PrePersist
     public void prePersist() {
         if (this.familyCode == null || this.familyCode.isBlank()) {
@@ -77,11 +64,18 @@ public class Family {
         }
     }
 
-    /**
-     * Método de utilidad para añadir miembros asegurando la consistencia.
-     */
-    public void addMember(Member member) {
-        members.add(member);
-        member.setFamily(this);
-    }
+    // Manual Getters/Setters
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public String getWhatsapp() { return whatsapp; }
+    public void setWhatsapp(String whatsapp) { this.whatsapp = whatsapp; }
+    public String getFamilyCode() { return familyCode; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getNextEvaluationAt() { return nextEvaluationAt; }
+    public void setNextEvaluationAt(LocalDateTime date) { this.nextEvaluationAt = date; }
+    public String getCurrentMilestone() { return currentMilestone; }
+    public void setCurrentMilestone(String milestone) { this.currentMilestone = milestone; }
+    public List<Member> getMembers() { return members; }
 }

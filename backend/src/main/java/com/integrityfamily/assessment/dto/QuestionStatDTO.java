@@ -5,3 +5,5 @@ package com.integrityfamily.assessment.dto;
  */
 public record QuestionStatDTO(String dimension, String area, long count) {
 }
+
+

@@ -17,6 +17,17 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    @ExceptionHandler(EmailAlreadyUsedException.class)
+    public ResponseEntity<ErrorResponse> handleEmailAlreadyUsedException(EmailAlreadyUsedException ex, HttpServletRequest request) {
+        ErrorResponse error = new ErrorResponse();
+        error.setSuccess(false);
+        error.setCode("EMAIL_ALREADY_USED");
+        error.setMessage(ex.getMessage());
+        error.setPath(request.getRequestURI());
+        error.setTimestamp(LocalDateTime.now().toString());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException ex, HttpServletRequest request) {
         ErrorResponse error = new ErrorResponse();
@@ -38,7 +49,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse();
         error.setSuccess(false);
         error.setCode("VALIDATION_ERROR");
-        error.setMessage("Error de validación: " + details);
+        error.setMessage("Error de validaciÃƒÂ³n: " + details);
         error.setPath(request.getRequestURI());
         error.setTimestamp(LocalDateTime.now().toString());
 
@@ -47,7 +58,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
-        log.error("Unhandled Exception at {}: {}", request.getRequestURI(), ex.getMessage(), ex);
+        String path = request.getRequestURI();
+        
+        // Ã°Å¸â€Â¥ CRÃƒÂTICO: excluir Actuator completamente
+        if (path.startsWith("/actuator")) {
+            log.error("Actuator Error at {}: {}", path, ex.getMessage());
+            throw new RuntimeException(ex); // Dejar que Spring maneje Actuator nativamente
+        }
+
+        log.error("Unhandled Exception at {}: {}", path, ex.getMessage(), ex);
         
         ErrorResponse error = new ErrorResponse();
         error.setSuccess(false);
@@ -59,3 +78,5 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }
+
+

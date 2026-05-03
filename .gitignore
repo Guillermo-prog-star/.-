@@ -49,3 +49,24 @@ exporting/
 *.csv
 
 # Excepto las plantillas si existieran
+# /c/Proyectos/if-full/.gitignore
+
+# Docker Database data
+mysql_data/
+/mysql_data
+
+# IDEs
+.idea/
+.vscode/
+
+# Java / Spring Boot
+backend/target/
+*.class
+
+# Node / Angular
+if-frontend/node_modules/
+if-frontend/dist/
+
+# OS files
+Thumbs.db
+.DS_Store

@@ -1,58 +1,84 @@
-version: '3.8'
-
 services:
+  # Base de Datos: Sincronizada a MySQL 8.4
   if-mysql:
     image: mysql:8.4
     container_name: if-mysql
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: integrity_family
+      MYSQL_ROOT_PASSWORD: root
     ports:
       - "3307:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql
     networks:
       - if-net
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 5s
+      interval: 10s
+      timeout: 5s
       retries: 5
 
+  # Bus de Eventos: Crucial para el AiInferenceService
   if-rabbitmq:
     image: rabbitmq:3-management
     container_name: if-rabbitmq
+    restart: always
     ports:
       - "5672:5672"
       - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
     networks:
       - if-net
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
+  # Backend: Inyección de Secretos y Resiliencia
   if-backend:
     build:
       context: ./backend
-      dockerfile: Dockerfile
     container_name: if-backend
-    ports:
-      - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://if-mysql:3306/integrity_family
-      SPRING_RABBITMQ_HOST: if-rabbitmq
-      APP_AI_GEMINI_API_KEY: ${GEMINI_API_KEY:-YOUR_KEY_HERE}
+      DB_HOST: if-mysql
+      DB_PORT: 3306
+      DB_NAME: integrity_family
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-root}
+      RABBITMQ_HOST: if-rabbitmq
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
     depends_on:
       if-mysql:
         condition: service_healthy
+      if-rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: on-failure:3
+    ports:
+      - "8080:8080"
     networks:
       - if-net
 
+  # Frontend: Acceso nativo por puerto 4200 con proxy interno
   if-frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: ./if-frontend
     container_name: if-frontend
-    restart: always
+    restart: unless-stopped
     ports:
       - "4200:4200"
+    environment:
+      - BACKEND_URL=if-backend
+    depends_on:
+      if-backend:
+        condition: service_healthy
     networks:
       - if-net
 

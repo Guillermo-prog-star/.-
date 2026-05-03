@@ -2,16 +2,32 @@ package com.integrityfamily;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * Punto de entrada de Integrity Family.
+ *
+ * @EntityScan restringe el escaneo de entidades JPA ÚNICAMENTE a los paquetes
+ * canónicos del dominio, eliminando DuplicateMappingException causada por
+ * entidades legacy en paquetes modulares.
+ *
  * La inicialización de datos (usuarios, roles) se delega a:
  *   - NodoArmeniaMasterInitializer (auth/service) → usuarios william y admin demo
  * No se duplica lógica aquí para evitar race conditions al arrancar.
  */
 @SpringBootApplication
 @EnableScheduling
+@EntityScan(basePackages = {
+        "com.integrityfamily.domain",
+        "com.integrityfamily.lts.domain",
+        "com.integrityfamily.risk.domain",
+        "com.integrityfamily.plan.domain",
+        "com.integrityfamily.assessment.domain",
+        "com.integrityfamily.analytics.domain",
+        "com.integrityfamily.common.domain",
+        "com.integrityfamily.report.domain"
+})
 public class IntegrityFamilyApplication {
 
     public static void main(String[] args) {

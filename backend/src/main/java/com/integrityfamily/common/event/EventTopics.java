@@ -4,3 +4,5 @@ public final class EventTopics {
     public static final String PLAN_GENERATED       = "plan.generated";
     private EventTopics() {}
 }
+
+

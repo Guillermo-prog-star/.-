@@ -3,7 +3,7 @@ package com.integrityfamily.auth.dto;
 import java.util.List;
 
 /**
- * Record optimizado para la respuesta de autenticación.
+ * Record optimizado para la respuesta de autenticaciÃƒÂ³n.
  */
 public record AuthResponse(
     Long id,
@@ -12,3 +12,5 @@ public record AuthResponse(
     String fullName,
     List<String> roles
 ) {}
+
+

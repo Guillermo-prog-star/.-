@@ -1,72 +1,101 @@
 package com.integrityfamily.checklist.service;
 
-import com.integrityfamily.checklist.domain.ChecklistItem;
-import com.integrityfamily.checklist.repository.ChecklistItemRepository;
-import com.integrityfamily.plan.domain.PlanTask;
-import com.integrityfamily.plan.repository.PlanTaskRepository;
+import com.integrityfamily.domain.ChecklistItem;
+import com.integrityfamily.domain.repository.ChecklistRepository;
+import com.integrityfamily.domain.Family;
+import com.integrityfamily.domain.repository.FamilyRepository;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
+@RequiredArgsConstructor
 public class ChecklistService {
 
-    private final ChecklistItemRepository checklistItemRepository;
-    private final PlanTaskRepository planTaskRepository;
+    private static final Logger log = LoggerFactory.getLogger(ChecklistService.class);
+    private final ChecklistRepository checklistRepository;
+    private final FamilyRepository familyRepository;
 
-    public ChecklistService(ChecklistItemRepository checklistItemRepository, 
-                            PlanTaskRepository planTaskRepository) {
-        this.checklistItemRepository = checklistItemRepository;
-        this.planTaskRepository = planTaskRepository;
-    }
-
-    public List<ChecklistItem> findAll() {
-        return checklistItemRepository.findAll();
-    }
-
-    public List<ChecklistItem> findByFamilyId(Long familyId) {
-        return checklistItemRepository.findByFamilyIdOrderByCreatedAtDesc(familyId);
-    }
-
-    public ChecklistItem findById(Long id) {
-        return checklistItemRepository.findById(id).orElseThrow();
-    }
-
-    public ChecklistItem create(ChecklistItem item) {
-        return checklistItemRepository.save(item);
+    public List<ChecklistItem> getFamilyChecklist(Long familyId) {
+        return checklistRepository.findByFamilyIdOrderByCreatedAtDesc(familyId);
     }
 
     @Transactional
-    public ChecklistItem completeItem(Long id, boolean completed) {
-        ChecklistItem item = findById(id);
-        item.setCompleted(completed);
+    public void markAsCompleted(Long id, String completedBy) {
+        ChecklistItem item = checklistRepository.findById(id).orElseThrow();
+        item.setCompleted(true);
+        item.setCompletedBy(completedBy);
+        item.setCompletedAt(LocalDateTime.now());
+        checklistRepository.save(item);
+
+        // [SDD Spec] EvaluaciÃƒÂ³n Determinista de Hito
+        Long familyId = item.getFamily().getId();
+        String source = item.getSource();
         
-        if (item.getPlanTask() != null) {
-            item.getPlanTask().setCompleted(completed);
-            planTaskRepository.save(item.getPlanTask());
+        long pending = checklistRepository.countByFamilyIdAndSourceAndCompletedFalse(familyId, source);
+        if (pending == 0) {
+            log.info("Ã°Å¸Å½Â¯ [MILESTONE-READY] Todas las tareas de la fuente '{}' han sido completadas para la familia {}.", source, familyId);
+        } else {
+            log.info("Ã°Å¸â€œË† [PROGRESS] Tareas pendientes para '{}': {}", source, pending);
         }
-        
-        return checklistItemRepository.save(item);
     }
 
+    /**
+     * Mapea un texto masivo de la IA (pilar, crisis, etc) y extrae actividades.
+     * Replicando la lÃƒÂ³gica del monolito: extraer lÃƒÂ­neas con -, * o n.
+     */
     @Transactional
-    public List<ChecklistItem> generateFromPlan(Long planId) {
-        List<PlanTask> tasks = planTaskRepository.findByPlanIdOrderByCreatedAtAsc(planId);
-        List<ChecklistItem> generated = new ArrayList<>();
+    public int extractAndAdd(String text, String source, Long familyId) {
+        Family family = familyRepository.findById(familyId).orElseThrow();
+        List<String> lines = extractActionableLines(text);
+        int added = 0;
 
-        for (PlanTask task : tasks) {
+        for (String line : lines) {
             ChecklistItem item = new ChecklistItem();
-            item.setTitle(task.getTitle());
-            item.setCompleted(task.getCompleted());
-            item.setPlanTask(task);
-            if (task.getPlan() != null) {
-                item.setFamily(task.getPlan().getFamily());
-            }
-            generated.add(checklistItemRepository.save(item));
+            item.setFamily(family);
+            item.setDescription(line);
+            item.setSource(source);
+            item.setDimension(detectDimension(line));
+            checklistRepository.save(item);
+            added++;
         }
+        
+        log.info("Ã°Å¸â€œâ€¹ [CHECKLIST] Se han extraÃƒÂ­do {} nuevas actividades para la familia {}", added, familyId);
+        return added;
+    }
 
-        return generated;
+    private List<String> extractActionableLines(String text) {
+        List<String> result = new ArrayList<>();
+        if (text == null) return result;
+
+        // Regex para lÃƒÂ­neas que empiezan con -, *, o 1. (tal cual el monolito)
+        Pattern pattern = Pattern.compile("^\\s*([-*]|\\d+\\.)\\s+(.*)$", Pattern.MULTILINE);
+        Matcher matcher = pattern.matcher(text);
+
+        while (matcher.find()) {
+            String content = matcher.group(2).trim();
+            if (content.length() >= 10 && !content.startsWith("#")) {
+                result.add(content);
+            }
+        }
+        return result;
+    }
+
+    private String detectDimension(String text) {
+        String t = text.toLowerCase();
+        if (t.contains("reconoci") || t.contains("identidad") || t.contains("ver") || t.contains("observar")) return "Reconocimiento";
+        if (t.contains("amor") || t.contains("afecto") || t.contains("cariÃƒÂ±o") || t.contains("vinculo")) return "Amor";
+        if (t.contains("entrega") || t.contains("servicio") || t.contains("compromiso") || t.contains("donacion")) return "Entrega";
+        return "General";
     }
 }
+
+

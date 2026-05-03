@@ -1,0 +1,28 @@
+package com.integrityfamily.reports.domain;
+
+import lombok.Getter;
+
+@Getter
+public enum RiskLevel {
+    HIGH("Alto", 0, 49),
+    MODERATE("Moderado", 50, 79),
+    LOW("Bajo", 80, 100);
+
+    private final String label;
+    private final int min;
+    private final int max;
+
+    RiskLevel(String label, int min, int max) {
+        this.label = label;
+        this.min = min;
+        this.max = max;
+    }
+
+    public static RiskLevel fromScore(double scorePercentage) {
+        if (scorePercentage < 50) return HIGH;
+        if (scorePercentage < 80) return MODERATE;
+        return LOW;
+    }
+}
+
+

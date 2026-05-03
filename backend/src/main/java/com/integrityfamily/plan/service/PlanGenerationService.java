@@ -1,99 +1,155 @@
 package com.integrityfamily.plan.service;
 
-import com.integrityfamily.evaluation.domain.Evaluation;
-import com.integrityfamily.evaluation.repository.EvaluationRepository;
-import com.integrityfamily.plan.domain.Plan;
-import com.integrityfamily.plan.domain.PlanTask;
-import com.integrityfamily.common.service.AiService;
+import com.integrityfamily.domain.*;
+import com.integrityfamily.domain.repository.EvaluationRepository;
+import com.integrityfamily.ai.service.AiService;
 import com.integrityfamily.common.service.WhatsAppService;
+import com.integrityfamily.checklist.service.ChecklistService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 public class PlanGenerationService {
-
-    private static final Logger log = LoggerFactory.getLogger(PlanGenerationService.class);
 
     private final PlanService planService;
     private final EvaluationRepository evaluationRepository;
     private final AiService aiService;
     private final WhatsAppService whatsappService;
     private final ObjectMapper objectMapper;
+    private final ChecklistService checklistService;
 
-    public PlanGenerationService(PlanService planService, 
-                                 EvaluationRepository evaluationRepository, 
-                                 AiService aiService, 
-                                 WhatsAppService whatsappService, 
-                                 ObjectMapper objectMapper) {
+    public PlanGenerationService(PlanService planService,
+                               EvaluationRepository evaluationRepository,
+                               AiService aiService,
+                               WhatsAppService whatsappService,
+                               ObjectMapper objectMapper,
+                               ChecklistService checklistService) {
         this.planService = planService;
         this.evaluationRepository = evaluationRepository;
         this.aiService = aiService;
         this.whatsappService = whatsappService;
         this.objectMapper = objectMapper;
+        this.checklistService = checklistService;
     }
 
     @RabbitListener(queues = "${app.messaging.queues.plan:if.plan.queue}")
     public void generatePlanFromEvaluation(Map<String, Object> event) {
-        log.info("🔥 [AI-PLAN] Iniciando generación generativa para evento: {}", event);
+        log.info("🚀 [AI_PLAN_ENGINE] Iniciando síntesis generativa para evento: {}", event);
 
         try {
             if (event.get("evaluationId") == null) return;
-
-            Long evaluationId = Long.valueOf(event.get("evaluationId").toString());
-            Evaluation evaluation = evaluationRepository.findById(evaluationId).orElse(null);
             
-            if (evaluation == null) return;
+            Long evaluationId = Long.valueOf(event.get("evaluationId").toString());
+            Evaluation evaluation = evaluationRepository.findById(evaluationId)
+                    .orElseThrow(() -> new RuntimeException("Evaluación no encontrada: " + evaluationId));
 
-            String milestone = evaluation.getMilestoneKey() != null ? evaluation.getMilestoneKey() : "inicio";
-            String riskLevel = (String) event.getOrDefault("riskLevel", "MEDIUM");
-            boolean hasCrisis = (boolean) event.getOrDefault("requiresImmediatePlan", false);
+            boolean isCrisis = Boolean.TRUE.equals(evaluation.getHasCrisis()) || 
+                               (evaluation.getIcf() != null && evaluation.getIcf() < 40.0);
 
-            Plan newPlan = new Plan();
-            newPlan.setFamily(evaluation.getFamily());
-            newPlan.setEvaluation(evaluation);
-            newPlan.setTitle("Ruta de Transformación: " + milestone);
-            newPlan.setDescription("Este plan ha sido diseñado por nuestro Consultor de IA basado en tu diagnóstico.");
-
-            // --- LLAMADA A IA PARA MISIONES REALES ---
-            String jsonMissions = aiService.generateMissions(event);
-            try {
-                List<Map<String, String>> tasks = objectMapper.readValue(jsonMissions, new com.fasterxml.jackson.core.type.TypeReference<>() {});
-                for (Map<String, String> t : tasks) {
-                    PlanTask task = new PlanTask();
-                    task.setPlan(newPlan);
-                    task.setTitle(t.getOrDefault("title", "Misión de Bienestar"));
-                    task.setDescription(t.getOrDefault("description", "Seguir las recomendaciones del mentor."));
-                    newPlan.getTasks().add(task);
-                }
-            } catch (Exception e) {
-                log.warn("⚠️ Fallo al parsear JSON de IA, usando tareas de contingencia.");
-                PlanTask fallbackTask = new PlanTask();
-                fallbackTask.setPlan(newPlan);
-                fallbackTask.setTitle("Diálogo Familiar");
-                fallbackTask.setDescription("Validación de resultados.");
-                newPlan.getTasks().add(fallbackTask);
-            }
-
-            // Persistencia del plan
-            planService.createPlan(newPlan);
-            log.info("✅ [AI-PLAN] Plan estratégico generado guardado correctamente.");
-
-            // --- NOTIFICACIÓN PROACTIVA WHATSAPP ---
-            String whatsappNum = evaluation.getFamily().getWhatsapp();
-            if (whatsappNum != null && !whatsappNum.isBlank()) {
-                String topic = hasCrisis ? "medidas de apoyo inmediato" : "un nuevo plan de bienestar familiar";
-                String warmMessage = aiService.generateNotificationCopy(evaluation.getFamily().getName(), topic);
-                whatsappService.sendMessage(whatsappNum, warmMessage);
+            if (isCrisis) {
+                processCrisisPlan(evaluation);
+            } else {
+                processStandardRoadmap(evaluation, event);
             }
 
         } catch (Exception e) {
-            log.error("❌ ERROR CRÍTICO en motor de IA", e);
+            log.error("❌ [PLAN-ENGINE-ERROR] Fallo crítico: {}", e.getMessage());
         }
     }
+
+    private void processStandardRoadmap(Evaluation evaluation, Map<String, Object> event) {
+        String milestone = evaluation.getFamily().getCurrentMilestone();
+        boolean isFirst = planService.findByFamilyId(evaluation.getFamily().getId()).isEmpty();
+
+        Plan p = new Plan();
+        p.setFamily(evaluation.getFamily());
+        p.setEvaluation(evaluation);
+        p.setTitle(isFirst ? "HOJA DE RUTA: " + milestone : "AJUSTE TÁCTICO: " + milestone);
+        p.setDescription(isFirst ? "Activación de transformación 36 meses." : "Evolución basada en progreso actual.");
+
+        injectEvolutionaryMissions(p, evaluation, event);
+        planService.createPlan(p);
+
+        log.info("✅ [PLAN-ENGINE] Plan '{}' creado satisfactoriamente.", p.getTitle());
+    }
+
+    private void injectEvolutionaryMissions(Plan p, Evaluation eval, Map<String, Object> event) {
+        // 1. Clasificación de Dimensiones (Hechos)
+        Map<String, Double> dimensions = eval.getDimensionScores().stream()
+                .collect(Collectors.toMap(EvaluationDimensionScore::getDimensionName, EvaluationDimensionScore::getScore));
+        
+        String riskLevel = event.getOrDefault("riskLevel", "MEDIUM").toString();
+
+        // 2. Invocación IA
+        String jsonResponse = aiService.generateEvolutionaryMissions(eval.getFamily(), dimensions, riskLevel);
+        
+        p.setAiReport(eval.getSpiritualSynthesis());
+        p.setAiGeneratedAt(LocalDateTime.now());
+
+        try {
+            // 3. Parseo Resiliente
+            List<AiMissionDto> missions = objectMapper.readValue(jsonResponse, new TypeReference<List<AiMissionDto>>() {});
+            
+            for (AiMissionDto m : missions) {
+                PlanTask task = new PlanTask();
+                task.setPlan(p);
+                task.setTitle(m.title());
+                task.setDescription(m.description());
+                task.setDimension(m.dimension() != null ? m.dimension() : "GENERAL");
+                
+                int months = m.periodicityMonths() > 0 ? m.periodicityMonths() : 1;
+                task.setPeriodicityMonths(months);
+                task.setDueDate(LocalDateTime.now().plusMonths(months));
+                
+                p.getTasks().add(task);
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ [AI-PARSER] Error en formato JSON. Activando Fallback Estructural.");
+            applyStructuralFallback(p, dimensions);
+        }
+
+        // Sincronización con Checklist (Retrocompatibilidad)
+        checklistService.extractAndAdd(jsonResponse, "EVO_" + eval.getId(), eval.getFamily().getId());
+    }
+
+    private void applyStructuralFallback(Plan p, Map<String, Double> dimensions) {
+        String weakDimension = dimensions.entrySet().stream()
+                .min(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse("INTEGRIDAD");
+
+        PlanTask task = new PlanTask();
+        task.setPlan(p);
+        task.setTitle("Consolidación en " + weakDimension);
+        task.setDescription("Foco prioritario en fortalecer la base de " + weakDimension + " tras inconsistencia en el reporte de IA.");
+        task.setDimension(weakDimension);
+        task.setDueDate(LocalDateTime.now().plusWeeks(2));
+        p.getTasks().add(task);
+    }
+
+    private void processCrisisPlan(Evaluation evaluation) {
+        Plan p = new Plan();
+        p.setFamily(evaluation.getFamily());
+        p.setEvaluation(evaluation);
+        p.setTitle("⚠️ PROTOCOLO DE CONTENCIÓN SENTINEL");
+        p.setDescription("Intervención inmediata por riesgo crítico detectado.");
+        
+        String jsonMissions = aiService.generateMissions(evaluation.getFamily());
+        checklistService.extractAndAdd(jsonMissions, "CRISIS_" + evaluation.getId(), evaluation.getFamily().getId());
+        
+        planService.createPlan(p);
+        log.error("🚨 [SENTINEL] Plan de Crisis generado para Familia: {}", evaluation.getFamily().getName());
+    }
+
+    private record AiMissionDto(String title, String description, String dimension, int periodicityMonths) {}
 }
+
+

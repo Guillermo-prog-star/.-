@@ -1,9 +1,9 @@
 package com.integrityfamily.plan.service;
 
-import com.integrityfamily.plan.domain.Plan;
-import com.integrityfamily.plan.domain.PlanTask;
-import com.integrityfamily.plan.repository.PlanRepository;
-import com.integrityfamily.plan.repository.PlanTaskRepository;
+import com.integrityfamily.domain.Plan;
+import com.integrityfamily.domain.PlanTask;
+import com.integrityfamily.domain.repository.PlanRepository;
+import com.integrityfamily.domain.repository.PlanTaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +20,7 @@ public class PlanService {
         return planRepository.findAll();
     }
 
-    /** Planes de una familia ordenados por fecha (más recientes primero) */
+    /** Planes de una familia ordenados por fecha (mÃƒÂ¡s recientes primero) */
     public List<Plan> findByFamilyId(Long familyId) {
         return planRepository.findByFamilyIdOrderByCreatedAtDesc(familyId);
     }
@@ -49,7 +49,7 @@ public class PlanService {
         planRepository.deleteById(id);
     }
 
-    // ── Tareas ────────────────────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Tareas Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
     public List<PlanTask> findAllTasks() {
         return planTaskRepository.findAll();
@@ -88,3 +88,5 @@ public class PlanService {
         planTaskRepository.deleteById(id);
     }
 }
+
+

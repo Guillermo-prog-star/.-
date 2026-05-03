@@ -1,26 +1,27 @@
 package com.integrityfamily.family.controller;
 
 import com.integrityfamily.common.dto.ApiResponse;
-import com.integrityfamily.family.domain.Family;
-import com.integrityfamily.family.repository.FamilyRepository;
+import com.integrityfamily.domain.Family;
 import com.integrityfamily.family.service.FamilyService;
+import com.integrityfamily.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
+/**
+ * SDD: Controlador de Núcleos Familiares.
+ * Postura Técnica: Se elimina el bypass de repositorios y se estandariza el contrato ApiResponse.
+ */
 @RestController
 @RequestMapping("/api/families")
 @RequiredArgsConstructor
 public class FamilyController {
 
     private final FamilyService familyService;
-    private final FamilyRepository familyRepository;
 
     @GetMapping
     public ApiResponse<List<Family>> getAll() {
@@ -29,19 +30,14 @@ public class FamilyController {
 
     /**
      * GET /api/families/mine — Retorna la familia del usuario autenticado.
-     * El frontend lo usa en ngOnInit para detectar si ya existe y rellenar el estado.
      */
     @GetMapping("/mine")
-    public ResponseEntity<?> getMyFamily(Principal principal) {
+    public ApiResponse<Family> getMyFamily(Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("success", false, "message", "No autenticado"));
+            throw new BusinessException("No autenticado", "UNAUTHORIZED", HttpStatus.UNAUTHORIZED);
         }
-        Optional<Family> family = familyRepository.findByCreatedBy_Email(principal.getName());
-        if (family.isPresent()) {
-            return ResponseEntity.ok(ApiResponse.ok(family.get()));
-        }
-        return ResponseEntity.ok(ApiResponse.ok(null, "Sin familia"));
+        Optional<Family> family = familyService.findByCreatorEmail(principal.getName());
+        return ApiResponse.ok(family.orElse(null), family.isPresent() ? "Familia recuperada" : "Sin familia vinculada");
     }
 
     @GetMapping("/{id}")
@@ -51,31 +47,15 @@ public class FamilyController {
 
     /**
      * POST /api/families — Crea un nuevo núcleo familiar.
-     * Si el usuario ya tiene una, retorna 409 con los datos de la existente.
      */
     @PostMapping
-    public ResponseEntity<?> createFamily(@RequestBody Family family, Principal principal) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ApiResponse<Family> createFamily(@RequestBody Family family, Principal principal) {
         if (principal == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("success", false, "message", "No autenticado"));
+            throw new BusinessException("No autenticado", "UNAUTHORIZED", HttpStatus.UNAUTHORIZED);
         }
-        String creatorEmail = principal.getName();
-
-        Optional<Family> existing = familyRepository.findByCreatedBy_Email(creatorEmail);
-        if (existing.isPresent()) {
-            Family f = existing.get();
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of(
-                        "success", false,
-                        "message", "ya posee",
-                        "familyId", f.getId(),
-                        "familyName", f.getName() != null ? f.getName() : "",
-                        "familyCode", f.getFamilyCode() != null ? f.getFamilyCode() : ""
-                    ));
-        }
-
-        Family created = familyService.create(family, creatorEmail);
-        return ResponseEntity.ok(ApiResponse.ok(created));
+        Family created = familyService.create(family, principal.getName());
+        return ApiResponse.ok(created);
     }
 
     @PutMapping("/{id}")

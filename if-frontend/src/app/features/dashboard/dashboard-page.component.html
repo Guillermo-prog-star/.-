@@ -1,0 +1,106 @@
+<ng-container *ngIf="state$ | async as data; else loadingTemplate">
+  <div class="dashboard-root min-h-screen p-6 lg:p-12 space-y-12">
+    
+    <!-- HEADER & SENTINEL ALERT -->
+    <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div>
+        <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40 tracking-tight">
+          Panóptico Familiar
+        </h1>
+        <p class="text-white/40 font-medium tracking-widest uppercase text-[10px] mt-2">
+          Nodo: {{ data.familyCode }} • Hito: {{ data.currentMilestone }}
+        </p>
+      </div>
+
+      <!-- [SDD Spec] PROTOCOLO SENTINEL: Capa de Contención Proactiva -->
+      <app-sentinel-alert [active]="data.isSentinelActive"></app-sentinel-alert>
+    </header>
+    
+    <!-- [SDD Spec] MILESTONE ADVANCE REINFORCEMENT -->
+    <!-- Activación determinista: Solo visible si el motor de validación aprueba el avance -->
+    <div *ngIf="readyToAdvance$ | async" 
+         class="glass-premium border-emerald-500/50 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-top duration-700 bg-emerald-500/5">
+      <div class="flex items-center gap-6">
+        <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-2xl animate-bounce">
+          🏆
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-white/90">¡Hito Completado!</h3>
+          <p class="text-white/60 text-sm">Habéis demostrado la coherencia necesaria. El nodo familiar está listo para evolucionar.</p>
+        </div>
+      </div>
+      <button (click)="advanceMilestone()" 
+              class="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-xs rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_10px_30px_rgba(16,185,129,0.3)]">
+        Evolucionar Nodo
+      </button>
+    </div>
+
+    <!-- STATS GRID -->
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <app-icf-stat-card 
+        label="Índice de Conciencia (ICF)" 
+        [value]="data.latestGlobalScore" 
+        [status]="data.latestConsciousnessLabel"
+        theme="theme-harmony">
+      </app-icf-stat-card>
+      
+      <app-icf-stat-card 
+        label="Progreso del Pilar" 
+        [value]="data.pillarProgress" 
+        status="EN RUTA DE TRANSFORMACIÓN"
+        theme="theme-growth">
+      </app-icf-stat-card>
+
+      <app-icf-stat-card 
+        label="Crecimiento de Conciencia" 
+        [value]="data.awarenessGrowth" 
+        status="EVOLUCIÓN SEMANAL"
+        theme="theme-peace">
+      </app-icf-stat-card>
+    </section>
+
+    <!-- RADAR & TIMELINE -->
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+      <div class="xl:col-span-4 h-full">
+        <app-evolution-radar></app-evolution-radar>
+      </div>
+
+      <div class="xl:col-span-8 space-y-8">
+        <!-- [SDD Spec] IA COGNITIVE INSIGHT -->
+        <app-ai-insight-panel 
+          [recommendation]="data.aiRecommendation"
+          [trend]="data.riskTrend">
+        </app-ai-insight-panel>
+
+        <app-ai-plan-timeline [actions]="data.suggestedActions"></app-ai-plan-timeline>
+
+        <app-scenarios-grid></app-scenarios-grid>
+      </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="mt-20 py-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+      <div class="text-[11px] font-bold text-white/20 tracking-[0.3em] uppercase">
+        Integrity Family • Red Global de Armonía
+      </div>
+      <div class="flex gap-8">
+        <div class="text-center">
+          <span class="block text-xl font-bold text-white/80">{{ data.totalEvaluations }}</span>
+          <span class="text-[9px] text-white/40 uppercase tracking-widest">Diagnósticos</span>
+        </div>
+        <div class="text-center">
+          <span class="block text-xl font-bold text-teal-400">{{ data.completedPlanTasks }} / {{ data.totalPlanTasks }}</span>
+          <span class="text-[9px] text-white/40 uppercase tracking-widest">Misiones</span>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+</ng-container>
+
+<ng-template #loadingTemplate>
+  <div class="flex flex-col items-center justify-center min-h-[60vh]">
+    <div class="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
+    <p class="text-white/40 text-sm font-medium animate-pulse">Sincronizando con el Santuario de Conciencia...</p>
+  </div>
+</ng-template>

@@ -1,0 +1,45 @@
+<div class="bg-auth-gradient">
+  <div class="glass-card">
+    <div class="logo-badge">IF</div>
+    <h1 class="text-center mb-24">Crear cuenta</h1>
+    
+    <form (ngSubmit)="submit()">
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input [(ngModel)]="fullName" name="fn" required placeholder="Ej: William López"/>
+      </div>
+      
+      <div class="form-group">
+        <label>Email</label>
+        <input [(ngModel)]="email" name="em" type="email" required placeholder="william@ejemplo.com"/>
+      </div>
+
+      <!-- Campo Crítico: Voucher para Fase Alfa -->
+      <div class="form-group mb-20">
+        <label class="flex justify-between">
+          Voucher de Inmersión
+          <span class="text-[9px] uppercase text-indigo-400 font-bold">Fase Alfa</span>
+        </label>
+        <input [(ngModel)]="voucher" name="vc" 
+               class="border-indigo-500/30 focus:border-indigo-500"
+               placeholder="Ej: ALFA-XXXXXX" />
+        <small class="text-[9px] text-white/40 italic">Ingresa tu código único para activar tu núcleo familiar.</small>
+      </div>
+      
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input [(ngModel)]="password" name="pw" type="password" required minlength="8" placeholder="********"/>
+      </div>
+
+      <div *ngIf="error" class="err-box">{{ error }}</div>
+
+      <button type="submit" class="btn btn-primary w-full mt-8" [disabled]="loading">
+        {{ loading ? 'Sincronizando Nodo...' : 'Crear Cuenta y Activar' }}
+      </button>
+    </form>
+
+    <p class="text-center mt-16 text-muted">
+      ¿Ya tienes cuenta? <a routerLink="/login">Ingresar</a>
+    </p>
+  </div>
+</div>

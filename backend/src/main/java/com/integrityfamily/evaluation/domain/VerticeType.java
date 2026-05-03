@@ -7,3 +7,5 @@ public enum VerticeType {
     INDIVIDUAL,
     FAMILIAR
 }
+
+

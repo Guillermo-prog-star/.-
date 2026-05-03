@@ -1,10 +1,12 @@
 package com.integrityfamily.family.service;
 
-import com.integrityfamily.auth.domain.User;
-import com.integrityfamily.auth.repository.UserRepository;
-import com.integrityfamily.family.domain.Family;
-import com.integrityfamily.family.repository.FamilyRepository;
+import com.integrityfamily.domain.User;
+import com.integrityfamily.domain.Family;
+import com.integrityfamily.domain.repository.UserRepository;
+import com.integrityfamily.domain.repository.FamilyRepository;
+import com.integrityfamily.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -12,7 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * FamilyService: Motor de Gestión y Visualización del Nodo Familiar.
+ * FamilyService: Motor de GestiÃƒÂ³n y VisualizaciÃƒÂ³n del Nodo Familiar.
  * Optimizado para carga masiva de integrantes y trazabilidad con IA.
  */
 @Service
@@ -26,14 +28,19 @@ public class FamilyService {
         this.userRepository = userRepository;
     }
 
+    @Transactional(readOnly = true)
+    public java.util.Optional<Family> findByCreatorEmail(String email) {
+        return familyRepository.findByCreatedBy_Email(email);
+    }
+
     /**
-     * Recupera el núcleo familiar completo con todos sus integrantes.
+     * Recupera el nÃƒÂºcleo familiar completo con todos sus integrantes.
      * Utiliza la consulta optimizada JOIN FETCH para evitar latencia.
      */
     @Transactional(readOnly = true)
     public Family getFullFamilyContext(String email) {
         return familyRepository.findByCreatedByEmailWithMembers(email)
-                .orElseThrow(() -> new RuntimeException("No se encontró un núcleo familiar asociado a: " + email));
+                .orElseThrow(() -> new RuntimeException("No se encontrÃƒÂ³ un nÃƒÂºcleo familiar asociado a: " + email));
     }
 
     /**
@@ -46,19 +53,19 @@ public class FamilyService {
     }
 
     /**
-     * Crea un nuevo núcleo familiar vinculándolo al usuario y generando el código de nodo.
+     * Crea un nuevo nÃƒÂºcleo familiar vinculÃƒÂ¡ndolo al usuario y generando el cÃƒÂ³digo de nodo.
      * Formato requerido: IF-CO-QUI-{YEAR}-{SEQUENCE}
      */
     @Transactional
     public Family create(Family family, String creatorEmail) {
         User creator = userRepository.findByEmail(creatorEmail)
-                .orElseThrow(() -> new RuntimeException("Usuario creador no encontrado"));
+                .orElseThrow(() -> new BusinessException("Usuario creador no encontrado", "USER_NOT_FOUND", org.springframework.http.HttpStatus.NOT_FOUND));
 
         if (familyRepository.findByCreatedBy_Email(creatorEmail).isPresent()) {
-            throw new RuntimeException("El usuario ya posee un núcleo familiar registrado.");
+            throw new BusinessException("El usuario ya posee un nÃƒÂºcleo familiar registrado.", "ALREADY_HAS_FAMILY", org.springframework.http.HttpStatus.CONFLICT);
         }
 
-        // Generación de código regional estratégico
+        // GeneraciÃƒÂ³n de cÃƒÂ³digo regional estratÃƒÂ©gico
         int currentYear = java.time.Year.now().getValue();
         long count = familyRepository.count() + 1;
         String sequence = String.format("%04d", count);
@@ -68,15 +75,21 @@ public class FamilyService {
         family.setCreatedBy(creator);
         family.setCurrentMilestone("MES_00_DIAGNOSTICO_BASE");
         
-        return familyRepository.save(family);
+        Family saved = familyRepository.save(family);
+        
+        // SDD: Sincronización de Identidad. Vinculamos al creador con su nuevo nodo.
+        creator.setFamily(saved);
+        userRepository.save(creator);
+        
+        return saved;
     }
 
     /**
-     * Actualiza los datos del núcleo manteniendo la integridad del código FAM.
+     * Actualiza los datos del nÃƒÂºcleo manteniendo la integridad del cÃƒÂ³digo FAM.
      */
     @Transactional
     public Family update(Long id, Family request) {
-        Family existing = findById(id); // Usa la búsqueda optimizada
+        Family existing = findById(id); // Usa la bÃƒÂºsqueda optimizada
         
         existing.setName(request.getName());
         existing.setDescription(request.getDescription());
@@ -104,3 +117,5 @@ public class FamilyService {
         return familyRepository.findAll();
     }
 }
+
+

@@ -1,2 +1,2 @@
-package com.integrityfamily.risk.domain;
-public enum RiskLevel { LOW, MEDIUM, HIGH }
+/* DUPLICATED - USE com.integrityfamily.domain.RiskLevel */
+// package com.integrityfamily.risk.domain;

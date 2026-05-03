@@ -1,0 +1,47 @@
+package com.integrityfamily.simulation.service;
+
+import com.integrityfamily.domain.AdminAlert;
+import com.integrityfamily.domain.repository.AdminAlertRepository;
+import com.integrityfamily.domain.Family;
+import com.integrityfamily.domain.repository.FamilyRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+@Slf4j
+@RequiredArgsConstructor
+public class CrisisSimulationService {
+
+    private final FamilyRepository familyRepository;
+    private final AdminAlertRepository alertRepository;
+
+    /**
+     * Provoca una crisis artificial de alta visibilidad para probar el banner global.
+     */
+    @Transactional
+    public String triggerGlobalCrisisTest() {
+        log.warn("Ã°Å¸Å¡Â¨ [SIMULATION] Iniciando crisis artificial de alta visibilidad...");
+
+        // 1. Asegurar que existe una familia para la prueba
+        Family f = familyRepository.findAll().stream().findFirst().orElseThrow();
+        f.setSentinelActive(true);
+        familyRepository.save(f);
+
+        // 2. Generar Alerta CrÃƒÂ­tica DIRECTA para el Watchdog
+        AdminAlert alert = AdminAlert.builder()
+                .title("CRISIS SENTINEL: " + f.getFamilyCode())
+                .message("SIMULACIÃƒâ€œN DE PRUEBA: El protocolo Sentinel ha sido activado para verificar la resiliencia del Shell.")
+                .severity("CRITICAL")
+                .viewed(false)
+                .build();
+        
+        alertRepository.save(alert);
+        
+        log.error("Ã°Å¸Å¡Â© [WATCHDOG] Alerta crÃƒÂ­tica inyectada para el nodo: {}", f.getFamilyCode());
+        return "Crisis artificial activada. Verifica el banner global en el Shell.";
+    }
+}
+
+

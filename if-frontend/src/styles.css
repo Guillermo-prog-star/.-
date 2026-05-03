@@ -1,0 +1,164 @@
+/* 1. LÍNEAS DE IMPORTACIÓN (Deben ir estrictamente al inicio) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
+
+/* 2. DIRECTIVAS DE TAILWIND */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 3. ESPECIFICACIÓN DE VARIABLES (Design Tokens) */
+:root {
+  /* Premium Palette - Integrity Family Blue & Transformation Indigo */
+  --primary: #6366f1;
+  --primary-glow: rgba(99, 102, 241, 0.4);
+  --secondary: #0ea5e9;
+  --accent: #a855f7;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+
+  /* Deep Night Theme Tokens */
+  --bg-deep: #020617;
+  --bg-surface: rgba(15, 23, 42, 0.8);
+  --text-bright: #f8fafc;
+  --text-dim: #94a3b8;
+
+  /* Dimension Colors */
+  --dim-emotions: #fb7185;
+  --dim-communication: #38bdf8;
+  --dim-habits: #fbbf24;
+  --dim-times: #a78bfa;
+
+  /* Glassmorphism Tokens */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  --glass-blur: blur(12px);
+
+  --radius: 20px;
+  --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 4. REGLAS BASE Y RESET */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background:
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.2) 0, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(45, 212, 191, 0.15) 0, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(168, 85, 247, 0.1) 0, transparent 50%),
+    var(--bg-deep);
+  color: var(--text-bright);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* 5. COMPONENTES Y UTILIDADES PERSONALIZADAS (Glassmorphism) */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  transition: var(--transition);
+}
+
+.glass-card:hover {
+  transform: translateY(-8px) scale(1.01);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* Crisis Mode Context */
+.crisis-mode {
+  border: 2px solid var(--danger) !important;
+  background: rgba(255, 241, 242, 0.8) !important;
+  animation: pulse-border 2s infinite;
+}
+
+@keyframes pulse-border {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.master-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.master-btn {
+  display: block;
+  padding: 1rem;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  color: white;
+  transition: var(--transition);
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.master-btn.diagnostic {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.master-btn.plans {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.master-btn.ai {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.master-btn:hover {
+  transform: translateX(10px);
+  filter: brightness(1.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.badge {
+  padding: 0.4rem 1rem;
+  border-radius: 99px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-conscience-1 {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-conscience-3 {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.badge-conscience-5 {
+  background: #fae8ff;
+  color: #86198f;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+}

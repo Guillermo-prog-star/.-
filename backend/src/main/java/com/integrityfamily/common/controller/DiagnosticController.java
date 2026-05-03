@@ -1,9 +1,9 @@
 package com.integrityfamily.common.controller;
 
 import com.integrityfamily.common.dto.ApiResponse;
-import com.integrityfamily.evaluation.domain.Evaluation;
-import com.integrityfamily.evaluation.repository.EvaluationRepository;
-import com.integrityfamily.plan.repository.PlanRepository;
+import com.integrityfamily.domain.Evaluation;
+import com.integrityfamily.domain.repository.EvaluationRepository;
+import com.integrityfamily.domain.repository.PlanRepository;
 import com.integrityfamily.plan.service.PlanGenerationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,18 +23,18 @@ public class DiagnosticController {
 
     @GetMapping("/fix-plans/{familyId}")
     public ApiResponse<String> fixFamilyPlans(@PathVariable Long familyId) {
-        log.info("🔍 Iniciando diagnóstico de base de datos para familia: {}", familyId);
+        log.info("Ã°Å¸â€Â Iniciando diagnÃƒÂ³stico de base de datos para familia: {}", familyId);
         
         // Buscamos evaluaciones completadas para esta familia
         List<Evaluation> evaluations = evaluationRepository.findByFamilyIdOrderByStartedAtDesc(familyId);
         int fixedCount = 0;
 
         for (Evaluation eval : evaluations) {
-            // Si la evaluación está completada pero no tiene plan, lo generamos
+            // Si la evaluaciÃƒÂ³n estÃƒÂ¡ completada pero no tiene plan, lo generamos
             if (eval.getFinalizedAt() != null) {
                 boolean hasPlan = planRepository.existsByEvaluationId(eval.getId());
                 if (!hasPlan) {
-                    log.info("🛠️ Reparando plan faltante para Evaluación ID: {}", eval.getId());
+                    log.info("Ã°Å¸â€ºÂ Ã¯Â¸Â Reparando plan faltante para EvaluaciÃƒÂ³n ID: {}", eval.getId());
                     try {
                         planGenerationService.generatePlanFromEvaluation(Map.of(
                             "evaluationId", eval.getId(),
@@ -44,12 +44,14 @@ public class DiagnosticController {
                         ));
                         fixedCount++;
                     } catch (Exception e) {
-                        log.error("❌ Error reparando plan {}: {}", eval.getId(), e.getMessage());
+                        log.error("Ã¢ÂÅ’ Error reparando plan {}: {}", eval.getId(), e.getMessage());
                     }
                 }
             }
         }
 
-        return ApiResponse.ok("🩺 Diagnóstico completado. Se generaron " + fixedCount + " planes faltantes.");
+        return ApiResponse.ok("Ã°Å¸Â©Âº DiagnÃƒÂ³stico completado. Se generaron " + fixedCount + " planes faltantes.");
     }
 }
+
+

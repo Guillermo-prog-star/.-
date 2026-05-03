@@ -7,33 +7,37 @@ echo "╔═══════════════════════�
 echo "║      INTEGRITY FAMILY MVP v1.0         ║"
 echo "╚════════════════════════════════════════╝"
 
-# Verificar API key
-if [ -z "$ANTHROPIC_API_KEY" ]; then
-  echo ""
-  echo "⚠️  ANTHROPIC_API_KEY no está configurada."
-  echo "   El sistema funcionará pero sin análisis IA real."
-  echo "   Para configurarla: export ANTHROPIC_API_KEY=sk-ant-..."
-  echo ""
+# Cargar variables del .env si existe
+if [ -f .env ]; then
+  export $(grep -v '^#' .env | xargs)
+  echo "✅ Variables de entorno cargadas desde .env"
 fi
 
-# Ir a infra
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR/infra"
+# Verificar API key
+if [ -z "$ANTHROPIC_API_KEY" ]; then
+  echo "⚠️  ANTHROPIC_API_KEY no detectada. Usando modo simulación."
+fi
 
-echo "🐳 Levantando contenedores..."
-docker compose up --build -d
+# Usar la carpeta raíz (donde está el docker-compose.yml)
+DOCKER_DIR="."
+
+echo "🐳 Levantando servicios..."
+docker compose -f $DOCKER_DIR/docker-compose.yml up --build -d
 
 echo ""
-echo "⏳ Esperando que los servicios estén listos..."
-sleep 15
+echo "⏳ Esperando a que los servicios estén listos..."
+# Los healthchecks en docker-compose se encargan de la sincronización real.
+# Solo damos un pequeño margen para que el log se asiente.
+sleep 5
 
 echo ""
-echo "✅ Sistema iniciado:"
+echo "✅ Sistema iniciado satisfactoriamente:"
 echo "   Frontend:  http://localhost:4200"
-echo "   Backend:   http://localhost:8080/swagger-ui.html"
+echo "   Backend:   http://localhost:8080/swagger-ui/index.html"
 echo "   RabbitMQ:  http://localhost:15672 (guest/guest)"
+echo "   MySQL:     localhost:3307"
+
 echo ""
-echo "   Email:     admin@integrityfamily.com"
-echo "   Password:  Admin123*"
-echo ""
-echo "Para detener: docker compose -f infra/docker-compose.yml down"
+echo "Para ver logs en tiempo real:"
+echo "docker compose logs -f"
+

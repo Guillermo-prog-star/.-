@@ -1,6 +1,6 @@
 package com.integrityfamily.milestone.controller;
 
-import com.integrityfamily.milestone.domain.Milestone;
+import com.integrityfamily.domain.Milestone;
 import com.integrityfamily.milestone.service.MilestoneService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -44,8 +44,15 @@ public class MilestoneController {
         return milestoneService.getCurrentMilestoneLabel(familyId);
     }
 
+    @GetMapping("/family/{familyId}/check-advance")
+    public boolean canAdvance(@PathVariable Long familyId) {
+        return milestoneService.canAdvance(familyId);
+    }
+
     @PostMapping("/family/{familyId}/advance")
     public String advanceMilestone(@PathVariable Long familyId) {
         return milestoneService.advanceMilestone(familyId);
     }
 }
+
+

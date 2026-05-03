@@ -1,0 +1,107 @@
+<div class="monitor-container">
+  <header class="flex justify-between items-end mb-12">
+    <div>
+      <h1 class="text-4xl font-black text-white mb-2">Sonic <span class="text-indigo-400">Intelligence</span></h1>
+      <p class="text-white/40 uppercase tracking-[0.2em] text-[10px] font-bold flex items-center gap-2">
+        <span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span>
+        Auditoría de Mentoría por Voz • Nodo Armenia
+      </p>
+    </div>
+    <div class="hidden md:flex items-center gap-3 bg-white/5 border border-white/10 px-6 py-3 rounded-2xl backdrop-blur-md">
+      <div class="wave-container">
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+      </div>
+      <span class="text-[10px] text-white/60 font-black uppercase tracking-widest ml-2">Monitor Activo</span>
+    </div>
+  </header>
+
+  <!-- KPI Grid -->
+  <div class="stats-grid">
+    <div class="kpi-card group">
+      <span class="kpi-label">Mensajes Procesados</span>
+      <div class="kpi-value text-indigo-400">{{ stats.totalMessages | number }}</div>
+      <div class="mt-4 flex items-center gap-2">
+        <span class="text-[10px] font-black text-teal-400 px-2 py-0.5 bg-teal-400/10 rounded-full">↑ 12.4%</span>
+        <span class="text-[9px] text-white/20 uppercase font-bold">Crecimiento Mensual</span>
+      </div>
+    </div>
+
+    <div class="kpi-card">
+      <span class="kpi-label">Rendimiento STT/TTS</span>
+      <div style="height: 100px; margin-top: -10px;" echarts [options]="performanceChartOption"></div>
+    </div>
+
+    <div class="kpi-card group">
+      <span class="kpi-label">Familias en Audio</span>
+      <div class="kpi-value text-teal-400">{{ stats.activeFamilies }}</div>
+      <div class="mt-4 flex items-center gap-2">
+        <span class="text-[10px] font-black text-indigo-400 px-2 py-0.5 bg-indigo-400/10 rounded-full">+{{ stats.activeFamilies > 5 ? 5 : stats.activeFamilies }}</span>
+        <span class="text-[9px] text-white/20 uppercase font-bold">Nuevos Nodos</span>
+      </div>
+    </div>
+
+    <div class="kpi-card group">
+      <span class="kpi-label">Tiempo de Mentoría</span>
+      <div class="kpi-value text-white">{{ stats.totalDuration / 60 | number:'1.0-0' }}<span class="text-xl text-white/30 ml-1">min</span></div>
+      <div class="mt-4 flex items-center gap-2">
+        <div class="wave-container scale-75 origin-left !gap-1">
+          <div class="wave-bar !bg-white/20"></div>
+          <div class="wave-bar !bg-white/20"></div>
+          <div class="wave-bar !bg-white/20"></div>
+        </div>
+        <span class="text-[9px] text-white/20 uppercase font-bold">Impacto Acumulado</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Panels -->
+  <div class="content-grid">
+    <!-- Regional Usage -->
+    <div class="panel">
+      <div class="panel-title">Distribución Territorial</div>
+      <div style="height: 400px;" echarts [options]="regionalChartOption"></div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="panel">
+      <div class="panel-title">Flujo de Interacciones</div>
+      <div class="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
+        <!-- Empty State -->
+        <div *ngIf="recentInteractions.length === 0" class="flex flex-col items-center justify-center h-64 text-center">
+          <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 animate-pulse">
+            <span class="text-2xl">🔇</span>
+          </div>
+          <p class="text-white/40 text-[10px] uppercase font-black tracking-widest">Silencio en el Nodo</p>
+          <p class="text-white/20 text-[9px] mt-1 italic">Esperando tráfico de voz institucional...</p>
+        </div>
+
+        <div class="activity-item group" *ngFor="let item of recentInteractions">
+          <div class="flex gap-4 items-center">
+            <div class="fam-icon-wrapper group-hover:scale-110 transition-transform">
+              <span *ngIf="item.status === 'SUCCESS'">🎙️</span>
+              <span *ngIf="item.status !== 'SUCCESS'">⚠️</span>
+            </div>
+            <div class="fam-info">
+              <h4>{{ item.family }}</h4>
+              <span class="flex items-center gap-2">
+                {{ item.municipio }} 
+                <span class="w-1 h-1 bg-white/20 rounded-full"></span> 
+                {{ item.duration }} seg de audio
+              </span>
+            </div>
+          </div>
+          <div class="flex flex-col items-end gap-2">
+            <span class="badge" [ngClass]="item.status === 'SUCCESS' ? 'badge-success' : 'badge-error'">
+              {{ item.status }}
+            </span>
+            <span class="text-[9px] font-bold text-white/20 uppercase">{{ item.processedAt | date:'HH:mm:ss' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

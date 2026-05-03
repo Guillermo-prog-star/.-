@@ -1,0 +1,33 @@
+<div class="scenarios-container">
+    <header class="grid-header">
+        <h3>Matriz de Escenarios</h3>
+        <button class="btn-update" (click)="triggerUpdate()" title="Sincronizar métricas con el servicio">
+            Actualizar Métricas
+        </button>
+    </header>
+    
+    <!-- SDD: Panel de Estado Rápido -->
+    <div class="quick-status glass-premium" *ngIf="dashboardDataService.dashboardStateSignal() as data">
+        <div class="status-item">
+            <span class="label">ICF:</span>
+            <span class="value">{{ data.latestGlobalScore }}</span>
+        </div>
+        <div class="status-item flex-grow">
+            <span class="label">Progreso del Pilar:</span>
+            <progress [value]="data.pillarProgress" max="100"></progress>
+        </div>
+    </div>
+
+    <div class="grid-layout">
+        <div class="grid-item card" 
+             *ngFor="let item of scenarios()"
+             [ngClass]="item.severity">
+            <div class="card-content">
+                <span class="status-indicator"></span>
+                <h4>{{ item.title }}</h4>
+                <p>Estado: <span class="status-text">{{ item.status }}</span></p>
+                <p class="description">{{ item.description }}</p>
+            </div>
+        </div>
+    </div>
+</div>

@@ -2,22 +2,24 @@ package com.integrityfamily.common.dto;
 
 /**
  * ApiResponse: DTO inmutable (Record) para estandarizar respuestas hacia el Frontend.
- * Incluye métodos estáticos de conveniencia para éxito y error.
+ * Incluye mÃƒÂ©todos estÃƒÂ¡ticos de conveniencia para ÃƒÂ©xito y error.
  */
 public record ApiResponse<T>(boolean success, T data, String message) {
     
-    // Método para respuestas exitosas rápidas
+    // MÃƒÂ©todo para respuestas exitosas rÃƒÂ¡pidas
     public static <T> ApiResponse<T> ok(T d) { 
-        return new ApiResponse<>(true, d, "Operación exitosa"); 
+        return new ApiResponse<>(true, d, "OperaciÃƒÂ³n exitosa"); 
     }
 
-    // Método para respuestas exitosas con mensaje personalizado
+    // MÃƒÂ©todo para respuestas exitosas con mensaje personalizado
     public static <T> ApiResponse<T> ok(T d, String m) { 
         return new ApiResponse<>(true, d, m); 
     }
 
-    // ESTA ES LA ESTOCADA FINAL: El método que AuthController está buscando
+    // ESTA ES LA ESTOCADA FINAL: El mÃƒÂ©todo que AuthController estÃƒÂ¡ buscando
     public static <T> ApiResponse<T> error(String m) { 
         return new ApiResponse<>(false, null, m); 
     }
 }
+
+

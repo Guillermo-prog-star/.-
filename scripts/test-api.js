@@ -1,9 +1,15 @@
 // PATH: scripts/test-api.js
-const fetch = require('node-fetch'); // Opcional en Node 18+
+
+/**
+ * ESPECIFICACIÓN: Validación de conectividad Integrity Family.
+ * Requiere: node-fetch @v2 para compatibilidad con require.
+ */
+const fetch = require('node-fetch');
 const { apiUrl, token } = require('../env.config.js');
 
 async function checkConnection() {
-    console.log(`🔍 Probando conexión a: ${apiUrl}/status`);
+    console.log(`🔍 Intentando conectar a: ${apiUrl}/status`);
+
     try {
         const response = await fetch(`${apiUrl}/status`, {
             method: 'GET',
@@ -13,15 +19,15 @@ async function checkConnection() {
             }
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP Error: ${response.status}`);
+        if (response.ok) {
+            const data = await response.json();
+            console.log('✅ CONEXIÓN EXITOSA:', data);
+        } else {
+            console.error(`⚠️ EL SERVIDOR RESPONDIÓ: ${response.status}`);
         }
-
-        const data = await response.json();
-        console.log('✅ Estado de Integrity Family:', data);
     } catch (error) {
-        console.error('❌ Error de conexión:', error.message);
-        console.log('💡 Tip: Asegúrate de que el backend de Spring Boot esté corriendo en el puerto 8080.');
+        console.error('❌ FALLO DE RED:', error.message);
+        console.log('💡 TIP: Verifica que el Backend de Java esté corriendo.');
     }
 }
 

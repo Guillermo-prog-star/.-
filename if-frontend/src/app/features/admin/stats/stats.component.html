@@ -1,0 +1,191 @@
+<div class="p-8 max-w-7xl mx-auto min-h-screen">
+
+  <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+    <div>
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <h1 class="text-4xl font-black tracking-tight text-white">Consola <span class="text-indigo-400">Master</span></h1>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 bg-teal-500 rounded-full animate-pulse"></span>
+        <p class="text-white/40 uppercase tracking-[0.2em] text-[10px] font-bold">Sentinel Protocol • Nodo Armenia • Operativo</p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-4 items-center">
+      <button (click)="exportPdf()"
+        class="flex items-center gap-3 px-6 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all group overflow-hidden relative">
+        <div class="absolute inset-0 bg-indigo-500/10 translate-y-full group-hover:translate-y-0 transition-transform"></div>
+        <span class="text-xs text-white/70 font-bold uppercase tracking-wider relative z-10">Exportar Informe Ejecutivo</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-indigo-400 group-hover:translate-y-0.5 transition-transform relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+      </button>
+
+      <button (click)="sentinel.simulateCrisis()"
+        class="flex items-center gap-3 px-6 py-3 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20 rounded-2xl transition-all group overflow-hidden relative">
+        <div class="absolute inset-0 bg-red-500/10 translate-y-full group-hover:translate-y-0 transition-transform"></div>
+        <span class="text-[10px] text-red-400/70 font-black uppercase tracking-widest relative z-10">Simular Crisis Sentinel</span>
+        <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse relative z-10"></div>
+      </button>
+
+      <div *ngIf="sentinel?.hasCriticalAlert()"
+        class="flex items-center gap-3 px-6 py-3 bg-red-500/10 border border-red-500/30 rounded-2xl pulse-red">
+        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+        <span class="text-xs text-red-400 font-black uppercase tracking-widest">Alerta de Crisis</span>
+      </div>
+
+      <div class="bg-indigo-500/10 border border-indigo-500/20 px-6 py-3 rounded-2xl hidden lg:block">
+        <p class="text-[9px] text-indigo-300/60 uppercase font-black tracking-widest mb-0.5">Estado del Sistema</p>
+        <p class="text-indigo-400 font-bold text-xs">VIGILANCIA SENTINEL ACTIVA</p>
+      </div>
+    </div>
+  </header>
+
+  <ng-container *ngIf="stats; else loadingTpl">
+
+    <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+      <article class="glass-card p-8 group">
+        <div class="stat-icon text-indigo-400 group-hover:scale-110 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+          </svg>
+        </div>
+        <p class="text-white/40 text-[10px] uppercase font-black tracking-widest mb-1">Familias Integradas</p>
+        <p class="text-4xl font-black text-white tracking-tighter">{{ stats.totalFamilies }}</p>
+      </article>
+
+      <article class="glass-card p-8 group">
+        <div class="stat-icon text-teal-400 group-hover:scale-110 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+        </div>
+        <p class="text-white/40 text-[10px] uppercase font-black tracking-widest mb-1">ICF Promedio</p>
+        <div class="flex items-baseline gap-2">
+          <p class="text-4xl font-black text-white tracking-tighter">{{ stats.averageIcf | number:'1.1-1' }}</p>
+          <span class="text-teal-400 text-xs font-bold">↑ 4.2%</span>
+        </div>
+      </article>
+
+      <article class="glass-card p-8 group">
+        <div class="stat-icon text-red-400 group-hover:scale-110 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+          </svg>
+        </div>
+        <p class="text-white/40 text-[10px] uppercase font-black tracking-widest mb-1">Alertas Sentinel</p>
+        <p class="text-4xl font-black text-white tracking-tighter">{{ alerts.length }}</p>
+      </article>
+
+      <article class="glass-card p-8 group">
+        <div class="stat-icon text-purple-400 group-hover:scale-110 transition-transform">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+        </div>
+        <p class="text-white/40 text-[10px] uppercase font-black tracking-widest mb-1">Misiones Completas</p>
+        <p class="text-4xl font-black text-white tracking-tighter">{{ stats.totalMissions || 124 }}</p>
+      </article>
+    </section>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+      <aside class="glass-card p-0 lg:col-span-1 flex flex-col max-h-[650px] overflow-hidden">
+        <div class="p-8 pb-4">
+          <h3 class="text-lg font-bold text-white flex justify-between items-center">
+            <span class="flex items-center gap-2">Security Feed</span>
+            <span class="px-2 py-0.5 bg-red-500 text-[8px] rounded font-black text-white animate-pulse">LIVE</span>
+          </h3>
+          <p class="text-[10px] text-white/30 uppercase font-bold tracking-widest mt-1">Monitoreo Proactivo de Crisis</p>
+        </div>
+
+        <div class="space-y-1 overflow-y-auto custom-scrollbar px-4 pb-8">
+          <div *ngFor="let alert of alerts"
+            class="p-4 rounded-2xl alert-item border border-transparent"
+            [class]="alert.severity === 'CRITICAL' ? 'bg-red-500/5 hover:border-red-500/30' : 'bg-white/5 hover:border-white/10'">
+            <div class="flex justify-between items-start mb-2">
+              <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" 
+                [class]="alert.severity === 'CRITICAL' ? 'bg-red-500/20 text-red-400' : 'bg-indigo-500/20 text-indigo-400'">
+                {{ alert.category }}
+              </span>
+              <span class="text-[8px] text-white/30 font-bold">{{ alert.createdAt | date:'HH:mm:ss' }}</span>
+            </div>
+            <p class="text-xs text-white font-bold mb-1">{{ alert.title }}</p>
+            <p class="text-[10px] text-white/50 leading-relaxed">{{ alert.message }}</p>
+          </div>
+        </div>
+      </aside>
+
+      <main class="lg:col-span-2 space-y-8">
+        <div class="glass-card p-8">
+          <h3 class="text-lg font-bold text-white mb-8">AI Sentiment Engine <span class="text-indigo-400 text-sm font-normal ml-2">| Análisis de Tensión</span></h3>
+
+          <div *ngIf="sentiment" class="space-y-10">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div *ngFor="let entry of getSentimentEntries()" class="space-y-3">
+                <div class="flex justify-between items-end">
+                  <p class="text-[9px] text-white/40 uppercase font-black tracking-widest">{{ entry[0] }}</p>
+                  <p class="text-xs text-indigo-400 font-black">{{ entry[1] | number:'1.0-0' }}%</p>
+                </div>
+                <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                  <div class="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000" [style.width.%]="entry[1]"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="relative">
+              <div class="absolute -top-4 -left-4 w-8 h-8 bg-indigo-500/20 rounded-full blur-xl"></div>
+              <div class="prose prose-invert prose-sm max-w-none bg-white/5 p-8 rounded-[32px] border border-white/5 italic text-white/80 leading-relaxed relative z-10 backdrop-blur-sm">
+                <div class="text-indigo-400 mb-3">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V3L14.017 3H21.017V21H14.017ZM3.01703 21L3.01703 18C3.01703 16.8954 3.91246 16 5.01703 16H8.01703C8.56931 16 9.01703 15.5523 9.01703 15V9C9.01703 8.44772 8.56931 8 8.01703 8H5.01703C3.91246 8 3.01703 7.10457 3.01703 6V3L3.01703 3H10.017V21H3.01703Z" />
+                  </svg>
+                </div>
+                <p class="whitespace-pre-wrap">{{ sentiment.aiExecutiveSummary }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="glass-card p-8 bg-gradient-to-br from-indigo-500/10 to-transparent">
+            <h4 class="text-white font-bold mb-2">Salud del Nodo Armenia</h4>
+            <p class="text-white/40 text-xs mb-6">Comparativa de integridad regional</p>
+            <div class="flex items-center gap-4">
+              <div class="flex-1 h-3 bg-white/5 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-right from-indigo-500 to-teal-400 w-[68%]"></div>
+              </div>
+              <span class="text-white font-bold text-sm">68.4</span>
+            </div>
+          </div>
+
+          <div class="glass-card p-8 bg-gradient-to-br from-teal-500/10 to-transparent">
+            <h4 class="text-white font-bold mb-2">Activación Familiar</h4>
+            <p class="text-white/40 text-xs mb-6">Nivel de compromiso promedio</p>
+            <div class="flex items-center gap-4">
+              <div class="flex-1 h-3 bg-white/5 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-right from-teal-400 to-indigo-500 w-[82%]"></div>
+              </div>
+              <span class="text-white font-bold text-sm">82.1</span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </ng-container>
+
+  <ng-template #loadingTpl>
+    <div class="animate-pulse flex flex-col gap-8">
+      <div class="h-32 bg-white/5 rounded-3xl"></div>
+      <div class="grid grid-cols-3 gap-8">
+        <div class="h-96 bg-white/5 rounded-3xl col-span-1"></div>
+        <div class="h-96 bg-white/5 rounded-3xl col-span-2"></div>
+      </div>
+    </div>
+  </ng-template>
+</div>

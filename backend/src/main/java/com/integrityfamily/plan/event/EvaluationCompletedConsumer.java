@@ -20,3 +20,5 @@ public class EvaluationCompletedConsumer {
         // planGenerationService.generatePlanFromEvaluation(evaluationId);
     }
 }
+
+

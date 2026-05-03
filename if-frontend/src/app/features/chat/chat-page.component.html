@@ -1,0 +1,75 @@
+<div class="chat-container h-full flex flex-col p-6 max-w-5xl mx-auto">
+  <!-- Header -->
+  <header class="flex justify-between items-center mb-6 glass-premium p-6 rounded-3xl border border-white/10 shrink-0">
+    <div class="flex items-center gap-4">
+      <div class="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(99,102,241,0.4)]">🧞</div>
+      <div>
+        <h2 class="text-white font-bold text-lg">Mentor de Integridad</h2>
+        <p class="text-[10px] text-teal-400 uppercase tracking-widest font-black animate-pulse">Consultoría Proactiva On-Line</p>
+      </div>
+    </div>
+    <div class="hidden md:block text-right">
+       <span class="text-[10px] text-white/40 uppercase block mb-1">Familia activa</span>
+       <span class="text-xs font-bold text-white">{{ familyName }}</span>
+    </div>
+  </header>
+
+  <!-- Messages Area -->
+  <div class="chat-messages flex-1 overflow-y-auto mb-6 pr-4 space-y-6 custom-scrollbar">
+    <div *ngFor="let msg of messages" 
+         class="flex flex-col" 
+         [ngClass]="msg.isAi ? 'items-start' : 'items-end'">
+      
+      <div class="max-w-[80%] p-4 rounded-2xl shadow-xl transition-all duration-300"
+           [ngClass]="msg.isAi ? 'bg-indigo-950/40 border border-indigo-500/30 text-indigo-50 rounded-tl-none' : 'bg-white/10 border border-white/10 text-white rounded-tr-none'">
+        <p class="text-sm leading-relaxed">{{ msg.content }}</p>
+        <span class="text-[9px] mt-2 block opacity-40">{{ msg.createdAt | date:'shortTime' }}</span>
+      </div>
+    </div>
+
+    <!-- Loading Spike -->
+    <div *ngIf="loading" class="flex items-center gap-2 text-indigo-400 p-2">
+      <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+      <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+      <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
+      <span class="text-[10px] font-bold uppercase ml-2">El Mentor está analizando...</span>
+    </div>
+    
+    <div #anchor></div>
+  </div>
+
+  <!-- Input Area -->
+  <footer class="shrink-0 relative">
+    <div class="relative overflow-hidden rounded-3xl border border-white/10 transition-all focus-within:border-indigo-500/50 shadow-2xl bg-white/5">
+      <textarea 
+        [(ngModel)]="inputText"
+        (keydown.enter)="$event.preventDefault(); send()"
+        [placeholder]="recording ? 'Grabando audio...' : 'Escribe tu duda familiar aquí...'"
+        [disabled]="loading || recording"
+        class="w-full bg-transparent text-white p-6 outline-none resize-none h-24 text-sm placeholder:text-white/20"
+      ></textarea>
+      
+      <div class="absolute bottom-4 right-4 flex gap-2">
+        <!-- Mic Button -->
+        <button 
+          (click)="toggleRecording()" 
+          [class.bg-red-500]="recording"
+          [class.animate-pulse]="recording"
+          class="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all shadow-lg active:scale-95 text-white">
+          <span class="text-xl">{{ recording ? '⏹️' : '🎙️' }}</span>
+        </button>
+
+        <!-- Send Button -->
+        <button 
+          (click)="send()" 
+          [disabled]="loading || !inputText.trim() || recording"
+          class="w-12 h-12 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-20 disabled:hover:bg-indigo-600 rounded-2xl flex items-center justify-center transition-all shadow-lg active:scale-95 text-white">
+          <span class="text-xl">🚀</span>
+        </button>
+      </div>
+    </div>
+    <p class="text-[9px] text-center mt-3 text-white/20 uppercase tracking-tighter">
+      Toda orientación del mentor es pedagógica y orientativa, no sustituye la terapia profesional.
+    </p>
+  </footer>
+</div>

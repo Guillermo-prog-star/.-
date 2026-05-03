@@ -5,3 +5,5 @@ public record DomainEvent(String eventType,String aggregateType,Long aggregateId
         return new DomainEvent(t,at,id,Instant.now(),p);
     }
 }
+
+

@@ -3,14 +3,15 @@ package com.integrityfamily.member.dto;
 import jakarta.validation.constraints.*;
 
 /**
- * MemberRequest: DTO para crear un miembro desde el frontend.
- * El familyId va en el path URL, no en el body.
- * Los campos numéricos son opcionales para no fallar con valores vacíos.
+ * SDD: Record Universal de Miembros.
  */
 public record MemberRequest(
-    @NotBlank @Size(max=120) String fullName,
-    @NotBlank @Size(max=50)  String roleType,
-    Integer age,
-    Integer autonomyLevel,
-    Integer responsibilityLevel
-) {}
+        @NotBlank(message = "El nombre es obligatorio") @Size(max = 120) String fullName,
+        @NotBlank(message = "El rol es obligatorio") @Size(max = 50) String roleType,
+        Integer age,
+        Integer autonomyLevel,
+        Integer responsibilityLevel,
+        String email,
+        String phone,
+        Long familyId) {
+}

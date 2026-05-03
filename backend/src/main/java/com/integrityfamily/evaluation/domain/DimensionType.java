@@ -8,3 +8,5 @@ public enum DimensionType {
     ESPIRITUAL,
     FINANCIERA
 }
+
+

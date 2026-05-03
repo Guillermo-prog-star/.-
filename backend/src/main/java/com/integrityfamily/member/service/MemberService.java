@@ -1,82 +1,86 @@
 package com.integrityfamily.member.service;
 
-import com.integrityfamily.family.domain.Family;
-import com.integrityfamily.family.repository.FamilyRepository;
-import com.integrityfamily.family.domain.Member;
+import com.integrityfamily.common.exception.BusinessException;
+import com.integrityfamily.domain.Family;
+import com.integrityfamily.domain.FamilyMember;
+import com.integrityfamily.domain.Role;
+import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.member.dto.MemberRequest;
-import com.integrityfamily.member.repository.MemberRepository;
+import com.integrityfamily.domain.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MemberService {
 
+
     private final MemberRepository memberRepository;
     private final FamilyRepository familyRepository;
 
-    public List<Member> findAll() {
+    public List<FamilyMember> findAll() {
         return memberRepository.findAll();
     }
 
-    public List<Member> findByFamily(Long familyId) {
+    public List<FamilyMember> findByFamily(Long familyId) {
         return memberRepository.findByFamilyId(familyId);
     }
 
-    public Member findById(Long id) {
+    public FamilyMember findById(Long id) {
         return memberRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Miembro de la familia no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Miembro no encontrado"));
     }
 
     @Transactional
-    public Member create(Member member) {
-        return memberRepository.save(member);
-    }
+    public FamilyMember createMember(MemberRequest req) {
+        Long familyId = req.familyId();
+        log.info("[MEMBER-SERVICE] Registrando miembro: {} en familia {}", req.fullName(), familyId);
 
-    /**
-     * Crea un miembro desde el DTO del frontend, mapeando los campos correctamente.
-     * - fullName → firstName + lastName (divide en espacio)
-     * - roleType → role + relationship
-     * - Vincula la familia por ID
-     */
-    @Transactional
-    public Member createFromRequest(Long familyId, MemberRequest req) {
         Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + familyId));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada: " + familyId, "FAMILY_NOT_FOUND", org.springframework.http.HttpStatus.NOT_FOUND));
 
-        Member member = new Member();
+        // SDD-MAPPING: Transferencia de datos del Record a la Entidad
+        FamilyMember member = new FamilyMember();
         member.setFullName(req.fullName());
-        member.setRoleType(req.roleType());
+        
+        // Derivación de First Name si no se provee (Protocolo Sentinel)
+        if (req.fullName().contains(" ")) {
+            member.setFirstName(req.fullName().split(" ")[0]);
+        } else {
+            member.setFirstName(req.fullName());
+        }
+
+        member.setRole(req.roleType());
         member.setAge(req.age() != null ? req.age() : 0);
-        member.setAutonomyLevel(req.autonomyLevel() != null ? req.autonomyLevel() : 70);
-        member.setResponsibilityLevel(req.responsibilityLevel() != null ? req.responsibilityLevel() : 70);
+        member.setEmail(req.email());
+        member.setPhone(req.phone());
+        
+        // Niveles de Desarrollo (Valores por defecto de 50 si son nulos)
+
+        member.setAutonomyLevel(req.autonomyLevel() != null ? req.autonomyLevel() : 50);
+        member.setResponsibilityLevel(req.responsibilityLevel() != null ? req.responsibilityLevel() : 50);
+
+        member.setJoinedAt(java.time.LocalDateTime.now());
         member.setActive(true);
         member.setFamily(family);
 
-        return memberRepository.save(member);
+        FamilyMember saved = memberRepository.save(member);
+        log.info("[MEMBER-SERVICE] Miembro {} guardado con ID {}", saved.getFullName(), saved.getId());
+        return saved;
     }
 
-    @Transactional
-    public Member createInFamily(Long familyId, Member member) {
-        Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + familyId));
-        member.setFamily(family);
-        return memberRepository.save(member);
-    }
 
     @Transactional
-    public Member update(Long id, Member request) {
-        Member existing = findById(id);
-        
-        // SINCRONIZACIÓN FINAL: Usamos los nombres exactos de Member.java
+    public FamilyMember update(Long id, FamilyMember request) {
+        FamilyMember existing = findById(id);
         existing.setFullName(request.getFullName());
-        existing.setRoleType(request.getRoleType());
-        existing.setAge(request.getAge());
+        existing.setRole(request.getRole());
         existing.setActive(request.isActive());
-        
         return memberRepository.save(existing);
     }
 

@@ -1,1 +1,2 @@
--- Archivo intencionalmente vacío. La carga de datos inicial ocurre desde data.sql
+-- Forzando inicialización de datos
+SELECT 1;

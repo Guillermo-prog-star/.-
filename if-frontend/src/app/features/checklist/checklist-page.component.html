@@ -1,0 +1,71 @@
+<div class="page-header flex-between mb-32">
+  <div>
+    <h1>Mi Ruta (Hábitos)</h1>
+    <p class="text-muted">Acciones tácticas extraídas de tus diagnósticos y planes.</p>
+  </div>
+</div>
+
+<!-- BARRA DE PROGRESO GLOBAL -->
+<div class="glass-card mb-32 p-32">
+  <div class="flex-between mb-16">
+    <div class="progress-info">
+      <span class="text-muted small">CONSOLIDACIÓN SEMANAL</span>
+      <h2 class="m-0">{{ done }}/{{ items.length }} <small class="text-muted">acciones</small></h2>
+    </div>
+    <div class="pct-badge" [style.background]="'var(--accent-glow)'" [style.color]="'var(--accent)'">
+      {{ pct }}%
+    </div>
+  </div>
+  <div class="progress-track" style="height: 12px; background: rgba(255,255,255,0.05);">
+    <div class="progress-fill" [style.width]="pct + '%'" style="background: linear-gradient(90deg, var(--accent), var(--primary-light));"></div>
+  </div>
+</div>
+
+@if (loading) { 
+  <div class="loading-state p-60 text-center">
+    <div class="spinner-premium mb-16"></div>
+    <p class="text-muted">Sincronizando hábitos...</p>
+  </div>
+} @else if (items.length === 0) {
+  <div class="glass-dark p-60 text-center rounded-24">
+    <div style="font-size: 64px; opacity: 0.3;" class="mb-24">📅</div>
+    <h2>Territorio sin Sembrar</h2>
+    <p class="text-muted mb-32">Realiza una evaluación o registra un día crítico para que el sistema genere tus primeros hábitos.</p>
+    <a routerLink="/evaluations/start" class="btn btn-primary">Ir a Diagnóstico</a>
+  </div>
+} @else {
+  <div class="checklist-grid" style="animation: fadeInUp 0.8s ease-out;">
+    @for (group of itemsByDimension; track group[0]) {
+      <div class="dimension-section mb-40">
+        <h3 class="dimension-title mb-20 flex-between">
+          <span class="text-capitalize">{{ group[0] }}</span>
+          <span class="badge-dim">{{ group[1].length }} actividades</span>
+        </h3>
+
+        <div class="items-list">
+          @for (item of group[1]; track item.id) {
+            <div class="checklist-item glass-card mb-12" [class.is-done]="item.completed">
+              <div class="item-body">
+                <div class="item-text">
+                  {{ item.description }}
+                </div>
+                <div class="item-meta mt-8">
+                  <span class="badge-source">{{ item.source | uppercase }}</span>
+                  <span class="text-muted small ml-12" *ngIf="item.completedBy">
+                    ✓ Por {{ item.completedBy }} el {{ item.completedAt | date:'shortDate' }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="item-action">
+                <button class="check-circle" [class.active]="item.completed" (click)="toggle(item.id, item.completed)">
+                  {{ item.completed ? '✓' : '' }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+  </div>
+}

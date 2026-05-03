@@ -6,3 +6,5 @@ public class ChecklistDtos {
     public record FromPlanRequest(@NotNull Long planId) {}
     public record CompleteRequest(Boolean completed) {}
 }
+
+

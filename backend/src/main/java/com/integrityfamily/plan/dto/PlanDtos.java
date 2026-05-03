@@ -8,3 +8,5 @@ public class PlanDtos {
             String status, List<PlanTaskResponse> tasks) {}
     public record TaskCompleteRequest(Boolean completed) {}
 }
+
+

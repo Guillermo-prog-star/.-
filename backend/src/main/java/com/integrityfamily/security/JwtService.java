@@ -15,8 +15,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * JwtService: Arquitectura Criptográfica Maestra para Integrity Family.
- * Implementación optimizada para JJWT 0.12.6 y Spring Boot 3.4.3.
+ * JwtService: Arquitectura CriptogrÃƒÂ¡fica Maestra para Integrity Family.
+ * ImplementaciÃƒÂ³n optimizada para JJWT 0.12.6 y Spring Boot 3.4.3.
  */
 @Service
 public class JwtService {
@@ -26,6 +26,10 @@ public class JwtService {
 
     @Value("${application.security.jwt.expiration:86400000}") // 24 Horas
     private long jwtExpiration;
+
+    public long getJwtExpiration() {
+        return jwtExpiration;
+    }
 
     /**
      * Extrae el email del usuario desde el token.
@@ -43,7 +47,7 @@ public class JwtService {
     }
 
     /**
-     * Genera un token JWT estándar.
+     * Genera un token JWT estÃƒÂ¡ndar.
      */
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);
@@ -94,3 +98,5 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
+
+

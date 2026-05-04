@@ -79,7 +79,7 @@ public class FamilyService {
         
         // SDD: Sincronización de Identidad. Vinculamos al creador con su nuevo nodo.
         creator.setFamily(saved);
-        userRepository.save(creator);
+        userRepository.saveAndFlush(creator);
         
         return saved;
     }

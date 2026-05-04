@@ -25,17 +25,17 @@ public class MilestoneService {
     private final FamilyRepository familyRepository;
 
     private static final Map<String, String> MILESTONE_LABELS = Map.of(
-            "MES_00_DIAGNOSTICO_BASE", "Inicio - DiagnÃƒÂ³stico Base",
+            "MES_00_DIAGNOSTICO", "Inicio - Diagnóstico Base",
             "MES_03_PRIMEROS_CAMBIOS", "3 Meses - Primeros Cambios",
-            "MES_06_CONSOLIDACION_INICIAL", "6 Meses - ConsolidaciÃƒÂ³n Inicial",
-            "MES_12_PRIMERA_TRANSFORMACION", "12 Meses - Primera TransformaciÃƒÂ³n",
-            "MES_18_PROFUNDIZACION", "18 Meses - ProfundizaciÃƒÂ³n",
+            "MES_06_CONSOLIDACION_INICIAL", "6 Meses - Consolidación Inicial",
+            "MES_12_PRIMERA_TRANSFORMACION", "12 Meses - Primera Transformación",
+            "MES_18_PROFUNDIZACION", "18 Meses - Profundización",
             "MES_24_MADUREZ_SISTEMA", "24 Meses - Madurez del Sistema",
             "MES_30_CIERRE_SOSTENIMIENTO", "30 Meses - Cierre y Sostenimiento",
-            "MES_36_TRANSFORMACION_COMPLETA", "36 Meses - TransformaciÃƒÂ³n Completa");
+            "MES_36_TRANSFORMACION_COMPLETA", "36 Meses - Transformación Completa");
 
     private static final List<String> MILESTONE_SEQUENCE = List.of(
-            "MES_00_DIAGNOSTICO_BASE",
+            "MES_00_DIAGNOSTICO",
             "MES_03_PRIMEROS_CAMBIOS",
             "MES_06_CONSOLIDACION_INICIAL",
             "MES_12_PRIMERA_TRANSFORMACION",

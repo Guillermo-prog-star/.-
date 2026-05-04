@@ -13,6 +13,9 @@ import java.util.Optional;
 @Repository
 public interface FamilyRepository extends JpaRepository<Family, Long> {
 
+    @Query("SELECT DISTINCT f FROM Family f LEFT JOIN FETCH f.members")
+    List<Family> findAll();
+
     @Query("SELECT DISTINCT f FROM Family f LEFT JOIN FETCH f.members WHERE f.familyCode = :familyCode")
     Optional<Family> findByFamilyCodeWithMembers(@Param("familyCode") String familyCode);
 
@@ -31,4 +34,6 @@ public interface FamilyRepository extends JpaRepository<Family, Long> {
     List<Family> findBySentinelActiveTrue();
 
     Optional<Family> findByFamilyCode(String familyCode);
+    
+    Optional<Family> findByName(String name);
 }

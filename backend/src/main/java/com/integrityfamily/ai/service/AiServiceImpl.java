@@ -113,4 +113,11 @@ public class AiServiceImpl implements AiService {
         String prompt = promptGenerator.buildMissionGenerationPrompt(family, dimensions, riskLevel);
         return aiProvider.generateRawResponse(prompt);
     }
+
+    @Override
+    public String generateHybridPlan(Family family, Map<String, Double> dimensions, String riskLevel) {
+        log.info("[AI_PLAN] Generando Plan Híbrido Estructurado (SDD 6.3) para familia: {}", family.getName());
+        String prompt = promptGenerator.buildHybridPlanPrompt(family, dimensions, riskLevel);
+        return aiProvider.generateRawResponse(prompt);
+    }
 }

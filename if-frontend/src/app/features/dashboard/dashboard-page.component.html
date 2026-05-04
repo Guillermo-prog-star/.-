@@ -59,6 +59,36 @@
       </app-icf-stat-card>
     </section>
 
+    <!-- [SDD Spec] LOGBOOK HIGHLIGHTS -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+      <div class="glass-premium p-8 rounded-[2rem] border-white/5 flex flex-col justify-center relative overflow-hidden group hover:border-indigo-500/30 transition-all">
+        <div class="absolute -right-6 -top-6 text-9xl opacity-[0.03] group-hover:opacity-[0.08] transition-opacity rotate-12">📔</div>
+        <h4 class="text-white/30 uppercase tracking-widest text-[10px] font-black mb-4 flex items-center gap-2">
+          <span class="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></span>
+          Último Acuerdo del Nodo
+        </h4>
+        <p class="text-xl md:text-2xl font-medium text-white/90 leading-relaxed italic pr-12">
+          "{{ data.latestFamilyAgreement }}"
+        </p>
+      </div>
+
+      <div class="glass-premium p-8 rounded-[2rem] border-white/5 flex items-center gap-8 group hover:border-amber-500/30 transition-all">
+        <div class="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl shadow-2xl transition-transform group-hover:scale-110" 
+             [ngClass]="data.openLogbookEntriesCount && data.openLogbookEntriesCount > 0 ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'">
+          {{ data.openLogbookEntriesCount && data.openLogbookEntriesCount > 0 ? '🚨' : '🛡️' }}
+        </div>
+        <div class="flex-1">
+          <h4 class="text-white/30 uppercase tracking-widest text-[10px] font-black">Bitácora Familiar</h4>
+          <p class="text-3xl font-black text-white/90 mt-1">
+            {{ data.openLogbookEntriesCount || 0 }} <span class="text-sm font-medium text-white/40">Situaciones Pendientes</span>
+          </p>
+          <a routerLink="/logbook" class="text-indigo-400 text-[11px] uppercase font-black mt-4 flex items-center gap-2 hover:gap-4 transition-all">
+            GESTIONAR BITÁCORA <span>→</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
     <!-- RADAR & TIMELINE -->
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
       <div class="xl:col-span-4 h-full">

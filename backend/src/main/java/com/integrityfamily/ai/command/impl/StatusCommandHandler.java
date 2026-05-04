@@ -3,7 +3,7 @@ package com.integrityfamily.ai.command.impl;
 import com.integrityfamily.ai.command.CommandHandler;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.RiskSnapshot;
-import com.integrityfamily.domain.Plan;
+import com.integrityfamily.domain.ImprovementPlan;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -12,11 +12,11 @@ import java.util.List;
 public class StatusCommandHandler implements CommandHandler {
 
     @Override
-    public String handle(Family family, RiskSnapshot risk, List<Plan> plans, boolean sentinel) {
+    public String handle(Family family, RiskSnapshot risk, List<ImprovementPlan> plans, boolean sentinel) {
         StringBuilder sb = new StringBuilder();
-        sb.append("### Ã°Å¸â€œÅ  ESTADO ACTUAL: ").append(family.getName()).append("\n");
+        sb.append("### 📊 ESTADO ACTUAL: ").append(family.getName()).append("\n");
         sb.append("- **Hito Actual:** ").append(family.getCurrentMilestone()).append("\n");
-        sb.append("- **Sentinel:** ").append(sentinel ? "Ã°Å¸Å¡Â¨ ALERTA CRÃƒÂTICA" : "Ã¢Å“â€¦ NORMAL").append("\n");
+        sb.append("- **Sentinel:** ").append(sentinel ? "🚨 ALERTA CRÍTICA" : "✅ NORMAL").append("\n");
         
         if (risk != null) {
             sb.append("- **Nivel de Riesgo:** ").append(risk.getLevel()).append("\n");
@@ -32,5 +32,3 @@ public class StatusCommandHandler implements CommandHandler {
         return "status";
     }
 }
-
-

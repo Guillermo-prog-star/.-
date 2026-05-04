@@ -34,6 +34,7 @@ public class AuthService {
     private final AccountLockService accountLockService;
     private final AuditService auditService;
 
+    @Transactional
     public LoginResponse login(LoginRequest request, String ip, String ua) {
         log.info("[AUTH] Intento de login para: {}", request.email());
         try {
@@ -123,6 +124,7 @@ public class AuthService {
     }
 
 
+    @Transactional(readOnly = true)
     public UserResponse me(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));

@@ -21,7 +21,7 @@ export class MemberListPageComponent implements OnInit {
   private router = inject(Router);
 
   members: Member[] = [];
-  fn = ''; role = 'PADRE'; age = 30; aut = 70; resp = 70;
+  fullName = ''; role = 'PADRE'; age = 30; aut = 70; resp = 70;
   error = ''; saving = false;
 
   get familyId(): number | null {
@@ -35,13 +35,11 @@ export class MemberListPageComponent implements OnInit {
     this.load();
   }
 
-
   load() {
     this.http.get<any>(`${this.api.base}/members/mine`)
       .subscribe({
         next: ({ data }) => {
           const list: Member[] = data ?? [];
-          // Filtrado de duplicados por ID (Protocolo de Redundancia)
           const seen = new Set<number>();
           this.members = list.filter(m => {
             if (seen.has(m.id)) return false;
@@ -56,7 +54,9 @@ export class MemberListPageComponent implements OnInit {
   }
 
   create() {
-    if (!this.fn.trim()) {
+    console.log('[SDD-MEMBER] Iniciando creación:', this.fullName);
+    
+    if (!this.fullName || !this.fullName.trim()) {
       this.error = 'El nombre es obligatorio.';
       return;
     }
@@ -65,29 +65,28 @@ export class MemberListPageComponent implements OnInit {
     this.error = '';
     
     const payload = { 
-      fullName: this.fn, 
+      fullName: this.fullName, 
       roleType: this.role, 
       age: this.age,
       autonomyLevel: this.aut, 
       responsibilityLevel: this.resp 
     };
 
+    console.log('[SDD-MEMBER] Payload:', payload);
+
     this.http.post<any>(`${this.api.base}/members/mine`, payload).subscribe({
       next: () => {
-        this.fn = ''; 
-        this.age = 30; 
-        this.aut = 70; 
-        this.resp = 70;
+        this.fullName = ''; 
         this.saving = false;
         this.load();
       },
       error: (e) => {
+        console.error('[SDD-MEMBER] Server Error:', e);
         this.saving = false;
         this.error = e?.error?.message ?? 'Error al registrar miembro.';
       }
     });
   }
-
 
   invite(id: number) {
     this.http.post<any>(`${this.api.base}/members/${id}/invite`, {})
@@ -98,7 +97,6 @@ export class MemberListPageComponent implements OnInit {
   }
 
   remove(id: number) {
-
     if (!confirm('¿Eliminar este miembro?')) return;
     this.http.delete<any>(`${this.api.base}/members/${id}`)
       .subscribe({ next: () => this.load() });

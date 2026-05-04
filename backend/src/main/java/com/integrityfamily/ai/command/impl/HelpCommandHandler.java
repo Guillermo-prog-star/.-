@@ -3,7 +3,7 @@ package com.integrityfamily.ai.command.impl;
 import com.integrityfamily.ai.command.CommandHandler;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.RiskSnapshot;
-import com.integrityfamily.domain.Plan;
+import com.integrityfamily.domain.ImprovementPlan;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -12,10 +12,10 @@ import java.util.List;
 public class HelpCommandHandler implements CommandHandler {
 
     @Override
-    public String handle(Family family, RiskSnapshot risk, List<Plan> plans, boolean sentinel) {
-        return "### Ã°Å¸â€ºÂ Ã¯Â¸Â COMANDOS DISPONIBLES\n" +
-               "- `/status`: Resumen del estado actual del nÃƒÂºcleo familiar.\n" +
-               "- `/diagnostico`: Alias de status (anÃƒÂ¡lisis detallado).\n" +
+    public String handle(Family family, RiskSnapshot risk, List<ImprovementPlan> plans, boolean sentinel) {
+        return "### 🛠️ COMANDOS DISPONIBLES\n" +
+               "- `/status`: Resumen del estado actual del núcleo familiar.\n" +
+               "- `/diagnostico`: Alias de status (análisis detallado).\n" +
                "- `/ayuda`: Muestra esta lista de comandos.";
     }
 
@@ -24,5 +24,3 @@ public class HelpCommandHandler implements CommandHandler {
         return "ayuda";
     }
 }
-
-

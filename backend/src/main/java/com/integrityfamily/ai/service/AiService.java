@@ -29,6 +29,11 @@ public interface AiService {
     String generateMissions(Family family);
 
     String generateEvolutionaryMissions(Family family, Map<String, Double> dimensions, String riskLevel);
+
+    /**
+     * SDD SPEC 6.3: Generación de Plan Híbrido con contrato JSON estricto.
+     */
+    String generateHybridPlan(Family family, Map<String, Double> dimensions, String riskLevel);
 }
 
 

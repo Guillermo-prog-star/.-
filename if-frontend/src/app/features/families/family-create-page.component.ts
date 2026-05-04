@@ -56,8 +56,16 @@ export class FamilyCreatePageComponent implements OnInit {
     }).subscribe({
       next: (res) => {
         const family: Family = res.data ?? res;
+        // Sincronización atómica del estado
         this.familyState.setFamily(family);
-        this.router.navigate(['/members']);
+        console.log('✅ Familia creada y seleccionada:', family.name);
+        
+        // Navegación forzada al dominio de Miembros
+        this.router.navigateByUrl('/members').then(success => {
+          if (success) {
+            console.log('🚀 Redirección a Miembros exitosa');
+          }
+        });
       },
       error: (e) => { 
         this.loading = false;

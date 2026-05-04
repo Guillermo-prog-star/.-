@@ -12,6 +12,9 @@ import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.RiskLevel;
 import com.integrityfamily.domain.RiskSnapshot;
+import com.integrityfamily.domain.LogbookStatus;
+import com.integrityfamily.domain.FamilyLogbookEntry;
+import com.integrityfamily.domain.repository.FamilyLogbookRepository;
 import com.integrityfamily.domain.repository.RiskSnapshotRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +43,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final AiService aiService;
     private final RiskSnapshotRepository riskSnapshotRepository;
     private final ChecklistItemRepository checklistRepository;
+    private final FamilyLogbookRepository logbookRepository;
     private final RabbitTemplate rabbitTemplate;
 
     @Override
@@ -108,15 +112,28 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                         .build())
                 .collect(Collectors.toList());
 
-        // 9. Motor de ActivaciÃƒÂ³n Proactiva Sentinel (Capa de ContenciÃƒÂ³n)
+        // 9. Recuperación de Bitácora (Novedad)
+        long openLogbookItems = logbookRepository.findByFamilyIdAndStatusOrderByCreatedAtDesc(familyId, LogbookStatus.OPEN).size();
+        String latestAgreement = logbookRepository.findByFamilyIdOrderByCreatedAtDesc(familyId).stream()
+                .filter(e -> e.getFamilyAgreement() != null && !e.getFamilyAgreement().isBlank())
+                .map(FamilyLogbookEntry::getFamilyAgreement)
+                .findFirst()
+                .orElse("No hay acuerdos recientes registrados.");
+
+        // 10. Motor de Activación Proactiva Sentinel (Capa de Contención)
         boolean sentinelTriggered = Boolean.TRUE.equals(family.getSentinelActive())
                 || (lastEval != null && lastEval.getIcf() != null && lastEval.getIcf() < 40.0)
-                || (growth < -15.0);
+                || (growth < -15.0)
+                || (openLogbookItems > 3); // Nueva condición: más de 3 dificultades abiertas
 
-        // 10. Ajuste de recomendaciÃƒÂ³n IA ante estado de crisis
-        String finalInsight = sentinelTriggered ? "Ã¢Å¡Â Ã¯Â¸Â [S.O.S NODO] Protocolo de ContenciÃƒÂ³n Activado. " + insight : insight;
+        // 11. Ajuste de recomendación IA ante estado de crisis
+        String finalInsight = sentinelTriggered ? "⚠️ [S.O.S NODO] Protocolo de Contención Activado. " + insight : insight;
+        
+        if (openLogbookItems > 0) {
+            finalInsight += " Hay " + openLogbookItems + " situaciones pendientes en la bitácora.";
+        }
 
-        // 11. Persistencia del Snapshot (Memoria HistÃƒÂ³rica)
+        // 11. Persistencia del Snapshot (Memoria Histórica)
         RiskSnapshot snapshot = RiskSnapshot.builder()
                 .family(family)
                 .icf(lastEval != null && lastEval.getIcf() != null ? lastEval.getIcf() : 0.0)
@@ -151,6 +168,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .dimensionScores(dims)
                 .suggestedActions(suggestedActions)
                 .aiRecommendation(finalInsight)
+                .openLogbookEntriesCount(openLogbookItems)
+                .latestFamilyAgreement(latestAgreement)
                 .build();
 
         // 13. SincronizaciÃƒÂ³n AsÃƒÂ­ncrona via RabbitMQ (Disparar generaciÃƒÂ³n de planes)

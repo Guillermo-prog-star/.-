@@ -63,6 +63,8 @@ services:
     restart: on-failure:3
     ports:
       - "8080:8080"
+    volumes:
+      - ./backend_logs:/app/logs
     networks:
       - if-net
 
@@ -81,6 +83,9 @@ services:
         condition: service_healthy
     networks:
       - if-net
+    volumes:
+      - ./if-frontend:/app
+      - /app/node_modules
 
 networks:
   if-net:

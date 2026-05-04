@@ -56,23 +56,26 @@ class EvolutionaryMissionsTest {
         evaluationRepository.save(eval);
 
         // 3. Trigger Plan Generation (Simulando evento de RabbitMQ)
-        Map<String, Object> event = new HashMap<>();
-        event.put("evaluationId", eval.getId());
-        event.put("familyId", family.getId());
-        event.put("riskLevel", "MEDIUM");
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("evaluationId", eval.getId());
+        payload.put("familyId", family.getId());
+        payload.put("riskLevel", "MEDIUM");
+        
+        Map<String, Object> eventWrapper = new HashMap<>();
+        eventWrapper.put("payload", payload);
 
-        planGenerationService.generatePlanFromEvaluation(event);
+        planGenerationService.generatePlanFromEvaluation(eventWrapper);
 
         // 4. Verificaciones
-        List<Plan> plans = planService.findByFamilyId(family.getId());
+        List<ImprovementPlan> plans = planService.findByFamilyId(family.getId());
         assertFalse(plans.isEmpty(), "Debería haberse creado al menos un plan");
         
-        Plan latestPlan = plans.get(plans.size() - 1);
+        ImprovementPlan latestPlan = plans.get(plans.size() - 1);
         assertFalse(latestPlan.getTasks().isEmpty(), "El plan debería tener misiones (tasks)");
         
         System.out.println("TEST EXITOSO: Se crearon " + latestPlan.getTasks().size() + " misiones automáticas.");
         latestPlan.getTasks().forEach(t -> {
-            System.out.println("- Misión: " + t.getTitle() + " (Vence: " + t.getDueDate() + ")");
+            System.out.println("- Misión: " + t.getTitle());
         });
     }
 }

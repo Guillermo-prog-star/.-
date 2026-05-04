@@ -4,6 +4,7 @@ import com.integrityfamily.common.service.WhatsAppService;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.PlanTask;
+import com.integrityfamily.domain.ImprovementPlan;
 import com.integrityfamily.domain.repository.PlanTaskRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +39,7 @@ public class PlanComplianceScheduler {
     @Scheduled(cron = "0 0 8 * * *")
     @Transactional
     public void checkFamilyMilestones() {
-        log.info("Ã°Å¸â€¢â€™ [MILESTONE-CLOCK] Iniciando auditorÃƒÂ­a trimestral de familias...");
+        log.info("⏰ [MILESTONE-CLOCK] Iniciando auditoría trimestral de familias...");
         LocalDateTime now = LocalDateTime.now();
 
         List<Family> familiesAtRiskOrDue = familyRepository.findByNextEvaluationAtBeforeOrNextEvaluationAtIsNull(now);
@@ -54,15 +55,15 @@ public class PlanComplianceScheduler {
             int milestoneNumber = (int) (months / 3) + 1;
             String milestoneLabel = "HITO_" + milestoneNumber;
 
-            log.info("Ã°Å¸â€œÂ [MILESTONE-HIT] Familia {} alcanzÃƒÂ³ el hito: {}", family.getName(), milestoneLabel);
+            log.info("📍 [MILESTONE-HIT] Familia {} alcanzó el hito: {}", family.getName(), milestoneLabel);
 
             family.setCurrentMilestone(milestoneLabel);
             family.setNextEvaluationAt(now.plusMonths(3));
             familyRepository.save(family);
 
             if (family.getWhatsapp() != null && !family.getWhatsapp().isBlank()) {
-                String message = "Ã°Å¸Å’Å¸ INTEGRITY FAMILY: Ã‚Â¡Felicidades Familia " + family.getName() + "! Su hito '" + milestoneLabel + "' ha llegado. " +
-                        "Es el momento de realizar su diagnÃƒÂ³stico trimestral.";
+                String message = "🌟 INTEGRITY FAMILY: ¡Felicidades Familia " + family.getName() + "! Su hito '" + milestoneLabel + "' ha llegado. " +
+                        "Es el momento de realizar su diagnóstico trimestral.";
                 whatsappService.sendMessage(family.getWhatsapp(), message);
             }
         }
@@ -73,22 +74,24 @@ public class PlanComplianceScheduler {
      */
     @Scheduled(cron = "0 0 0/4 * * *")
     public void checkTaskCompliance() {
-        log.info("Ã°Å¸â€Â [COMPLIANCE-CLOCK] Revisando tareas vencidas...");
+        log.info("🔍 [COMPLIANCE-CLOCK] Revisando tareas vencidas...");
         
         List<PlanTask> allTasks = taskRepository.findAll();
         for (PlanTask task : allTasks) {
-            if (Boolean.FALSE.equals(task.getCompleted()) && 
+            // Sincronización con el nuevo ImprovementPlan y PlanTask
+            if (!task.isCompleted() && 
                 task.getDueDate() != null && 
                 task.getDueDate().isBefore(LocalDateTime.now())) {
                 
-                String whatsapp = task.getPlan().getFamily().getWhatsapp();
-                if (whatsapp != null && !whatsapp.isBlank()) {
-                    String message = "Ã¢Å¡Â Ã¯Â¸Â NotificaciÃƒÂ³n: Tarea '" + task.getTitle() + "' pendiente.";
-                    whatsappService.sendMessage(whatsapp, message);
+                ImprovementPlan plan = task.getPlan();
+                if (plan != null && plan.getFamily() != null) {
+                    String whatsapp = plan.getFamily().getWhatsapp();
+                    if (whatsapp != null && !whatsapp.isBlank()) {
+                        String message = "⚠️ Notificación: Tarea '" + task.getTitle() + "' pendiente.";
+                        whatsappService.sendMessage(whatsapp, message);
+                    }
                 }
             }
         }
     }
 }
-
-

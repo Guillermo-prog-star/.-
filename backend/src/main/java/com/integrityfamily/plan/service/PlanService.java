@@ -1,55 +1,54 @@
 package com.integrityfamily.plan.service;
 
-import com.integrityfamily.domain.Plan;
+import com.integrityfamily.domain.ImprovementPlan;
 import com.integrityfamily.domain.PlanTask;
-import com.integrityfamily.domain.repository.PlanRepository;
+import com.integrityfamily.domain.repository.ImprovementPlanRepository;
 import com.integrityfamily.domain.repository.PlanTaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+/**
+ * SDD: Servicio de Planificación Harmonizado.
+ * Gestiona el ciclo de vida de los planes de transformación familiar.
+ */
 @Service
 @RequiredArgsConstructor
 public class PlanService {
 
-    private final PlanRepository planRepository;
+    private final ImprovementPlanRepository planRepository;
     private final PlanTaskRepository planTaskRepository;
 
-    public List<Plan> findAllPlans() {
+    public List<ImprovementPlan> findAllPlans() {
         return planRepository.findAll();
     }
 
-    /** Planes de una familia ordenados por fecha (mÃƒÂ¡s recientes primero) */
-    public List<Plan> findByFamilyId(Long familyId) {
-        return planRepository.findByFamilyIdOrderByCreatedAtDesc(familyId);
+    public List<ImprovementPlan> findByFamilyId(Long familyId) {
+        return planRepository.findByFamilyId(familyId);
     }
 
-    public Plan findPlanById(Long id) {
+    public ImprovementPlan findPlanById(Long id) {
         return planRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + id));
     }
 
-    public Plan createPlan(Plan plan) {
+    public ImprovementPlan createPlan(ImprovementPlan plan) {
         return planRepository.save(plan);
     }
 
-    public Plan updatePlan(Long id, Plan request) {
-        Plan existing = planRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + id));
+    public ImprovementPlan updatePlan(Long id, ImprovementPlan request) {
+        ImprovementPlan existing = findPlanById(id);
         existing.setTitle(request.getTitle());
         existing.setDescription(request.getDescription());
         return planRepository.save(existing);
     }
 
     public void deletePlan(Long id) {
-        if (!planRepository.existsById(id)) {
-            throw new RuntimeException("Plan no encontrado: " + id);
-        }
         planRepository.deleteById(id);
     }
 
-    // Ã¢â€â‚¬Ã¢â€â‚¬ Tareas Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // --- Tareas ---
 
     public List<PlanTask> findAllTasks() {
         return planTaskRepository.findAll();
@@ -65,28 +64,20 @@ public class PlanService {
     }
 
     public PlanTask updateTask(Long id, PlanTask request) {
-        PlanTask existing = planTaskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tarea no encontrada: " + id));
+        PlanTask existing = findTaskById(id);
         existing.setTitle(request.getTitle());
         existing.setDescription(request.getDescription());
-        existing.setCompleted(request.getCompleted());
+        existing.setCompleted(request.isCompleted());
         return planTaskRepository.save(existing);
     }
 
-    /** Marca o desmarca una tarea como completada */
     public PlanTask completeTask(Long id, boolean completed) {
-        PlanTask task = planTaskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tarea no encontrada: " + id));
+        PlanTask task = findTaskById(id);
         task.setCompleted(completed);
         return planTaskRepository.save(task);
     }
 
     public void deleteTask(Long id) {
-        if (!planTaskRepository.existsById(id)) {
-            throw new RuntimeException("Tarea no encontrada: " + id);
-        }
         planTaskRepository.deleteById(id);
     }
 }
-
-

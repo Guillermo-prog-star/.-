@@ -1,20 +1,32 @@
 package com.integrityfamily.plan.service;
 
-import com.integrityfamily.domain.*;
+import com.integrityfamily.domain.ImprovementPlan;
+import com.integrityfamily.domain.PlanTask;
+import com.integrityfamily.domain.PlanTaskStep;
+import com.integrityfamily.domain.StepType;
+import com.integrityfamily.domain.Milestone;
+import com.integrityfamily.domain.Evaluation;
+import com.integrityfamily.domain.EvaluationDimensionScore;
 import com.integrityfamily.domain.repository.EvaluationRepository;
+import com.integrityfamily.domain.repository.MilestoneRepository;
 import com.integrityfamily.ai.service.AiService;
 import com.integrityfamily.common.service.WhatsAppService;
 import com.integrityfamily.checklist.service.ChecklistService;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * SDD SPEC 6.5: Motor de Generación de Planes Híbridos.
+ */
 @Slf4j
 @Service
 public class PlanGenerationService {
@@ -25,131 +37,134 @@ public class PlanGenerationService {
     private final WhatsAppService whatsappService;
     private final ObjectMapper objectMapper;
     private final ChecklistService checklistService;
+    private final MilestoneRepository milestoneRepository;
 
     public PlanGenerationService(PlanService planService,
-                               EvaluationRepository evaluationRepository,
-                               AiService aiService,
-                               WhatsAppService whatsappService,
-                               ObjectMapper objectMapper,
-                               ChecklistService checklistService) {
+                                EvaluationRepository evaluationRepository,
+                                AiService aiService,
+                                WhatsAppService whatsappService,
+                                ObjectMapper objectMapper,
+                                ChecklistService checklistService,
+                                MilestoneRepository milestoneRepository) {
         this.planService = planService;
         this.evaluationRepository = evaluationRepository;
         this.aiService = aiService;
         this.whatsappService = whatsappService;
         this.objectMapper = objectMapper;
         this.checklistService = checklistService;
+        this.milestoneRepository = milestoneRepository;
     }
 
     @RabbitListener(queues = "${app.messaging.queues.plan:if.plan.queue}")
+    @Transactional
     public void generatePlanFromEvaluation(Map<String, Object> event) {
-        log.info("🚀 [AI_PLAN_ENGINE] Iniciando síntesis generativa para evento: {}", event);
+        log.info("🚀 [AI_PLAN_ENGINE] Iniciando síntesis híbrida para evento: {}", event);
 
         try {
-            if (event.get("evaluationId") == null) return;
+            @SuppressWarnings("unchecked")
+            Map<String, Object> payload = (Map<String, Object>) event.get("payload");
             
-            Long evaluationId = Long.valueOf(event.get("evaluationId").toString());
+            if (payload == null || payload.get("evaluationId") == null) {
+                log.warn("⚠️ [AI_PLAN_ENGINE] Evento recibido sin payload de evaluación válido.");
+                return;
+            }
+            
+            Long evaluationId = Long.valueOf(payload.get("evaluationId").toString());
             Evaluation evaluation = evaluationRepository.findById(evaluationId)
                     .orElseThrow(() -> new RuntimeException("Evaluación no encontrada: " + evaluationId));
 
-            boolean isCrisis = Boolean.TRUE.equals(evaluation.getHasCrisis()) || 
-                               (evaluation.getIcf() != null && evaluation.getIcf() < 40.0);
-
-            if (isCrisis) {
-                processCrisisPlan(evaluation);
-            } else {
-                processStandardRoadmap(evaluation, event);
+            // 1. Generar Síntesis Espiritual Asíncrona (Desbloqueo de UI)
+            try {
+                log.info("🧠 [AI_PLAN_ENGINE] Generando síntesis espiritual en background...");
+                String synthesis = aiService.generateExecutiveSynthesis(evaluation);
+                evaluation.setSpiritualSynthesis(synthesis);
+                evaluationRepository.save(evaluation);
+            } catch (Exception e) {
+                log.error("⚠️ [AI_PLAN_ENGINE] Fallo en síntesis: {}", e.getMessage());
             }
 
+            // 2. Procesar Plan Híbrido
+            processHybridPlan(evaluation, payload);
+
         } catch (Exception e) {
-            log.error("❌ [PLAN-ENGINE-ERROR] Fallo crítico: {}", e.getMessage());
+            log.error("❌ [PLAN-ENGINE-ERROR] Fallo crítico al procesar evento: {}", e.getMessage());
         }
     }
 
-    private void processStandardRoadmap(Evaluation evaluation, Map<String, Object> event) {
-        String milestone = evaluation.getFamily().getCurrentMilestone();
-        boolean isFirst = planService.findByFamilyId(evaluation.getFamily().getId()).isEmpty();
-
-        Plan p = new Plan();
-        p.setFamily(evaluation.getFamily());
-        p.setEvaluation(evaluation);
-        p.setTitle(isFirst ? "HOJA DE RUTA: " + milestone : "AJUSTE TÁCTICO: " + milestone);
-        p.setDescription(isFirst ? "Activación de transformación 36 meses." : "Evolución basada en progreso actual.");
-
-        injectEvolutionaryMissions(p, evaluation, event);
-        planService.createPlan(p);
-
-        log.info("✅ [PLAN-ENGINE] Plan '{}' creado satisfactoriamente.", p.getTitle());
-    }
-
-    private void injectEvolutionaryMissions(Plan p, Evaluation eval, Map<String, Object> event) {
-        // 1. Clasificación de Dimensiones (Hechos)
-        Map<String, Double> dimensions = eval.getDimensionScores().stream()
+    private void processHybridPlan(Evaluation evaluation, Map<String, Object> event) {
+        Map<String, Double> dimensions = evaluation.getDimensionScores().stream()
                 .collect(Collectors.toMap(EvaluationDimensionScore::getDimensionName, EvaluationDimensionScore::getScore));
         
         String riskLevel = event.getOrDefault("riskLevel", "MEDIUM").toString();
 
-        // 2. Invocación IA
-        String jsonResponse = aiService.generateEvolutionaryMissions(eval.getFamily(), dimensions, riskLevel);
+        String jsonResponse = aiService.generateHybridPlan(evaluation.getFamily(), dimensions, riskLevel);
         
-        p.setAiReport(eval.getSpiritualSynthesis());
-        p.setAiGeneratedAt(LocalDateTime.now());
-
         try {
-            // 3. Parseo Resiliente
-            List<AiMissionDto> missions = objectMapper.readValue(jsonResponse, new TypeReference<List<AiMissionDto>>() {});
-            
-            for (AiMissionDto m : missions) {
-                PlanTask task = new PlanTask();
-                task.setPlan(p);
-                task.setTitle(m.title());
-                task.setDescription(m.description());
-                task.setDimension(m.dimension() != null ? m.dimension() : "GENERAL");
-                
-                int months = m.periodicityMonths() > 0 ? m.periodicityMonths() : 1;
-                task.setPeriodicityMonths(months);
-                task.setDueDate(LocalDateTime.now().plusMonths(months));
-                
-                p.getTasks().add(task);
+            HybridPlanDto planDto = objectMapper.readValue(jsonResponse, HybridPlanDto.class);
+
+            ImprovementPlan p = new ImprovementPlan();
+            p.setFamily(evaluation.getFamily());
+            p.setEvaluation(evaluation);
+            p.setTitle("PLAN DE TRANSFORMACIÓN: " + evaluation.getFamily().getName());
+            p.setVision3y(planDto.vision3y());
+            p.setAiReport(jsonResponse);
+            p.setAiGeneratedAt(LocalDateTime.now());
+
+            for (MilestoneDto mDto : planDto.milestones()) {
+                Milestone milestone = milestoneRepository.findByCode(mDto.code())
+                        .orElseGet(() -> milestoneRepository.findAll().get(0));
+
+                for (TaskDto tDto : mDto.tasks()) {
+                    PlanTask task = new PlanTask();
+                    task.setPlan(p);
+                    task.setTitle(tDto.title());
+                    task.setDimension(tDto.dimension());
+                    task.setMilestone(milestone);
+                    
+                    for (StepDto sDto : tDto.steps()) {
+                        try {
+                            PlanTaskStep step = new PlanTaskStep();
+                            step.setTask(task);
+                            // Robustez ante variaciones de la IA (case-insensitive)
+                            String typeStr = sDto.type() != null ? sDto.type().toUpperCase().trim() : "PLANIFICAR";
+                            step.setType(StepType.valueOf(typeStr));
+                            step.setDetail(sDto.detail());
+                            task.getSteps().add(step);
+                        } catch (Exception e) {
+                            log.warn("⚠️ [AI-PARSER] Tipo de paso inválido: {}. Ignorando.", sDto.type());
+                        }
+                    }
+                    p.getTasks().add(task);
+                }
             }
+
+            planService.createPlan(p);
+            log.info("✅ [PLAN-ENGINE] Plan Híbrido persistido con éxito.");
+
         } catch (Exception e) {
-            log.warn("⚠️ [AI-PARSER] Error en formato JSON. Activando Fallback Estructural.");
-            applyStructuralFallback(p, dimensions);
+            log.error("⚠️ [AI-PARSER] Error en formato JSON Híbrido: {}", e.getMessage());
         }
-
-        // Sincronización con Checklist (Retrocompatibilidad)
-        checklistService.extractAndAdd(jsonResponse, "EVO_" + eval.getId(), eval.getFamily().getId());
     }
 
-    private void applyStructuralFallback(Plan p, Map<String, Double> dimensions) {
-        String weakDimension = dimensions.entrySet().stream()
-                .min(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse("INTEGRIDAD");
+    public record HybridPlanDto(
+        @JsonProperty("vision_3y") String vision3y,
+        List<MilestoneDto> milestones
+    ) {}
 
-        PlanTask task = new PlanTask();
-        task.setPlan(p);
-        task.setTitle("Consolidación en " + weakDimension);
-        task.setDescription("Foco prioritario en fortalecer la base de " + weakDimension + " tras inconsistencia en el reporte de IA.");
-        task.setDimension(weakDimension);
-        task.setDueDate(LocalDateTime.now().plusWeeks(2));
-        p.getTasks().add(task);
-    }
+    public record MilestoneDto(
+        String code,
+        String objective,
+        List<TaskDto> tasks
+    ) {}
 
-    private void processCrisisPlan(Evaluation evaluation) {
-        Plan p = new Plan();
-        p.setFamily(evaluation.getFamily());
-        p.setEvaluation(evaluation);
-        p.setTitle("⚠️ PROTOCOLO DE CONTENCIÓN SENTINEL");
-        p.setDescription("Intervención inmediata por riesgo crítico detectado.");
-        
-        String jsonMissions = aiService.generateMissions(evaluation.getFamily());
-        checklistService.extractAndAdd(jsonMissions, "CRISIS_" + evaluation.getId(), evaluation.getFamily().getId());
-        
-        planService.createPlan(p);
-        log.error("🚨 [SENTINEL] Plan de Crisis generado para Familia: {}", evaluation.getFamily().getName());
-    }
+    public record TaskDto(
+        String title,
+        String dimension,
+        List<StepDto> steps
+    ) {}
 
-    private record AiMissionDto(String title, String description, String dimension, int periodicityMonths) {}
+    public record StepDto(
+        String type,
+        String detail
+    ) {}
 }
-
-

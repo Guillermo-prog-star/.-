@@ -1,19 +1,16 @@
-# =========================
-# ESTRATEGIA: Build Local para Bypass de Red lenta
-# =========================
-# Este Dockerfile asume que ya ejecutaste ./mvnw package localmente.
-# Esto evita que Docker intente descargar dependencias en una red lenta.
-
-FROM eclipse-temurin:17-jre-alpine
-
-RUN apk add --no-cache curl bash
-
+# ETAPA 1: Construcción (Maven)
+FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
 WORKDIR /app
+COPY pom.xml .
+# Descargar dependencias primero para aprovechar cache
+RUN mvn package -DskipTests -Dmaven.main.skip || true
+COPY src ./src
+RUN mvn package -DskipTests
 
-# Copia el JAR generado localmente en la carpeta target
-COPY target/*.jar app.jar
-
+# ETAPA 2: Ejecución (JRE)
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+RUN apk add --no-cache curl bash
+COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-
-# Entrypoint con soporte para espera de DB si fuera necesario
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx512m", "-jar", "app.jar"]

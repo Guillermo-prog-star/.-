@@ -17,7 +17,8 @@ export class DashboardDataService {
   }
 
   fetchData(familyId?: number): Observable<DashboardDTO | null> {
-    const id = familyId || 1;
+    const id = familyId;
+    if (!id) return of(null);
     return forkJoin({
       dashboard: this.http.get<any>(`/api/analytics/dashboard/family/${id}`),
       advanceStatus: this.http.get<boolean>(`/api/milestones/family/${id}/check-advance`)
@@ -40,9 +41,10 @@ export class DashboardDataService {
   }
 
   // FIX TS2339: Implementación requerida por evolution-radar.component.ts
-  getRadarData$(): Observable<any> {
+  getRadarData$(): Observable<any[]> {
     return this.http.get<any>('/api/analytics/radar').pipe(
-      catchError(() => of({ labels: [], datasets: [] }))
+      map(res => res && res.data ? [res.data] : []),
+      catchError(() => of([]))
     );
   }
 

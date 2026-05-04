@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { FamilyStateService } from './family-state.service';
 
 /** * SDD: Contrato de Identidad Global
  */
@@ -18,7 +19,8 @@ export interface AuthUser {
 export class AuthService {
   constructor(
     private http: HttpClient,
-    private router: Router
+    private router: Router,
+    private familyState: FamilyStateService
   ) {}
 
 
@@ -64,6 +66,9 @@ export class AuthService {
           };
           this.saveUserToStorage(userData);
           this._user.set(userData);
+          if (userData.familyId) {
+            this.familyState.setFamily({ id: userData.familyId, name: userData.fullName });
+          }
         }
       })
     );
@@ -88,6 +93,9 @@ export class AuthService {
           };
           this.saveUserToStorage(userData);
           this._user.set(userData);
+          if (userData.familyId) {
+            this.familyState.setFamily({ id: userData.familyId, name: userData.fullName });
+          }
         }
       })
     );
@@ -109,6 +117,9 @@ export class AuthService {
           };
           this.saveUserToStorage(userData);
           this._user.set(userData);
+          if (userData.familyId) {
+            this.familyState.setFamily({ id: userData.familyId, name: userData.fullName });
+          }
         }
       })
     );

@@ -15,14 +15,19 @@ public class EvaluationDtos {
 
         public record AnswerDto(
                         @NotNull Long questionId,
-                        @NotNull @Min(1) @Max(5) Integer value) {
+                        @NotNull @Min(1) @Max(5) Integer value,
+                        // Soporte para legado del frontend
+                        Integer answerValue) {
+                public Integer getEffectiveValue() {
+                        return value != null ? value : answerValue;
+                }
         }
 
         public record EvaluationFinalizeRequest(
                         @NotEmpty List<AnswerDto> answers,
-                        @NotNull Double icf,
-                        @NotNull Boolean hasCrisis,
-                        @NotNull Map<String, Double> dimensionScores) {
+                        Double icf,
+                        Boolean hasCrisis,
+                        Map<String, Double> dimensionScores) {
         }
 
         public record EvaluationResultResponse(

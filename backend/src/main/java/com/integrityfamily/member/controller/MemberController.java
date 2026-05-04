@@ -6,14 +6,13 @@ import com.integrityfamily.member.dto.MemberRequest;
 import com.integrityfamily.member.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
-/**
- * SDD: Controlador de Miembros sincronizado.
- * Postura Técnica: Se centraliza la creación a través del Record universal.
- */
+@Slf4j
 @RestController
 @RequestMapping("/api/members")
 @RequiredArgsConstructor
@@ -21,6 +20,7 @@ public class MemberController {
 
     private final MemberService memberService;
     private final com.integrityfamily.domain.repository.UserRepository userRepository;
+    private final com.integrityfamily.domain.repository.FamilyRepository familyRepository;
     private final com.integrityfamily.member.service.InvitationService invitationService;
 
     @PostMapping("/{id}/invite")
@@ -29,16 +29,13 @@ public class MemberController {
         return ApiResponse.ok(null);
     }
 
-
     @GetMapping
     public ApiResponse<List<FamilyMember>> getAll() {
         return ApiResponse.ok(memberService.findAll());
     }
 
-    /**
-     * SDD: Recupera los miembros de la familia del usuario autenticado.
-     */
     @GetMapping("/mine")
+    @Transactional(readOnly = true)
     public ApiResponse<List<FamilyMember>> getMyFamilyMembers(org.springframework.security.core.Authentication auth) {
         com.integrityfamily.domain.User user = userRepository.findByEmail(auth.getName())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -50,19 +47,30 @@ public class MemberController {
         return ApiResponse.ok(memberService.findByFamily(user.getFamily().getId()));
     }
 
-    /**
-     * SDD: Registra un miembro en la familia del usuario autenticado (ADMIN flow).
-     */
     @PostMapping("/mine")
+    @Transactional
     public ApiResponse<FamilyMember> createInMyFamily(
-            @Valid @RequestBody MemberRequest request,
+            @RequestBody MemberRequest request,
             org.springframework.security.core.Authentication auth) {
+        
+        log.info("[MEMBER-DEBUG] Registrando: '{}' con rol '{}'", request.fullName(), request.roleType());
+
+        if (request.fullName() == null || request.fullName().trim().isEmpty()) {
+            return ApiResponse.error("El nombre es obligatorio (Manual)");
+        }
 
         com.integrityfamily.domain.User user = userRepository.findByEmail(auth.getName())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        if (user.getFamily() == null) {
-            throw new RuntimeException("El usuario no tiene una familia asociada");
+        com.integrityfamily.domain.Family family = user.getFamily();
+        
+        if (family == null) {
+            log.warn("[MEMBER-AUTH] Usuario {} sin vínculo. Intentando recuperación por dueño...", auth.getName());
+            family = familyRepository.findByCreatedBy_Email(auth.getName())
+                    .orElseThrow(() -> new RuntimeException("No tienes una familia asociada."));
+            
+            user.setFamily(family);
+            userRepository.saveAndFlush(user);
         }
 
         MemberRequest integratedRequest = new MemberRequest(
@@ -73,7 +81,7 @@ public class MemberController {
                 request.responsibilityLevel(),
                 request.email(),
                 request.phone(),
-                user.getFamily().getId()
+                family.getId()
         );
 
         return ApiResponse.ok(memberService.createMember(integratedRequest));
@@ -83,26 +91,6 @@ public class MemberController {
     public ApiResponse<List<FamilyMember>> getByFamily(@PathVariable Long familyId) {
         return ApiResponse.ok(memberService.findByFamily(familyId));
     }
-
-    @PostMapping("/family/{familyId}")
-    public ApiResponse<FamilyMember> createInFamily(
-            @PathVariable Long familyId,
-            @Valid @RequestBody MemberRequest request) {
-
-        MemberRequest integratedRequest = new MemberRequest(
-                request.fullName(),
-                request.roleType(),
-                request.age(),
-                request.autonomyLevel(),
-                request.responsibilityLevel(),
-                request.email(),
-                request.phone(),
-                familyId
-        );
-
-        return ApiResponse.ok(memberService.createMember(integratedRequest));
-    }
-
 
     @GetMapping("/{id}")
     public ApiResponse<FamilyMember> getById(@PathVariable Long id) {

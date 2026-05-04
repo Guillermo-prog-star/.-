@@ -3,14 +3,19 @@ package com.integrityfamily.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * SDD SPEC 6.2: Tarea de Plan Harmonizada.
+ */
 @Entity
 @Table(name = "plan_tasks")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class PlanTask {
 
     @Id
@@ -18,31 +23,45 @@ public class PlanTask {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "plan_id", nullable = false)
-    private Plan plan;
+    @JoinColumn(name = "plan_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private ImprovementPlan plan;
 
-    @Column(nullable = false, length = 160)
+    @Column(nullable = false)
     private String title;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Builder.Default
-    private Boolean completed = false;
-
-    private LocalDateTime createdAt;
-    private LocalDateTime completedAt;
-    private LocalDateTime dueDate;
-
     private String dimension;
-    private Integer periodicityMonths;
+
+    private LocalDateTime dueDate;
+    
+    private int periodicityMonths;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "milestone_id")
+    private Milestone milestone;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "responsible_id")
     private FamilyMember responsible;
 
-    @PrePersist
-    public void prePersist() {
-        if (createdAt == null) createdAt = LocalDateTime.now();
-    }
+    @Builder.Default
+    private boolean completed = false;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PlanTaskStep> steps = new ArrayList<>();
+
+    // SDD-FIX: Métodos explícitos para el build de Docker
+    public String getDescription() { return this.description; }
+    public void setDescription(String description) { this.description = description; }
+    
+    public boolean isCompleted() { return this.completed; }
+    public boolean getCompleted() { return this.completed; }
+    public void setCompleted(boolean completed) { this.completed = completed; }
+
+    public LocalDateTime getDueDate() { return this.dueDate; }
+    public void setDueDate(LocalDateTime dueDate) { this.dueDate = dueDate; }
 }

@@ -4,53 +4,37 @@ import com.integrityfamily.ai.service.AiService;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.dto.EvaluationDtos;
 import com.integrityfamily.domain.repository.EvaluationRepository;
-import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.MemberRepository;
+import com.integrityfamily.domain.repository.QuestionRepository;
 import com.integrityfamily.risk.service.RiskService;
 import com.integrityfamily.milestone.service.MilestoneService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * SDD: Motor de EvaluaciÃƒÂ³n del Nodo Armenia.
- * Gestiona el ciclo de vida de los diagnÃƒÂ³sticos y dispara la inteligencia
- * reactiva.
+ * SDD: Motor de Evaluación del Nodo Armenia.
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class EvaluationService {
 
     private final EvaluationRepository evaluationRepository;
     private final FamilyRepository familyRepository;
     private final MemberRepository memberRepository;
+    private final QuestionRepository questionRepository;
     private final RiskService riskService;
     private final RabbitTemplate rabbitTemplate;
     private final MilestoneService milestoneService;
     private final AiService aiService;
-
-    public EvaluationService(EvaluationRepository evaluationRepository,
-            FamilyRepository familyRepository,
-            MemberRepository memberRepository,
-            RiskService riskService,
-            RabbitTemplate rabbitTemplate,
-            MilestoneService milestoneService,
-            AiService aiService) {
-        this.evaluationRepository = evaluationRepository;
-        this.familyRepository = familyRepository;
-        this.memberRepository = memberRepository;
-        this.riskService = riskService;
-        this.rabbitTemplate = rabbitTemplate;
-        this.milestoneService = milestoneService;
-        this.aiService = aiService;
-    }
 
     public List<Evaluation> findAll() {
         return evaluationRepository.findAll();
@@ -69,9 +53,6 @@ public class EvaluationService {
         return evaluationRepository.save(e);
     }
 
-    /**
-     * SDD: Inicia un nuevo diagnóstico vinculándolo a la familia y opcionalmente a un miembro.
-     */
     @Transactional
     public Evaluation start(EvaluationDtos.EvaluationStartRequest req) {
         Family family = familyRepository.findById(req.familyId())
@@ -90,21 +71,27 @@ public class EvaluationService {
         return evaluationRepository.save(evaluation);
     }
 
-
     /**
-     * Finaliza un diagnÃƒÂ³stico real enviado desde el Frontend.
+     * Finaliza un diagnóstico real enviado desde el Frontend.
+     * SDD-FIX: Ahora calcula ICF y Dimensiones si el frontend no los envía.
      */
     @Transactional
     public Evaluation finalize(Long id, EvaluationDtos.EvaluationFinalizeRequest request) {
-        log.info("Ã°Å¸ÂÂ [EVALUATION] Finalizando diagnÃƒÂ³stico ID: {}", id);
+        log.info("🏁 [EVALUATION] Finalizando diagnóstico ID: {}", id);
         Evaluation existing = findById(id);
 
         existing.setStatus(EvaluationStatus.FINALIZED);
         existing.setFinalizedAt(LocalDateTime.now());
-        existing.setIcf(request.icf());
-        existing.setHasCrisis(request.hasCrisis());
 
-        request.dimensionScores().forEach((name, score) -> {
+        // Lógica de Autocalculo si vienen nulos
+        double icf = (request.icf() != null) ? request.icf() : calculateIcf(request.answers());
+        boolean hasCrisis = (request.hasCrisis() != null) ? request.hasCrisis() : icf < 30.0;
+        Map<String, Double> scores = (request.dimensionScores() != null) ? request.dimensionScores() : calculateDimensionScores(request.answers());
+
+        existing.setIcf(icf);
+        existing.setHasCrisis(hasCrisis);
+
+        scores.forEach((name, score) -> {
             EvaluationDimensionScore ds = new EvaluationDimensionScore();
             ds.setEvaluation(existing);
             ds.setDimensionName(name);
@@ -113,29 +100,42 @@ public class EvaluationService {
         });
 
         Evaluation saved = evaluationRepository.save(existing);
+        log.info("✅ [EVALUATION] Evaluación guardada con éxito (ICF: {}). ID: {}", icf, saved.getId());
         
-        // SDD-UIE: Generación de Síntesis Espiritual Narrativa (Inyección Directa)
-        try {
-            log.info("Ã°Å¸Â§Â  [UIE] Generando sÃƒÂ­ntesis espiritual para la evaluaciÃƒÂ³n...");
-            String synthesis = aiService.generateExecutiveSynthesis(saved);
-            saved.setSpiritualSynthesis(synthesis);
-            evaluationRepository.save(saved);
-        } catch (Exception e) {
-            log.error("Ã¢Â Å’ [UIE] Error al generar sÃƒÂ­ntesis: {}", e.getMessage());
-        }
-
         processPostFinalization(saved);
         return saved;
     }
 
-    /**
-     * SDD: Protocolo Sentinel para inyecciÃƒÂ³n de rÃƒÂ¡fagas de simulaciÃƒÂ³n.
-     */
+    private double calculateIcf(List<EvaluationDtos.AnswerDto> answers) {
+        if (answers == null || answers.isEmpty()) return 0.0;
+        double sum = answers.stream().mapToInt(a -> a.getEffectiveValue()).sum();
+        return (sum / (answers.size() * 5.0)) * 100.0;
+    }
+
+    private Map<String, Double> calculateDimensionScores(List<EvaluationDtos.AnswerDto> answers) {
+        if (answers == null || answers.isEmpty()) return Collections.emptyMap();
+        
+        Map<String, List<Integer>> dimValues = new HashMap<>();
+        for (EvaluationDtos.AnswerDto a : answers) {
+            questionRepository.findById(a.questionId()).ifPresent(q -> {
+                String dim = q.getDimension() != null ? q.getDimension() : "GENERAL";
+                dimValues.computeIfAbsent(dim, k -> new ArrayList<>()).add(a.getEffectiveValue());
+            });
+        }
+
+        Map<String, Double> result = new HashMap<>();
+        dimValues.forEach((dim, vals) -> {
+            double avg = vals.stream().mapToInt(Integer::intValue).average().orElse(0.0);
+            result.put(dim, (avg / 5.0) * 100.0);
+        });
+        return result;
+    }
+
     @Transactional
     public void processSimulatedResult(Long familyId, Double icf, boolean hasCrisis) {
-        log.info("Ã°Å¸Â§Âª [SIMULATION] Ejecutando rÃƒÂ¡faga para familia: {}", familyId);
+        log.info("🧪 [SIMULATION] Ejecutando ráfaga para familia: {}", familyId);
         Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new RuntimeException("EspecificaciÃƒÂ³n de Familia no encontrada"));
+                .orElseThrow(() -> new RuntimeException("Especificación de Familia no encontrada"));
 
         Evaluation eval = new Evaluation();
         eval.setFamily(family);
@@ -145,7 +145,6 @@ public class EvaluationService {
         eval.setFinalizedAt(LocalDateTime.now());
         eval.setMilestoneKey(family.getCurrentMilestone());
 
-        // SDD: InyecciÃƒÂ³n de dimensiÃƒÂ³n tÃƒÂ©cnica para consistencia del Radar Chart
         EvaluationDimensionScore ds = new EvaluationDimensionScore();
         ds.setEvaluation(eval);
         ds.setDimensionName("Integridad");
@@ -156,25 +155,25 @@ public class EvaluationService {
         processPostFinalization(saved);
     }
 
-    /**
-     * Orquestador de lÃƒÂ³gica reactiva post-diagnÃƒÂ³stico.
-     */
     private void processPostFinalization(Evaluation saved) {
-        // 1. SDD: Actualizar Motor de Riesgo (Sentinel)
         riskService.calculateAndCreate(saved.getFamily(), saved.getIcf(), saved.getHasCrisis());
-
-        // 2. SDD: TransiciÃƒÂ³n de Hito Territorial (Armenia-QuindÃƒÂ­o)
         milestoneService.advanceMilestone(saved.getFamily().getId());
 
-        // 3. SDD: Disparo de MensajerÃƒÂ­a AsÃƒÂ­ncrona (RabbitMQ)
-        Map<String, Object> event = new HashMap<>();
-        event.put("evaluationId", saved.getId());
-        event.put("familyId", saved.getFamily().getId());
-        event.put("icf", saved.getIcf());
-        event.put("crisis", saved.getHasCrisis());
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("evaluationId", saved.getId());
+        payload.put("icf", saved.getIcf());
+        payload.put("familyId", saved.getFamily().getId());
 
-        rabbitTemplate.convertAndSend("if.plan.queue", event);
-        log.info("Ã°Å¸â€œÂ§ [EVALUATION] Evento enviado a if.plan.queue (Trigger Plan de IntervenciÃƒÂ³n)");
+        com.integrityfamily.common.event.SystemEvent eventObj = 
+            com.integrityfamily.common.event.SystemEvent.of(
+                "evaluation.completed", 
+                saved.getFamily().getId(), 
+                payload, 
+                "SYSTEM"
+            );
+
+        rabbitTemplate.convertAndSend(com.integrityfamily.common.config.RabbitConfig.EXCHANGE_NAME, "evaluation.completed", eventObj);
+        log.info("📧 [EVALUATION] Evento 'evaluation.completed' enviado para familia: {}", saved.getFamily().getId());
     }
 
     @Transactional
@@ -182,5 +181,3 @@ public class EvaluationService {
         evaluationRepository.deleteById(id);
     }
 }
-
-

@@ -1,0 +1,67 @@
+package com.integrityfamily.analytics.messaging;
+
+import com.integrityfamily.analytics.domain.FamilyDashboardView;
+import com.integrityfamily.analytics.repository.FamilyDashboardViewRepository;
+import com.integrityfamily.common.config.RabbitConfig;
+import com.integrityfamily.common.event.SystemEvent;
+import com.integrityfamily.domain.Family;
+import com.integrityfamily.domain.repository.FamilyRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+
+/**
+ * SDD: Sincronizador del Read Model (Dashboard).
+ * Actualiza la vista desnormalizada ante cualquier evento de dominio.
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AnalyticsEventConsumer {
+
+    private final FamilyDashboardViewRepository viewRepository;
+    private final FamilyRepository familyRepository;
+
+    @RabbitListener(queues = RabbitConfig.ANALYTICS_QUEUE)
+    @Transactional
+    public void handleSystemEvent(SystemEvent event) {
+        log.info("📊 [ANALYTICS-SYNC] Actualizando Read Model para familia: {} -> Evento: {}", 
+                 event.familyId(), event.routingKey());
+
+        FamilyDashboardView view = viewRepository.findById(event.familyId())
+                .orElseGet(() -> createInitialView(event.familyId()));
+
+        switch (event.routingKey()) {
+            case "evaluation.completed":
+                view.setLatestIcf(BigDecimal.valueOf((Double) event.payload()));
+                break;
+            case "members.updated":
+                // Lógica de conteo de miembros (simplificada por ahora)
+                view.setTotalMembers(view.getTotalMembers() + 1);
+                break;
+            // Otros casos: plan.created, task.completed, crisis.reported...
+        }
+
+        viewRepository.save(view);
+    }
+
+    private FamilyDashboardView createInitialView(Long familyId) {
+        Family f = familyRepository.findById(familyId).orElseThrow();
+        return FamilyDashboardView.builder()
+                .familyId(familyId)
+                .familyName(f.getName())
+                .familyCode(f.getFamilyCode())
+                .latestIcf(BigDecimal.ZERO)
+                .totalMembers(0L)
+                .tasksCompleted(0L)
+                .tasksTotal(0L)
+                .adherencePercentage(0.0)
+                .openCrisesCount(0L)
+                .learningEntriesCount(0L)
+                .build();
+    }
+}

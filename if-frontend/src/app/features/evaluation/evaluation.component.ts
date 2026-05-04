@@ -57,25 +57,36 @@ export class EvaluationComponent implements OnInit {
     const currentQuestion = this.questions[this.currentIndex];
     this.answers.set(currentQuestion.id, score);
     
+    console.log(`Paso ${this.currentIndex + 1}: Respuesta ${score} guardada.`);
+
     setTimeout(() => {
       if (this.currentIndex < this.questions.length - 1) {
         this.currentIndex++;
       } else {
+        alert('DEBUG: Llegaste al final. Iniciando envío de resultados...');
         this.sendResults();
       }
     }, 400);
   }
 
   sendResults(): void {
+    alert('DEBUG: Entrando a sendResults...');
     this.isFinished = true;
     const answerList = Array.from(this.answers.keys()).map(qId => ({
       questionId: Number(qId),
       answerValue: Number(this.answers.get(qId))
     }));
+    alert(`DEBUG: Enviando ${answerList.length} respuestas al servidor...`);
 
     this.assessmentService.finalizeEvaluation(this.evaluationId, { answers: answerList }).subscribe({
-      next: () => this.router.navigate(['/plans']),
-      error: (err: any) => console.error('Error al finalizar:', err)
+      next: () => {
+        console.log('✅ Evaluación finalizada. Redirigiendo...');
+        this.router.navigate(['/plans']);
+      },
+      error: (err: any) => {
+        console.error('❌ Error al finalizar:', err);
+        alert('Error al finalizar el diagnóstico: ' + (err.error?.message || err.message));
+      }
     });
   }
 

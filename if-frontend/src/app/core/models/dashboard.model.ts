@@ -32,4 +32,6 @@ export interface DashboardDTO {
   readyToAdvance: boolean;
   awarenessGrowth: number;
   totalEvaluations: number;
+  openLogbookEntriesCount?: number;
+  latestFamilyAgreement?: string;
 }

@@ -60,23 +60,22 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex, HttpServletRequest request) {
         String path = request.getRequestURI();
         
-        // Ã°Å¸â€Â¥ CRÃƒÂTICO: excluir Actuator completamente
+        // 🔥 CRÍTICO: excluir Actuator completamente
         if (path.startsWith("/actuator")) {
             log.error("Actuator Error at {}: {}", path, ex.getMessage());
-            throw new RuntimeException(ex); // Dejar que Spring maneje Actuator nativamente
+            throw new RuntimeException(ex);
         }
 
-        log.error("Unhandled Exception at {}: {}", path, ex.getMessage(), ex);
+        log.error("Unhandled Exception at {}: {} - {}", path, ex.getClass().getName(), ex.getMessage(), ex);
         
         ErrorResponse error = new ErrorResponse();
         error.setSuccess(false);
         error.setCode("INTERNAL_SERVER_ERROR");
-        error.setMessage("Un error inesperado ha ocurrido");
-        error.setPath(request.getRequestURI());
+        error.setMessage("Error interno en el Nodo Armenia: " + ex.getMessage());
+        error.setPath(path);
         error.setTimestamp(LocalDateTime.now().toString());
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 }
-
 

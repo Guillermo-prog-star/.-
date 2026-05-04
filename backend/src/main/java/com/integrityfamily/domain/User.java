@@ -13,6 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class User {
 
     @Id
@@ -21,6 +22,7 @@ public class User {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "family_id", nullable = true)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Family family;
 
     @Column(nullable = false, unique = true, length = 180)

@@ -6,6 +6,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * SDD: Entidad de Evaluación.
+ * Refactorizada para evitar fallas de serialización en el inicio del diagnóstico.
+ */
 @Entity
 @Table(name = "evaluations")
 @Getter
@@ -21,10 +25,12 @@ public class Evaluation {
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "family_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Family family;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private FamilyMember member;
 
     @Enumerated(EnumType.STRING)
@@ -47,10 +53,12 @@ public class Evaluation {
 
     @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<EvaluationAnswer> answers = new ArrayList<>();
 
     @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<EvaluationDimensionScore> dimensionScores = new ArrayList<>();
 
     @PrePersist

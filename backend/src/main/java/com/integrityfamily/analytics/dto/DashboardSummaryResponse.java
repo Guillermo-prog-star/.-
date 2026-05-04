@@ -33,7 +33,9 @@ public record DashboardSummaryResponse(
                 Double awarenessGrowth,
                 Map<String, Double> dimensionScores,
                 List<SuggestedActionDto> suggestedActions,
-                String aiRecommendation) {
+                String aiRecommendation,
+                Long openLogbookEntriesCount,
+                String latestFamilyAgreement) {
 }
 
 

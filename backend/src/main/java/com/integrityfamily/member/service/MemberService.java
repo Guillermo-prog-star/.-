@@ -7,8 +7,11 @@ import com.integrityfamily.domain.Role;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.member.dto.MemberRequest;
 import com.integrityfamily.domain.repository.MemberRepository;
+import com.integrityfamily.common.config.RabbitConfig;
+import com.integrityfamily.common.event.SystemEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +25,7 @@ public class MemberService {
 
     private final MemberRepository memberRepository;
     private final FamilyRepository familyRepository;
+    private final RabbitTemplate rabbitTemplate;
 
     public List<FamilyMember> findAll() {
         return memberRepository.findAll();
@@ -70,7 +74,19 @@ public class MemberService {
         member.setFamily(family);
 
         FamilyMember saved = memberRepository.save(member);
-        log.info("[MEMBER-SERVICE] Miembro {} guardado con ID {}", saved.getFullName(), saved.getId());
+        
+        // SDD-EVENT: Disparo de evento 'members.updated'
+        try {
+            rabbitTemplate.convertAndSend(
+                RabbitConfig.EXCHANGE_NAME, 
+                "members.updated", 
+                SystemEvent.of("members.updated", familyId, saved.getFullName(), "SYSTEM")
+            );
+            log.info("[MEMBER-EVENT] Evento members.updated enviado para: {}", saved.getFullName());
+        } catch (Exception e) {
+            log.error("[MEMBER-EVENT] Error al enviar evento: {}", e.getMessage());
+        }
+
         return saved;
     }
 

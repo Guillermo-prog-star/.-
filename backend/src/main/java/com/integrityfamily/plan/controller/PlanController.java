@@ -1,7 +1,7 @@
 package com.integrityfamily.plan.controller;
 
 import com.integrityfamily.common.dto.ApiResponse;
-import com.integrityfamily.domain.Plan;
+import com.integrityfamily.domain.ImprovementPlan;
 import com.integrityfamily.domain.PlanTask;
 import com.integrityfamily.plan.service.PlanService;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * SDD: Controlador de Planes de Transformación Familiar.
+ * Refactorizado para usar la arquitectura de ImprovementPlan e Hitos.
+ */
 @RestController
 @RequestMapping("/api/plans")
 @RequiredArgsConstructor
@@ -17,31 +21,28 @@ public class PlanController {
 
     private final PlanService planService;
 
-    // Ã¢â€â‚¬Ã¢â€â‚¬ Planes Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
-
     @GetMapping
-    public ApiResponse<List<Plan>> getAllPlans() {
+    public ApiResponse<List<ImprovementPlan>> getAllPlans() {
         return ApiResponse.ok(planService.findAllPlans());
     }
 
-    /** Endpoint que usa el frontend: GET /api/plans/family/{familyId} */
     @GetMapping("/family/{familyId}")
-    public ApiResponse<List<Plan>> getPlansByFamily(@PathVariable Long familyId) {
+    public ApiResponse<List<ImprovementPlan>> getPlansByFamily(@PathVariable Long familyId) {
         return ApiResponse.ok(planService.findByFamilyId(familyId));
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<Plan> getPlanById(@PathVariable Long id) {
+    public ApiResponse<ImprovementPlan> getPlanById(@PathVariable Long id) {
         return ApiResponse.ok(planService.findPlanById(id));
     }
 
     @PostMapping
-    public ApiResponse<Plan> createPlan(@RequestBody Plan plan) {
+    public ApiResponse<ImprovementPlan> createPlan(@RequestBody ImprovementPlan plan) {
         return ApiResponse.ok(planService.createPlan(plan));
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<Plan> updatePlan(@PathVariable Long id, @RequestBody Plan plan) {
+    public ApiResponse<ImprovementPlan> updatePlan(@PathVariable Long id, @RequestBody ImprovementPlan plan) {
         return ApiResponse.ok(planService.updatePlan(id, plan));
     }
 
@@ -51,7 +52,7 @@ public class PlanController {
         return ApiResponse.ok(null);
     }
 
-    // Ã¢â€â‚¬Ã¢â€â‚¬ Tareas Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+    // --- Tareas ---
 
     @GetMapping("/tasks")
     public ApiResponse<List<PlanTask>> getAllTasks() {
@@ -73,7 +74,6 @@ public class PlanController {
         return ApiResponse.ok(planService.updateTask(id, task));
     }
 
-    /** Endpoint que usa el frontend: PUT /api/plans/tasks/{taskId}/complete */
     @PutMapping("/tasks/{id}/complete")
     public ApiResponse<PlanTask> completeTask(
             @PathVariable Long id,
@@ -88,5 +88,3 @@ public class PlanController {
         return ApiResponse.ok(null);
     }
 }
-
-

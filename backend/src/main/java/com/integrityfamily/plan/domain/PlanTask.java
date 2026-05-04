@@ -1,2 +1,1 @@
-/* DUPLICATED - USE com.integrityfamily.domain.PlanTask */
-// package com.integrityfamily.plan.domain;
+// DEPRECATED: Neutralizado para SDD v6.39 - Use com.integrityfamily.domain.PlanTask

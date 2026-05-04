@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.transaction.annotation.Transactional;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,7 @@ public class FamilyController {
     private final FamilyService familyService;
 
     @GetMapping
+    @Transactional(readOnly = true)
     public ApiResponse<List<Family>> getAll() {
         return ApiResponse.ok(familyService.findAll());
     }
@@ -32,6 +34,7 @@ public class FamilyController {
      * GET /api/families/mine — Retorna la familia del usuario autenticado.
      */
     @GetMapping("/mine")
+    @Transactional(readOnly = true)
     public ApiResponse<Family> getMyFamily(Principal principal) {
         if (principal == null) {
             throw new BusinessException("No autenticado", "UNAUTHORIZED", HttpStatus.UNAUTHORIZED);

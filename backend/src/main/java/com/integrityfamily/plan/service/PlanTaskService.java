@@ -1,9 +1,9 @@
 package com.integrityfamily.plan.service;
 
 import com.integrityfamily.domain.repository.FamilyRepository;
-import com.integrityfamily.domain.Plan;
+import com.integrityfamily.domain.ImprovementPlan;
 import com.integrityfamily.domain.PlanTask;
-import com.integrityfamily.domain.repository.PlanRepository;
+import com.integrityfamily.domain.repository.ImprovementPlanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -12,46 +12,45 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * SDD SPEC: Motor de EjecuciÃƒÂ³n de Planes.
- * Sincronizado con los campos de dominio para eliminar fallas de compilaciÃƒÂ³n.
+ * SDD SPEC: Motor de Ejecución de Planes Harmonizado.
+ * Refactorizado para usar ImprovementPlan y la estructura de dominio centralizada.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PlanTaskService {
 
-    private final PlanRepository planRepository;
+    private final ImprovementPlanRepository planRepository;
     private final FamilyRepository familyRepository;
 
     @Transactional
     public void createTasksFromAi(Long familyId, List<String> tasks) {
-        log.info("Ã°Å¸â€œÂ [PLAN-TASK] Iniciando persistencia de {} tareas para familia ID: {}", tasks.size(), familyId);
+        log.info("📌 [PLAN-TASK] Iniciando persistencia de {} tareas para familia ID: {}", tasks.size(), familyId);
 
-        Plan plan = planRepository.findFirstByFamilyIdOrderByCreatedAtDesc(familyId)
+        ImprovementPlan plan = planRepository.findByFamilyId(familyId).stream()
+                .findFirst()
                 .orElseGet(() -> createDefaultPlan(familyId));
 
         tasks.forEach(taskDescription -> {
             PlanTask task = PlanTask.builder()
-                    .title("MisiÃƒÂ³n Sugerida por IA") // Requerido por @Column(nullable = false)
+                    .title("Misión Sugerida por IA")
                     .description(taskDescription)
-                    .completed(false) // SDD FIX: Sincronizado con el campo 'completed' de PlanTask
+                    .completed(false)
                     .plan(plan)
                     .build();
             plan.getTasks().add(task);
         });
 
         planRepository.save(plan);
-        log.info("Ã¢Å“â€¦ [PLAN-TASK] SincronizaciÃƒÂ³n exitosa.");
+        log.info("✅ [PLAN-TASK] Sincronización exitosa.");
     }
 
-    private Plan createDefaultPlan(Long familyId) {
-        log.info("Ã°Å¸â€ â€¢ [PLAN-TASK] Generando Plan Sentinel base.");
-        return Plan.builder()
+    private ImprovementPlan createDefaultPlan(Long familyId) {
+        log.info("🆕 [PLAN-TASK] Generando ImprovementPlan base.");
+        return ImprovementPlan.builder()
                 .family(familyRepository.getReferenceById(familyId))
                 .title("Estrategia de Integridad Familiar")
-                .description("Generado automÃƒÂ¡ticamente por el motor Sentinel.")
+                .description("Generado automáticamente por el motor Sentinel.")
                 .build();
     }
 }
-
-

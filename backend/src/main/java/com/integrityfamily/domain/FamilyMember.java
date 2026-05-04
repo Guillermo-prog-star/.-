@@ -1,12 +1,15 @@
 package com.integrityfamily.domain;
 
-// Sincronización de dominio centralizado
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * SDD: Entidad de Miembro de Familia.
+ * Refactorizada para evitar LazyInitializationException en serialización.
+ */
 @Entity
 @Table(name = "family_members")
 @Getter
@@ -14,6 +17,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class FamilyMember {
 
     @Id
@@ -22,6 +26,7 @@ public class FamilyMember {
 
     @Builder.Default
     @OneToMany(mappedBy = "responsible", cascade = CascadeType.ALL)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private List<PlanTask> tasks = new ArrayList<>();
 
     @Column(name = "full_name", nullable = false)
@@ -54,15 +59,16 @@ public class FamilyMember {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "family_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Family family;
 
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "user_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private User user;
 
     @Column(name = "joined_at")
     private LocalDateTime joinedAt;
-
 
     @PrePersist
     public void prePersist() {
@@ -71,5 +77,3 @@ public class FamilyMember {
         }
     }
 }
-
-

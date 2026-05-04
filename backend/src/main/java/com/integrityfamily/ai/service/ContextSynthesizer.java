@@ -1,11 +1,12 @@
 package com.integrityfamily.ai.service;
 
 import com.integrityfamily.ai.dto.AiContext;
+import com.integrityfamily.domain.ChatMessage;
 import com.integrityfamily.domain.repository.ChatMessageRepository;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.RiskSnapshot;
 import com.integrityfamily.domain.repository.RiskSnapshotRepository;
-import com.integrityfamily.domain.repository.PlanRepository;
+import com.integrityfamily.domain.repository.ImprovementPlanRepository;
 import com.integrityfamily.domain.repository.EvaluationRepository;
 import com.integrityfamily.domain.Evaluation;
 import com.integrityfamily.domain.EvaluationStatus;
@@ -20,8 +21,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * SDD-AI-03.2: Enhanced Context Synthesizer.
- * Injects temporal trends, nodal composition, and conversational memory.
+ * SDD-AI-03.2: Sintetizador de Contexto Harmonizado.
  */
 @Service
 @Slf4j
@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
 public class ContextSynthesizer {
 
     private final RiskSnapshotRepository riskRepo;
-    private final PlanRepository planRepo;
+    private final ImprovementPlanRepository planRepo;
     private final EvaluationRepository evalRepo;
     private final ChatMessageRepository chatRepo;
 
@@ -39,7 +39,7 @@ public class ContextSynthesizer {
 
     @Transactional(readOnly = true)
     public AiContext synthesize(Family family, String sentiment) {
-        log.debug("Synthesizing memory-enhanced context for family: {}", family.getId());
+        log.debug("Synthesizing context for family: {}", family.getId());
 
         List<RiskSnapshot> riskHistory = riskRepo.findByFamilyIdOrderByCreatedAtDesc(family.getId());
         Optional<Evaluation> latestEval = evalRepo.findTopByFamilyIdAndStatusOrderByFinalizedAtDesc(
@@ -68,7 +68,7 @@ public class ContextSynthesizer {
     private List<AiContext.MemberNode> buildMemberNodes(Family family) {
         return family.getMembers().stream()
                 .filter(m -> m.isActive())
-                .map(m -> new AiContext.MemberNode(m.getFirstName(), m.getRole()))
+                .map(m -> new AiContext.MemberNode(m.getFullName(), m.getRole()))
                 .toList();
     }
 
@@ -82,22 +82,15 @@ public class ContextSynthesizer {
             return new AiContext.TrendAnalysis(0.0, 0.0, 0.0);
         }
 
-        // SDD-TREND-01: BÃƒÂºsqueda del punto de comparaciÃƒÂ³n significativo (Lookback Window)
-        // Evitamos comparar con evaluaciones de hace menos de 24h para reducir el ruido.
         RiskSnapshot significantPrevious = history.stream()
-                .skip(1) // Saltar el actual
+                .skip(1)
                 .filter(rs -> java.time.Duration.between(rs.getCreatedAt(), current.getCreatedAt()).toHours() >= 24)
                 .findFirst()
-                .orElse(history.get(1)); // Fallback al inmediatamente anterior si no hay mÃƒÂ¡s
+                .orElse(history.get(1));
 
         double delta = current.getIcf() - significantPrevious.getIcf();
-        
-        // CÃƒÂ¡lculo de Velocidad (Puntos por dÃƒÂ­a)
         long daysBetween = java.time.Duration.between(significantPrevious.getCreatedAt(), current.getCreatedAt()).toDays();
         double velocity = (daysBetween > 0) ? delta / daysBetween : delta;
-
-        log.debug("Trend Analysis: Delta={}, Velocity={} pts/day (Comparison period: {} days)", 
-                delta, velocity, daysBetween);
 
         return new AiContext.TrendAnalysis(significantPrevious.getIcf(), delta, velocity);
     }
@@ -113,22 +106,20 @@ public class ContextSynthesizer {
     }
 
     private List<AiContext.ActiveMission> fetchTopMissions(Long familyId) {
-        return planRepo.findByFamilyIdOrderByCreatedAtDesc(familyId).stream()
+        return planRepo.findByFamilyId(familyId).stream()
                 .flatMap(p -> p.getTasks().stream())
-                .filter(t -> !Boolean.TRUE.equals(t.getCompleted()))
+                .filter(t -> !t.isCompleted())
                 .limit(MISSION_LIMIT)
                 .map(t -> new AiContext.ActiveMission(t.getTitle(), t.getDescription()))
                 .toList();
     }
 
     private List<AiContext.MessageHistory> fetchMessageHistory(Long familyId) {
-        var messages = chatRepo.findByFamilyIdOrderByCreatedAtDesc(familyId, PageRequest.of(0, HISTORY_LIMIT));
-        Collections.reverse(messages); // Orden cronolÃƒÂ³gico para el prompt
-        return messages.stream()
+        List<ChatMessage> messages = chatRepo.findByFamilyIdOrderByCreatedAtDesc(familyId, PageRequest.of(0, HISTORY_LIMIT));
+        List<ChatMessage> messageList = new ArrayList<>(messages);
+        Collections.reverse(messageList); 
+        return messageList.stream()
                 .map(m -> new AiContext.MessageHistory(m.isAi() ? "ASSISTANT" : "USER", m.getContent()))
                 .toList();
     }
 }
-
-
-

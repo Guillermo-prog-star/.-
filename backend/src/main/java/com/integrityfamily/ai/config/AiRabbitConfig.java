@@ -1,21 +1,12 @@
 package com.integrityfamily.ai.config;
 
-import org.springframework.amqp.core.*;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+/**
+ * SDD: Configuración neutralizada para evitar colisión con RabbitConfig centralizado.
+ * Toda la configuración de RabbitMQ para el módulo AI ahora reside en com.integrityfamily.common.config.RabbitConfig
+ */
 @Configuration
 public class AiRabbitConfig {
-    @Bean
-    public Queue aiQueue() { return new Queue("q.ai.inference", true); }
-
-    @Bean
-    public DirectExchange aiExchange() { return new DirectExchange("x.ai.events"); }
-
-    @Bean
-    public Binding aiBinding(Queue aiQueue, DirectExchange aiExchange) {
-        return BindingBuilder.bind(aiQueue).to(aiExchange).with("crisis.detected");
-    }
+    // Configuración movida a RabbitConfig para centralización arquitectónica.
 }
-
-

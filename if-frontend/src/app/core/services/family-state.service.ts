@@ -59,6 +59,19 @@ export class FamilyStateService {
 
   private getInitialState(): number {
     const savedId = localStorage.getItem('selectedFamilyId');
-    return savedId ? Number(savedId) : 0;
+    if (savedId) return Number(savedId);
+
+    // [SDD Fallback] Intentar recuperar desde el objeto de usuario si la llave específica no existe
+    const authUserJson = localStorage.getItem('auth_user');
+    if (authUserJson) {
+      try {
+        const user = JSON.parse(authUserJson);
+        return user.familyId || 0;
+      } catch {
+        return 0;
+      }
+    }
+    
+    return 0;
   }
 }

@@ -30,6 +30,7 @@ import { AuthService } from '../../core/services/auth.service';
         <a routerLink="/evaluations/start" class="nav-item" routerLinkActive="active"><span class="icon">◈</span> 3. Diagnóstico</a>
         <a routerLink="/plans" class="nav-item" routerLinkActive="active"><span class="icon">📝</span> 4. Planes</a>
         <a routerLink="/checklist" class="nav-item" routerLinkActive="active"><span class="icon">📸</span> 5. Evidencias</a>
+        <a routerLink="/logbook"   class="nav-item" routerLinkActive="active"><span class="icon">📔</span> 6. Bitácora</a>
         
         <div class="divider"></div>
         <a routerLink="/chat"   class="nav-item" routerLinkActive="active"><span class="icon">✨</span> Consultor IA</a>

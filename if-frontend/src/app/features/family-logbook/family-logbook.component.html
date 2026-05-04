@@ -1,0 +1,137 @@
+<section class="logbook-page">
+  <header class="logbook-header">
+    <div>
+      <h1>Bitácora Familiar</h1>
+      <p>
+        Registrar situaciones, comprender dificultades, corregir acuerdos
+        y evidenciar avances reales.
+      </p>
+    </div>
+  </header>
+
+  <div class="error" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <section class="card">
+    <h2>Nueva entrada</h2>
+
+    <div class="form-group">
+      <label>Situación vivida</label>
+      <textarea [(ngModel)]="form.situation"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Dificultad o error detectado</label>
+      <textarea [(ngModel)]="form.difficultyDetected"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Emoción identificada</label>
+      <input [(ngModel)]="form.emotionIdentified" />
+    </div>
+
+    <div class="form-group">
+      <label>Qué entendimos</label>
+      <textarea [(ngModel)]="form.understanding"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Qué corregimos</label>
+      <textarea [(ngModel)]="form.correctionAction"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Acuerdo familiar</label>
+      <textarea [(ngModel)]="form.familyAgreement"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Registrado por</label>
+      <input [(ngModel)]="form.createdBy" placeholder="Padre, madre, hijo, hija..." />
+    </div>
+
+    <button class="btn-primary" (click)="createEntry()" [disabled]="loading">
+      Guardar aprendizaje
+    </button>
+  </section>
+
+  <section class="toolbar">
+    <div class="filter-group">
+      <label>Filtrar:</label>
+      <select [(ngModel)]="statusFilter" (change)="loadEntries()">
+        <option value="ALL">Todas</option>
+        <option value="OPEN">Abiertas</option>
+        <option value="RESOLVED">Resueltas</option>
+      </select>
+    </div>
+  </section>
+
+  <section class="entries">
+    <div *ngIf="loading" class="loading-state">Cargando bitácora...</div>
+    <div *ngIf="!loading && entries.length === 0" class="empty-state">No hay entradas registradas.</div>
+
+    <article class="entry-card" *ngFor="let entry of entries">
+      <div class="entry-top">
+        <span class="status-badge" [class.status-open]="entry.status === 'OPEN'" [class.status-resolved]="entry.status === 'RESOLVED'">
+          {{ entry.status === 'OPEN' ? 'Abierta' : 'Resuelta' }}
+        </span>
+        <span class="entry-date">{{ entry.createdAt | date:'medium' }}</span>
+      </div>
+
+      <div class="entry-content">
+        <div class="content-section">
+          <h3>Situación</h3>
+          <p>{{ entry.situation }}</p>
+        </div>
+
+        <div class="content-section">
+          <h3>Dificultad detectada</h3>
+          <p>{{ entry.difficultyDetected }}</p>
+        </div>
+
+        <div class="content-section">
+          <h3>Emoción</h3>
+          <p>{{ entry.emotionIdentified }}</p>
+        </div>
+
+        <div class="content-section">
+          <h3>Comprensión</h3>
+          <p>{{ entry.understanding }}</p>
+        </div>
+
+        <div class="content-section">
+          <h3>Corrección</h3>
+          <p>{{ entry.correctionAction }}</p>
+        </div>
+
+        <div class="content-section">
+          <h3>Acuerdo familiar</h3>
+          <p>{{ entry.familyAgreement }}</p>
+        </div>
+
+        <div *ngIf="entry.status === 'RESOLVED'" class="content-section resolved-section">
+          <h3>Evidencia de avance</h3>
+          <p>{{ entry.progressEvidence }}</p>
+          <div class="resolved-info">
+            <span>Resuelto por: {{ entry.resolvedBy }}</span>
+            <span *ngIf="entry.resolvedAt"> - {{ entry.resolvedAt | date:'medium' }}</span>
+          </div>
+        </div>
+
+        <div class="resolve-box" *ngIf="entry.status === 'OPEN'">
+          <label>Evidencia de avance</label>
+          <textarea [(ngModel)]="resolveEvidence[entry.id]" placeholder="Describe el avance logrado..."></textarea>
+
+          <button class="btn-resolve" (click)="resolveEntry(entry)" [disabled]="loading">
+            Cerrar con evidencia
+          </button>
+        </div>
+      </div>
+      
+      <div class="entry-footer">
+        <span>Registrado por: {{ entry.createdBy }}</span>
+      </div>
+    </article>
+  </section>
+</section>

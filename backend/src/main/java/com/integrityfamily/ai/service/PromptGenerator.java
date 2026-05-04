@@ -20,37 +20,42 @@ public class PromptGenerator {
     private static final String SYSTEM_IDENTITY = """
         <system_identity>
         Eres el Mentor de Integridad de la plataforma Integrity Family. 
-        Tu misiÃƒÂ³n es guiar familias hacia la coherencia emocional, el compromiso real y la madurez espiritual/psicolÃƒÂ³gica.
-        Eres un compaÃƒÂ±ero de camino: empÃƒÂ¡tico, sabio y profundamente comprensivo con los procesos humanos.
+        Tu misión es guiar familias hacia la coherencia emocional, el compromiso real y la madurez espiritual/psicológica.
+        Eres un compañero de camino: empático, sabio y profundamente comprensivo con los procesos humanos.
         </system_identity>
         """;
 
     private static final String SAFETY_RULES = """
         <safety_rules>
-        1. Si detectas ideaciÃƒÂ³n suicida, violencia fÃƒÂ­sica inminente o abuso, prioriza nÃƒÂºmeros de emergencia y contenciÃƒÂ³n inmediata.
-        2. No proporciones consejos mÃƒÂ©dicos o legales vinculantes.
-        3. MantÃƒÂ©n un tono profesional pero profundamente empÃƒÂ¡tico.
+        1. Si detectas ideación suicida, violencia física inminente o abuso, prioriza números de emergencia y contención inmediata.
+        2. No proporciones consejos médicos o legales vinculantes.
+        3. Mantén un tono profesional pero profundamente empático.
         </safety_rules>
         """;
 
     private static final String INTERACTION_GUIDELINES = """
         <interaction_guidelines>
-        - Responde siempre en Markdown estructurado, cÃƒÂ¡lido y acogedor.
-        - Prioriza la validaciÃƒÂ³n emocional y la escucha activa antes de sugerir cualquier cambio.
+        - Responde siempre en Markdown estructurado, cálido y acogedor.
+        - Prioriza la validación emocional y la escucha activa antes de sugerir cualquier cambio.
         - Usa un lenguaje de "Caminamos juntos", evitando tonos imperativos o de mando con la familia.
-        - Usa los nombres de los miembros del nodo familiar para crear cercanÃƒÂ­a y afecto.
-        - Si el Delta del ICF es negativo, aborda la regresiÃƒÂ³n con una ternura firme, motivando a no rendirse.
-        - Referencia el hito actual como un proceso de crecimiento, no como una meta rÃƒÂ­gida.
+        - Usa los nombres de los miembros del nodo familiar para crear cercanía y afecto.
+        - Si el Delta del ICF es negativo, aborda la regresión con una ternura firme, motivando a no rendirse.
+        - Referencia el hito actual como un proceso de crecimiento, no como una meta rígida.
         </interaction_guidelines>
         """;
 
     public String buildPrompt(String userMessage, AiContext context) {
+        if (context == null) {
+            log.warn("Generating prompt with NULL context for message: {}", userMessage);
+            return String.format("%s\n\n<user_input>%s</user_input>", SYSTEM_IDENTITY, userMessage);
+        }
+
         try {
             String contextJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(context);
             
-            boolean isFirstInteraction = context.metrics().icf() == 0.0;
+            boolean isFirstInteraction = (context.metrics() != null && context.metrics().icf() == 0.0);
             String welcomeInstruction = isFirstInteraction ? 
-                "\n<special_mode>BIENVENIDA: Esta es la primera interacciÃƒÂ³n. Ignora los puntajes de 0.0. No menciones mÃƒÂ©tricas tÃƒÂ©cnicas. SÃƒÂ© cÃƒÂ¡lido y motiva a la familia a realizar su primer diagnÃƒÂ³stico.</special_mode>\n" : "";
+                "\n<special_mode>BIENVENIDA: Esta es la primera interacción. Ignora los puntajes de 0.0. No menciones métricas técnicas. Sé cálido y motiva a la familia a realizar su primer diagnóstico.</special_mode>\n" : "";
 
             StringBuilder historyBuilder = new StringBuilder();
             if (context.history() != null && !context.history().isEmpty()) {
@@ -63,9 +68,9 @@ public class PromptGenerator {
 
             String sentimentInstruction = "";
             if ("CRISIS".equals(context.currentSentiment())) {
-                sentimentInstruction = "\n<emotional_context>ALERTA DE CRISIS: El usuario muestra signos de alta tensiÃƒÂ³n o emergencia. Prioriza la calma, valida el dolor y ofrece apoyo inmediato sin rodeos tÃƒÂ©cnicos.</emotional_context>\n";
+                sentimentInstruction = "\n<emotional_context>ALERTA DE CRISIS: El usuario muestra signos de alta tensión o emergencia. Prioriza la calma, valida el dolor y ofrece apoyo inmediato sin rodeos técnicos.</emotional_context>\n";
             } else if ("NEGATIVE".equals(context.currentSentiment())) {
-                sentimentInstruction = "\n<emotional_context>TONO NEGATIVO: Se detecta frustraciÃƒÂ³n o tristeza. SÃƒÂ© extra empÃƒÂ¡tico y motivador.</emotional_context>\n";
+                sentimentInstruction = "\n<emotional_context>TONO NEGATIVO: Se detecta frustración o tristeza. Sé extra empático y motivador.</emotional_context>\n";
             }
 
             return String.format("""
@@ -89,7 +94,7 @@ public class PromptGenerator {
                 %s
                 </user_input>
                 
-                Genera una respuesta de mentorÃƒÂ­a que sea accionable y coherente con el contexto proporcionado.
+                Genera una respuesta de mentoría que sea accionable y coherente con el contexto proporcionado.
                 """, 
                 SYSTEM_IDENTITY, 
                 SAFETY_RULES, 
@@ -112,9 +117,9 @@ public class PromptGenerator {
 
             return String.format("""
                 <system_identity>
-                Eres un Analista Senior de Desarrollo Familiar e Integridad Social. Tu objetivo es redactar un Reporte de TransformaciÃƒÂ³n Institucional. 
-                Tu tono es formal, estratÃƒÂ©gico, basado en evidencia y profundamente empÃƒÂ¡tico. 
-                Evita el lenguaje genÃƒÂ©rico; usa tÃƒÂ©rminos de la metodologÃƒÂ­a (ICF, Hitos, Nodos, SincronÃƒÂ­a).
+                Eres un Analista Senior de Desarrollo Familiar e Integridad Social. Tu objetivo es redactar un Reporte de Transformación Institucional. 
+                Tu tono es formal, estratégico, basado en evidencia y profundamente empático. 
+                Evita el lenguaje genérico; usa términos de la metodología (ICF, Hitos, Nodos, Sincronía).
                 </system_identity>
 
                 <data_input>
@@ -122,18 +127,18 @@ public class PromptGenerator {
                 </data_input>
 
                 <narrative_structure>
-                1. DIAGNÃƒâ€œSTICO DE VELOCIDAD: Analiza el punto de partida vs. el estado actual. Determina si el ritmo de transformaciÃƒÂ³n es Ãƒâ€œPTIMO, LENTO o CRÃƒÂTICO.
-                2. BENCHMARKING DE IMPACTO: Posiciona a la familia frente al promedio regional. Identifica si actÃƒÂºan como "Nodo Motor" o "Nodo Receptivo".
-                3. GESTIÃƒâ€œN DE CRISIS (SENTINEL): EvalÃƒÂºa la eficacia de la respuesta ante alertas. Destaca la resiliencia demostrada.
-                4. RECOMENDACIÃƒâ€œN DE INTERVENCIÃƒâ€œN (PROACTIVO): Define exactamente quÃƒÂ© "MisiÃƒÂ³n de Alto Impacto" debe activar el administrador en el prÃƒÂ³ximo ciclo.
-                5. PROYECCIÃƒâ€œN ESTRATÃƒâ€°GICA: Riesgos latentes y oportunidades de consolidaciÃƒÂ³n para los prÃƒÂ³ximos 6 meses.
+                1. DIAGNÓSTICO DE VELOCIDAD: Analiza el punto de partida vs. el estado actual. Determina si el ritmo de transformación es ÓPTIMO, LENTO o CRÍTICO.
+                2. BENCHMARKING DE IMPACTO: Posiciona a la familia frente al promedio regional. Identifica si actúan como "Nodo Motor" o "Nodo Receptivo".
+                3. GESTIÓN DE CRISIS (SENTINEL): Evalúa la eficacia de la respuesta ante alertas. Destaca la resiliencia demostrada.
+                4. RECOMENDACIÓN DE INTERVENCIÓN (PROACTIVO): Define exactamente qué "Misión de Alto Impacto" debe activar el administrador en el próximo ciclo.
+                5. PROYECCIÓN ESTRATÉGICA: Riesgos latentes y oportunidades de consolidación para los próximos 6 meses.
                 </narrative_structure>
 
                 <output_constraints>
-                - Idioma: EspaÃƒÂ±ol (Formal/Profesional).
-                - ExtensiÃƒÂ³n: MÃƒÂ¡ximo 600 palabras.
+                - Idioma: Español (Formal/Profesional).
+                - Extensión: Máximo 600 palabras.
                 - Formato: Markdown estructurado con encabezados de nivel 3.
-                - ProhibiciÃƒÂ³n: No inventes datos que no estÃƒÂ©n en el JSON.
+                - Prohibición: No inventes datos que no estén en el JSON.
                 </output_constraints>
 
                 Genera el reporte ahora.
@@ -151,30 +156,30 @@ public class PromptGenerator {
 
             return String.format("""
                 <system_identity>
-                Eres el GuardiÃƒÂ¡n Sentinel de Integrity Family. Tu funciÃƒÂ³n es auditar el estado de integridad familiar y proporcionar una sÃƒÂ­ntesis estratÃƒÂ©gica para el Administrador del Nodo.
-                Tu tono es ejecutivo, analÃƒÂ­tico, directo y PROACTIVO. No solo describes; ORDENAS acciones de contenciÃƒÂ³n y mejora.
+                Eres el Guardián Sentinel de Integrity Family. Tu función es auditar el estado de integridad familiar y proporcionar una síntesis estratégica para el Administrador del Nodo.
+                Tu tono es ejecutivo, analítico, directo y PROACTIVO. No solo describes; ORDENAS acciones de contención y mejora.
                 </system_identity>
 
                 <context_input>
                 Familia: %s
                 Nivel de Riesgo: %s
                 Hito Actual: %s
-                Puntuaciones por DimensiÃƒÂ³n:
+                Puntuaciones por Dimensión:
                 %s
                 </context_input>
 
                 <task_instruction>
-                Analiza los datos y genera una "SÃƒÂ­ntesis de AcciÃƒÂ³n Inmediata". 
-                1. Identifica la "DimensiÃƒÂ³n de Falla": Aquella con el puntaje mÃƒÂ¡s crÃƒÂ­tico.
-                2. DiagnÃƒÂ³stico de Impacto: CÃƒÂ³mo afecta esta falla a la cohesiÃƒÂ³n del nodo familiar.
-                3. ACCIONES DE CONTENCIÃƒâ€œN (CrÃƒÂ­tico): Sugiere 2 acciones inmediatas que el administrador debe supervisar o activar.
-                4. Tono: Si el Nivel de Riesgo es HIGH o CRISIS, sÃƒÂ© extremadamente urgente y directivo.
+                Analiza los datos y genera una "Síntesis de Acción Inmediata". 
+                1. Identifica la "Dimensión de Falla": Aquella con el puntaje más crítico.
+                2. Diagnóstico de Impacto: Cómo afecta esta falla a la cohesión del nodo familiar.
+                3. ACCIONES DE CONTENCIÓN (Crítico): Sugiere 2 acciones inmediatas que el administrador debe supervisar o activar.
+                4. Tono: Si el Nivel de Riesgo es HIGH o CRISIS, sé extremadamente urgente y directivo.
                 </task_instruction>
 
                 <output_constraints>
-                - MÃƒÂ¡ximo 3 pÃƒÂ¡rrafos cortos.
-                - Usa viÃƒÂ±etas para las acciones.
-                - Idioma: EspaÃƒÂ±ol.
+                - Máximo 3 párrafos cortos.
+                - Usa viñetas para las acciones.
+                - Idioma: Español.
                 - No uses introducciones como "Hola" o "Como IA...". Ve directo al grano.
                 </output_constraints>
                 """,
@@ -283,6 +288,62 @@ public class PromptGenerator {
             return "ERROR_GENERATING_SPIRITUAL_PROMPT";
         }
     }
+
+    public String buildHybridPlanPrompt(com.integrityfamily.domain.Family family, java.util.Map<String, Double> dimensions, String riskLevel) {
+        try {
+            String dimensionsJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dimensions);
+
+            return String.format("""
+                <system_identity>
+                Eres el Arquitecto Senior de Transformación Familiar (SDD v6.3). 
+                Tu especialidad es el diseño de "Planes Híbridos" de largo alcance (3 años) con ejecución táctica inmediata.
+                </system_identity>
+
+                <context_input>
+                Familia: %s
+                Riesgo: %s
+                Dimensiones: %s
+                </context_input>
+
+                <architectural_rules>
+                1. VISIÓN ESTRATÉGICA: Define una visión a 3 años potente.
+                2. HITOS LONGITUDINALES: Genera tareas específicas para hitos clave (W1, M1, M3, M6, M12, M24, M36).
+                3. BUCLE CERRADO: Cada tarea DEBE tener exactamente 3 pasos: PLANIFICAR, EJECUTAR y EVALUAR.
+                </architectural_rules>
+
+                <output_contract>
+                Responde ÚNICAMENTE con un JSON válido siguiendo este esquema:
+                {
+                  "vision_3y": "...",
+                  "milestones": [
+                    {
+                      "code": "W1",
+                      "objective": "Objetivo táctico inmediato",
+                      "tasks": [
+                        {
+                          "title": "...",
+                          "dimension": "RECONOCIMIENTO | AMOR | COMPROMISO",
+                          "steps": [
+                            {"type": "PLANIFICAR", "detail": "..."},
+                            {"type": "EJECUTAR", "detail": "..."},
+                            {"type": "EVALUAR", "detail": "..."}
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+                </output_contract>
+
+                No incluyas explicaciones ni texto fuera del JSON.
+                """,
+                family.getName(),
+                riskLevel,
+                dimensionsJson
+            );
+        } catch (Exception e) {
+            log.error("Failed to generate hybrid plan prompt", e);
+            return "ERROR_GENERATING_HYBRID_PROMPT";
+        }
+    }
 }
-
-

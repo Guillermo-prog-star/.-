@@ -2,6 +2,7 @@ package com.integrityfamily.family.controller;
 
 import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.domain.Family;
+import com.integrityfamily.family.dto.FamilyResponse;
 import com.integrityfamily.family.service.FamilyService;
 import com.integrityfamily.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +27,7 @@ public class FamilyController {
 
     @GetMapping
     @Transactional(readOnly = true)
-    public ApiResponse<List<Family>> getAll() {
+    public ApiResponse<List<FamilyResponse>> getAll() {
         return ApiResponse.ok(familyService.findAll());
     }
 
@@ -35,16 +36,16 @@ public class FamilyController {
      */
     @GetMapping("/mine")
     @Transactional(readOnly = true)
-    public ApiResponse<Family> getMyFamily(Principal principal) {
+    public ApiResponse<FamilyResponse> getMyFamily(Principal principal) {
         if (principal == null) {
             throw new BusinessException("No autenticado", "UNAUTHORIZED", HttpStatus.UNAUTHORIZED);
         }
-        Optional<Family> family = familyService.findByCreatorEmail(principal.getName());
+        java.util.Optional<FamilyResponse> family = familyService.findByCreatorEmail(principal.getName());
         return ApiResponse.ok(family.orElse(null), family.isPresent() ? "Familia recuperada" : "Sin familia vinculada");
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<Family> getById(@PathVariable Long id) {
+    public ApiResponse<FamilyResponse> getById(@PathVariable Long id) {
         return ApiResponse.ok(familyService.findById(id));
     }
 
@@ -53,16 +54,16 @@ public class FamilyController {
      */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ApiResponse<Family> createFamily(@RequestBody Family family, Principal principal) {
+    public ApiResponse<FamilyResponse> createFamily(@RequestBody Family family, Principal principal) {
         if (principal == null) {
             throw new BusinessException("No autenticado", "UNAUTHORIZED", HttpStatus.UNAUTHORIZED);
         }
-        Family created = familyService.create(family, principal.getName());
+        FamilyResponse created = familyService.create(family, principal.getName());
         return ApiResponse.ok(created);
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<Family> update(@PathVariable Long id, @RequestBody Family family) {
+    public ApiResponse<FamilyResponse> update(@PathVariable Long id, @RequestBody Family family) {
         return ApiResponse.ok(familyService.update(id, family));
     }
 

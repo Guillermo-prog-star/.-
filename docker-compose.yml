@@ -68,10 +68,11 @@ services:
     networks:
       - if-net
 
-  # Frontend: Acceso nativo por puerto 4200 con proxy interno
+  # Frontend: Entorno de Desarrollo (Hot-Reloading)
   if-frontend:
     build:
       context: ./if-frontend
+      dockerfile: Dockerfile.dev
     container_name: if-frontend
     restart: unless-stopped
     ports:

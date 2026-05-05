@@ -1,207 +1,107 @@
-.plans-container {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-}
-
-.plan-wrapper {
-  transition: var(--transition);
-  border-left: 5px solid #cbd5e1;
-}
-
-.plan-wrapper.ai-generated {
-  border-left: 5px solid var(--accent);
-  background: linear-gradient(to right, rgba(139, 92, 246, 0.03), white);
-}
-
-.plan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 2rem;
-}
-
-.plan-meta {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 0.5rem;
-  align-items: center;
-}
-
-.badge-ai {
-  background: var(--accent);
-  color: white;
-  padding: 0.25rem 0.75rem;
-  border-radius: 6px;
-  font-size: 0.7rem;
-  font-weight: 800;
-  letter-spacing: 0.05em;
-}
-
-.plan-date {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-weight: 600;
-}
-
-.plan-desc {
-  color: var(--text-muted);
-  margin-top: 0.5rem;
-  max-width: 80%;
-}
-
-/* CIRCULAR PROGRESS */
-.plan-progress {
-  width: 80px;
-}
-
-.circular-chart {
-  display: block;
-  margin: 10px auto;
-  max-width: 100%;
-}
-
-.circle-bg { fill: none; stroke: #e2e8f0; stroke-width: 3; }
-.circle-val {
-  fill: none;
-  stroke: var(--success);
-  stroke-width: 3;
-  stroke-linecap: round;
-  transition: stroke-dasharray 1s ease 0s;
-}
-
-.percentage {
-  text-align: center;
-  font-size: 0.9rem;
-  font-weight: 800;
-  margin-top: -5px;
-}
-
-/* MENTOR INSIGHT */
-.mentor-insight {
-  display: flex;
-  gap: 1.5rem;
-  background: rgba(248, 250, 252, 0.8);
-  padding: 2rem;
-  border-radius: 12px;
-  margin-bottom: 2rem;
-  border: 1px dashed #cbd5e1;
-}
-
-.mentor-icon { font-size: 2rem; }
-
-.mentor-text blockquote {
-  font-size: 1.1rem;
-  font-style: italic;
-  color: #334155;
-  margin-bottom: 0.5rem;
-  line-height: 1.6;
-}
-
-.mentor-text cite {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: var(--accent);
-  text-transform: uppercase;
-}
-
-/* MISIONES GRID */
-.misiones-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1.5rem;
-}
-
-.mision-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-height: 180px;
-  transition: var(--transition);
-}
-
-.mision-card:hover {
-  border-color: var(--primary);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-}
-
-.mision-card.is-done {
-  background: rgba(16, 185, 129, 0.05);
-  border-color: var(--success);
-  opacity: 0.8;
-}
-
-.mision-title {
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  color: var(--text-main);
-}
-
-.mision-desc {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  line-height: 1.4;
-}
-
-.badge-dimension {
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 0.2rem 0.6rem;
-  border-radius: 4px;
-  background: #e2e8f0;
-  color: #475569;
-  text-transform: uppercase;
-}
-
-.badge-dimension[data-dimension="EMOCIONES"] { background: #fee2e2; color: #b91c1c; }
-.badge-dimension[data-dimension="COMUNICACION"] { background: #dcfce7; color: #15803d; }
-.badge-dimension[data-dimension="HABITOS"] { background: #fef9c3; color: #a16207; }
-.badge-dimension[data-dimension="TIEMPOS"] { background: #dbeafe; color: #1d4ed8; }
-
-.mision-periodicity {
-  color: var(--accent);
-  font-weight: 700;
-  opacity: 0.8;
-}
-
-.mision-footer {
-  margin-top: 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-top: 1rem;
-  border-top: 1px solid #f1f5f9;
-}
-
-.mision-member {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.check-btn {
-  background: #f1f5f9;
-  border: none;
-  padding: 0.5rem 1rem;
+/* SDD: CLI Terminal Styling para Plan Longitudinal */
+.cli-container {
+  background-color: #0d1117; /* GitHub Dark / Terminal */
+  color: #c9d1d9;
+  font-family: 'Courier New', Courier, monospace;
   border-radius: 8px;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: var(--transition);
+  padding: 1.5rem;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  border: 1px solid #30363d;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.5;
+  font-size: 14px;
+  animation: fadeIn 0.5s ease-in-out;
 }
 
-.check-btn.active {
-  background: var(--success);
-  color: white;
+.cli-header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-.check-btn:hover {
-  filter: brightness(0.95);
+.cli-title {
+  color: #58a6ff;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.cli-status {
+  color: #3fb950;
+  font-size: 0.85rem;
+}
+
+.cli-body {
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.cli-line {
+  margin-bottom: 4px;
+}
+
+.comment { color: #8b949e; }
+.cli-keyword { color: #ff7b72; }
+.text-accent { color: #d2a8ff; font-weight: bold; }
+.text-muted { color: #8b949e; }
+.cli-success { color: #3fb950; font-weight: bold; }
+.cli-warning { color: #d29922; }
+
+/* Tabla Emulada */
+.cli-table-header {
+  display: flex;
+  font-weight: bold;
+  color: #c9d1d9;
+}
+
+.cli-row {
+  display: flex;
+}
+
+.cli-table-divider {
+  color: #30363d;
+  margin: 2px 0;
+}
+
+.col-mes { width: 60px; text-align: right; padding-right: 15px; }
+.col-pilar { width: 150px; }
+.col-fase { width: 230px; }
+.col-estado { width: 200px; }
+
+/* Utilidades */
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mb-24 { margin-bottom: 24px; }
+.pl-16 { padding-left: 16px; }
+.ml-auto { margin-left: auto; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.mr-8 { margin-right: 8px; }
+
+/* Prompt */
+.cli-prompt {
+  font-weight: bold;
+}
+
+.cli-user { color: #79c0ff; }
+.cli-colon { color: #c9d1d9; }
+.cli-path { color: #d2a8ff; }
+.cli-cursor { color: #c9d1d9; margin-left: 5px;}
+.cli-blink {
+  animation: blink 1s step-end infinite;
+  background-color: #c9d1d9;
+  color: transparent;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

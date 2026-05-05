@@ -2,8 +2,11 @@ package com.integrityfamily.plan.service;
 
 import com.integrityfamily.domain.ImprovementPlan;
 import com.integrityfamily.domain.PlanTask;
+import com.integrityfamily.domain.PlanTaskStep;
+import com.integrityfamily.plan.dto.PlanDtos.*;
 import com.integrityfamily.domain.repository.ImprovementPlanRepository;
 import com.integrityfamily.domain.repository.PlanTaskRepository;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -20,64 +23,134 @@ public class PlanService {
     private final ImprovementPlanRepository planRepository;
     private final PlanTaskRepository planTaskRepository;
 
-    public List<ImprovementPlan> findAllPlans() {
-        return planRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<PlanResponse> findAllPlans() {
+        return planRepository.findAll().stream().map(this::toPlanResponse).toList();
     }
 
-    public List<ImprovementPlan> findByFamilyId(Long familyId) {
-        return planRepository.findByFamilyId(familyId);
+    @Transactional(readOnly = true)
+    public List<PlanResponse> findByFamilyId(Long familyId) {
+        return planRepository.findByFamilyId(familyId).stream().map(this::toPlanResponse).toList();
     }
 
-    public ImprovementPlan findPlanById(Long id) {
-        return planRepository.findById(id)
+    @Transactional(readOnly = true)
+    public PlanResponse findPlanById(Long id) {
+        ImprovementPlan plan = planRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + id));
+        return toPlanResponse(plan);
     }
 
-    public ImprovementPlan createPlan(ImprovementPlan plan) {
-        return planRepository.save(plan);
+    @Transactional
+    public PlanResponse createPlan(ImprovementPlan plan) {
+        return toPlanResponse(planRepository.save(plan));
     }
 
-    public ImprovementPlan updatePlan(Long id, ImprovementPlan request) {
-        ImprovementPlan existing = findPlanById(id);
+    @Transactional
+    public PlanResponse updatePlan(Long id, ImprovementPlan request) {
+        ImprovementPlan existing = planRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + id));
         existing.setTitle(request.getTitle());
         existing.setDescription(request.getDescription());
-        return planRepository.save(existing);
+        return toPlanResponse(planRepository.save(existing));
     }
 
+    @Transactional
     public void deletePlan(Long id) {
         planRepository.deleteById(id);
     }
 
     // --- Tareas ---
 
-    public List<PlanTask> findAllTasks() {
-        return planTaskRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<PlanTaskResponse> findAllTasks() {
+        return planTaskRepository.findAll().stream().map(this::toTaskResponse).toList();
     }
 
-    public PlanTask findTaskById(Long id) {
-        return planTaskRepository.findById(id)
+    @Transactional(readOnly = true)
+    public PlanTaskResponse findTaskById(Long id) {
+        PlanTask task = planTaskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tarea no encontrada: " + id));
+        return toTaskResponse(task);
     }
 
-    public PlanTask createTask(PlanTask task) {
-        return planTaskRepository.save(task);
+    @Transactional
+    public PlanTaskResponse createTask(PlanTask task) {
+        return toTaskResponse(planTaskRepository.save(task));
     }
 
-    public PlanTask updateTask(Long id, PlanTask request) {
-        PlanTask existing = findTaskById(id);
+    @Transactional
+    public PlanTaskResponse updateTask(Long id, PlanTask request) {
+        PlanTask existing = planTaskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tarea no encontrada: " + id));
         existing.setTitle(request.getTitle());
         existing.setDescription(request.getDescription());
         existing.setCompleted(request.isCompleted());
-        return planTaskRepository.save(existing);
+        return toTaskResponse(planTaskRepository.save(existing));
     }
 
-    public PlanTask completeTask(Long id, boolean completed) {
-        PlanTask task = findTaskById(id);
+    @Transactional
+    public PlanTaskResponse completeTask(Long id, boolean completed) {
+        PlanTask task = planTaskRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tarea no encontrada: " + id));
         task.setCompleted(completed);
-        return planTaskRepository.save(task);
+        return toTaskResponse(planTaskRepository.save(task));
     }
 
+    @Transactional
     public void deleteTask(Long id) {
         planTaskRepository.deleteById(id);
+    }
+
+    // --- Mappers SDD ---
+
+    private PlanResponse toPlanResponse(ImprovementPlan plan) {
+        if (plan == null) return null;
+        
+        List<PlanTaskResponse> tasks = plan.getTasks() == null ? List.of() :
+                plan.getTasks().stream().map(this::toTaskResponse).toList();
+
+        return PlanResponse.builder()
+                .id(plan.getId())
+                .familyId(plan.getFamily() != null ? plan.getFamily().getId() : null)
+                .evaluationId(plan.getEvaluation() != null ? plan.getEvaluation().getId() : null)
+                .title(plan.getTitle())
+                .description(plan.getDescription())
+                .vision3y(plan.getVision3y())
+                .aiReport(plan.getAiReport())
+                .aiGeneratedAt(plan.getAiGeneratedAt())
+                .tasks(tasks)
+                .build();
+    }
+
+    private PlanTaskResponse toTaskResponse(PlanTask task) {
+        if (task == null) return null;
+
+        List<PlanTaskStepResponse> steps = task.getSteps() == null ? List.of() :
+                task.getSteps().stream().map(this::toStepResponse).toList();
+
+        return PlanTaskResponse.builder()
+                .id(task.getId())
+                .title(task.getTitle())
+                .description(task.getDescription())
+                .dimension(task.getDimension())
+                .dueDate(task.getDueDate())
+                .periodicityMonths(task.getPeriodicityMonths())
+                .milestoneId(task.getMilestone() != null ? task.getMilestone().getId() : null)
+                .milestoneCode(task.getMilestone() != null ? task.getMilestone().getCode() : null)
+                .assignedMemberId(task.getResponsible() != null ? task.getResponsible().getId() : null)
+                .assignedMemberName(task.getResponsible() != null ? task.getResponsible().getFullName() : null)
+                .completed(task.isCompleted())
+                .steps(steps)
+                .build();
+    }
+
+    private PlanTaskStepResponse toStepResponse(PlanTaskStep step) {
+        if (step == null) return null;
+        return PlanTaskStepResponse.builder()
+                .id(step.getId())
+                .type(step.getType() != null ? step.getType().name() : null)
+                .detail(step.getDetail())
+                .completed(step.isCompleted())
+                .build();
     }
 }

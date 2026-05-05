@@ -23,6 +23,7 @@ export class PlanListPageComponent implements OnInit {
   isWaitingForPlan = false;
   
   get familyId() { return this.familyState.currentFamilyId(); }
+  get familyCode() { return localStorage.getItem('selectedFamilyCode') || 'IF-CO-QUI-2026-0001'; }
 
   ngOnInit() { 
     if (this.familyId) {

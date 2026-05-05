@@ -45,7 +45,7 @@ export interface RiskHistory { id: number; evaluationId: number; riskLevel: Risk
 
 // Plan
 export interface PlanTask { id: number; title: string; description: string; assignedMemberId: number|null; assignedMemberName: string|null; completed: boolean; dimension?: string; periodicityMonths?: number; dueDate?: string; }
-export interface Plan { id: number; familyId: number; evaluationId: number; title: string; description: string; aiReport: string|null; aiGeneratedAt: string|null; status: string; tasks: PlanTask[]; }
+export interface Plan { id: number; familyId: number; evaluationId: number; title: string; description: string; aiReport: string|null; aiGeneratedAt: string|null; status: string; vision3y?: string; tasks: PlanTask[]; }
 
 // Checklist
 export interface ChecklistItem { id: number; familyId: number; planId: number|null; planTaskId: number|null; title: string; completed: boolean; }

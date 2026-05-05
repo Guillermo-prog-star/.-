@@ -2,6 +2,9 @@ package com.integrityfamily.family.service;
 
 import com.integrityfamily.domain.User;
 import com.integrityfamily.domain.Family;
+import com.integrityfamily.domain.FamilyMember;
+import com.integrityfamily.family.dto.FamilyMemberResponse;
+import com.integrityfamily.family.dto.FamilyResponse;
 import com.integrityfamily.domain.repository.UserRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.common.exception.BusinessException;
@@ -29,8 +32,8 @@ public class FamilyService {
     }
 
     @Transactional(readOnly = true)
-    public java.util.Optional<Family> findByCreatorEmail(String email) {
-        return familyRepository.findByCreatedBy_Email(email);
+    public java.util.Optional<FamilyResponse> findByCreatorEmail(String email) {
+        return familyRepository.findByCreatedBy_Email(email).map(this::toResponse);
     }
 
     /**
@@ -47,9 +50,10 @@ public class FamilyService {
      * Busca una familia por ID cargando sus miembros de golpe para el Dashboard.
      */
     @Transactional(readOnly = true)
-    public Family findById(Long id) {
-        return familyRepository.findByIdWithMembers(id)
+    public FamilyResponse findById(Long id) {
+        Family family = familyRepository.findByIdWithMembers(id)
                 .orElseThrow(() -> new RuntimeException("Familia con ID " + id + " no encontrada"));
+        return toResponse(family);
     }
 
     /**
@@ -57,7 +61,7 @@ public class FamilyService {
      * Formato requerido: IF-CO-QUI-{YEAR}-{SEQUENCE}
      */
     @Transactional
-    public Family create(Family family, String creatorEmail) {
+    public FamilyResponse create(Family family, String creatorEmail) {
         User creator = userRepository.findByEmail(creatorEmail)
                 .orElseThrow(() -> new BusinessException("Usuario creador no encontrado", "USER_NOT_FOUND", org.springframework.http.HttpStatus.NOT_FOUND));
 
@@ -81,15 +85,16 @@ public class FamilyService {
         creator.setFamily(saved);
         userRepository.saveAndFlush(creator);
         
-        return saved;
+        return toResponse(saved);
     }
 
     /**
      * Actualiza los datos del nÃƒÂºcleo manteniendo la integridad del cÃƒÂ³digo FAM.
      */
     @Transactional
-    public Family update(Long id, Family request) {
-        Family existing = findById(id); // Usa la bÃƒÂºsqueda optimizada
+    public FamilyResponse update(Long id, Family request) {
+        Family existing = familyRepository.findById(id) // Búsqueda directa para actualización
+                .orElseThrow(() -> new RuntimeException("Familia con ID " + id + " no encontrada"));
         
         existing.setName(request.getName());
         existing.setDescription(request.getDescription());
@@ -101,7 +106,7 @@ public class FamilyService {
             existing.setCurrentMilestone(request.getCurrentMilestone());
         }
 
-        return familyRepository.save(existing);
+        return toResponse(familyRepository.save(existing));
     }
 
     @Transactional
@@ -113,8 +118,47 @@ public class FamilyService {
     }
 
     @Transactional(readOnly = true)
-    public List<Family> findAll() {
-        return familyRepository.findAll();
+    public List<FamilyResponse> findAll() {
+        return familyRepository.findAll().stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    /**
+     * Mapea una entidad Family a su DTO de respuesta.
+     */
+    public FamilyResponse toResponse(Family family) {
+        if (family == null) return null;
+
+        List<FamilyMemberResponse> members = family.getMembers() == null ? List.of() :
+                family.getMembers().stream()
+                        .map(this::toMemberResponse)
+                        .toList();
+
+        return FamilyResponse.builder()
+                .id(family.getId())
+                .name(family.getName())
+                .description(family.getDescription())
+                .familyCode(family.getFamilyCode())
+                .currentMilestone(family.getCurrentMilestone())
+                .municipio(family.getMunicipio())
+                .whatsapp(family.getWhatsapp())
+                .sentinelActive(family.getSentinelActive())
+                .members(members)
+                .build();
+    }
+
+    private FamilyMemberResponse toMemberResponse(FamilyMember member) {
+        return FamilyMemberResponse.builder()
+                .id(member.getId())
+                .fullName(member.getFullName())
+                .email(member.getEmail())
+                .role(member.getRole())
+                .age(member.getAge())
+                .active(member.isActive())
+                .autonomyLevel(member.getAutonomyLevel())
+                .responsibilityLevel(member.getResponsibilityLevel())
+                .build();
     }
 }
 

@@ -1,98 +1,108 @@
-<div class="page-header flex-between mb-24">
-  <div>
-    <h1>Misiones de Bienestar</h1>
-    <p class="text-muted">Acciones estratégicas diseñadas para elevar la armonía de tu hogar.</p>
+<div class="cli-container">
+  <div class="cli-header">
+    <div class="cli-title">INTEGRITY_TERMINAL_v4.2</div>
+    <div class="cli-status">CONEXIÓN SEGURA [ESTABLE]</div>
   </div>
-</div>
 
-@if (isWaitingForPlan && plans.length === 0) {
-  <div class="glass-dark p-60 text-center">
-    <div class="mb-24" style="font-size:64px; animation: pulse 2s infinite;">🧠</div>
-    <h2 class="mb-16" style="color:var(--accent);">Estructurando tu Sabiduría Familiar...</h2>
-    <p class="text-muted w-full" style="max-width:500px; margin: 0 auto;">Nuestra IA está analizando los vértices de tu diagnóstico para generar misiones personalizadas.</p>
-  </div>
-} @else if (loading) { 
-  <div class="p-60 text-center">
-    <div class="spinner-premium"></div>
-    <p class="text-muted">Cargando misiones...</p>
-  </div>
-} @else if (plans.length === 0) {
-  <div class="glass-dark p-60 text-center">
-    <div class="mb-24 text-muted" style="font-size:64px; opacity:0.3;">🗺️</div>
-    <h2 class="mb-16">Territorio por Explorar</h2>
-    <p class="text-muted mb-24">Completa un diagnóstico para que la IA trace tu primera ruta de bienestar.</p>
-    <a routerLink="/evaluations/start" class="btn btn-primary">Iniciar evaluación</a>
-  </div>
-} @else {
-  <div class="plans-container" style="animation: fadeIn 0.8s ease-out;">
-    @for (plan of plans; track plan.id) {
-      <div class="glass-card plan-wrapper mb-24" [class.ai-generated]="plan.aiReport">
-        
-        <!-- HEADER DE LA RUTA -->
-        <div class="plan-header">
-          <div class="plan-info">
-            <div class="plan-meta">
-              <span class="badge-ai" *ngIf="plan.aiReport">AI CONSULTANT DESIGNED</span>
-              <span class="plan-date">{{ plan.aiGeneratedAt | date:'mediumDate' }}</span>
-            </div>
-            <h2 class="gradient-text">{{ plan.title }}</h2>
-            <p class="plan-desc">{{ plan.description }}</p>
-          </div>
+  <div class="cli-body">
+    <div class="cli-line comment">*/CÓDIGO FAMILIA ASIGNADO: {{ familyCode }}/*</div>
+    <div class="cli-line comment">*/</div>
+    
+    <div class="cli-line mt-16 comment">*/COMANDOS DISPONIBLES:</div>
+    <div class="cli-line comment">  ─────────────────────────────────────────────────</div>
+    <div class="cli-line"><span class="cli-keyword">  Evaluaciones:</span>  'evaluación inicio' / '3 meses' / '6 meses' /</div>
+    <div class="cli-line">                 '12 meses' / '18 meses' / '24 meses' / '30 meses' / '36 meses'</div>
+    <div class="cli-line"><span class="cli-keyword">  Continuidad:</span>   'práctica semanal'</div>
+    <div class="cli-line"><span class="cli-keyword">  Análisis:</span>      'plan longitudinal' / 'ver ruta' / 'ver perfil'</div>
+    <div class="cli-line"><span class="cli-keyword">  Momentos:</span>      'día crítico' / 'ver días críticos'</div>
+    <div class="cli-line"><span class="cli-keyword">  Seguimiento:</span>   'checklist'  → Ver y marcar actividades completadas</div>
+    <div class="cli-line"><span class="cli-keyword">  Sesión:</span>        'cambiar familia' → volver al menú principal</div>
+    <div class="cli-line comment">  ─────────────────────────────────────────────────*/</div>
 
-          <div class="plan-progress">
-            <div class="circular-progress">
-              <svg viewBox="0 0 36 36" class="circular-chart">
-                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                <path class="circle-val" [attr.stroke-dasharray]="planPct(plan) + ', 100'" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-              </svg>
-              <div class="percentage">{{ planPct(plan) }}%</div>
-            </div>
-          </div>
-        </div>
+    <div class="cli-line mt-24 text-accent">  */🗺️  RUTA DE TRANSFORMACIÓN — 8 PILARES</div>
+    <div class="cli-line text-accent">════════════════════════════════════════════════════════</div>
+    <div class="cli-line cli-table-header">
+      <span class="col-mes">Mes</span>
+      <span class="col-pilar">Pilar</span>
+      <span class="col-fase">Fase</span>
+      <span class="col-estado">Estado</span>
+    </div>
+    <div class="cli-line cli-table-divider">  ────  ─────────────── ──────────────────────  ────────────────────</div>
+    
+    <!-- Renderizado Dinámico de la Ruta -->
+    <div class="cli-line cli-row">
+      <span class="col-mes">  0</span>
+      <span class="col-pilar">📍 Inicio</span>
+      <span class="col-fase">Diagnóstico Base</span>
+      <span class="col-estado cli-success">✅ ICF 85.60% ⚠️ BAJO</span>
+    </div>
+    <div class="cli-line cli-row">
+      <span class="col-mes">  3</span>
+      <span class="col-pilar">🌱 3 Meses</span>
+      <span class="col-fase">Primeros Cambios</span>
+      <span class="col-estado cli-warning">⏳ PRÓXIMO</span>
+    </div>
+    <div class="cli-line cli-row">
+      <span class="col-mes">  6</span>
+      <span class="col-pilar">🌿 6 Meses</span>
+      <span class="col-fase">Consolidación Inicial</span>
+      <span class="col-estado text-muted">⬜ Pendiente</span>
+    </div>
+    <div class="cli-line cli-table-divider text-muted">  ┄┄┄┄  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄</div>
+    <div class="cli-line cli-row text-muted">
+      <span class="col-mes"> 12</span>
+      <span class="col-pilar">🌳 12 Meses</span>
+      <span class="col-fase">Primera Transformación</span>
+      <span class="col-estado">⬜ Pendiente</span>
+    </div>
+    <div class="cli-line cli-row text-muted">
+      <span class="col-mes"> 18</span>
+      <span class="col-pilar">🛡️ 18 Meses</span>
+      <span class="col-fase">Profundización</span>
+      <span class="col-estado">⬜ Pendiente</span>
+    </div>
+    <div class="cli-line cli-table-divider text-muted">  ┄┄┄┄  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄</div>
+    <div class="cli-line cli-row text-muted">
+      <span class="col-mes"> 24</span>
+      <span class="col-pilar">⚙️ 24 Meses</span>
+      <span class="col-fase">Madurez del Sistema</span>
+      <span class="col-estado">⬜ Pendiente</span>
+    </div>
+    <div class="cli-line cli-row text-muted">
+      <span class="col-mes"> 30</span>
+      <span class="col-pilar">⭐ 30 Meses</span>
+      <span class="col-fase">Cierre y Sostenimiento</span>
+      <span class="col-estado">⬜ Pendiente</span>
+    </div>
+    <div class="cli-line cli-table-divider text-muted">  ┄┄┄┄  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄</div>
+    <div class="cli-line cli-row text-muted">
+      <span class="col-mes"> 36</span>
+      <span class="col-pilar">🏆 36 Meses</span>
+      <span class="col-fase">Transformación Completa</span>
+      <span class="col-estado">⬜ Pendiente</span>
+    </div>
 
-        <!-- INSIGHT DEL MENTOR IA -->
-        @if (plan.aiReport) {
-          <div class="mentor-insight">
-            <div class="mentor-icon">✨</div>
-            <div class="mentor-text">
-               <blockquote>"{{ plan.aiReport }}"</blockquote>
-               <cite>— Tu Consultor de Integridad</cite>
-            </div>
+    @if (plans.length > 0) {
+      <div class="cli-line mt-24 text-accent">  */📌  MISIONES ACTIVAS (Generadas por IA)</div>
+      <div class="cli-line text-accent">════════════════════════════════════════════════════════</div>
+      @for (plan of plans; track plan.id) {
+        <div class="cli-line cli-keyword">> {{ plan.title }}</div>
+        <div class="cli-line comment pl-16">Visión: "{{ plan.vision3y || 'N/A' }}"</div>
+        @for (task of plan.tasks; track task.id) {
+          <div class="cli-line pl-16 flex items-center">
+            <span class="mr-8">[{{ task.completed ? 'X' : ' ' }}]</span>
+            <span>{{ task.title }}</span>
+            <span class="ml-auto text-muted">[{{ task.dimension }}]</span>
           </div>
         }
-
-        <!-- GRID DE MISIONES TÁCTICAS -->
-        <div class="misiones-grid">
-          @for (task of plan.tasks; track task.id) {
-            <div class="mision-card" [class.is-done]="task.completed">
-              <div class="mision-body">
-                <div class="mision-header flex-between mb-8">
-                  <h4 class="mision-title">{{ task.title }}</h4>
-                  <span class="badge-dimension" [attr.data-dimension]="task.dimension">{{ task.dimension }}</span>
-                </div>
-                <p class="mision-desc">{{ task.description }}</p>
-                <div class="mision-periodicity mt-8 text-mini" *ngIf="task.dueDate">
-                   📅 Objetivo: {{ task.dueDate | date:'mediumDate' }}
-                </div>
-              </div>
-              
-              <div class="mision-footer">
-                <div class="mision-member">
-                  <span class="avatar-mini">👤</span>
-                  {{ task.assignedMemberName ?? 'Núcleo Familiar' }}
-                </div>
-                
-                <button class="check-btn" 
-                        [class.active]="task.completed"
-                        (click)="toggle(task.id, !task.completed)">
-                  {{ task.completed ? 'Completado ✓' : 'Marcar hito' }}
-                </button>
-              </div>
-            </div>
-          }
-        </div>
-
-      </div>
+        <div class="cli-line"> </div>
+      }
+    } @else {
+      <div class="cli-line mt-24 cli-warning">  [SISTEMA]: No se encontraron misiones activas. Diagnóstico requerido.</div>
     }
+
+    <div class="cli-prompt mt-24">
+      <span class="cli-user">sentinel&#64;if-core</span><span class="cli-colon">:</span><span class="cli-path">~/family/{{ familyId || '0001' }}/plans</span><span class="cli-cursor">$</span> <span class="cli-blink">_</span>
+    </div>
   </div>
-}
+</div>

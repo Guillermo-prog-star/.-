@@ -4,10 +4,15 @@ spring:
   application:
     name: integrity-family
   datasource:
-    url: jdbc:mysql://${DB_HOST:if-mysql}:${DB_PORT:3306}/${DB_NAME:integrity_family}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota
+    url: jdbc:mysql://${DB_HOST:if-mysql}:${DB_PORT:3306}/${DB_NAME:integrity_family}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota&connectTimeout=10000
     username: ${DB_USER:root}
     password: ${DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      initialization-fail-timeout: 60000
+      connection-timeout: 30000
+      validation-timeout: 5000
+      leak-detection-threshold: 2000
   jpa:
     hibernate:
       ddl-auto: ${JPA_DDL_AUTO:update}

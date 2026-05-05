@@ -3,6 +3,7 @@ package com.integrityfamily.plan.controller;
 import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.domain.ImprovementPlan;
 import com.integrityfamily.domain.PlanTask;
+import com.integrityfamily.plan.dto.PlanDtos.*;
 import com.integrityfamily.plan.service.PlanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -22,27 +23,27 @@ public class PlanController {
     private final PlanService planService;
 
     @GetMapping
-    public ApiResponse<List<ImprovementPlan>> getAllPlans() {
+    public ApiResponse<List<PlanResponse>> getAllPlans() {
         return ApiResponse.ok(planService.findAllPlans());
     }
 
     @GetMapping("/family/{familyId}")
-    public ApiResponse<List<ImprovementPlan>> getPlansByFamily(@PathVariable Long familyId) {
+    public ApiResponse<List<PlanResponse>> getPlansByFamily(@PathVariable Long familyId) {
         return ApiResponse.ok(planService.findByFamilyId(familyId));
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<ImprovementPlan> getPlanById(@PathVariable Long id) {
+    public ApiResponse<PlanResponse> getPlanById(@PathVariable Long id) {
         return ApiResponse.ok(planService.findPlanById(id));
     }
 
     @PostMapping
-    public ApiResponse<ImprovementPlan> createPlan(@RequestBody ImprovementPlan plan) {
+    public ApiResponse<PlanResponse> createPlan(@RequestBody ImprovementPlan plan) {
         return ApiResponse.ok(planService.createPlan(plan));
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<ImprovementPlan> updatePlan(@PathVariable Long id, @RequestBody ImprovementPlan plan) {
+    public ApiResponse<PlanResponse> updatePlan(@PathVariable Long id, @RequestBody ImprovementPlan plan) {
         return ApiResponse.ok(planService.updatePlan(id, plan));
     }
 
@@ -55,30 +56,30 @@ public class PlanController {
     // --- Tareas ---
 
     @GetMapping("/tasks")
-    public ApiResponse<List<PlanTask>> getAllTasks() {
+    public ApiResponse<List<PlanTaskResponse>> getAllTasks() {
         return ApiResponse.ok(planService.findAllTasks());
     }
 
     @GetMapping("/tasks/{id}")
-    public ApiResponse<PlanTask> getTaskById(@PathVariable Long id) {
+    public ApiResponse<PlanTaskResponse> getTaskById(@PathVariable Long id) {
         return ApiResponse.ok(planService.findTaskById(id));
     }
 
     @PostMapping("/tasks")
-    public ApiResponse<PlanTask> createTask(@RequestBody PlanTask task) {
+    public ApiResponse<PlanTaskResponse> createTask(@RequestBody PlanTask task) {
         return ApiResponse.ok(planService.createTask(task));
     }
 
     @PutMapping("/tasks/{id}")
-    public ApiResponse<PlanTask> updateTask(@PathVariable Long id, @RequestBody PlanTask task) {
+    public ApiResponse<PlanTaskResponse> updateTask(@PathVariable Long id, @RequestBody PlanTask task) {
         return ApiResponse.ok(planService.updateTask(id, task));
     }
 
     @PutMapping("/tasks/{id}/complete")
-    public ApiResponse<PlanTask> completeTask(
+    public ApiResponse<PlanTaskResponse> completeTask(
             @PathVariable Long id,
-            @RequestBody Map<String, Boolean> body) {
-        boolean completed = Boolean.TRUE.equals(body.get("completed"));
+            @RequestBody TaskCompleteRequest body) {
+        boolean completed = Boolean.TRUE.equals(body.completed());
         return ApiResponse.ok(planService.completeTask(id, completed));
     }
 

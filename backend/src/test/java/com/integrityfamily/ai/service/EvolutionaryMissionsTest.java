@@ -67,15 +67,15 @@ class EvolutionaryMissionsTest {
         planGenerationService.generatePlanFromEvaluation(eventWrapper);
 
         // 4. Verificaciones
-        List<ImprovementPlan> plans = planService.findByFamilyId(family.getId());
+        List<com.integrityfamily.plan.dto.PlanDtos.PlanResponse> plans = planService.findByFamilyId(family.getId());
         assertFalse(plans.isEmpty(), "Debería haberse creado al menos un plan");
         
-        ImprovementPlan latestPlan = plans.get(plans.size() - 1);
-        assertFalse(latestPlan.getTasks().isEmpty(), "El plan debería tener misiones (tasks)");
+        com.integrityfamily.plan.dto.PlanDtos.PlanResponse latestPlan = plans.get(plans.size() - 1);
+        assertFalse(latestPlan.tasks().isEmpty(), "El plan debería tener misiones (tasks)");
         
-        System.out.println("TEST EXITOSO: Se crearon " + latestPlan.getTasks().size() + " misiones automáticas.");
-        latestPlan.getTasks().forEach(t -> {
-            System.out.println("- Misión: " + t.getTitle());
+        System.out.println("TEST EXITOSO: Se crearon " + latestPlan.tasks().size() + " misiones automáticas.");
+        latestPlan.tasks().forEach(t -> {
+            System.out.println("- Misión: " + t.title());
         });
     }
 }

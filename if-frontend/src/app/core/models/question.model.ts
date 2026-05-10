@@ -6,4 +6,17 @@ export interface Question {
   text: string;      // Nuevo: coincide con Backend Entity
   questionText?: string; // Deprecated: antes se llamaba así
   active: boolean;
+
+  // --- Nueva Taxonomía del Modelo Híbrido Adaptativo ---
+  questionKey?: string;
+  pillar?: string;
+  phase?: string;
+  type?: string; // CORE, ADAPTIVE, FASE_PILLAR, MIRROR, EXPLORATORY
+  severityWeight?: number;
+  detectsRelapse?: boolean;
+  requiresEvidence?: boolean;
+  reverseQuestion?: boolean;
+  category?: string;
+  adaptiveTriggers?: string;
+  evidenceType?: string;
 }

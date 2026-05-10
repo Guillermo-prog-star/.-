@@ -69,3 +69,66 @@
     }
   </div>
 }
+
+<!-- HISTORIAL DE EVIDENCIAS ACUMULADAS (ARCHIVO DE VICTORIAS DE TODOS LOS HITOS) -->
+<div class="evidence-archive-section mt-48" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 32px;">
+  <div class="section-header flex-between mb-24 flex-wrap gap-16">
+    <div>
+      <h2 class="flex items-center gap-12 text-white m-0">
+        <i>🏛️</i> Historial de Evidencias (Archivo de Victorias)
+      </h2>
+      <p class="text-muted small m-0 mt-4">Evidencias acumuladas e inmutables del progreso familiar de pilar en pilar.</p>
+    </div>
+    <span class="badge-dim count-badge" style="background: rgba(63, 185, 80, 0.1); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.2); padding: 6px 12px; borderRadius: 20px;">
+      {{ resolvedEvidences.length }} evidencias consolidadas
+    </span>
+  </div>
+
+  @if (resolvedEvidences.length === 0) {
+    <div class="glass-dark p-40 text-center rounded-24">
+      <div style="font-size: 40px; opacity: 0.3;" class="mb-16">📸</div>
+      <p class="text-muted mb-0">No se han registrado evidencias de progreso de hitos completados aún. ¡Completa tu primera misión en Planes para sembrar una victoria!</p>
+    </div>
+  } @else {
+    <div class="evidence-timeline" style="display: flex; flex-direction: column; gap: 16px;">
+      @for (entry of resolvedEvidences; track entry.id) {
+        <div class="evidence-log-card glass-card p-24" style="animation: fadeInUp 0.5s ease-out; position: relative;">
+          <div class="flex-between border-bottom pb-12 mb-16" style="border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div class="flex items-center gap-12" style="display: flex; align-items: center; gap: 12px;">
+              <span class="evidence-badge" style="background: rgba(63,185,80,0.15); color: #3fb950; font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(63,185,80,0.3);">
+                ✓ EVIDENCIA CONSOLIDADA
+              </span>
+              <span class="evidence-dimension-tag text-capitalize" style="background: rgba(121,192,255,0.15); color: #79c0ff; font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold;">
+                {{ entry.emotionIdentified || 'EMOCIONES' }}
+              </span>
+            </div>
+            <span class="text-muted small">{{ entry.createdAt | date:'medium' }}</span>
+          </div>
+
+          <div class="evidence-details-grid" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="detail-item">
+              <span class="detail-lbl text-muted small" style="display: block; opacity: 0.7;">📋 Situación / Misión</span>
+              <strong class="text-white" style="display: block; margin-top: 4px; font-size: 15px;">{{ entry.situation }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-lbl text-muted small" style="display: block; opacity: 0.7;">🎯 Comprensión / Acuerdo Familiar</span>
+              <span class="text-muted" style="display: block; margin-top: 4px; font-size: 13.5px;">
+                {{ entry.understanding }} — <span style="color: var(--accent); font-weight: 500;">Acuerdo:</span> <em>{{ entry.familyAgreement }}</em>
+              </span>
+            </div>
+
+            <div class="detail-item highlight-evidence p-16 rounded-12 mt-12" style="background: rgba(63, 185, 80, 0.04); border-left: 3px solid #3fb950; padding: 16px; border-radius: 12px;">
+              <span class="detail-lbl success small" style="display: block; color: #3fb950; font-weight: bold; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">📸 Evidencia Sincronizada</span>
+              <p class="text-white mb-0" style="margin-top: 4px; font-style: italic; font-size: 13px; line-height: 1.5; opacity: 0.9;">{{ entry.progressEvidence }}</p>
+            </div>
+          </div>
+          
+          <div class="evidence-footer mt-16 text-right" style="text-align: right; margin-top: 16px; opacity: 0.7; font-size: 11.5px;">
+            <span class="text-muted">Registrado y verificado por: <strong style="color: #c9d1d9;">{{ entry.createdBy }}</strong></span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

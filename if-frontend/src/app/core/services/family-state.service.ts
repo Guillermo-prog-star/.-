@@ -7,8 +7,12 @@ export class FamilyStateService {
   // Signal para guardar el estado del ID de familia seleccionado
   private readonly familyIdSignal = signal<number>(this.getInitialState());
 
-  // Exponemos el signal de solo lectura para componentes reactivos
+  // Signal para guardar el estado del nombre de la familia seleccionada
+  private readonly familyNameSignal = signal<string>(this.getInitialFamilyName());
+
+  // Exponemos los signals de solo lectura para componentes reactivos
   public readonly currentFamilyId = this.familyIdSignal.asReadonly();
+  public readonly currentFamilyName = this.familyNameSignal.asReadonly();
 
   constructor() { }
 
@@ -36,8 +40,11 @@ export class FamilyStateService {
     if (!family || !family.id) return;
     
     this.familyIdSignal.set(family.id);
+    const familyName = family.name || 'Familia';
+    this.familyNameSignal.set(familyName);
+
     localStorage.setItem('selectedFamilyId', family.id.toString());
-    localStorage.setItem('selectedFamilyName', family.name || 'Familia');
+    localStorage.setItem('selectedFamilyName', familyName);
     localStorage.setItem('selectedFamilyCode', family.familyCode || '');
   }
 
@@ -53,8 +60,10 @@ export class FamilyStateService {
    */
   clearFamily(): void {
     this.familyIdSignal.set(0);
+    this.familyNameSignal.set('');
     localStorage.removeItem('selectedFamilyId');
     localStorage.removeItem('selectedFamilyName');
+    localStorage.removeItem('selectedFamilyCode');
   }
 
   private getInitialState(): number {
@@ -73,5 +82,23 @@ export class FamilyStateService {
     }
     
     return 0;
+  }
+
+  private getInitialFamilyName(): string {
+    const savedName = localStorage.getItem('selectedFamilyName');
+    if (savedName) return savedName;
+
+    // [SDD Fallback] Intentar recuperar desde el objeto de usuario si la llave específica no existe
+    const authUserJson = localStorage.getItem('auth_user');
+    if (authUserJson) {
+      try {
+        const user = JSON.parse(authUserJson);
+        return user.familyName || '';
+      } catch {
+        return '';
+      }
+    }
+    
+    return '';
   }
 }

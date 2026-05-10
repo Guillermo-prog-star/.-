@@ -116,8 +116,24 @@ public class AiServiceImpl implements AiService {
 
     @Override
     public String generateHybridPlan(Family family, Map<String, Double> dimensions, String riskLevel) {
-        log.info("[AI_PLAN] Generando Plan Híbrido Estructurado (SDD 6.3) para familia: {}", family.getName());
-        String prompt = promptGenerator.buildHybridPlanPrompt(family, dimensions, riskLevel);
+        return generateHybridPlan(family, dimensions, riskLevel, null);
+    }
+
+    @Override
+    public String generateHybridPlan(Family family, Map<String, Double> dimensions, String riskLevel, com.integrityfamily.plan.service.ContinuityEngine.ContinuityAnalysis continuityAnalysis) {
+        log.info("[AI_PLAN] Generando Plan Híbrido Longitudinal Estructurado (SDD v5.0) para familia: {}", family.getName());
+        
+        com.integrityfamily.ai.dto.LogbookCorrelationResult correlation = null;
+        try {
+            correlation = sentimentAnalysisService.correlateFamilySentiment(family.getId());
+            log.info("[AI_PLAN] Correlación de sentimiento en vivo consultada con éxito. Etiqueta: {}, Promedio: {}", 
+                     correlation.getGeneralLabel(), correlation.getAverageEmotionalScore());
+        } catch (Exception e) {
+            log.warn("⚠️ [AI_PLAN] No se pudo obtener la correlación de sentimiento de bitácora para la familia ID {}: {}", 
+                     family.getId(), e.getMessage());
+        }
+
+        String prompt = promptGenerator.buildHybridPlanPrompt(family, dimensions, riskLevel, correlation, continuityAnalysis);
         return aiProvider.generateRawResponse(prompt);
     }
 }

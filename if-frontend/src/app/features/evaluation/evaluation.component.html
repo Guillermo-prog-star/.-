@@ -1,46 +1,174 @@
-<div class="assessment-container" *ngIf="questions && questions.length > 0; else loading">
+<!-- PANTALLA PRINCIPAL DE DIAGNÓSTICO -->
+<div class="assessment-container" *ngIf="questions && questions.length > 0 && !isLoadingResults; else loadingOrSaving">
   
-  <div class="progress-container">
-    <div class="progress-track">
-      <div class="progress-bar-fill" [style.width.%]="(currentIndex + 1) * 100 / questions.length"></div>
+  <!-- Encabezado de Progreso Segmentado Premium -->
+  <div class="progress-section">
+    <div class="progress-header">
+      <div class="family-badge">
+        <span class="icon">🏡</span> {{ familyName }}
+      </div>
+      <div class="step-counter">
+        REACTIVO <span class="current">{{ currentIndex + 1 }}</span> DE <span class="total">{{ questions.length }}</span>
+      </div>
     </div>
-    <div class="meta-info">
-      <span>{{ questions[currentIndex].dimension }} · Vertice {{ questions[currentIndex].vertice }}</span>
-      <span>Paso {{ currentIndex + 1 }} de {{ questions.length }}</span>
+    
+    <!-- Barra de Progreso Segmentada de Alta Fidelidad -->
+    <div class="segmented-track-container">
+      <div class="segmented-track">
+        <div *ngFor="let q of questions; let idx = index" 
+             class="progress-segment"
+             [class.completed]="idx < currentIndex"
+             [class.active]="idx === currentIndex"
+             [style.background-color]="idx < currentIndex ? getDimensionColor(q.dimension) : (idx === currentIndex ? getDimensionColor(questions[currentIndex].dimension) : '')"
+             [style.box-shadow]="idx === currentIndex ? '0 0 12px ' + getDimensionColor(questions[currentIndex].dimension) : ''">
+        </div>
+      </div>
     </div>
   </div>
 
-  <div class="question-card">
-    <div class="version-badge">DIAGNÓSTICO V4.2</div>
+  <!-- Contenedor del Reactivo Actual (con transición de fade) -->
+  <div class="question-container-wrapper" [class.transitioning]="isTransitioning">
+    
+    <!-- Fila de Metadatos Taxonómicos Premium -->
+    <div class="taxonomy-bar">
+      <!-- Badge de Dimensión Dinámico -->
+      <div class="taxonomy-badge dimension-badge" 
+           [style.color]="getDimensionColor(questions[currentIndex].dimension)"
+           [style.border-color]="getDimensionColor(questions[currentIndex].dimension)"
+           [style.background]="getDimensionColorGlow(questions[currentIndex].dimension)">
+        <span class="dot" [style.background-color]="getDimensionColor(questions[currentIndex].dimension)"></span>
+        {{ getDimensionName(questions[currentIndex].dimension) }}
+      </div>
 
-    <h2 class="question-text">
-      {{ questions[currentIndex].text }}
-    </h2>
-    
-    <div class="scale-grid">
-        <div *ngFor="let i of [1,2,3,4,5]" class="scale-item">
-            <button type="button" 
-                    (click)="selectAnswer(i)"
-                    class="scale-button"
-                    [class.active]="answers.get(questions[currentIndex].id) === i">
-                {{ i }}
-            </button>
-            <span class="scale-label">
-                {{ getScoreLabel(i) }}
-            </span>
-        </div>
+      <!-- Badge de Tipo de Reactivo -->
+      <div class="taxonomy-badge type-badge" [attr.data-type]="questions[currentIndex].type">
+        {{ getQuestionTypeLabel(questions[currentIndex].type) }}
+      </div>
+
+      <!-- Área/Categoría -->
+      <div class="taxonomy-badge area-badge" *ngIf="questions[currentIndex].area">
+        🎯 {{ questions[currentIndex].area }}
+      </div>
     </div>
-    
-    <div class="form-footer">
-        <p>Selecciona el nivel de conciencia que mejor describa la realidad de tu hogar en este momento.</p>
+
+    <!-- Tarjeta de Reactivo Principal (Glassmorphism) -->
+    <div class="question-card" [style.border-top]="'4px solid ' + getDimensionColor(questions[currentIndex].dimension)">
+      
+      <!-- Indicadores Clínicos / Alertas del Reactivo -->
+      <div class="clinical-alerts" *ngIf="questions[currentIndex].requiresEvidence || questions[currentIndex].detectsRelapse">
+        <span class="alert-badge evidence" *ngIf="questions[currentIndex].requiresEvidence" title="Este reactivo medirá compromisos reales que requerirán subir evidencias fotográficas o de bitácora en tu plan de transformación.">
+          📷 Requiere Evidencia
+        </span>
+        <span class="alert-badge relapse" *ngIf="questions[currentIndex].detectsRelapse" title="Este reactivo actúa como un sensor clínico para monitorear sostenibilidad y mitigar retrocesos conductuales.">
+          ⚠️ Sensor de Sostenibilidad
+        </span>
+      </div>
+
+      <!-- Enunciado de la Pregunta -->
+      <h2 class="question-text">
+        {{ questions[currentIndex].text }}
+      </h2>
+
+      <!-- Nivel de Severidad / Peso Psicométrico -->
+      <div class="severity-rating">
+        <span class="label">{{ getSeverityLevel(questions[currentIndex].severityWeight) }}</span>
+        <div class="stars">
+          <span *ngFor="let s of getSeverityStars(questions[currentIndex].severityWeight)" class="star" [style.color]="getDimensionColor(questions[currentIndex].dimension)">✦</span>
+        </div>
+      </div>
+      
+      <!-- Grilla de Respuestas (Escala Likert de Consciencia) -->
+      <div class="scale-section">
+        <div class="scale-grid">
+            <div *ngFor="let i of [1,2,3,4,5]" class="scale-item">
+                <button type="button" 
+                        (click)="selectAnswer(i)"
+                        class="scale-button"
+                        [class.active]="answers.get(questions[currentIndex].id) === i"
+                        [style.--hover-color]="getDimensionColor(questions[currentIndex].dimension)"
+                        [style.--hover-color-glow]="getDimensionColorGlow(questions[currentIndex].dimension)"
+                        [style.--active-color]="getDimensionColor(questions[currentIndex].dimension)">
+                    {{ i }}
+                </button>
+                <span class="scale-label" [class.active-label]="answers.get(questions[currentIndex].id) === i">
+                    {{ getScoreLabel(i) }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Caja Descriptiva Dinámica del Nivel de Consciencia Seleccionado -->
+        <div class="score-helper-box" *ngIf="answers.get(questions[currentIndex].id) as selectedScore">
+          <div class="helper-arrow"></div>
+          <p class="helper-text">
+            <strong>Nivel {{ selectedScore }} ({{ getScoreLabel(selectedScore) }}):</strong> 
+            {{ getScoreDetail(selectedScore) }}
+          </p>
+        </div>
+      </div>
+      
+      <!-- Footer de Navegación del Reactivo -->
+      <div class="form-navigation-footer">
+          <button type="button" 
+                  class="nav-btn prev-btn" 
+                  *ngIf="currentIndex > 0" 
+                  (click)="prevQuestion()">
+            ← Volver al reactivo anterior
+          </button>
+          <span class="desc" *ngIf="currentIndex === 0">Selecciona con absoluta honestidad para un diagnóstico asertivo.</span>
+      </div>
     </div>
   </div>
 
 </div>
 
-<ng-template #loading>
-  <div class="assessment-container" style="text-align: center; padding: 100px;">
-    <div class="custom-spinner"></div>
-    <p style="font-weight: 700; color: var(--accent); margin-top: 24px;">Conectando con la sabiduría familiar...</p>
+<!-- COMPONENTE AUXILIAR: PANTALLA DE CARGA O GUARDADO -->
+<ng-template #loadingOrSaving>
+  
+  <!-- Estado 1: Guardando y calculando ICF / Hoja de Ruta en tiempo real (Premium Overaly) -->
+  <div class="saving-overlay-container" *ngIf="isLoadingResults">
+    <div class="saving-card">
+      <div class="quantum-spinner">
+        <div class="ring outer"></div>
+        <div class="ring middle"></div>
+        <div class="ring inner"></div>
+        <div class="pulse-core"></div>
+      </div>
+      
+      <h2 class="saving-title">Sincronizando Diagnóstico</h2>
+      <p class="saving-subtitle">Procesando con el Nodo Armenia de Transformación Familiar</p>
+      
+      <div class="processing-steps">
+        <div class="step-item active">
+          <span class="bullet">✓</span>
+          <p>Compilando respuestas psicométricas del hogar...</p>
+        </div>
+        <div class="step-item active">
+          <span class="bullet">✦</span>
+          <p>Calculando Índice de Conectividad Familiar (ICF)...</p>
+        </div>
+        <div class="step-item active">
+          <span class="bullet">✦</span>
+          <p>Analizando brechas y vulnerabilidades estructurales...</p>
+        </div>
+        <div class="step-item">
+          <span class="bullet">✦</span>
+          <p>Orquestando hoja de ruta de 36 meses vía RabbitMQ...</p>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <!-- Estado 2: Cargando el banco de preguntas adaptativo (Se muestra inicialmente) -->
+  <div class="assessment-container initial-loading" *ngIf="!isLoadingResults">
+    <div class="loader-box">
+      <div class="pulse-loader">
+        <div></div>
+        <div></div>
+        <div></div>
+      </div>
+      <h3 class="loader-title">Conectando con la sabiduría familiar...</h3>
+      <p class="loader-desc">Estructurando un set de preguntas adaptativo basado en el hito temporal y estado de tu hogar.</p>
+    </div>
+  </div>
+
 </ng-template>

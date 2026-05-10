@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "a9a8d5e1-8890-48e0-bb15-bbf07b22d119",
 		"name": "Integrity Family API",
-		"description": "Colección centralizada para interactuar y validar el Nodo Integrity Family (Spring Boot + RabbitMQ).",
+		"description": "Colección centralizada para interactuar y validar el Nodo Integrity Family (Spring Boot + RabbitMQ). El Login captura el JWT automáticamente.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -10,7 +10,24 @@
 			"name": "1. Authentication",
 			"item": [
 				{
-					"name": "Login",
+					"name": "Login ✅ (auto-captura JWT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const json = pm.response.json();",
+									"    pm.collectionVariables.set('jwt_token', json.token);",
+									"    console.log('✅ JWT capturado y guardado en {{jwt_token}}');",
+									"} else {",
+									"    console.warn('❌ Login fallido:', pm.response.status);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -18,7 +35,8 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"email\": \"william@integrity.family\",\n    \"password\": \"Admin123*\"\n}"
+							"raw": "{\n    \"email\": \"william@integrity.family\",\n    \"password\": \"admin123\"\n}",
+							"options": { "raw": { "language": "json" } }
 						},
 						"url": {
 							"raw": "http://localhost:8080/api/auth/login",
@@ -28,6 +46,22 @@
 							"path": [ "api", "auth", "login" ]
 						}
 					}
+				},
+				{
+					"name": "Mi Perfil (GET /api/auth/me)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/auth/me",
+							"protocol": "http",
+							"host": [ "localhost" ],
+							"port": "8080",
+							"path": [ "api", "auth", "me" ]
+						}
+					}
 				}
 			]
 		},
@@ -35,7 +69,7 @@
 			"name": "2. Analíticas (Requiere Bearer Token)",
 			"item": [
 				{
-					"name": "Resumen por Familia",
+					"name": "Dashboard por Familia",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -53,7 +87,88 @@
 			]
 		},
 		{
-			"name": "3. RabbitMQ Testing",
+			"name": "3. Familias",
+			"item": [
+				{
+					"name": "Listar Familias",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/families",
+							"protocol": "http",
+							"host": [ "localhost" ],
+							"port": "8080",
+							"path": [ "api", "families" ]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Evaluaciones",
+			"item": [
+				{
+					"name": "Listar Evaluaciones (familia 1)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/evaluations?familyId=1",
+							"protocol": "http",
+							"host": [ "localhost" ],
+							"port": "8080",
+							"path": [ "api", "evaluations" ],
+							"query": [ { "key": "familyId", "value": "1" } ]
+						}
+					}
+				},
+				{
+					"name": "Finalizar Evaluación (activa generación de plan)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}" },
+							{ "key": "Content-Type", "value": "application/json" }
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/evaluations/{{evaluation_id}}/finalize",
+							"protocol": "http",
+							"host": [ "localhost" ],
+							"port": "8080",
+							"path": [ "api", "evaluations", "{{evaluation_id}}", "finalize" ]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. Planes (Microacciones)",
+			"item": [
+				{
+					"name": "Plan de Familia 1",
+					"request": {
+						"method": "GET",
+						"header": [
+							{ "key": "Authorization", "value": "Bearer {{jwt_token}}" }
+						],
+						"url": {
+							"raw": "http://localhost:8080/api/plans/family/1",
+							"protocol": "http",
+							"host": [ "localhost" ],
+							"port": "8080",
+							"path": [ "api", "plans", "family", "1" ]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "6. Salud y RabbitMQ",
 			"item": [
 				{
 					"name": "Verificar Salud",
@@ -73,6 +188,7 @@
 		}
 	],
 	"variable": [
-		{ "key": "jwt_token", "value": "aqui_tu_token_generado_en_login" }
+		{ "key": "jwt_token", "value": "" },
+		{ "key": "evaluation_id", "value": "1" }
 	]
 }

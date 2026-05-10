@@ -45,6 +45,16 @@ public class ExportController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(data);
     }
+
+    @GetMapping("/export/pdf/family/{familyId}")
+    public ResponseEntity<byte[]> exportFamilyPdf(@PathVariable Long familyId) {
+        byte[] data = pdfExportService.generateFamilyEvolutivePdf(familyId);
+        String filename = "IFE_Reporte_Evolutivo_Familia_" + familyId + "_" + System.currentTimeMillis() + ".pdf";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(data);
+    }
 }
 
 

@@ -3,17 +3,21 @@ package com.integrityfamily.plan.controller;
 import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.domain.ImprovementPlan;
 import com.integrityfamily.domain.PlanTask;
+import com.integrityfamily.domain.AuditEventType;
+import com.integrityfamily.auth.service.AuditService;
 import com.integrityfamily.plan.dto.PlanDtos.*;
 import com.integrityfamily.plan.service.PlanService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
 /**
  * SDD: Controlador de Planes de Transformación Familiar.
- * Refactorizado para usar la arquitectura de ImprovementPlan e Hitos.
+ * Refactorizado para usar la arquitectura de ImprovementPlan e Hitos, con telemetría integrada.
  */
 @RestController
 @RequestMapping("/api/plans")
@@ -21,6 +25,7 @@ import java.util.Map;
 public class PlanController {
 
     private final PlanService planService;
+    private final AuditService auditService;
 
     @GetMapping
     public ApiResponse<List<PlanResponse>> getAllPlans() {
@@ -78,9 +83,18 @@ public class PlanController {
     @PutMapping("/tasks/{id}/complete")
     public ApiResponse<PlanTaskResponse> completeTask(
             @PathVariable Long id,
-            @RequestBody TaskCompleteRequest body) {
+            @RequestBody TaskCompleteRequest body,
+            Principal principal,
+            HttpServletRequest httpServletRequest) {
         boolean completed = Boolean.TRUE.equals(body.completed());
-        return ApiResponse.ok(planService.completeTask(id, completed));
+        PlanTaskResponse response = planService.completeTask(id, completed);
+        
+        String email = principal != null ? principal.getName() : "ANONYMOUS";
+        String metadata = String.format("{\"taskId\":%d,\"completed\":%b}", id, completed);
+        
+        auditService.register(email, AuditEventType.PLAN_TASK_TOGGLED, httpServletRequest, metadata);
+        
+        return ApiResponse.ok(response);
     }
 
     @DeleteMapping("/tasks/{id}")

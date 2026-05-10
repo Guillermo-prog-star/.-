@@ -13,6 +13,7 @@ export interface AuthUser {
   email: string;
   role: 'ADMIN' | 'USER' | 'SENTINEL';
   familyId?: number;
+  familyName?: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -62,12 +63,13 @@ export class AuthService {
             fullName: res.user?.fullName || res.fullName || 'Usuario',
             email: res.user?.email || res.email,
             role: roleMapping,
-            familyId: res.user?.familyId || res.familyId
+            familyId: res.user?.familyId || res.familyId,
+            familyName: res.user?.familyName || res.familyName
           };
           this.saveUserToStorage(userData);
           this._user.set(userData);
           if (userData.familyId) {
-            this.familyState.setFamily({ id: userData.familyId, name: userData.fullName });
+            this.familyState.setFamily({ id: userData.familyId, name: userData.familyName || 'Familia' });
           }
         }
       })
@@ -89,12 +91,13 @@ export class AuthService {
             fullName: res.user?.fullName || res.fullName || 'Usuario',
             email: res.user?.email || res.email,
             role: roleMapping,
-            familyId: res.user?.familyId || res.familyId
+            familyId: res.user?.familyId || res.familyId,
+            familyName: res.user?.familyName || res.familyName
           };
           this.saveUserToStorage(userData);
           this._user.set(userData);
           if (userData.familyId) {
-            this.familyState.setFamily({ id: userData.familyId, name: userData.fullName });
+            this.familyState.setFamily({ id: userData.familyId, name: userData.familyName || 'Familia' });
           }
         }
       })
@@ -113,12 +116,13 @@ export class AuthService {
             fullName: res.user?.fullName || res.fullName || 'Administrador',
             email: res.user?.email || res.email,
             role: 'ADMIN',
-            familyId: res.user?.familyId || res.familyId
+            familyId: res.user?.familyId || res.familyId,
+            familyName: res.user?.familyName || res.familyName
           };
           this.saveUserToStorage(userData);
           this._user.set(userData);
           if (userData.familyId) {
-            this.familyState.setFamily({ id: userData.familyId, name: userData.fullName });
+            this.familyState.setFamily({ id: userData.familyId, name: userData.familyName || 'Familia' });
           }
         }
       })
@@ -148,6 +152,7 @@ export class AuthService {
     console.warn('SENTINEL: Limpiando estado de sesión y redirigiendo al acceso.');
     localStorage.removeItem('auth_user');
     this._user.set(null);
+    this.familyState.clearFamily();
     this.router.navigate(['/auth/login']);
   }
 

@@ -13,8 +13,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * SDD-PLAN-01: Consumidor AsÃƒÂ­ncrono de Planes de AcciÃƒÂ³n.
- * Procesa la recomendaciÃƒÂ³n de la IA y la convierte en tareas ejecutables.
+ * SDD-PLAN-01: Consumidor Asíncrono de Planes de Acción.
+ * Procesa la recomendación de la IA y la convierte en tareas ejecutables.
  */
 @Component
 @Slf4j
@@ -23,33 +23,34 @@ public class PlanConsumer {
 
     private final PlanTaskService planTaskService;
 
-    @RabbitListener(queues = RabbitConfig.PLAN_QUEUE)
+    @RabbitListener(queues = RabbitConfig.SUGGESTED_TASKS_QUEUE)
     @Transactional
     public void handlePlanGeneration(DashboardSummaryResponse summary) {
-        log.info("Ã°Å¸Å¡â‚¬ [PLAN-CONSUMER] Iniciando orquestaciÃƒÂ³n de tareas para: {}", summary.familyName());
+        log.info("🚀 [PLAN-CONSUMER] Iniciando orquestación de tareas para: {}", summary.familyName());
 
         try {
             // 1. Extraer potenciales tareas del texto de la IA
             List<String> suggestedTasks = parseAiRecommendation(summary.aiRecommendation());
 
             if (suggestedTasks.isEmpty()) {
-                log.warn("Ã¢Å¡Â Ã¯Â¸Â [PLAN-CONSUMER] El reporte de IA no contenÃƒÂ­a acciones claras para procesar.");
+                log.warn("⚠️ [PLAN-CONSUMER] El reporte de IA no contenía acciones claras para procesar.");
                 return;
             }
 
-            // 2. Persistir tareas en el Plan de AcciÃƒÂ³n de la familia
+            // 2. Persistir tareas en el Plan de Acción de la familia
             planTaskService.createTasksFromAi(summary.familyId(), suggestedTasks);
 
-            log.info("Ã¢Å“â€¦ [PLAN-CONSUMER] SincronizaciÃƒÂ³n exitosa: {} nuevas tareas para la familia.",
+            log.info("✅ [PLAN-CONSUMER] Sincronización exitosa: {} nuevas tareas para la familia.",
                     suggestedTasks.size());
 
         } catch (Exception e) {
-            log.error("Ã¢ÂÅ’ [PLAN-CONSUMER] Fallo crÃƒÂ­tico en el procesamiento de mensajes: {}", e.getMessage());
+            log.error("❌ [PLAN-CONSUMER] Fallo crítico en el procesamiento de mensajes: {}", e.getMessage());
+            throw new RuntimeException("Fallo en PlanConsumer al procesar recomendaciones de la IA", e);
         }
     }
 
     /**
-     * Extrae lÃƒÂ­neas que parecen acciones (empiezan con -, * o nÃƒÂºmero)
+     * Extrae líneas que parecen acciones (empiezan con -, * o número)
      * para transformarlas en tareas de base de datos.
      */
     private List<String> parseAiRecommendation(String text) {
@@ -59,10 +60,8 @@ public class PlanConsumer {
         return Arrays.stream(text.split("\n"))
                 .map(String::trim)
                 .filter(line -> line.startsWith("-") || line.startsWith("*") || line.matches("^\\d+\\..*"))
-                .map(line -> line.replaceAll("^[-*\\d.]+\\s*", "")) // Limpiar viÃƒÂ±etas
+                .map(line -> line.replaceAll("^[-*\\d.]+\\s*", "")) // Limpiar viñetas
                 .filter(line -> line.length() > 5) // Filtrar ruido
                 .toList();
     }
 }
-
-

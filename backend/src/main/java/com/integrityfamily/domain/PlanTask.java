@@ -54,6 +54,26 @@ public class PlanTask {
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PlanTaskStep> steps = new ArrayList<>();
 
+    private String fase; // RECONOCIMIENTO, AMOR, ENTREGA
+
+    @Column(name = "riesgo_asociado")
+    private String riesgoAsociado;
+
+    @Column(columnDefinition = "TEXT")
+    private String objetivo;
+
+    @Column(name = "accion_concreta", columnDefinition = "TEXT")
+    private String accionConcreta;
+
+    @Column(name = "indicador_cumplimiento", columnDefinition = "TEXT")
+    private String indicadorCumplimiento;
+
+    @Column(name = "evidencia_requerida", columnDefinition = "TEXT")
+    private String evidenciaRequerida;
+
+    @Column(name = "impacto_icf")
+    private Integer impactoIcf;
+
     // SDD-FIX: Métodos explícitos para el build de Docker
     public String getDescription() { return this.description; }
     public void setDescription(String description) { this.description = description; }

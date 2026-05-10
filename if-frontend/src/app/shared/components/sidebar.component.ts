@@ -21,7 +21,10 @@ import { AuthService } from '../../core/services/auth.service';
       
       <nav>
         <a routerLink="/dashboard" class="nav-item" routerLinkActive="active">
-          <span class="icon">📊</span> Dashboard
+          <span class="icon">📊</span> Panóptico Clínico
+        </a>
+        <a routerLink="/portal" class="nav-item" routerLinkActive="active">
+          <span class="icon">📱</span> Portal Familiar Móvil
         </a>
         <div class="divider"></div>
         
@@ -31,6 +34,7 @@ import { AuthService } from '../../core/services/auth.service';
         <a routerLink="/plans" class="nav-item" routerLinkActive="active"><span class="icon">📝</span> 4. Planes</a>
         <a routerLink="/checklist" class="nav-item" routerLinkActive="active"><span class="icon">📸</span> 5. Evidencias</a>
         <a routerLink="/logbook"   class="nav-item" routerLinkActive="active"><span class="icon">📔</span> 6. Bitácora</a>
+        <a routerLink="/gratitude" class="nav-item" routerLinkActive="active"><span class="icon">💖</span> 7. Gratitud</a>
         
         <div class="divider"></div>
         <a routerLink="/chat"   class="nav-item" routerLinkActive="active"><span class="icon">✨</span> Consultor IA</a>

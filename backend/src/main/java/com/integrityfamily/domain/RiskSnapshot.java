@@ -21,7 +21,7 @@ public class RiskSnapshot {
     @JoinColumn(name = "family_id", nullable = false)
     private Family family;
 
-    @Column(name = "icf")
+    @Column(name = "score")
     private Double icf;
 
     @Column(name = "risk_level")

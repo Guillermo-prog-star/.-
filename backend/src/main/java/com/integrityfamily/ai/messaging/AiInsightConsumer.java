@@ -1,5 +1,6 @@
 package com.integrityfamily.ai.messaging;
 
+import java.util.Map;
 import com.integrityfamily.ai.service.AiService;
 import com.integrityfamily.bitacora.dto.BitacoraRequest;
 import com.integrityfamily.bitacora.service.BitacoraService;
@@ -29,7 +30,16 @@ public class AiInsightConsumer {
 
         try {
             // 1. Recuperar contexto de la evaluación
-            Double icf = Double.valueOf(event.payload().toString());
+            Double icf = 0.0;
+            if (event.payload() instanceof Map) {
+                Map<?, ?> payloadMap = (Map<?, ?>) event.payload();
+                Object icfVal = payloadMap.get("icf");
+                if (icfVal instanceof Number) {
+                    icf = ((Number) icfVal).doubleValue();
+                }
+            } else if (event.payload() instanceof Number) {
+                icf = ((Number) event.payload()).doubleValue();
+            }
             
             // 2. Generar Recomendación Profunda via IA (Resolviendo ambigüedad de firma)
             String insight = aiService.generateExecutiveSynthesis((Long) event.familyId());
@@ -50,6 +60,7 @@ public class AiInsightConsumer {
 
         } catch (Exception e) {
             log.error("❌ [AI-MOTOR] Error procesando insight: {}", e.getMessage());
+            throw new RuntimeException("Fallo en AiInsightConsumer al procesar insight de IA", e);
         }
     }
 }

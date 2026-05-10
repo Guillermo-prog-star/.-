@@ -1,50 +1,32 @@
 package com.integrityfamily.milestone.service;
 
-import com.integrityfamily.domain.Family; // REQUERIDO: Sanar MilestoneService:52,59
+import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.Milestone;
 import com.integrityfamily.domain.repository.MilestoneRepository;
 import com.integrityfamily.domain.repository.ChecklistRepository;
 import com.integrityfamily.common.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Map;
+import java.util.Comparator;
 
 /**
- * MilestoneService: Motor de TransformaciÃƒÂ³n Familiar a 36 meses.
- * Sincronizado para sanar MilestoneController y visibilidad de dominio.
+ * MilestoneService: Motor de Transformación Familiar a 36 meses.
+ * Completamente dinámico, conectando directamente con los hitos reales en base de datos.
+ * Incluye un protocolo de auto-curación (Self-Healing) para datos legacy.
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MilestoneService {
 
     private final MilestoneRepository milestoneRepository;
     private final FamilyRepository familyRepository;
-
-    private static final Map<String, String> MILESTONE_LABELS = Map.of(
-            "MES_00_DIAGNOSTICO", "Inicio - Diagnóstico Base",
-            "MES_03_PRIMEROS_CAMBIOS", "3 Meses - Primeros Cambios",
-            "MES_06_CONSOLIDACION_INICIAL", "6 Meses - Consolidación Inicial",
-            "MES_12_PRIMERA_TRANSFORMACION", "12 Meses - Primera Transformación",
-            "MES_18_PROFUNDIZACION", "18 Meses - Profundización",
-            "MES_24_MADUREZ_SISTEMA", "24 Meses - Madurez del Sistema",
-            "MES_30_CIERRE_SOSTENIMIENTO", "30 Meses - Cierre y Sostenimiento",
-            "MES_36_TRANSFORMACION_COMPLETA", "36 Meses - Transformación Completa");
-
-    private static final List<String> MILESTONE_SEQUENCE = List.of(
-            "MES_00_DIAGNOSTICO",
-            "MES_03_PRIMEROS_CAMBIOS",
-            "MES_06_CONSOLIDACION_INICIAL",
-            "MES_12_PRIMERA_TRANSFORMACION",
-            "MES_18_PROFUNDIZACION",
-            "MES_24_MADUREZ_SISTEMA",
-            "MES_30_CIERRE_SOSTENIMIENTO",
-            "MES_36_TRANSFORMACION_COMPLETA");
-
-    // --- MÃƒâ€°TODOS REQUERIDOS POR MILESTONECONTROLLER ---
+    private final ChecklistRepository checklistRepository;
 
     @Transactional(readOnly = true)
     public Milestone findById(Long id) {
@@ -61,7 +43,10 @@ public class MilestoneService {
     public Milestone update(Long id, Milestone milestone) {
         Milestone existing = findById(id);
         existing.setTitle(milestone.getTitle());
-        // AquÃƒÂ­ se pueden sincronizar mÃƒÂ¡s campos (sortOrder, description, etc.)
+        existing.setLabel(milestone.getLabel());
+        existing.setDurationDays(milestone.getDurationDays());
+        existing.setOrderIndex(milestone.getOrderIndex());
+        existing.setDescription(milestone.getDescription());
         return milestoneRepository.save(existing);
     }
 
@@ -75,12 +60,10 @@ public class MilestoneService {
 
     @Transactional(readOnly = true)
     public List<Milestone> findAll() {
-        return milestoneRepository.findAll();
+        return milestoneRepository.findAll().stream()
+                .sorted(Comparator.comparingInt(m -> m.getOrderIndex() != null ? m.getOrderIndex() : 99))
+                .toList();
     }
-
-    private final ChecklistRepository checklistRepository;
-
-    // --- LÃƒâ€œGICA DE SECUENCIA TERRITORIAL ---
 
     @Transactional(readOnly = true)
     public boolean canAdvance(Long familyId) {
@@ -90,8 +73,11 @@ public class MilestoneService {
         String currentMilestone = family.getCurrentMilestone();
         
         // [SDD Spec] Gatekeeping: Contamos tareas pendientes asociadas al hito actual.
-        // Si hay tareas crÃƒÂ­ticas (source = currentMilestone) pendientes, no se puede avanzar.
+        // Si hay tareas críticas (source = currentMilestone) pendientes, no se puede avanzar.
         long pending = checklistRepository.countByFamilyIdAndSourceAndCompletedFalse(familyId, currentMilestone);
+        
+        log.info("🔍 [MILESTONE-SERVICE] Evaluando avance para familia {}. Hito actual: {}. Tareas pendientes: {}", 
+                familyId, currentMilestone, pending);
         
         return pending == 0;
     }
@@ -100,29 +86,57 @@ public class MilestoneService {
     public String getCurrentMilestoneLabel(Long familyId) {
         Family family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new NotFoundException("Familia no encontrada"));
-        return MILESTONE_LABELS.getOrDefault(family.getCurrentMilestone(), "Fase Desconocida");
+        
+        String code = family.getCurrentMilestone();
+        return milestoneRepository.findByCode(code)
+                .map(m -> m.getLabel() != null ? m.getLabel() : m.getTitle())
+                .orElse("Hito " + code);
     }
 
     @Transactional
     public String advanceMilestone(Long familyId) {
+        Family family = familyRepository.findById(familyId)
+                .orElseThrow(() -> new NotFoundException("Familia no encontrada"));
+
         if (!canAdvance(familyId)) {
             throw new IllegalStateException("No se puede avanzar: Existen tareas pendientes para el hito actual.");
         }
 
-        Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new NotFoundException("Familia no encontrada"));
-
         String current = family.getCurrentMilestone();
-        int currentIndex = MILESTONE_SEQUENCE.indexOf(current);
+        
+        // Obtener la secuencia de hitos real y ordenada desde la base de datos
+        List<Milestone> sequence = milestoneRepository.findAll().stream()
+                .sorted(Comparator.comparingInt(m -> m.getOrderIndex() != null ? m.getOrderIndex() : 99))
+                .toList();
 
-        if (currentIndex != -1 && currentIndex < MILESTONE_SEQUENCE.size() - 1) {
-            String next = MILESTONE_SEQUENCE.get(currentIndex + 1);
+        int currentIndex = -1;
+        for (int i = 0; i < sequence.size(); i++) {
+            if (sequence.get(i).getCode().equalsIgnoreCase(current)) {
+                currentIndex = i;
+                break;
+            }
+        }
+
+        if (currentIndex == -1) {
+            // Self-Healing: Si el hito actual es legacy o desconocido, lo inicializamos en el primer hito de la secuencia
+            if (!sequence.isEmpty()) {
+                String firstCode = sequence.get(0).getCode();
+                family.setCurrentMilestone(firstCode);
+                familyRepository.save(family);
+                log.info("🏥 [SELF-HEALING] Hito desconocido '{}' actualizado automáticamente al primer hito moderno '{}' para la familia ID: {}.", 
+                        current, firstCode, familyId);
+                return firstCode;
+            }
+        } else if (currentIndex < sequence.size() - 1) {
+            String next = sequence.get(currentIndex + 1).getCode();
             family.setCurrentMilestone(next);
             familyRepository.save(family);
+            log.info("🚀 [MILESTONE-SERVICE] Familia {} avanzada del hito '{}' al '{}' de forma exitosa.", 
+                    familyId, current, next);
             return next;
         }
+        
+        log.warn("⚠️ [MILESTONE-SERVICE] Familia {} ya se encuentra en el hito terminal '{}'.", familyId, current);
         return current;
     }
 }
-
-

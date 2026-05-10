@@ -1,0 +1,70 @@
+<section class="gratitude-page">
+  <header class="gratitude-header">
+    <div>
+      <h1>Muro de Gratitud Familiar</h1>
+      <p>
+        Un espacio diario para reconocer y celebrar las pequeñas acciones con las que nos apoyamos e iluminamos el hogar.
+      </p>
+    </div>
+  </header>
+
+  <div class="error" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <div class="success" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+
+  <section class="card">
+    <h2>Enviar un Agradecimiento</h2>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>De (Miembro Emisor)</label>
+        <input [(ngModel)]="form.fromMember" placeholder="Tu nombre, Ej: Papá, William, etc." />
+      </div>
+
+      <div class="form-group">
+        <label>Para (Miembro Receptor)</label>
+        <input [(ngModel)]="form.toMember" placeholder="A quién agradeces, Ej: Mamá, Sofía..." />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Mensaje de Agradecimiento</label>
+      <textarea [(ngModel)]="form.description" placeholder="Gracias por prepararme café por la mañana / escucharme cuando estuve estresado..."></textarea>
+    </div>
+
+    <button class="btn-primary" (click)="createGratitude()" [disabled]="loading || !isFormValid()">
+      Compartir en el Muro 💖
+    </button>
+  </section>
+
+  <section>
+    <h2>Agradecimientos Recientes</h2>
+    
+    <div class="entries-grid">
+      <div *ngIf="loading" class="loading-state">Abriendo el cofre de la gratitud...</div>
+      <div *ngIf="!loading && entries.length === 0" class="empty-state">
+        El muro está esperando vuestra primera chispa. ¡Anímate a agradecer hoy!
+      </div>
+
+      <article class="gratitude-card" *ngFor="let entry of entries">
+        <div class="card-header">
+          <span>Para: <strong>{{ entry.toMember }}</strong></span>
+          <span class="heart-icon">♥</span>
+        </div>
+
+        <div class="card-body">
+          <p class="gratitude-text">"{{ entry.description }}"</p>
+        </div>
+
+        <div class="card-footer">
+          <span>De: <strong class="from-badge">{{ entry.fromMember }}</strong></span>
+          <span>{{ entry.createdAt | date:'short' }}</span>
+        </div>
+      </article>
+    </div>
+  </section>
+</section>

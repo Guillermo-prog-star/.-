@@ -1,24 +1,18 @@
 package com.integrityfamily.plan.event;
 
-import com.integrityfamily.plan.service.PlanGenerationService;
-import org.springframework.stereotype.Component;
 
-@Component
+/**
+ * @deprecated OBSOLETE - This class has been replaced by the native asynchronous 
+ * RabbitMQ message-driven consumers:
+ * 1. PlanConsumer (for action plans)
+ * 2. AiInsightConsumer (for AI clinical insights)
+ * 3. AnalyticsEventConsumer (for dashboard read-model sync)
+ */
+@Deprecated
+// @Component
 public class EvaluationCompletedConsumer {
-
-    private final PlanGenerationService planGenerationService;
-
-    public EvaluationCompletedConsumer(PlanGenerationService planGenerationService) {
-        this.planGenerationService = planGenerationService;
-    }
-
-    public void onEvaluationCompleted(Long evaluationId) {
-        if (evaluationId == null) {
-            return;
-        }
-        // OBSOLETO: El enrutamiento ahora se hace nativamente con RabbitMQ escuchando Map<String,Object>
-        // planGenerationService.generatePlanFromEvaluation(evaluationId);
-    }
+    // This consumer has been deprecated and its component annotation removed 
+    // to prevent Spring bean registration and save memory resources.
 }
 
 

@@ -1,5 +1,6 @@
 package com.integrityfamily.analytics.messaging;
 
+import java.util.Map;
 import com.integrityfamily.analytics.domain.FamilyDashboardView;
 import com.integrityfamily.analytics.repository.FamilyDashboardViewRepository;
 import com.integrityfamily.common.config.RabbitConfig;
@@ -37,7 +38,17 @@ public class AnalyticsEventConsumer {
 
         switch (event.routingKey()) {
             case "evaluation.completed":
-                view.setLatestIcf(BigDecimal.valueOf((Double) event.payload()));
+                Double icf = 0.0;
+                if (event.payload() instanceof Map) {
+                    Map<?, ?> payloadMap = (Map<?, ?>) event.payload();
+                    Object icfVal = payloadMap.get("icf");
+                    if (icfVal instanceof Number) {
+                        icf = ((Number) icfVal).doubleValue();
+                    }
+                } else if (event.payload() instanceof Number) {
+                    icf = ((Number) event.payload()).doubleValue();
+                }
+                view.setLatestIcf(BigDecimal.valueOf(icf));
                 break;
             case "members.updated":
                 // Lógica de conteo de miembros (simplificada por ahora)

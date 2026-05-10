@@ -4,9 +4,9 @@ spring:
   application:
     name: integrity-family
   datasource:
-    url: jdbc:mysql://${DB_HOST:if-mysql}:${DB_PORT:3306}/${DB_NAME:integrity_family}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota&connectTimeout=10000
-    username: ${DB_USER:root}
-    password: ${DB_PASSWORD:root}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${DB_HOST:if-mysql}:${DB_PORT:3306}/${DB_NAME:integrity_family}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota&connectTimeout=10000}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:root}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:root}}
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       initialization-fail-timeout: 60000
@@ -26,13 +26,20 @@ spring:
         format_sql: false
         dialect: org.hibernate.dialect.MySQLDialect
   rabbitmq:
-    host: ${RABBITMQ_HOST:if-rabbitmq}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USER:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    host: ${SPRING_RABBITMQ_HOST:${RABBITMQ_HOST:if-rabbitmq}}
+    port: ${SPRING_RABBITMQ_PORT:${RABBITMQ_PORT:5672}}
+    username: ${SPRING_RABBITMQ_USERNAME:${RABBITMQ_USER:guest}}
+    password: ${SPRING_RABBITMQ_PASSWORD:${RABBITMQ_PASSWORD:guest}}
     listener:
       simple:
         auto-startup: ${RABBITMQ_ENABLED:false}
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 2000ms
+          max-attempts: 3
+          max-interval: 10000ms
+          multiplier: 2.0
     template:
       retry:
         enabled: false
@@ -62,7 +69,7 @@ app:
     anthropic:
       enabled: ${CLAUDE_ENABLED:true}
       api-key: ${CLAUDE_API_KEY:MOCK_KEY}
-      model: ${CLAUDE_MODEL:claude-3-5-sonnet-20240620}
+      model: ${CLAUDE_MODEL:claude-3-5-sonnet-20241022}
       base-url: ${CLAUDE_BASE_URL:https://api.anthropic.com/v1}
     openai:
       api-key: ${OPENAI_API_KEY:MOCK_KEY}

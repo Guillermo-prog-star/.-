@@ -44,7 +44,31 @@ export interface EvaluationHistory { id: number; familyId: number; memberId: num
 export interface RiskHistory { id: number; evaluationId: number; riskLevel: RiskLevel; scoreEmotions: number; scoreCommunication: number; scoreHabits: number; scoreTimes: number; globalScore: number; createdAt: string; }
 
 // Plan
-export interface PlanTask { id: number; title: string; description: string; assignedMemberId: number|null; assignedMemberName: string|null; completed: boolean; dimension?: string; periodicityMonths?: number; dueDate?: string; }
+export interface PlanTaskStep {
+  id: number;
+  type: string;
+  detail: string;
+}
+
+export interface PlanTask { 
+  id: number; 
+  title: string; 
+  description: string; 
+  assignedMemberId: number|null; 
+  assignedMemberName: string|null; 
+  completed: boolean; 
+  dimension?: string; 
+  periodicityMonths?: number; 
+  dueDate?: string; 
+  fase?: string;
+  riesgoAsociado?: string;
+  objetivo?: string;
+  accionConcreta?: string;
+  indicadorCumplimiento?: string;
+  evidenciaRequerida?: string;
+  impactoIcf?: number;
+  steps?: PlanTaskStep[];
+}
 export interface Plan { id: number; familyId: number; evaluationId: number; title: string; description: string; aiReport: string|null; aiGeneratedAt: string|null; status: string; vision3y?: string; tasks: PlanTask[]; }
 
 // Checklist

@@ -31,7 +31,14 @@ public class PlanDtos {
             Long assignedMemberId,
             String assignedMemberName,
             boolean completed,
-            List<PlanTaskStepResponse> steps
+            List<PlanTaskStepResponse> steps,
+            String fase,
+            String riesgoAsociado,
+            String objetivo,
+            String accionConcreta,
+            String indicadorCumplimiento,
+            String evidenciaRequerida,
+            Integer impactoIcf
     ) {}
 
     @Builder

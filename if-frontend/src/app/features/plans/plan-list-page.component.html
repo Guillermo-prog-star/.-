@@ -1,108 +1,216 @@
-<div class="cli-container">
-  <div class="cli-header">
-    <div class="cli-title">INTEGRITY_TERMINAL_v4.2</div>
-    <div class="cli-status">CONEXIÓN SEGURA [ESTABLE]</div>
+<div class="dashboard-container">
+  
+  <!-- Encabezado del Dashboard -->
+  <div class="dashboard-header">
+    <div class="dashboard-title-group">
+      <h1 class="dashboard-title">Portal de Transformación Familiar</h1>
+      <div class="family-badge">
+        📂 NODO FAMILIAR ACTIVO: {{ familyCode }}
+      </div>
+    </div>
   </div>
 
-  <div class="cli-body">
-    <div class="cli-line comment">*/CÓDIGO FAMILIA ASIGNADO: {{ familyCode }}/*</div>
-    <div class="cli-line comment">*/</div>
-    
-    <div class="cli-line mt-16 comment">*/COMANDOS DISPONIBLES:</div>
-    <div class="cli-line comment">  ─────────────────────────────────────────────────</div>
-    <div class="cli-line"><span class="cli-keyword">  Evaluaciones:</span>  'evaluación inicio' / '3 meses' / '6 meses' /</div>
-    <div class="cli-line">                 '12 meses' / '18 meses' / '24 meses' / '30 meses' / '36 meses'</div>
-    <div class="cli-line"><span class="cli-keyword">  Continuidad:</span>   'práctica semanal'</div>
-    <div class="cli-line"><span class="cli-keyword">  Análisis:</span>      'plan longitudinal' / 'ver ruta' / 'ver perfil'</div>
-    <div class="cli-line"><span class="cli-keyword">  Momentos:</span>      'día crítico' / 'ver días críticos'</div>
-    <div class="cli-line"><span class="cli-keyword">  Seguimiento:</span>   'checklist'  → Ver y marcar actividades completadas</div>
-    <div class="cli-line"><span class="cli-keyword">  Sesión:</span>        'cambiar familia' → volver al menú principal</div>
-    <div class="cli-line comment">  ─────────────────────────────────────────────────*/</div>
-
-    <div class="cli-line mt-24 text-accent">  */🗺️  RUTA DE TRANSFORMACIÓN — 8 PILARES</div>
-    <div class="cli-line text-accent">════════════════════════════════════════════════════════</div>
-    <div class="cli-line cli-table-header">
-      <span class="col-mes">Mes</span>
-      <span class="col-pilar">Pilar</span>
-      <span class="col-fase">Fase</span>
-      <span class="col-estado">Estado</span>
-    </div>
-    <div class="cli-line cli-table-divider">  ────  ─────────────── ──────────────────────  ────────────────────</div>
-    
-    <!-- Renderizado Dinámico de la Ruta -->
-    <div class="cli-line cli-row">
-      <span class="col-mes">  0</span>
-      <span class="col-pilar">📍 Inicio</span>
-      <span class="col-fase">Diagnóstico Base</span>
-      <span class="col-estado cli-success">✅ ICF 85.60% ⚠️ BAJO</span>
-    </div>
-    <div class="cli-line cli-row">
-      <span class="col-mes">  3</span>
-      <span class="col-pilar">🌱 3 Meses</span>
-      <span class="col-fase">Primeros Cambios</span>
-      <span class="col-estado cli-warning">⏳ PRÓXIMO</span>
-    </div>
-    <div class="cli-line cli-row">
-      <span class="col-mes">  6</span>
-      <span class="col-pilar">🌿 6 Meses</span>
-      <span class="col-fase">Consolidación Inicial</span>
-      <span class="col-estado text-muted">⬜ Pendiente</span>
-    </div>
-    <div class="cli-line cli-table-divider text-muted">  ┄┄┄┄  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄</div>
-    <div class="cli-line cli-row text-muted">
-      <span class="col-mes"> 12</span>
-      <span class="col-pilar">🌳 12 Meses</span>
-      <span class="col-fase">Primera Transformación</span>
-      <span class="col-estado">⬜ Pendiente</span>
-    </div>
-    <div class="cli-line cli-row text-muted">
-      <span class="col-mes"> 18</span>
-      <span class="col-pilar">🛡️ 18 Meses</span>
-      <span class="col-fase">Profundización</span>
-      <span class="col-estado">⬜ Pendiente</span>
-    </div>
-    <div class="cli-line cli-table-divider text-muted">  ┄┄┄┄  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄</div>
-    <div class="cli-line cli-row text-muted">
-      <span class="col-mes"> 24</span>
-      <span class="col-pilar">⚙️ 24 Meses</span>
-      <span class="col-fase">Madurez del Sistema</span>
-      <span class="col-estado">⬜ Pendiente</span>
-    </div>
-    <div class="cli-line cli-row text-muted">
-      <span class="col-mes"> 30</span>
-      <span class="col-pilar">⭐ 30 Meses</span>
-      <span class="col-fase">Cierre y Sostenimiento</span>
-      <span class="col-estado">⬜ Pendiente</span>
-    </div>
-    <div class="cli-line cli-table-divider text-muted">  ┄┄┄┄  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄ ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄  ┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄┄</div>
-    <div class="cli-line cli-row text-muted">
-      <span class="col-mes"> 36</span>
-      <span class="col-pilar">🏆 36 Meses</span>
-      <span class="col-fase">Transformación Completa</span>
-      <span class="col-estado">⬜ Pendiente</span>
-    </div>
-
-    @if (plans.length > 0) {
-      <div class="cli-line mt-24 text-accent">  */📌  MISIONES ACTIVAS (Generadas por IA)</div>
-      <div class="cli-line text-accent">════════════════════════════════════════════════════════</div>
-      @for (plan of plans; track plan.id) {
-        <div class="cli-line cli-keyword">> {{ plan.title }}</div>
-        <div class="cli-line comment pl-16">Visión: "{{ plan.vision3y || 'N/A' }}"</div>
-        @for (task of plan.tasks; track task.id) {
-          <div class="cli-line pl-16 flex items-center">
-            <span class="mr-8">[{{ task.completed ? 'X' : ' ' }}]</span>
-            <span>{{ task.title }}</span>
-            <span class="ml-auto text-muted">[{{ task.dimension }}]</span>
-          </div>
-        }
-        <div class="cli-line"> </div>
+  <!-- SECCIÓN 1: RUTA DE TRANSFORMACIÓN LONGITUDINAL (36 MESES) -->
+  <div class="glass-card">
+    <h2 class="card-title">
+      <i>🗺️</i> Ruta de Transformación — 8 Pilares de Integridad
+    </h2>
+    <div class="timeline-grid">
+      @for (m of milestones; track m.code) {
+        <div class="timeline-row" 
+             [class.active]="m.orderIndex === getCurrentMilestoneOrderIndex()"
+             [class.completed]="m.orderIndex < getCurrentMilestoneOrderIndex()">
+          
+          <span class="col-month">{{ getMilestoneMonthLabel(m.code) }}</span>
+          
+          <span class="col-pilar">
+            {{ getMilestoneEmoji(m.code) }} {{ m.label }}
+          </span>
+          
+          <span class="col-fase">{{ m.title }}</span>
+          
+          <span class="status-pill" 
+                [ngClass]="{
+                  'status-completed': m.orderIndex < getCurrentMilestoneOrderIndex(),
+                  'status-active': m.orderIndex === getCurrentMilestoneOrderIndex(),
+                  'status-pending': m.orderIndex > getCurrentMilestoneOrderIndex()
+                }">
+            {{ getMilestoneStatusText(m) }}
+          </span>
+        </div>
       }
+    </div>
+  </div>
+
+  <!-- SECCIÓN 2: MISIONES Y TAREAS ACTIVAS (IA CLINICAL PLANS) -->
+  <div class="glass-card">
+    <h2 class="card-title">
+      <i>📌</i> Misiones Activas y Compromisos de Cambio
+    </h2>
+    
+    @if (plans.length > 0) {
+      <div class="missions-list">
+        @for (plan of plans; track plan.id) {
+          <div class="plan-header">
+            <h3 class="plan-title">🎯 {{ plan.title }}</h3>
+            <p class="plan-vision">Visión Familiar: "{{ plan.vision3y || 'Fortalecer la cohesión y comunicación del núcleo.' }}"</p>
+          </div>
+
+          @for (task of plan.tasks; track task.id) {
+            <div class="task-card" [class.expanded]="selectedTaskId === task.id">
+              
+              <!-- Fila Principal de la Tarea -->
+              <div class="task-main-row" (click)="selectTask(task.id, $event)">
+                <div class="checkbox-wrapper" 
+                     [class.checked]="task.completed"
+                     (click)="toggle(task.id, !task.completed); $event.stopPropagation()">
+                  @if (task.completed) { ✓ }
+                </div>
+                
+                <span class="task-title-text" [class.completed]="task.completed">
+                  {{ task.title }}
+                </span>
+                
+                <span class="dimension-badge">
+                  {{ task.dimension || 'GENERAL' }}
+                </span>
+                
+                <span class="expand-chevron">▶</span>
+              </div>
+
+              <!-- Detalle Premium Expandido -->
+              @if (selectedTaskId === task.id) {
+                <div class="task-details-pane">
+                  
+                  <!-- Columna de Información Clínica -->
+                  <div class="details-column">
+                    <div class="detail-item">
+                      <span class="detail-lbl">📍 Hito / Fase Asociada</span>
+                      <span class="detail-val highlight">{{ task.fase || 'RECONOCIMIENTO' }}</span>
+                    </div>
+                    @if (task.riesgoAsociado) {
+                      <div class="detail-item">
+                        <span class="detail-lbl">⚠️ Riesgo Mitigado</span>
+                        <span class="detail-val">{{ task.riesgoAsociado }}</span>
+                      </div>
+                    }
+                    @if (task.objetivo) {
+                      <div class="detail-item">
+                        <span class="detail-lbl">🎯 Objetivo Conductual</span>
+                        <span class="detail-val text-white">{{ task.objetivo }}</span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Columna de Acciones y Evidencias -->
+                  <div class="details-column">
+                    @if (task.accionConcreta) {
+                      <div class="detail-item">
+                        <span class="detail-lbl">📋 Acción Concreta</span>
+                        <span class="detail-val text-white font-medium">{{ task.accionConcreta }}</span>
+                      </div>
+                    }
+                    @if (task.indicadorCumplimiento) {
+                      <div class="detail-item">
+                        <span class="detail-lbl">📏 Indicador de Éxito</span>
+                        <span class="detail-val">{{ task.indicadorCumplimiento }}</span>
+                      </div>
+                    }
+                    @if (task.evidenciaRequerida) {
+                      <div class="detail-item">
+                        <span class="detail-lbl">📸 Evidencia Requerida</span>
+                        <span class="detail-val highlight">{{ task.evidenciaRequerida }}</span>
+                      </div>
+                    }
+                    <div class="flex items-center gap-16 mt-4">
+                      @if (task.impactoIcf) {
+                        <div class="detail-item">
+                          <span class="detail-lbl">📈 Impacto ICF</span>
+                          <span class="detail-val success">+{{ task.impactoIcf }} puntos</span>
+                        </div>
+                      }
+                      @if (task.dueDate) {
+                        <div class="detail-item">
+                          <span class="detail-lbl">📅 Fecha Límite</span>
+                          <span class="detail-val text-white">{{ task.dueDate | date:'mediumDate' }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Pipeline del Bucle de Ejecución Cerrado -->
+                  @if (task.steps && task.steps.length > 0) {
+                    <div class="pipeline-container">
+                      <h4 class="pipeline-title">⚙️ Bucle de Ejecución Conductual (Ciclo Cerrado)</h4>
+                      <div class="pipeline-steps">
+                        @for (step of task.steps; track step.id) {
+                          <div class="pipeline-step-card">
+                            <span class="step-header">[{{ step.type }}]</span>
+                            <span class="step-desc">{{ step.detail }}</span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  }
+
+                </div>
+              }
+
+            </div>
+          }
+        }
+      </div>
     } @else {
-      <div class="cli-line mt-24 cli-warning">  [SISTEMA]: No se encontraron misiones activas. Diagnóstico requerido.</div>
+      <div class="empty-state">
+        <span>⚠️ [ALERTA]</span>
+        <p>No se encontraron misiones de transformación activas para la familia López Rivera. Diagnóstico o recalibración clínica requerida.</p>
+      </div>
+    }
+  </div>
+
+</div>
+
+<!-- CONSOLA INTERACTIVA SENTINEL (DRAWER COLAPSIBLE AL PIE) -->
+<div class="cli-drawer" [class.collapsed]="isCliCollapsed">
+  
+  <!-- Barra de Título / Pestaña de Control -->
+  <div class="cli-drawer-header" (click)="toggleCli()">
+    <div class="cli-drawer-title">
+      <div class="cli-drawer-pulse"></div>
+      <span>SENTINEL_CLI_v4.5</span>
+    </div>
+    <div class="cli-drawer-toggle-btn">
+      {{ isCliCollapsed ? '▲ EXPANDIR CONSOLA' : '▼ COLAPSAR CONSOLA' }}
+    </div>
+  </div>
+
+  <!-- Cuerpo de Consola Activa -->
+  <div class="cli-drawer-body" (click)="cmdInput.focus()">
+    <div class="cli-drawer-line comment">*/ CONSOLA DE SEGURIDAD OPERACIONAL Y CONTROL DE HITOS /*</div>
+    <div class="cli-drawer-line comment">*/ Escribe "ayuda" o "help" para ver la lista de comandos disponibles. /*</div>
+    
+    @if (terminalLogs.length > 0) {
+      @for (log of terminalLogs; track log) {
+        <div class="cli-drawer-line" 
+             [style.color]="log.startsWith('$') ? '#79c0ff' : (log.includes('❌') || log.includes('🚨') || log.includes('⚠️') ? '#ff7b72' : (log.includes('✅') || log.includes('🚀') ? '#3fb950' : '#8b949e'))">
+          {{ log }}
+        </div>
+      }
     }
 
-    <div class="cli-prompt mt-24">
-      <span class="cli-user">sentinel&#64;if-core</span><span class="cli-colon">:</span><span class="cli-path">~/family/{{ familyId || '0001' }}/plans</span><span class="cli-cursor">$</span> <span class="cli-blink">_</span>
+    <!-- Prompt de Comando -->
+    <div class="cli-drawer-prompt">
+      <span class="cli-drawer-user">sentinel&#64;if-core</span>
+      <span class="cli-colon">:</span>
+      <span class="cli-drawer-path">~/family/{{ familyId || '0001' }}/plans</span>
+      <span class="cli-drawer-cursor">$</span>
+      <input #cmdInput 
+             type="text" 
+             class="cli-drawer-input" 
+             (keyup.enter)="onCommand(cmdInput.value); cmdInput.value=''" 
+             placeholder="Escribe un comando... (ej: 'ayuda')" 
+             autocomplete="off" />
     </div>
   </div>
+
 </div>

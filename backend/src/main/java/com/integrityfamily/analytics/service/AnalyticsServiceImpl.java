@@ -175,7 +175,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         // 13. SincronizaciÃƒÂ³n AsÃƒÂ­ncrona via RabbitMQ (Disparar generaciÃƒÂ³n de planes)
         log.info("Ã°Å¸â€œÂ§ [ANALYTICS] Intentando sincronizar con RabbitMQ...");
         try {
-            rabbitTemplate.convertAndSend(RabbitConfig.PLAN_QUEUE, response);
+            rabbitTemplate.convertAndSend(RabbitConfig.EXCHANGE_NAME, "tasks.suggested", response);
             log.info("Ã¢Å“â€¦ [ANALYTICS] SincronizaciÃƒÂ³n RabbitMQ completada.");
         } catch (Exception e) {
             log.error("Ã¢ÂÅ’ [ANALYTICS] Error al enviar a RabbitMQ (No crÃƒÂ­tico para el Dashboard): {}", e.getMessage());

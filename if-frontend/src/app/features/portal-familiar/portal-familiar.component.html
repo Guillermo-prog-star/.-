@@ -1,0 +1,334 @@
+<div class="portal-wrapper">
+  <!-- Simulador de Smartphone de Lujo para Pantallas Grandes, Responsivo al 100% en Móviles -->
+  <div class="phone-simulator">
+    
+    <!-- Barra de Estado del Teléfono Mockup -->
+    <header class="phone-status-bar">
+      <span class="time">15:47</span>
+      <div class="notch"></div>
+      <div class="status-icons">
+        <span class="wifi">📶</span>
+        <span class="battery">🔋 100%</span>
+      </div>
+    </header>
+
+    <!-- Cuerpo del Portal Familiar -->
+    <div class="phone-content">
+      
+      <!-- Errores -->
+      <div class="error-toast" *ngIf="errorMessage">
+        <span>⚠️ {{ errorMessage }}</span>
+      </div>
+
+      <!-- Cabecera de Identidad Familiar -->
+      <section class="user-hero">
+        <div class="header-main">
+          <div class="greeting-box">
+            <span class="eyebrow">✨ PORTAL DEL HOGAR</span>
+            <h1>¡Hola, {{ userFullName }}!</h1>
+            <p class="family-name">NÚCLEO: <strong>{{ familyName }}</strong></p>
+          </div>
+          <span class="role-pill">{{ roleLabel === 'ROLE_ADMIN' ? 'Gestor' : 'Miembro' }}</span>
+        </div>
+
+        <div class="milestone-indicator" *ngIf="stats">
+          <span class="milestone-tag">🚀 HITO ACTIVO</span>
+          <p class="milestone-name">{{ stats.currentMilestone }}</p>
+        </div>
+      </section>
+
+      <!-- Rueda de Progreso Diario (SVG Circular) -->
+      <section class="progress-card">
+        <div class="circle-box">
+          <svg class="radial-svg" viewBox="0 0 100 100">
+            <circle class="circle-bg" cx="50" cy="50" r="40" />
+            <circle class="circle-progress" cx="50" cy="50" r="40" 
+                    [attr.stroke-dashoffset]="251.2 - (251.2 * completionPercentage / 100)" />
+          </svg>
+          <div class="circle-label">
+            <span class="percentage">{{ completionPercentage }}%</span>
+            <span class="subtext">CONEXIÓN HOY</span>
+          </div>
+        </div>
+        <div class="progress-info">
+          <h3>Sintonía Diaria</h3>
+          <p *ngIf="checklistItems.length">Han completado {{ completedCount }} de {{ checklistItems.length }} micro-acciones de hoy.</p>
+          <p *ngIf="!checklistItems.length">No hay acciones registradas para el hito hoy.</p>
+        </div>
+      </section>
+
+      <!-- Checklist de Micro-acciones de Fricción Cero -->
+      <section class="checklist-section">
+        <div class="section-header">
+          <h2>📝 Acciones de Hoy</h2>
+          <span class="badge" *ngIf="checklistItems.length">{{ checklistItems.length }} misiones</span>
+        </div>
+
+        <div *ngIf="loading" class="inner-loading">Sincronizando el checklist...</div>
+
+        <div class="checklist-container" *ngIf="!loading">
+          <div class="checklist-item" 
+               *ngFor="let item of checklistItems" 
+               [class.item-completed]="item.completed"
+               (click)="toggleChecklistItem(item)">
+            <div class="checkbox-circle">
+              <span class="check-icon" *ngIf="item.completed">✓</span>
+            </div>
+            <div class="item-details">
+              <p class="item-text">{{ item.taskDescription || item.description }}</p>
+              <div class="item-meta">
+                <span class="dimension-badge">{{ item.dimension || 'Vínculo' }}</span>
+                <span class="completed-by" *ngIf="item.completed">Por: {{ item.completedBy }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="empty-actions" *ngIf="checklistItems.length === 0">
+            <span>🎉</span>
+            <p>¡No hay acciones pendientes hoy! Sigan vibrando en armonía.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SECCIÓN IVR: MÉTRICAS DE AUTORREGULACIÓN CONDUCTUAL (CRISTAL ESMERILADO) -->
+      <section class="ivr-glass-card" *ngIf="ivrSummary">
+        <div class="ivr-card-header">
+          <div>
+            <span class="ivr-subtitle">⚡ SENSOR DE REPARACIÓN</span>
+            <h2>Índice IVR Familiar</h2>
+          </div>
+          <button class="btn-friction-trigger" (click)="openFrictionModal()">
+            <span>⚠️</span> Reportar Fricción
+          </button>
+        </div>
+
+        <div class="ivr-card-body">
+          <div class="ivr-gauge-box">
+            <svg class="ivr-radial-svg" viewBox="0 0 100 100">
+              <circle class="ivr-circle-bg" cx="50" cy="50" r="40" />
+              <circle class="ivr-circle-progress" cx="50" cy="50" r="40" 
+                      [attr.stroke-dashoffset]="251.2 - (251.2 * ivrSummary.ivrScore / 100)"
+                      [style.stroke]="ivrSummary.ivrScore >= 80 ? '#10b981' : ivrSummary.ivrScore >= 50 ? '#f59e0b' : '#ef4444'" />
+            </svg>
+            <div class="ivr-gauge-text">
+              <span class="ivr-score-value">{{ ivrSummary.ivrScore }}%</span>
+              <span class="ivr-score-label">COHESIÓN</span>
+            </div>
+          </div>
+
+          <div class="ivr-stats-grid">
+            <div class="ivr-stat-pill">
+              <span class="stat-number">{{ ivrSummary.repairedConflicts }}/{{ ivrSummary.totalConflicts }}</span>
+              <span class="stat-label">Reparados</span>
+            </div>
+            <div class="ivr-stat-pill">
+              <span class="stat-number">{{ ivrSummary.averageRepairTimeHours }}h</span>
+              <span class="stat-label">Latencia Promedio</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ivr-clinical-guideline" [ngSwitch]="true">
+          <p *ngSwitchCase="ivrSummary.ivrScore >= 80" class="guideline-good">
+            💚 **Regulación Óptima:** Su velocidad de reparación mantiene los vínculos seguros. ¡Excelente resiliencia!
+          </p>
+          <p *ngSwitchCase="ivrSummary.ivrScore >= 50" class="guideline-warning">
+            💛 **Atención Requerida:** Registran fricciones con latencia prolongada. Dialoguen antes de que se enfríe el día.
+          </p>
+          <p *ngSwitchDefault class="guideline-danger">
+            ❤️ **Alerta de Distanciamiento:** Reparaciones lentas o nulas activan alertas de silencio. Busquen al consultor.
+          </p>
+        </div>
+      </section>
+
+      <!-- CRONOLOGÍA DE FRICCIONES Y REPARACIONES -->
+      <section class="friction-timeline-section">
+        <div class="section-header">
+          <h2>📊 Línea de Convivencia</h2>
+          <span class="badge badge-indigo" *ngIf="behavioralEvents.length">{{ behavioralEvents.length }} incidentes</span>
+        </div>
+
+        <div class="timeline-container" *ngIf="behavioralEvents.length">
+          <div class="timeline-node" *ngFor="let ev of behavioralEvents" [class.node-repaired]="ev.repairedAt">
+            <div class="node-line-indicator">
+              <div class="node-dot" [class.dot-danger]="!ev.repairedAt"></div>
+            </div>
+            
+            <div class="node-card">
+              <div class="node-header">
+                <span class="severity-badge" [ngClass]="'severity-' + ev.severity">
+                  Severidad: {{ ev.severity }}
+                </span>
+                <span class="node-date">{{ ev.occurredAt | date:'short' }}</span>
+              </div>
+              
+              <p class="node-description">"{{ ev.description }}"</p>
+
+              <!-- Detalles de reparación si existe -->
+              <div class="repair-detail-box" *ngIf="ev.repairedAt">
+                <div class="repair-header">
+                  <span class="repair-check">✓ Reparado</span>
+                  <span class="repair-date">{{ ev.repairedAt | date:'short' }}</span>
+                </div>
+                <p class="repair-desc">"{{ ev.repairDescription }}"</p>
+              </div>
+
+              <!-- Botón rápido para reparar si está pendiente -->
+              <button class="btn-repair-action" *ngIf="!ev.repairedAt" (click)="openRepairModal(ev)">
+                🛠️ Reparar este Incidente
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="empty-timeline-card" *ngIf="behavioralEvents.length === 0">
+          <span>🛡️</span>
+          <p>No se reportan fricciones conductuales. La homeostasis del hogar se encuentra equilibrada.</p>
+        </div>
+      </section>
+
+      <!-- Enviar Nota de Amor Rápida (Gratitud) -->
+      <section class="quick-gratitude-section">
+        <h2>💖 Enviar Destello de Amor</h2>
+        
+        <div class="success-toast" *ngIf="gratitudeSuccess">
+          <span>✨ ¡Destello compartido en el Muro!</span>
+        </div>
+
+        <div class="gratitude-mini-form">
+          <div class="input-container">
+            <input [(ngModel)]="gratitudeForm.toMember" placeholder="¿Para quién? Ej: Mamá, Sofía..." />
+          </div>
+          <div class="input-container">
+            <textarea [(ngModel)]="gratitudeForm.description" placeholder="Escribe un agradecimiento rápido por hoy..."></textarea>
+          </div>
+          <button class="btn-send" 
+                  (click)="submitQuickGratitude()" 
+                  [disabled]="submittingGratitude || !gratitudeForm.toMember.trim() || !gratitudeForm.description.trim()">
+            {{ submittingGratitude ? 'Enviando...' : 'Compartir en el Muro 💖' }}
+          </button>
+        </div>
+      </section>
+
+      <!-- Feed de Gratitud Móvil -->
+      <section class="gratitude-feed-section" *ngIf="gratitudeEntries.length">
+        <div class="section-header">
+          <h2>🌟 Muro de Luz Reciente</h2>
+        </div>
+
+        <div class="feed-grid">
+          <div class="feed-card" *ngFor="let entry of gratitudeEntries">
+            <div class="feed-header">
+              <span class="to">Para: <strong>{{ entry.toMember }}</strong></span>
+              <span class="heart">♥</span>
+            </div>
+            <p class="feed-text">"{{ entry.description }}"</p>
+            <div class="feed-footer">
+              <span>De: <strong class="author">{{ entry.fromMember }}</strong></span>
+              <span>{{ entry.createdAt | date:'shortTime' }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- MODAL ESPECTACULAR: REGISTRO DE REPARACIÓN CONDUCTUAL (GLASSMORPHISM) -->
+    <div class="glass-modal-overlay" *ngIf="showRepairModal" (click)="closeRepairModal()">
+      <div class="glass-modal-container" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <span class="modal-icon">🛠️</span>
+          <div>
+            <h3>Registrar Reparación</h3>
+            <p>Selle de forma amorosa y madura el acuerdo de reconciliación.</p>
+          </div>
+        </header>
+
+        <div class="modal-body">
+          <div class="modal-reference-card">
+            <strong>Fricción Original:</strong>
+            <p>"{{ selectedEventForRepair?.description }}"</p>
+          </div>
+
+          <div class="input-container">
+            <label class="modal-label">Descripción de la Reparación / Acuerdos:</label>
+            <textarea [(ngModel)]="repairForm.description" placeholder="¿Cómo dialogaron y resolvieron la tensión? Detalle los compromisos conjuntos..."></textarea>
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <button class="btn-modal-cancel" (click)="closeRepairModal()">Cancelar</button>
+          <button class="btn-modal-submit btn-repair-confirm" 
+                  (click)="submitRepair()" 
+                  [disabled]="submittingRepair || !repairForm.description.trim()">
+            {{ submittingRepair ? 'Guardando...' : 'Sellar Reconciliación 💖' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- MODAL ESPECTACULAR: REPORTAR NUEVA FRICCIÓN (GLASSMORPHISM) -->
+    <div class="glass-modal-overlay" *ngIf="showFrictionModal" (click)="closeFrictionModal()">
+      <div class="glass-modal-container glass-modal-danger" (click)="$event.stopPropagation()">
+        <header class="modal-header">
+          <span class="modal-icon">⚠️</span>
+          <div>
+            <h3>Registrar Fricción</h3>
+            <p>Documente el incidente con sinceridad. El sistema guiará la autorregulación.</p>
+          </div>
+        </header>
+
+        <div class="modal-body">
+          <div class="input-container">
+            <label class="modal-label">¿Qué sucedió?</label>
+            <textarea [(ngModel)]="frictionForm.description" placeholder="Describa el desacuerdo, desconexión o incidente con la mayor asertividad posible..."></textarea>
+          </div>
+
+          <div class="input-container">
+            <label class="modal-label">Nivel de Impacto / Severidad:</label>
+            <div class="severity-selector-grid">
+              <button *ngFor="let lvl of [1,2,3,4,5]" 
+                      type="button" 
+                      class="btn-severity-option" 
+                      [class.active-severity]="frictionForm.severity === lvl"
+                      [ngClass]="'severity-lvl-' + lvl"
+                      (click)="frictionForm.severity = lvl">
+                {{ lvl }}
+              </button>
+            </div>
+            <div class="severity-labels">
+              <span>Leve</span>
+              <span>Crítico</span>
+            </div>
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <button class="btn-modal-cancel" (click)="closeFrictionModal()">Cancelar</button>
+          <button class="btn-modal-submit btn-friction-confirm" 
+                  (click)="submitFriction()" 
+                  [disabled]="submittingFriction || !frictionForm.description.trim()">
+            {{ submittingFriction ? 'Enviando...' : 'Registrar Incidente ⚠️' }}
+          </button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- Barra de Navegación Mockup para Completitud -->
+    <footer class="phone-nav-bar">
+      <div class="nav-button active-nav">
+        <span>🏠</span>
+        <label>Portal</label>
+      </div>
+      <div class="nav-button">
+        <span>📔</span>
+        <label>Bitácora</label>
+      </div>
+      <div class="nav-button">
+        <span>💬</span>
+        <label>Coach IA</label>
+      </div>
+    </footer>
+
+  </div>
+</div>

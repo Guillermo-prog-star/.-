@@ -46,13 +46,7 @@ public class AuthService {
             
             String token = jwtTokenProvider.generate(user);
         
-        com.integrityfamily.auth.dto.UserResponse userDto = new com.integrityfamily.auth.dto.UserResponse(
-            user.getId(), 
-            user.getEmail(), 
-            user.getFullName(), 
-            user.getRole(),
-            user.getFamily() != null ? user.getFamily().getId() : null
-        );
+        com.integrityfamily.auth.dto.UserResponse userDto = com.integrityfamily.auth.dto.UserResponse.from(user);
 
         return new com.integrityfamily.auth.dto.LoginResponse(token, 3600000L, userDto);
         } catch (Exception e) {

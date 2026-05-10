@@ -86,8 +86,22 @@ public class RiskService {
     }
 
     private int calculateMonthsSinceRegistration(Family family) {
-        String milestone = family.getCurrentMilestone() != null ? family.getCurrentMilestone() : "0";
-        return Integer.parseInt(milestone.replaceAll("[^0-9]", "0"));
+        String milestone = family.getCurrentMilestone();
+        if (milestone == null || milestone.isBlank()) {
+            return 0;
+        }
+        String digitsOnly = milestone.replaceAll("[^0-9]", "");
+        if (digitsOnly.isEmpty()) {
+            return 0;
+        }
+        try {
+            long parsed = Long.parseLong(digitsOnly);
+            // Si el número es excesivamente grande, limitarlo a un rango razonable (ej. 36 meses max)
+            return (int) Math.min(parsed, 36L);
+        } catch (NumberFormatException e) {
+            log.warn("[RISK-ENGINE] No se pudo parsear el hito como número de meses: '{}'. Usando 0.", milestone);
+            return 0;
+        }
     }
 
     private int calculateConsciousnessLevel(Double icf) {

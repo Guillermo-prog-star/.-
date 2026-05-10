@@ -10,7 +10,7 @@ import java.util.List;
  * SDD SPEC 6.3: Plan de Mejora Unificado (Plan Híbrido).
  */
 @Entity
-@Table(name = "improvement_plans")
+@Table(name = "plans")
 @Getter
 @Setter
 @Builder

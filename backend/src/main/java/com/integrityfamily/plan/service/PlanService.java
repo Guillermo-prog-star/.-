@@ -3,25 +3,33 @@ package com.integrityfamily.plan.service;
 import com.integrityfamily.domain.ImprovementPlan;
 import com.integrityfamily.domain.PlanTask;
 import com.integrityfamily.domain.PlanTaskStep;
+import com.integrityfamily.domain.FamilyLogbookEntry;
+import com.integrityfamily.domain.LogbookStatus;
 import com.integrityfamily.plan.dto.PlanDtos.*;
 import com.integrityfamily.domain.repository.ImprovementPlanRepository;
 import com.integrityfamily.domain.repository.PlanTaskRepository;
+import com.integrityfamily.domain.repository.FamilyLogbookEntryRepository;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
  * SDD: Servicio de Planificación Harmonizado.
  * Gestiona el ciclo de vida de los planes de transformación familiar.
+ * Integra un motor de Auto-Evidencias [Sentinel Auto-Evidence Engine].
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PlanService {
 
     private final ImprovementPlanRepository planRepository;
     private final PlanTaskRepository planTaskRepository;
+    private final FamilyLogbookEntryRepository logbookEntryRepository;
 
     @Transactional(readOnly = true)
     public List<PlanResponse> findAllPlans() {
@@ -93,7 +101,57 @@ public class PlanService {
         PlanTask task = planTaskRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Tarea no encontrada: " + id));
         task.setCompleted(completed);
-        return toTaskResponse(planTaskRepository.save(task));
+        
+        PlanTask savedTask = planTaskRepository.save(task);
+
+        // [SDD SPEC: Sentinel Auto-Evidence Engine]
+        // Si la tarea se marca como completada, generamos automáticamente su evidencia en la bitácora familiar (logbook)
+        if (completed && task.getPlan() != null && task.getPlan().getFamily() != null) {
+            try {
+                com.integrityfamily.domain.Family family = task.getPlan().getFamily();
+                
+                String situation = "Ejecución exitosa de la Misión Clínica: " + task.getTitle();
+                String difficultyDetected = task.getRiesgoAsociado() != null && !task.getRiesgoAsociado().isBlank() ? 
+                        task.getRiesgoAsociado() : "Prevención de riesgos en la dimensión " + (task.getDimension() != null ? task.getDimension() : "INTEGRIDAD");
+                String emotionIdentified = task.getDimension() != null && !task.getDimension().isBlank() ? 
+                        task.getDimension() : "EMOCIONES";
+                String understanding = task.getObjetivo() != null && !task.getObjetivo().isBlank() ? 
+                        task.getObjetivo() : "La familia comprende la importancia de consolidar este hábito de cambio.";
+                String correctionAction = task.getAccionConcreta() != null && !task.getAccionConcreta().isBlank() ? 
+                        task.getAccionConcreta() : "Realización de las actividades pautadas en el plan.";
+                String familyAgreement = task.getIndicadorCumplimiento() != null && !task.getIndicadorCumplimiento().isBlank() ? 
+                        task.getIndicadorCumplimiento() : "Sostener el hábito en las prácticas cotidianas.";
+                
+                String evidenceDesc = String.format(
+                        "[EVIDENCIA AUTOMÁTICA SENTINEL v4.5]: Microacción completada con éxito. Requisito de evidencia cumplido: '%s'. Impacto de +%d puntos sumados al ICF.",
+                        task.getEvidenciaRequerida() != null && !task.getEvidenciaRequerida().isBlank() ? task.getEvidenciaRequerida() : "Registro clínico de plan de acción",
+                        task.getImpactoIcf() != null ? task.getImpactoIcf() : 10
+                );
+
+                FamilyLogbookEntry evidenceEntry = FamilyLogbookEntry.builder()
+                        .family(family)
+                        .situation(situation)
+                        .difficultyDetected(difficultyDetected)
+                        .emotionIdentified(emotionIdentified)
+                        .understanding(understanding)
+                        .correctionAction(correctionAction)
+                        .familyAgreement(familyAgreement)
+                        .progressEvidence(evidenceDesc)
+                        .status(LogbookStatus.RESOLVED)
+                        .createdBy("SENTINEL_AUTO_AI")
+                        .resolvedBy("SENTINEL_AUTO_AI")
+                        .createdAt(LocalDateTime.now())
+                        .resolvedAt(LocalDateTime.now())
+                        .build();
+
+                logbookEntryRepository.save(evidenceEntry);
+                log.info("🎯 [AUTO-EVIDENCE] Entrada de bitácora registrada automáticamente para la tarea ID: {}", id);
+            } catch (Exception e) {
+                log.error("❌ Error en generación automática de evidencia: {}", e.getMessage());
+            }
+        }
+
+        return toTaskResponse(savedTask);
     }
 
     @Transactional
@@ -141,6 +199,13 @@ public class PlanService {
                 .assignedMemberName(task.getResponsible() != null ? task.getResponsible().getFullName() : null)
                 .completed(task.isCompleted())
                 .steps(steps)
+                .fase(task.getFase())
+                .riesgoAsociado(task.getRiesgoAsociado())
+                .objetivo(task.getObjetivo())
+                .accionConcreta(task.getAccionConcreta())
+                .indicadorCumplimiento(task.getIndicadorCumplimiento())
+                .evidenciaRequerida(task.getEvidenciaRequerida())
+                .impactoIcf(task.getImpactoIcf())
                 .build();
     }
 

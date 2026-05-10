@@ -1,107 +1,528 @@
-/* SDD: CLI Terminal Styling para Plan Longitudinal */
-.cli-container {
-  background-color: #0d1117; /* GitHub Dark / Terminal */
-  color: #c9d1d9;
-  font-family: 'Courier New', Courier, monospace;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-  border: 1px solid #30363d;
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
-  line-height: 1.5;
-  font-size: 14px;
-  animation: fadeIn 0.5s ease-in-out;
+/* 🌟 INTEGRITY FAMILY PREMIUM MODERN DESIGN SYSTEM (v4.5) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap');
+
+:host {
+  display: block;
+  font-family: 'Outfit', sans-serif;
+  background-color: #050811;
+  color: #e6edf3;
+  min-height: 100vh;
+  box-sizing: border-box;
 }
 
-.cli-header {
+/* Base Container */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-bottom: 120px; /* Spacing for the bottom CLI console drawer */
+}
+
+/* Header & Metadata */
+.dashboard-header {
   display: flex;
   justify-content: space-between;
-  border-bottom: 1px solid #30363d;
-  padding-bottom: 1rem;
-  margin-bottom: 1.5rem;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 16px;
 }
 
-.cli-title {
-  color: #58a6ff;
-  font-weight: bold;
-  letter-spacing: 1px;
+.dashboard-title-group {
+  display: flex;
+  flex-direction: column;
 }
 
-.cli-status {
+.dashboard-title {
+  font-size: 24px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #ab7df6 0%, #58a6ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
+.family-badge {
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  color: #8b949e;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  margin-top: 6px;
+  width: fit-content;
+}
+
+/* Glassmorphism Card System */
+.glass-card {
+  background: rgba(13, 17, 28, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(171, 125, 246, 0.25);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f0f6fc;
+}
+
+.card-title i {
+  color: #ab7df6;
+}
+
+/* Premium Timeline / Roadmap Grid */
+.timeline-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.timeline-row {
+  display: grid;
+  grid-template-columns: 80px 1.2fr 1.8fr 1fr;
+  align-items: center;
+  padding: 14px 16px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  transition: all 0.2s ease;
+}
+
+.timeline-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.timeline-row.active {
+  background: rgba(171, 125, 246, 0.06);
+  border-color: rgba(171, 125, 246, 0.2);
+  box-shadow: inset 0 0 12px rgba(171, 125, 246, 0.03);
+}
+
+.timeline-row.completed {
+  opacity: 0.85;
+}
+
+.col-month {
+  font-family: 'Fira Code', monospace;
+  font-weight: 600;
+  color: #ab7df6;
+}
+
+.col-pilar {
+  font-weight: 500;
+  color: #f0f6fc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.col-fase {
+  color: #8b949e;
+  font-size: 14px;
+}
+
+.timeline-row.active .col-fase {
+  color: #f0f6fc;
+  font-weight: 500;
+}
+
+/* Status Badges */
+.status-pill {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  width: fit-content;
+}
+
+.status-completed {
+  background: rgba(63, 185, 80, 0.12);
   color: #3fb950;
-  font-size: 0.85rem;
+  border: 1px solid rgba(63, 185, 80, 0.2);
 }
 
-.cli-body {
-  white-space: pre;
-  overflow-x: auto;
+.status-active {
+  background: rgba(245, 176, 65, 0.12);
+  color: #f5b041;
+  border: 1px solid rgba(245, 176, 65, 0.2);
+  animation: glowPulse 2s infinite ease-in-out;
 }
 
-.cli-line {
-  margin-bottom: 4px;
+.status-pending {
+  background: rgba(255, 255, 255, 0.05);
+  color: #8b949e;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.comment { color: #8b949e; }
-.cli-keyword { color: #ff7b72; }
-.text-accent { color: #d2a8ff; font-weight: bold; }
-.text-muted { color: #8b949e; }
-.cli-success { color: #3fb950; font-weight: bold; }
-.cli-warning { color: #d29922; }
-
-/* Tabla Emulada */
-.cli-table-header {
+/* Active Missions Layout */
+.missions-list {
   display: flex;
-  font-weight: bold;
-  color: #c9d1d9;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.cli-row {
+.plan-header {
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.plan-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #58a6ff;
+}
+
+.plan-vision {
+  font-style: italic;
+  font-size: 13px;
+  color: #8b949e;
+  margin-top: 4px;
+}
+
+/* Individual Task Card */
+.task-card {
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+}
+
+.task-card:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.task-card.expanded {
+  border-color: rgba(88, 166, 255, 0.25);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.task-main-row {
   display: flex;
+  align-items: center;
+  padding: 16px;
+  cursor: pointer;
+  user-select: none;
 }
 
-.cli-table-divider {
-  color: #30363d;
-  margin: 2px 0;
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-right: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
 }
 
-.col-mes { width: 60px; text-align: right; padding-right: 15px; }
-.col-pilar { width: 150px; }
-.col-fase { width: 230px; }
-.col-estado { width: 200px; }
-
-/* Utilidades */
-.mt-16 { margin-top: 16px; }
-.mt-24 { margin-top: 24px; }
-.mb-24 { margin-bottom: 24px; }
-.pl-16 { padding-left: 16px; }
-.ml-auto { margin-left: auto; }
-.flex { display: flex; }
-.items-center { align-items: center; }
-.mr-8 { margin-right: 8px; }
-
-/* Prompt */
-.cli-prompt {
-  font-weight: bold;
+.checkbox-wrapper:hover {
+  border-color: #58a6ff;
+  background: rgba(88, 166, 255, 0.1);
 }
 
-.cli-user { color: #79c0ff; }
-.cli-colon { color: #c9d1d9; }
-.cli-path { color: #d2a8ff; }
-.cli-cursor { color: #c9d1d9; margin-left: 5px;}
-.cli-blink {
-  animation: blink 1s step-end infinite;
-  background-color: #c9d1d9;
-  color: transparent;
+.checkbox-wrapper.checked {
+  background: #3fb950;
+  border-color: #3fb950;
+  color: #050811;
 }
 
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+.task-title-text {
+  font-weight: 500;
+  font-size: 15px;
+  color: #f0f6fc;
+  transition: all 0.2s ease;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+.task-title-text.completed {
+  text-decoration: line-through;
+  color: #8b949e;
+  opacity: 0.7;
+}
+
+.dimension-badge {
+  margin-left: auto;
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(171, 125, 246, 0.1);
+  color: #ab7df6;
+  border: 1px solid rgba(171, 125, 246, 0.15);
+}
+
+.expand-chevron {
+  margin-left: 14px;
+  font-size: 12px;
+  color: #8b949e;
+  transition: transform 0.2s ease;
+}
+
+.task-card.expanded .expand-chevron {
+  transform: rotate(90deg);
+  color: #58a6ff;
+}
+
+/* Expanded Premium Detail Area */
+.task-details-pane {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media(max-width: 768px) {
+  .task-details-pane {
+    grid-template-columns: 1fr;
+  }
+}
+
+.details-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-lbl {
+  font-size: 11px;
+  font-weight: 600;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-val {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #e6edf3;
+}
+
+.detail-val.highlight {
+  color: #ab7df6;
+  font-weight: 500;
+}
+
+.detail-val.success {
+  color: #3fb950;
+  font-weight: 600;
+}
+
+/* Loop/Bucle pipeline styling */
+.pipeline-container {
+  grid-column: 1 / -1;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  padding-top: 16px;
+  margin-top: 8px;
+}
+
+.pipeline-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #58a6ff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.pipeline-steps {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+@media(max-width: 600px) {
+  .pipeline-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
+.pipeline-step-card {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.step-header {
+  font-family: 'Fira Code', monospace;
+  font-size: 11px;
+  font-weight: 600;
+  color: #3fb950;
+  background: rgba(63, 185, 80, 0.08);
+  padding: 2px 6px;
+  border-radius: 4px;
+  width: fit-content;
+}
+
+.step-desc {
+  font-size: 13px;
+  line-height: 1.4;
+  color: #8b949e;
+}
+
+/* Collapsible CLI Console Drawer at the bottom */
+.cli-drawer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #02040a;
+  border-top: 1px solid #30363d;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 320px;
+}
+
+.cli-drawer.collapsed {
+  transform: translateY(275px); /* Only shows header/tab */
+}
+
+.cli-drawer-header {
+  height: 45px;
+  background: #0d1117;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.cli-drawer-title {
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3fb950;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cli-drawer-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #3fb950;
+  animation: glowPulse 1.5s infinite ease-in-out;
+}
+
+.cli-drawer-toggle-btn {
+  background: transparent;
+  border: none;
+  color: #8b949e;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.cli-drawer-body {
+  flex: 1;
+  padding: 16px;
+  overflow-y: auto;
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #3fb950;
+}
+
+.cli-drawer-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cli-drawer-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+}
+
+.cli-drawer-line {
+  margin-bottom: 6px;
+  white-space: pre-wrap;
+}
+
+.cli-drawer-prompt {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.cli-drawer-user { color: #79c0ff; }
+.cli-drawer-path { color: #d2a8ff; }
+.cli-drawer-cursor { color: #c9d1d9; margin-left: 4px; margin-right: 8px;}
+
+.cli-drawer-input {
+  background: transparent;
+  border: none;
+  color: #3fb950;
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  outline: none;
+  flex: 1;
+  caret-color: #c9d1d9;
+}
+
+/* Animations */
+@keyframes glowPulse {
+  0%, 100% { opacity: 0.6; box-shadow: 0 0 0 rgba(171, 125, 246, 0); }
+  50% { opacity: 1; box-shadow: 0 0 8px rgba(171, 125, 246, 0.4); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+/* Empty State Warning styling */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+  color: #d29922;
+  border: 1px dashed rgba(245, 176, 65, 0.25);
+  border-radius: 8px;
+  background: rgba(245, 176, 65, 0.03);
+  gap: 12px;
 }

@@ -34,6 +34,8 @@ public interface AiService {
      * SDD SPEC 6.3: Generación de Plan Híbrido con contrato JSON estricto.
      */
     String generateHybridPlan(Family family, Map<String, Double> dimensions, String riskLevel);
+    
+    String generateHybridPlan(Family family, Map<String, Double> dimensions, String riskLevel, com.integrityfamily.plan.service.ContinuityEngine.ContinuityAnalysis continuityAnalysis);
 }
 
 

@@ -19,6 +19,7 @@ export class ChecklistPageComponent implements OnInit {
   private familyState = inject(FamilyStateService);
 
   items: any[] = []; 
+  resolvedEvidences: any[] = []; // Archivo permanente de evidencias (Victorias de todos los hitos)
   loading = false; 
   
   get familyId() { return this.familyState.getSelectedFamilyId(); }
@@ -45,10 +46,26 @@ export class ChecklistPageComponent implements OnInit {
   
   load() {
     this.loading = true;
+    
+    // Cargar hábitos/checklist
     this.http.get<any>(`${this.api.base}/checklist/family/${this.familyId}`)
       .subscribe({ 
-        next: ({ data }) => { this.items = data; this.loading = false; }, 
-        error: () => this.loading = false 
+        next: ({ data }) => { 
+          this.items = data || []; 
+          this.loading = false; 
+        }, 
+        error: () => {
+          this.loading = false;
+        } 
+      });
+
+    // Cargar evidencias históricas acumuladas de la bitácora (estado RESOLVED)
+    this.http.get<any[]>(`${this.api.base}/family-logbook/family/${this.familyId}/status/RESOLVED`)
+      .subscribe({
+        next: (data) => {
+          this.resolvedEvidences = data || [];
+        },
+        error: () => {}
       });
   }
   

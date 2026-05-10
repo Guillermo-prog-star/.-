@@ -2,6 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { FamilyStateService } from '../../core/services/family-state.service';
 
 /**
  * NavbarComponent: Barra de navegación con contexto familiar.
@@ -72,16 +73,18 @@ import { AuthService } from '../../core/services/auth.service';
     </div>`
 })
 export class NavbarComponent {
+  private familyState = inject(FamilyStateService);
+
   constructor(
     protected auth: AuthService,
     private router: Router
   ) {}
 
   /**
-   * Recupera el nombre de la familia seleccionada desde el almacenamiento.
+   * Recupera el nombre de la familia seleccionada reactivamente desde el signal.
    */
   get familyName(): string | null { 
-    return localStorage.getItem('selectedFamilyName'); 
+    return this.familyState.currentFamilyName() || null; 
   }
 
   /**

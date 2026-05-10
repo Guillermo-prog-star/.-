@@ -37,6 +37,11 @@ export const routes: Routes = [
         title: 'Panel Principal',
         loadComponent: () => import('./features/dashboard/dashboard-page.component').then(m => m.DashboardPageComponent)
       },
+      {
+        path: 'portal',
+        title: 'Portal Familiar Móvil',
+        loadComponent: () => import('./features/portal-familiar/portal-familiar.component').then(m => m.PortalFamiliarComponent)
+      },
 
       // Dominio: Gestión Familiar
       {
@@ -75,6 +80,7 @@ export const routes: Routes = [
       { path: 'chat', loadComponent: () => import('./features/chat/chat-page.component').then(m => m.ChatPageComponent) },
       { path: 'crisis', loadComponent: () => import('./features/crisis/crisis-page.component').then(m => m.CrisisPageComponent) },
       { path: 'logbook', title: 'Bitácora Familiar', loadComponent: () => import('./features/family-logbook/family-logbook.component').then(m => m.FamilyLogbookComponent) },
+      { path: 'gratitude', title: 'Muro de Gratitud', loadComponent: () => import('./features/family-gratitude/family-gratitude.component').then(m => m.FamilyGratitudeComponent) },
 
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]

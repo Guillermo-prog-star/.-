@@ -35,6 +35,7 @@ public class LearningSession {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String objective;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     private SessionStatus status = SessionStatus.ACTIVE;
 

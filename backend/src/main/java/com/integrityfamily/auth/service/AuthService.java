@@ -3,6 +3,7 @@ package com.integrityfamily.auth.service;
 import com.integrityfamily.auth.dto.*;
 import com.integrityfamily.domain.User;
 import com.integrityfamily.domain.Family;
+import com.integrityfamily.domain.RefreshToken;
 import com.integrityfamily.domain.Role;
 import com.integrityfamily.domain.repository.UserRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
@@ -33,6 +34,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final AccountLockService accountLockService;
     private final AuditService auditService;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public LoginResponse login(LoginRequest request, String ip, String ua) {
@@ -44,79 +46,41 @@ public class AuthService {
             User user = userRepository.findByEmail(request.email())
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado post-auth"));
             
-            String token = jwtTokenProvider.generate(user);
-        
-        com.integrityfamily.auth.dto.UserResponse userDto = com.integrityfamily.auth.dto.UserResponse.from(user);
+            // [SEGURIDAD DE PROTOCOLO] Confidencialidad y aislamiento total de datos del Nodo Armenia
+            if (user.getFamily() != null) {
+                String code = user.getFamily().getFamilyCode();
+                if (code != null && !code.equals("IF-CO-QUI-2026-0004") && !user.getRole().equals("ROLE_ADMIN")) {
+                    log.warn("[SECURITY] Acceso bloqueado. Usuario {} pertenece a familia no autorizada: {}", request.email(), code);
+                    throw new RuntimeException("Acceso restringido: Esta cuenta no pertenece a la red familiar autorizada.");
+                }
+            } else if (!user.getRole().equals("ROLE_ADMIN")) {
+                log.warn("[SECURITY] Acceso bloqueado. Usuario {} no tiene familia asignada.", request.email());
+                throw new RuntimeException("Acceso restringido: Esta cuenta no tiene una red familiar asignada.");
+            }
 
-        return new com.integrityfamily.auth.dto.LoginResponse(token, 3600000L, userDto);
+            String token = jwtTokenProvider.generate(user);
+            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
+            com.integrityfamily.auth.dto.UserResponse userDto = com.integrityfamily.auth.dto.UserResponse.from(user);
+
+            return new com.integrityfamily.auth.dto.LoginResponse(token, refreshToken.getToken(), 3600000L, userDto);
         } catch (Exception e) {
-            log.error("[AUTH] Error de autenticación: {}", e.getMessage());
+            log.error("[AUTH] Error de autenticación para {}: {}", request.email(), e.getMessage());
             accountLockService.registerFailure(request.email());
-            throw new RuntimeException("Credenciales inválidas");
+            throw new RuntimeException(e.getMessage() != null && e.getMessage().contains("Acceso restringido") ? e.getMessage() : "Credenciales inválidas");
         }
     }
 
     @Transactional
     public LoginResponse register(RegisterRequest request, String ip, String ua) {
-        log.info("[AUTH] Registrando nuevo usuario: {}", request.email());
-
-        if (userRepository.existsByEmail(request.email())) {
-            throw new RuntimeException("El correo electrónico ya está registrado");
-        }
-
-        User user = new User();
-        user.setEmail(request.email());
-        user.setFullName(request.fullName());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setEnabled(true);
-
-        Role userRole = roleRepository.findByName("ROLE_USER")
-                .orElseGet(() -> roleRepository.save(Role.builder().name("ROLE_USER").build()));
-        
-        user.setRoles(Collections.singletonList(userRole));
-
-        User saved = userRepository.save(user);
-        log.info("[AUTH] Usuario {} creado con éxito", saved.getEmail());
-
-        String token = jwtTokenProvider.generate(saved);
-        UserResponse userDto = UserResponse.from(saved);
-
-        return new LoginResponse(token, 3600000L, userDto);
+        log.warn("[SECURITY] Intento de autoregistro denegado para {}. El registro de cuentas externas está deshabilitado por seguridad.", request.email());
+        throw new RuntimeException("El autoregistro de cuentas externas está restringido temporalmente por políticas de confidencialidad de la red familiar.");
     }
 
     @Transactional
     public LoginResponse registerFamily(RegisterFamilyRequest request, String ip, String ua) {
-        log.info("[AUTH] Registrando familia: {}", request.familyName());
-        
-        if (userRepository.existsByEmail(request.email())) {
-            throw new RuntimeException("El correo electrónico ya está registrado");
-        }
-
-        Family family = new Family();
-        family.setName(request.familyName());
-        family = familyRepository.save(family);
-
-        User admin = new User();
-        admin.setEmail(request.email());
-        admin.setFullName(request.fullName());
-        admin.setPasswordHash(passwordEncoder.encode(request.password()));
-        admin.setFamily(family);
-        admin.setEnabled(true);
-        
-        Role adminRole = roleRepository.findByName("ROLE_ADMIN")
-                .orElseGet(() -> roleRepository.save(Role.builder().name("ROLE_ADMIN").build()));
-        
-        admin.setRoles(Collections.singletonList(adminRole));
-        
-        User saved = userRepository.save(admin);
-        log.info("[AUTH] Familia {} y Admin {} creados con éxito", family.getId(), saved.getEmail());
-        
-        String token = jwtTokenProvider.generate(saved);
-        UserResponse userDto = UserResponse.from(saved);
-        
-        return new LoginResponse(token, 3600000L, userDto);
+        log.warn("[SECURITY] Intento de registro familiar denegado para {}. Registro restringido para la única familia autorizada.", request.familyName());
+        throw new RuntimeException("La creación de redes familiares externas está deshabilitada. Únicamente el Nodo Familiar Lopez Rivera está autorizado en esta red.");
     }
-
 
     @Transactional(readOnly = true)
     public UserResponse me(String email) {
@@ -125,9 +89,10 @@ public class AuthService {
         return UserResponse.from(user);
     }
 
+    @Transactional
     public void logout(String email, String ip, String ua) {
         log.info("[AUTH] Logout para: {}", email);
-        // Implementar invalidación de token si se usa un TokenStore/Blacklist
+        userRepository.findByEmail(email).ifPresent(user -> refreshTokenService.deleteByUserId(user.getId()));
     }
 
     public void requestPasswordReset(String email, String ip, String ua) {
@@ -139,5 +104,18 @@ public class AuthService {
     public void resetPassword(ResetPasswordRequest request, String ip, String ua) {
         log.info("[AUTH] Ejecutando recuperación de contraseña para el token: {}", request.token());
         // Implementar validación de token y cambio de password
+    }
+
+    @Transactional
+    public LoginResponse refreshToken(RefreshTokenRequest request, String ip, String ua) {
+        log.info("[AUTH] Solicitando refresco de token JWT desde IP: {}", ip);
+        RefreshToken refreshToken = refreshTokenService.findByToken(request.refreshToken());
+        refreshTokenService.verifyExpiration(refreshToken);
+
+        User user = refreshToken.getUser();
+        String token = jwtTokenProvider.generate(user);
+        com.integrityfamily.auth.dto.UserResponse userDto = com.integrityfamily.auth.dto.UserResponse.from(user);
+
+        return new LoginResponse(token, refreshToken.getToken(), 3600000L, userDto);
     }
 }

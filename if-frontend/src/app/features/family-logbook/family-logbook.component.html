@@ -13,6 +13,58 @@
     {{ errorMessage }}
   </div>
 
+  <!-- Análisis Cualitativo Clínico de Claude (Nodo Armenia) -->
+  <section class="card ai-analysis-card" *ngIf="correlationResult || loadingCorrelation">
+    <div class="ai-header">
+      <span class="ai-badge">🤖 MENTOR DE INTEGRIDAD FAMILIAR</span>
+      <h2>Análisis Cualitativo Clínico de Claude</h2>
+      <p class="subtitle">Contraste diagnóstico en tiempo real basado en vuestras bitácoras semanales.</p>
+    </div>
+
+    <div *ngIf="loadingCorrelation" class="loading-ai">
+      <div class="spinner"></div>
+      <span>Claude está analizando la semántica emocional de vuestras vivencias...</span>
+    </div>
+
+    <div *ngIf="!loadingCorrelation && correlationResult" class="ai-content-grid">
+      <!-- Panel de Temperatura Emocional -->
+      <div class="temperature-panel">
+        <div class="temp-stat">
+          <span class="label">Temperatura Emocional</span>
+          <span class="value" [class.crisis]="correlationResult.averageEmotionalScore < -0.2" [class.positivo]="correlationResult.averageEmotionalScore > 0.2">
+            {{ correlationResult.averageEmotionalScore > 0 ? '+' : '' }}{{ correlationResult.averageEmotionalScore | number:'1.2-2' }}
+          </span>
+          <span class="status-lbl" [class.lbl-crisis]="correlationResult.averageEmotionalScore < -0.2" [class.lbl-positivo]="correlationResult.averageEmotionalScore > 0.2">
+            {{ correlationResult.generalLabel }}
+          </span>
+        </div>
+        <p class="temp-desc">
+          Calculado analizando la carga verbal de vuestras narrativas recientes y cruzando los deltas del diagnóstico.
+        </p>
+
+        <!-- Correlaciones dimensionales -->
+        <div class="dimension-bars" *ngIf="correlationResult.dimensionCorrelations?.length">
+          <h3>Sintonía por Dimensión</h3>
+          <div class="dim-bar-row" *ngFor="let dc of correlationResult.dimensionCorrelations">
+            <div class="bar-info">
+              <span class="dim-name">{{ dc.dimensionFriendlyName }}</span>
+              <span class="pct" [class.pct-neg]="dc.logbookSentimentScore < 0" [class.pct-pos]="dc.logbookSentimentScore >= 0">
+                {{ dc.logbookSentimentScore > 0 ? '+' : '' }}{{ dc.logbookSentimentScore | number:'1.1-1' }}
+              </span>
+            </div>
+            <div class="bar-outer">
+              <div class="bar-inner" [style.width.%]="(dc.logbookSentimentScore + 1) * 50" [class.low]="dc.logbookSentimentScore < -0.2" [class.high]="dc.logbookSentimentScore > 0.2"></div>
+            </div>
+            <div class="priority-badge" *ngIf="dc.requiresPriorityShift">⚠️ Ajuste de Prioridad Activo</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- El Reporte de Claude -->
+      <div class="report-panel markdown-body" [innerHTML]="formatAiResponse(correlationResult.adaptationRecommendation)"></div>
+    </div>
+  </section>
+
   <section class="card">
     <h2>Nueva entrada</h2>
 

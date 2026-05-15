@@ -5,6 +5,9 @@ import com.integrityfamily.ai.dto.LogbookCorrelationResult;
 import com.integrityfamily.ai.dto.SentimentResult;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
+import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.ai.service.ContextSynthesizer;
+import com.integrityfamily.ai.dto.AiContext;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,15 +26,21 @@ public class SentimentAnalysisService {
     private final FamilyRepository familyRepository;
     private final FamilyLogbookEntryRepository logbookRepository;
     private final EvaluationRepository evaluationRepository;
+    private final AiProvider aiProvider;
+    private final ContextSynthesizer contextSynthesizer;
 
     public SentimentAnalysisService(
             FamilyRepository familyRepository,
             FamilyLogbookEntryRepository logbookRepository,
-            EvaluationRepository evaluationRepository
+            EvaluationRepository evaluationRepository,
+            AiProvider aiProvider,
+            ContextSynthesizer contextSynthesizer
     ) {
         this.familyRepository = familyRepository;
         this.logbookRepository = logbookRepository;
         this.evaluationRepository = evaluationRepository;
+        this.aiProvider = aiProvider;
+        this.contextSynthesizer = contextSynthesizer;
     }
 
     /**
@@ -136,8 +145,8 @@ public class SentimentAnalysisService {
                     .build());
         }
 
-        // 5. Formular Recomendación de Calibración de Plan
-        String recommendation = generateAdaptationRecommendation(averageGlobalSentiment, correlations);
+        // 5. Formular Recomendación de Calibración de Plan (Dinámica con Claude o Fallback Estático)
+        String recommendation = generateDynamicClaudeRecommendation(family, entries, averageGlobalSentiment, correlations);
 
         return LogbookCorrelationResult.builder()
                 .familyId(familyId)
@@ -149,6 +158,75 @@ public class SentimentAnalysisService {
                 .adaptationRecommendation(recommendation)
                 .calculatedAt(LocalDateTime.now())
                 .build();
+    }
+
+    /**
+     * Motor Cualitativo Inteligente: Envía los registros narrativos de bitácora y las correlaciones a Claude
+     * para generar un informe de análisis psicoclínico empático y una calibración dinámica del plan de 36 meses.
+     */
+    private String generateDynamicClaudeRecommendation(
+            Family family, 
+            List<FamilyLogbookEntry> entries, 
+            double globalSentiment, 
+            List<DimensionCorrelation> correlations
+    ) {
+        try {
+            log.info("🧠 [SENTIMENT-CLAUDE] Iniciando análisis clínico cualitativo de bitácoras con Claude para Familia: {}", family.getId());
+            
+            // 1. Sintetizar contexto del hogar
+            AiContext context = contextSynthesizer.synthesize(family, "ANALYSIS");
+
+            // 2. Construir histórico cualitativo de las últimas 5 entradas
+            StringBuilder logbookText = new StringBuilder();
+            int limit = Math.min(5, entries.size());
+            for (int i = 0; i < limit; i++) {
+                FamilyLogbookEntry entry = entries.get(i);
+                logbookText.append(String.format("- Entrada %d (%s):\n", i + 1, entry.getCreatedAt() != null ? entry.getCreatedAt().toLocalDate() : "Fecha N/A"));
+                logbookText.append(String.format("  * Situación: \"%s\"\n", entry.getSituation() != null ? entry.getSituation() : "N/A"));
+                logbookText.append(String.format("  * Dificultad: \"%s\"\n", entry.getDifficultyDetected() != null ? entry.getDifficultyDetected() : "N/A"));
+                logbookText.append(String.format("  * Emoción: \"%s\"\n", entry.getEmotionIdentified() != null ? entry.getEmotionIdentified() : "N/A"));
+                logbookText.append(String.format("  * Comprensión/Aprendizaje: \"%s\"\n", entry.getUnderstanding() != null ? entry.getUnderstanding() : "N/A"));
+                logbookText.append(String.format("  * Acción correctora: \"%s\"\n", entry.getCorrectionAction() != null ? entry.getCorrectionAction() : "N/A"));
+                logbookText.append(String.format("  * Acuerdo: \"%s\"\n", entry.getFamilyAgreement() != null ? entry.getFamilyAgreement() : "N/A"));
+            }
+
+            // 3. Construir métricas de correlación para informar al LLM
+            StringBuilder correlationsText = new StringBuilder();
+            for (DimensionCorrelation dc : correlations) {
+                correlationsText.append(String.format("- %s: Puntaje Diagnóstico = %.1f%%, Sentimiento Bitácora = %.2f (Delta = %.1f%%, Reajuste Prioridad = %s)\n",
+                        dc.getDimensionFriendlyName(), dc.getDiagnosticScore(), dc.getLogbookSentimentScore(), dc.getCorrelationDelta(), dc.isRequiresPriorityShift() ? "SÍ" : "NO"));
+            }
+
+            // 4. Prompt clínico estructurado para Claude
+            String prompt = String.format(
+                "ALINEACIÓN ADAPTATIVA Y ANÁLISIS CUALITATIVO DE BITÁCORAS:\n\n" +
+                "Hola Claude. Como Mentor de Integridad Familiar del Nodo Armenia, realiza un análisis clínico cualitativo profundo " +
+                "de las vivencias reales registradas por la familia en su bitácora semanal y contrástalas contra su última evaluación formal.\n\n" +
+                "=== DATOS GENERALES DE LA FAMILIA ===\n" +
+                "Nombre: %s\n" +
+                "Hito Actual: %s\n" +
+                "Sentimiento General Estimado (VADER): %.2f\n\n" +
+                "=== CORRELACIONES DIMENSIONALES (DIAGNÓSTICO VS BITÁCORA) ===\n" +
+                "%s\n" +
+                "=== REGISTROS RECIENTES DE LA BITÁCORA ===\n" +
+                "%s\n" +
+                "=== INSTRUCCIÓN ===\n" +
+                "Genera un reporte premium estructurado de dos secciones usando markdown:\n\n" +
+                "1. **Análisis Cualitativo Clínico 🧠**\n" +
+                "   (Analiza el tono del lenguaje, emociones subyacentes, fortalezas o patrones pasivo-agresivos/regresivos que se deduzcan de lo que la familia escribe).\n\n" +
+                "2. **Calibración Adaptativa del Plan de 36 Meses 🎯**\n" +
+                "   (Ofrece una sugerencia asertiva de qué misiones del hito actual priorizar, reforzar o adaptar basándote en las brechas y discrepancias detectadas).\n\n" +
+                "Sé empático, clínicamente asertivo, asombrosamente perspicaz y directo. Estructura el markdown de forma elegante.",
+                family.getName(), family.getCurrentMilestone() != null ? family.getCurrentMilestone() : "Inicial",
+                globalSentiment, correlationsText.toString(), logbookText.toString()
+            );
+
+            log.info("🧠 [SENTIMENT-CLAUDE] Consultando a Claude...");
+            return aiProvider.generateResponse(prompt, context);
+        } catch (Exception e) {
+            log.error("⚠️ [SENTIMENT-CLAUDE] Error al generar recomendación adaptativa con Claude, usando fallback: {}", e.getMessage());
+            return generateAdaptationRecommendation(globalSentiment, correlations);
+        }
     }
 
     /**

@@ -191,6 +191,83 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         // Por ahora, forzamos el cÃƒÂ¡lculo directo.
         calculateLatestResults(familyId);
     }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> getEvolutionRadarData(Long familyId) {
+        log.info("🎯 [ANALYTICS] Generando radar de evolución dinámico para familia ID: {}", familyId);
+
+        List<Evaluation> history = evaluationRepository.findByFamilyIdOrderByFinalizedAtAsc(familyId);
+        List<String> labels = List.of("Emociones", "Comunicación", "Hábitos", "Tiempos");
+
+        if (history == null || history.isEmpty()) {
+            log.warn("⚠️ [ANALYTICS] No se encontró historial de evaluaciones para familia ID: {}. Retornando valores base cero.", familyId);
+            return List.of(
+                Map.of(
+                    "labels", labels,
+                    "name", "Actual",
+                    "value", List.of(0.0, 0.0, 0.0, 0.0)
+                ),
+                Map.of(
+                    "labels", labels,
+                    "name", "Inicio",
+                    "value", List.of(0.0, 0.0, 0.0, 0.0)
+                )
+            );
+        }
+
+        Evaluation firstEval = history.get(0);
+        Evaluation lastEval = history.get(history.size() - 1);
+
+        List<Double> actualValues = List.of(
+            getScoreForDimension(lastEval, "emociones"),
+            getScoreForDimension(lastEval, "comunicacion"),
+            getScoreForDimension(lastEval, "habitos"),
+            getScoreForDimension(lastEval, "tiempos")
+        );
+
+        List<Double> inicioValues = List.of(
+            getScoreForDimension(firstEval, "emociones"),
+            getScoreForDimension(firstEval, "comunicacion"),
+            getScoreForDimension(firstEval, "habitos"),
+            getScoreForDimension(firstEval, "tiempos")
+        );
+
+        return List.of(
+            Map.of(
+                "labels", labels,
+                "name", "Actual",
+                "value", actualValues
+            ),
+            Map.of(
+                "labels", labels,
+                "name", "Inicio",
+                "value", inicioValues
+            )
+        );
+    }
+
+    private Double getScoreForDimension(Evaluation eval, String key) {
+        if (eval == null || eval.getDimensionScores() == null) return 50.0;
+        return eval.getDimensionScores().stream()
+            .filter(ds -> ds != null && ds.getDimensionName() != null)
+            .filter(ds -> {
+                String name = ds.getDimensionName().toLowerCase();
+                if (key.equals("comunicacion")) {
+                    return name.contains("comunica");
+                } else if (key.equals("emociones")) {
+                    return name.contains("emocio") || name.contains("clima");
+                } else if (key.equals("habitos")) {
+                    return name.contains("habito") || name.contains("hábito") || name.contains("convive");
+                } else if (key.equals("tiempos")) {
+                    return name.contains("tiempo") || name.contains("conexi");
+                }
+                return false;
+            })
+            .map(ds -> ds.getScore())
+            .findFirst()
+            .orElse(50.0);
+    }
 }
 
 

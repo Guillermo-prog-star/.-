@@ -22,6 +22,8 @@ export class FamilyLogbookComponent implements OnInit {
   statusFilter: 'ALL' | LogbookStatus = 'ALL';
 
   entries: FamilyLogbookEntry[] = [];
+  correlationResult: any = null;
+  loadingCorrelation = false;
 
   form: CreateFamilyLogbookEntryRequest = {
     familyId: 0,
@@ -51,6 +53,7 @@ export class FamilyLogbookComponent implements OnInit {
       this.form.familyId = user.familyId;
       this.form.createdBy = user.fullName; // Pre-poblar autor
       this.loadEntries();
+      this.loadCorrelation();
     } else {
       this.errorMessage = 'No se encontró una familia asociada a tu cuenta.';
     }
@@ -76,6 +79,20 @@ export class FamilyLogbookComponent implements OnInit {
     });
   }
 
+  loadCorrelation(): void {
+    if (!this.familyId) return;
+    this.loadingCorrelation = true;
+    this.service.getCorrelation(this.familyId).subscribe({
+      next: res => {
+        this.correlationResult = res?.data || null;
+        this.loadingCorrelation = false;
+      },
+      error: () => {
+        this.loadingCorrelation = false;
+      }
+    });
+  }
+
   createEntry(): void {
     if (!this.isFormValid()) {
       this.errorMessage = 'Todos los campos principales son obligatorios.';
@@ -91,6 +108,7 @@ export class FamilyLogbookComponent implements OnInit {
       next: () => {
         this.resetForm();
         this.loadEntries();
+        this.loadCorrelation();
       },
       error: () => {
         this.errorMessage = 'No fue posible crear la entrada de bitácora.';
@@ -117,6 +135,7 @@ export class FamilyLogbookComponent implements OnInit {
       next: () => {
         this.resolveEvidence[entry.id] = '';
         this.loadEntries();
+        this.loadCorrelation();
       },
       error: () => {
         this.errorMessage = 'No fue posible cerrar la entrada.';
@@ -147,5 +166,31 @@ export class FamilyLogbookComponent implements OnInit {
       familyAgreement: '',
       createdBy: ''
     };
+  }
+
+  formatAiResponse(text: string) {
+    if (!text) return '';
+    
+    // Convert headings (supports ###, ##, #)
+    let html = text
+      .replace(/^### (.*)/gm, '<h4>$1</h4>')
+      .replace(/^## (.*)/gm, '<h3>$1</h3>')
+      .replace(/^# (.*)/gm, '<h2>$1</h2>');
+
+    // Convert strong markdown (**text**)
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    // Convert italics markdown (*text*)
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    // Convert bullet lists and ordered lists (supports lines starting with * or numbers)
+    html = html.replace(/^\s*\*\s*(.*)/gm, '<li style="list-style-type: disc; margin-left: 20px; margin-bottom: 6px;">$1</li>');
+    html = html.replace(/^\s*-\s*(.*)/gm, '<li style="list-style-type: disc; margin-left: 20px; margin-bottom: 6px;">$1</li>');
+    html = html.replace(/^\s*\d+\.\s*(.*)/gm, '<li style="list-style-type: decimal; margin-left: 20px; margin-bottom: 6px;">$1</li>');
+
+    // Convert newlines to breaks
+    html = html.replace(/\n/g, '<br>');
+
+    return html;
   }
 }

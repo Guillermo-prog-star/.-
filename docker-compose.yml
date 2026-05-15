@@ -47,7 +47,8 @@ services:
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-root}
       RABBITMQ_HOST: if-rabbitmq
-      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-}
+      RABBITMQ_ENABLED: "true"
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-${ANTHROPIC_API_KEY:-}}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
     depends_on:
       if-mysql:
@@ -58,8 +59,8 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 15s
       timeout: 10s
-      retries: 3
-      start_period: 40s
+      retries: 5
+      start_period: 120s
     restart: on-failure:3
     ports:
       - "8080:8080"

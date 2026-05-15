@@ -108,10 +108,17 @@ export class EvolutionRadarComponent implements OnInit, OnDestroy {
         data: seriesData.map((s, idx) => ({
           name: s.name,
           value: s.value,
-          itemStyle: { color: idx === 0 ? '#6366f1' : '#64748b' },
-          lineStyle: { width: 3, shadowBlur: 10, shadowColor: '#6366f1' },
-          areaStyle: { color: 'rgba(99, 102, 241, 0.2)' },
-          symbolSize: 6
+          itemStyle: { color: idx === 0 ? '#6366f1' : '#94a3b8' },
+          lineStyle: { 
+            width: idx === 0 ? 3.5 : 2, 
+            shadowBlur: idx === 0 ? 12 : 0, 
+            shadowColor: idx === 0 ? 'rgba(99, 102, 241, 0.6)' : 'transparent',
+            color: idx === 0 ? '#6366f1' : '#94a3b8'
+          },
+          areaStyle: { 
+            color: idx === 0 ? 'rgba(99, 102, 241, 0.18)' : 'rgba(148, 163, 184, 0.08)' 
+          },
+          symbolSize: idx === 0 ? 6 : 4
         }))
       }]
     });

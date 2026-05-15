@@ -55,4 +55,6 @@ public class PlanDtos {
     ) {}
 
     public record TaskCompleteRequest(Boolean completed) {}
+
+    public record PlanGenerateRequest(Long evaluationId) {}
 }

@@ -49,6 +49,13 @@ public class ImprovementPlan {
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PlanTask> tasks = new ArrayList<>();
 
+    public List<PlanTask> getTasks() {
+        if (this.tasks == null) {
+            this.tasks = new ArrayList<>();
+        }
+        return this.tasks;
+    }
+
     // SDD-FIX: Métodos explícitos para asegurar compatibilidad
     public String getDescription() { return this.description; }
     public void setDescription(String description) { this.description = description; }

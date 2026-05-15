@@ -24,7 +24,7 @@ public class PlanTask {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id")
-    @com.fasterxml.jackson.annotation.JsonIgnore
+    @com.fasterxml.jackson.annotation.JsonProperty(access = com.fasterxml.jackson.annotation.JsonProperty.Access.WRITE_ONLY)
     private ImprovementPlan plan;
 
     @Column(nullable = false)
@@ -53,6 +53,13 @@ public class PlanTask {
     @Builder.Default
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PlanTaskStep> steps = new ArrayList<>();
+
+    public List<PlanTaskStep> getSteps() {
+        if (this.steps == null) {
+            this.steps = new ArrayList<>();
+        }
+        return this.steps;
+    }
 
     private String fase; // RECONOCIMIENTO, AMOR, ENTREGA
 

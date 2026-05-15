@@ -131,13 +131,15 @@ public class PlanGenerationService {
             // 3. Pasar por PlanValidator para validar y sanear
             HybridPlanDto planDto = planValidator.validateAndSanitize(rawPlanDto);
 
-            ImprovementPlan p = new ImprovementPlan();
-            p.setFamily(evaluation.getFamily());
-            p.setEvaluation(evaluation);
-            p.setTitle("PLAN DE TRANSFORMACIÓN: " + evaluation.getFamily().getName());
-            p.setVision3y(planDto.vision3y());
-            p.setAiReport(jsonResponse);
-            p.setAiGeneratedAt(LocalDateTime.now());
+            ImprovementPlan p = ImprovementPlan.builder()
+                    .family(evaluation.getFamily())
+                    .evaluation(evaluation)
+                    .title("PLAN DE TRANSFORMACIÓN: " + evaluation.getFamily().getName())
+                    .vision3y(planDto.vision3y())
+                    .aiReport(jsonResponse)
+                    .aiGeneratedAt(LocalDateTime.now())
+                    .tasks(new java.util.ArrayList<>())
+                    .build();
 
             List<Milestone> allMilestones = milestoneRepository.findAll();
             for (MilestoneDto mDto : planDto.milestones()) {
@@ -145,26 +147,27 @@ public class PlanGenerationService {
                         .orElseGet(() -> allMilestones.isEmpty() ? null : allMilestones.get(0));
 
                 for (TaskDto tDto : mDto.tasks()) {
-                    PlanTask task = new PlanTask();
-                    task.setPlan(p);
-                    task.setTitle(tDto.title());
-                    task.setDimension(tDto.dimension());
-                    task.setMilestone(milestone);
-
-                    // Set extended fields for longitudinal transformation
-                    task.setFase(tDto.fase());
-                    task.setRiesgoAsociado(tDto.riesgoAsociado());
-                    task.setObjetivo(tDto.objetivo());
-                    task.setAccionConcreta(tDto.accionConcreta());
-                    task.setIndicadorCumplimiento(tDto.indicadorCumplimiento());
-                    task.setEvidenciaRequerida(tDto.evidenciaRequerida());
-                    task.setImpactoIcf(tDto.impactoIcf());
-
-                    // SDD-FIX: Calcular la fecha concreta de ejecución basada en el código del hito
                     int daysForMilestone = resolveMilestoneDays(mDto.code());
                     int periodicityMonths = resolveMilestonePeriodicityMonths(mDto.code());
-                    task.setDueDate(LocalDateTime.now().plusDays(daysForMilestone));
-                    task.setPeriodicityMonths(periodicityMonths);
+
+                    PlanTask task = PlanTask.builder()
+                            .plan(p)
+                            .title(tDto.title())
+                            .dimension(tDto.dimension())
+                            .milestone(milestone)
+                            .fase(tDto.fase())
+                            .riesgoAsociado(tDto.riesgoAsociado())
+                            .objetivo(tDto.objetivo())
+                            .accionConcreta(tDto.accionConcreta())
+                            .indicadorCumplimiento(tDto.indicadorCumplimiento())
+                            .evidenciaRequerida(tDto.evidenciaRequerida())
+                            .impactoIcf(tDto.impactoIcf())
+                            .dueDate(LocalDateTime.now().plusDays(daysForMilestone))
+                            .periodicityMonths(periodicityMonths)
+                            .completed(false)
+                            .steps(new java.util.ArrayList<>())
+                            .build();
+
                     log.info("📅 [PLAN-ENGINE] Microacción '{}' → Hito {} → Vence: {} ({} meses)",
                             tDto.title(), mDto.code(), task.getDueDate().toLocalDate(), periodicityMonths);
 
@@ -188,8 +191,32 @@ public class PlanGenerationService {
             planService.createPlan(p);
             log.info("✅ [PLAN-ENGINE] Plan Híbrido persistido con éxito.");
 
+            // 4. Despachar notificación cálida de bienvenida al nuevo hito por WhatsApp
+            try {
+                String currentMilestone = evaluation.getFamily().getCurrentMilestone();
+                String welcomeMessage = String.format(
+                    "🌟 *¡Felicidades Familia %s!* 🌟\n\n" +
+                    "Hemos completado con éxito su diagnóstico de convivencia. Su nuevo hito activo es *%s*.\n\n" +
+                    "Nuestro motor de IA ha calibrado a la perfección su *Plan de Transformación de 36 Meses* basándose en sus resultados de sintonía. " +
+                    "Ya tienen listas nuevas microacciones cotidianas en su línea de tiempo para caminar juntos esta semana.\n\n" +
+                    "¡Sigamos sembrando sintonía, amor e integridad en el hogar! 🚀🏡",
+                    evaluation.getFamily().getName(),
+                    currentMilestone != null ? currentMilestone : "Inicial"
+                );
+                whatsappService.sendToFamily(evaluation.getFamily(), welcomeMessage);
+                log.info("📧 [AI_PLAN_ENGINE] Notificación de bienvenida al hito {} despachada vía WhatsApp.", currentMilestone);
+            } catch (Exception we) {
+                log.warn("⚠️ [AI_PLAN_ENGINE] No se pudo enviar notificación de bienvenida por WhatsApp: {}", we.getMessage());
+            }
+
         } catch (Exception e) {
-            log.error("⚠️ [AI-PARSER] Error en formato JSON Híbrido: {}", e.getMessage());
+            log.error("⚠️ [AI-PARSER] Error en formato JSON Híbrido o procesamiento: {}", e.getMessage(), e);
+            try {
+                log.info("🛡️ [PLAN-FALLBACK] Activando motor determinístico de contingencia para Evaluación ID: {}", evaluation.getId());
+                planService.generateDeterministicPlan(evaluation.getId());
+            } catch (Exception ex) {
+                log.error("❌ [PLAN-FALLBACK-ERROR] Fallo en motor determinístico: {}", ex.getMessage());
+            }
         }
     }
 

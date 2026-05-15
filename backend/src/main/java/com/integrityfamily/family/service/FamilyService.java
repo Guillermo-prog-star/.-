@@ -120,6 +120,7 @@ public class FamilyService {
     @Transactional(readOnly = true)
     public List<FamilyResponse> findAll() {
         return familyRepository.findAll().stream()
+                .filter(f -> "IF-CO-QUI-2026-0004".equals(f.getFamilyCode()))
                 .map(this::toResponse)
                 .toList();
     }

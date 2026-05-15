@@ -43,7 +43,7 @@ export class DashboardDataService {
   // FIX TS2339: Implementación requerida por evolution-radar.component.ts
   getRadarData$(): Observable<any[]> {
     return this.http.get<any>('/api/analytics/radar').pipe(
-      map(res => res && res.data ? [res.data] : []),
+      map(res => res && res.data ? (Array.isArray(res.data) ? res.data : [res.data]) : []),
       catchError(() => of([]))
     );
   }

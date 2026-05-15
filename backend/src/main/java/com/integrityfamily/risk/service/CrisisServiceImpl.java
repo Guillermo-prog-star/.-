@@ -9,6 +9,7 @@ import com.integrityfamily.domain.FamilyMember;
 import com.integrityfamily.domain.repository.CriticalDayRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.common.exception.BusinessException;
+import com.integrityfamily.common.service.WhatsAppService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -31,6 +32,7 @@ public class CrisisServiceImpl implements CrisisService {
     private final FamilyRepository familyRepository;
     private final AiProvider aiProvider;
     private final ContextSynthesizer contextSynthesizer;
+    private final WhatsAppService whatsAppService;
 
     @Override
     @Transactional
@@ -87,6 +89,34 @@ public class CrisisServiceImpl implements CrisisService {
         // 4. Activar el estado Sentinel en la familia
         family.setSentinelActive(true);
         familyRepository.save(family);
+
+        // 5. [FIX SDD] Despachar la guía de contención de Claude y las alertas por WhatsApp
+        try {
+            log.info("[CRISIS] Despachando guía de contención de Claude por WhatsApp a la Familia ID: {}", familyId);
+            String mainMessage = String.format(
+                "🚨 *ALERTA SENTINEL: REPORTE DE CRISIS EN EL HOGAR* 🚨\n\n" +
+                "Se ha registrado una situación de *%s*.\n" +
+                "Emoción prevalente: *%s*\n" +
+                "Descripción: \"%s\"\n\n" +
+                "💡 *GUÍA DE CONTENCIÓN EMOCIONAL DE CLAUDE:*\n\n%s",
+                category, emotion != null ? emotion : "No especificada", description, containmentGuide
+            );
+            whatsAppService.sendToFamily(family, mainMessage);
+
+            List<FamilyMember> members = family.getMembers();
+            if (members != null && !members.isEmpty()) {
+                log.info("[CRISIS] Enviando alertas de WhatsApp personalizadas por rol a {} miembros...", members.size());
+                for (FamilyMember member : members) {
+                    if (member.isActive()) {
+                        String shortContext = String.format("Crisis de %s registrada. Emoción: %s.", 
+                                category, emotion != null ? emotion : "Tensión");
+                        whatsAppService.sendPersonalizedMessage(member, "CRISIS_ALERT", shortContext);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.error("[CRISIS] Error enviando notificaciones de WhatsApp para crisis: {}", e.getMessage());
+        }
 
         return saved;
     }

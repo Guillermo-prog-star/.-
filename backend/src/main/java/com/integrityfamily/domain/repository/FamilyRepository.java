@@ -35,5 +35,5 @@ public interface FamilyRepository extends JpaRepository<Family, Long> {
 
     Optional<Family> findByFamilyCode(String familyCode);
     
-    Optional<Family> findByName(String name);
+    List<Family> findByName(String name);
 }

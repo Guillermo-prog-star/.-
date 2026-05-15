@@ -6,6 +6,7 @@ import { adminGuard } from './core/guards/admin.guard';
  * SDD: Mapa de Rutas del Nodo Armenia.
  * Postura Técnica: Optimización de carga por chunks y segmentación por dominios de seguridad.
  * REGISTRO: Se activa el 'Admin Sentinel Guard' siguiendo el protocolo de auditoría de William.
+ * HMR-TRIGGER: Forzando reconstrucción del grafo de chunks interactivos del Portal Familiar.
  */
 export const routes: Routes = [
   // ZONA PÚBLICA

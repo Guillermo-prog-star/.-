@@ -21,6 +21,17 @@ public class ChecklistController {
         return ApiResponse.ok(checklistService.getFamilyChecklist(familyId));
     }
 
+    @PostMapping("/family/{familyId}")
+    public ApiResponse<ChecklistItem> createItem(@PathVariable Long familyId, @RequestBody Map<String, String> body) {
+        ChecklistItem item = checklistService.createChecklistItem(
+            familyId,
+            body.get("description"),
+            body.get("dimension"),
+            body.get("source")
+        );
+        return ApiResponse.ok(item);
+    }
+
     @PutMapping("/{id}/complete")
     public ApiResponse<Void> complete(@PathVariable Long id, @RequestBody Map<String, String> body) {
         String who = body.get("completedBy");

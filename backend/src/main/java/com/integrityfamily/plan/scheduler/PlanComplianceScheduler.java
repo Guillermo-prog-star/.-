@@ -94,4 +94,70 @@ public class PlanComplianceScheduler {
             }
         }
     }
+
+    /**
+     * ENVIADOR SEMANAL DE RECORDATORIOS DE HÁBITOS (Mentoría Interactiva WhatsApp)
+     * Se ejecuta todos los lunes a las 9:00 AM para motivar y facilitar el envío de evidencias.
+     */
+    @Scheduled(cron = "0 0 9 * * MON")
+    @Transactional(readOnly = true)
+    public void sendWeeklyHabitReminders() {
+        log.info("⏰ [HABIT-REMINDER-CLOCK] Iniciando despacho semanal de mentoría de hábitos...");
+        
+        List<PlanTask> pendingTasks = taskRepository.findAll().stream()
+                .filter(t -> !t.isCompleted())
+                .filter(t -> t.getDueDate() != null && t.getDueDate().isAfter(LocalDateTime.now()) && t.getDueDate().isBefore(LocalDateTime.now().plusDays(7)))
+                .toList();
+
+        if (pendingTasks.isEmpty()) {
+            log.info("✨ [HABIT-REMINDER-CLOCK] No hay microacciones programadas para vencer esta semana.");
+            return;
+        }
+
+        // Agrupar tareas por familia para enviar un único mensaje consolidado
+        java.util.Map<Family, List<PlanTask>> familyTasks = pendingTasks.stream()
+                .filter(t -> t.getPlan() != null && t.getPlan().getFamily() != null)
+                .collect(java.util.stream.Collectors.groupingBy(t -> t.getPlan().getFamily()));
+
+        familyTasks.forEach((family, tasks) -> {
+            if (family.getWhatsapp() == null || family.getWhatsapp().isBlank()) {
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("🏡 *ACOMPAÑAMIENTO INTEGRITY FAMILY* 🏡\n\n");
+            sb.append(String.format("¡Hola Familia *%s*! Esperamos que estén teniendo una semana llena de unión y alegría. 🌱\n\n", family.getName()));
+            sb.append("Para seguir fortaleciendo la armonía en su hogar, les animamos a enfocar su energía en las siguientes microacciones de su plan activo:\n\n");
+
+            for (PlanTask task : tasks) {
+                String emoji = switch (task.getDimension() != null ? task.getDimension().toUpperCase() : "GENERAL") {
+                    case "EMOCIONES" -> "🧠";
+                    case "COMUNICACION" -> "💬";
+                    case "HABITOS" -> "📅";
+                    case "TIEMPOS" -> "⏳";
+                    default -> "✨";
+                };
+                sb.append(String.format("%s *%s*\n", emoji, task.getTitle()));
+                if (task.getAccionConcreta() != null && !task.getAccionConcreta().isBlank()) {
+                    sb.append(String.format("   _Misión:_ %s\n", task.getAccionConcreta()));
+                }
+                if (task.getEvidenciaRequerida() != null && !task.getEvidenciaRequerida().isBlank()) {
+                    sb.append(String.format("   _Evidencia:_ %s\n", task.getEvidenciaRequerida()));
+                }
+                sb.append("\n");
+            }
+
+            sb.append("📸 *¿Listo para registrar tu avance?*\n");
+            sb.append("Cuando realicen sus microacciones, ingresen aquí para subir una foto o nota rápida en su bitácora:\n");
+            sb.append(String.format("👉 https://integrity.family/dashboard/family/%d\n\n", family.getId()));
+            sb.append("¡Pequeños hábitos diarios construyen hogares extraordinarios! ♥️✨");
+
+            try {
+                whatsappService.sendToFamily(family, sb.toString());
+                log.info("📧 [HABIT-REMINDER] Recordatorio de hábitos enviado a familia ID: {}", family.getId());
+            } catch (Exception e) {
+                log.error("❌ [HABIT-REMINDER] Error al enviar WhatsApp a familia {}: {}", family.getId(), e.getMessage());
+            }
+        });
+    }
 }

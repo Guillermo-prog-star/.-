@@ -47,6 +47,39 @@
     <h2 class="card-title">
       <i>📌</i> Misiones Activas y Compromisos de Cambio
     </h2>
+
+    <!-- PROPUESTA DE SENTINEL AI: PLAN DE DECISIÓN ACTIVA -->
+    @if (plans.length > 0 && proposedMissions.length > 0) {
+      <div class="proposed-missions-box" style="margin-bottom: 32px; padding: 20px; background: rgba(168, 85, 247, 0.03); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: 12px; animation: fadeIn 0.4s ease-out;">
+        <div style="margin-bottom: 16px;">
+          <h3 style="margin: 0; color: #c084fc; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+            <span>🔮</span> Sentinel AI: Tu Turno de Decidir
+          </h3>
+          <p style="margin: 4px 0 0 0; color: #ab7df6; font-size: 13px; opacity: 0.85;">¿Cuál de estas tres misiones de baja fricción desean comprometerse a cumplir juntos esta semana?</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+          @for (m of proposedMissions; track m.title) {
+            <div [style.borderLeft]="'3px solid ' + getDimensionColor(m.dimension)" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); padding: 16px; border-radius: 8px; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s ease;">
+              <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span [style.background]="getDimensionBg(m.dimension)" [style.color]="getDimensionColor(m.dimension)" style="font-family: monospace; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                    {{ m.dimension }}
+                  </span>
+                  <span style="font-size: 10px; padding: 2px 6px; background: rgba(168, 85, 247, 0.1); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 4px; font-weight: 600;">⚡ MICRO-ACCIÓN</span>
+                </div>
+                <h4 style="font-size: 14px; font-weight: 600; color: #fff; margin: 0 0 6px 0;">{{ m.title }}</h4>
+                <p style="color: #8b949e; font-size: 12px; line-height: 1.4; margin: 0 0 16px 0;">{{ m.description }}</p>
+              </div>
+              
+              <button (click)="selectProposedMission(m)" style="width: 100%; background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%); border: none; color: white; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px; transition: opacity 0.2s;">
+                🎯 Elegir esta Misión
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
     
     @if (plans.length > 0) {
       <div class="missions-list">
@@ -136,6 +169,72 @@
                         </div>
                       }
                     </div>
+
+                    <!-- Módulo de Evidencias Interactivas (Closed-Loop) -->
+                    <div class="evidence-interactive-box mt-12 p-12 rounded-8" style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px;">
+                      <div class="flex-between items-center mb-8" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 11px; font-weight: 600; color: #8b949e; text-transform: uppercase;">🔒 Validación de Evidencia Conductual</span>
+                        @if (getTaskEvidence(task.id)) {
+                          <span class="status-pill status-active" 
+                                [ngClass]="{
+                                  'status-completed': getTaskEvidence(task.id).status === 'VALIDATED',
+                                  'status-active': getTaskEvidence(task.id).status === 'SUBMITTED' || getTaskEvidence(task.id).status === 'UNDER_REVIEW',
+                                  'status-pending': getTaskEvidence(task.id).status === 'PENDING',
+                                  'status-rejected': getTaskEvidence(task.id).status === 'REJECTED'
+                                }"
+                                [style.color]="getTaskEvidence(task.id).status === 'VALIDATED' ? '#3fb950' : (getTaskEvidence(task.id).status === 'REJECTED' ? '#ff7b72' : '#79c0ff')">
+                            ● {{ getTaskEvidence(task.id).status }}
+                          </span>
+                        } @else {
+                          <span class="status-pill status-pending" style="color: #8b949e;">● PENDING</span>
+                        }
+                      </div>
+
+                      @if (getTaskEvidence(task.id); as ev) {
+                        <div class="evidence-details mt-8 p-8 rounded-4" style="background: rgba(0,0,0,0.2); font-size: 12px; border-radius: 4px; padding: 8px; margin-top: 8px;">
+                          <div class="mb-4"><strong>Título:</strong> {{ ev.title }}</div>
+                          @if (ev.description) {
+                            <div class="mb-4 text-muted" style="white-space: pre-line; color: #8b949e;"><strong>Detalles:</strong> {{ ev.description }}</div>
+                          }
+                          @if (ev.textContent) {
+                            <div class="mb-4" style="background: rgba(255,255,255,0.02); padding: 6px; border-radius: 4px; font-style: italic; max-height: 100px; overflow-y: auto;">
+                              "{{ ev.textContent }}"
+                            </div>
+                          }
+                          @if (ev.fileUrl) {
+                            <div class="mb-4" style="margin-top: 6px;"><a [href]="ev.fileUrl" target="_blank" class="highlight" style="text-decoration: underline; color: #58a6ff;">🔗 Ver archivo adjunto</a></div>
+                          }
+                          <div class="flex-between mt-8 items-center" style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 6px; margin-top: 8px;">
+                            <span style="color: #8b949e;">Por: {{ ev.submittedBy }} | {{ ev.createdAt | date:'short' }}</span>
+                            @if (ev.aiScore !== null) {
+                              <span style="color: #58a6ff; font-weight: 600;">Sentinel AI Score: {{ ev.aiScore }}/100</span>
+                            }
+                          </div>
+                        </div>
+
+                        <!-- Permitir volver a enviar si fue rechazada -->
+                        @if (ev.status === 'REJECTED') {
+                          <div class="flex-gap-8 mt-12" style="display: flex; gap: 8px; margin-top: 12px;">
+                            <button (click)="openEvidenceModal(task, 'BITACORA')" class="btn btn-outline btn-small" style="font-size: 11px; padding: 4px 10px; cursor: pointer; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #c9d1d9; border-radius: 4px;">
+                              ✍️ Reintentar Reflexión
+                            </button>
+                            <button (click)="openEvidenceModal(task, 'PHOTO')" class="btn btn-outline btn-small" style="font-size: 11px; padding: 4px 10px; cursor: pointer; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); color: #c9d1d9; border-radius: 4px;">
+                              📷 Reintentar Foto
+                            </button>
+                          </div>
+                        }
+                      } @else {
+                        <p style="font-size: 12px; margin: 4px 0 12px 0; color: #8b949e;">No se han aportado evidencias válidas de modificación de conducta para este hito terapéutico.</p>
+                        <div class="flex-gap-8 mt-8" style="display: flex; gap: 8px; margin-top: 8px;">
+                          <button (click)="openEvidenceModal(task, 'BITACORA')" class="btn btn-outline btn-small" style="font-size: 11px; padding: 4px 10px; cursor: pointer; background: rgba(56, 139, 253, 0.15); border: 1px solid rgba(56, 139, 253, 0.4); color: #58a6ff; border-radius: 4px;">
+                            ✍️ Escribir Reflexión
+                          </button>
+                          <button (click)="openEvidenceModal(task, 'PHOTO')" class="btn btn-outline btn-small" style="font-size: 11px; padding: 4px 10px; cursor: pointer; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #c9d1d9; border-radius: 4px;">
+                            📷 Adjuntar Foto
+                          </button>
+                        </div>
+                      }
+                    </div>
                   </div>
 
                   <!-- Pipeline del Bucle de Ejecución Cerrado -->
@@ -214,3 +313,99 @@
   </div>
 
 </div>
+
+<!-- MODAL DE ENVÍO DE EVIDENCIAS PREMIUM (CLOSED-LOOP) -->
+@if (isEvidenceModalOpen) {
+  <div class="modal-backdrop-premium" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 9999;">
+    <div class="modal-card-premium glass-card" style="width: 100%; max-width: 550px; background: rgba(18, 18, 18, 0.85); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 24px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);">
+      
+      <!-- Cabecera -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px;">
+        <h3 style="margin: 0; color: #fff; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+          <span>🔒 Sentinel AI</span>
+          <span style="font-size: 11px; font-weight: normal; background: rgba(56, 139, 253, 0.2); border: 1px solid rgba(56, 139, 253, 0.4); color: #58a6ff; padding: 2px 6px; border-radius: 4px;">ANÁLISIS COGNITIVO</span>
+        </h3>
+        <button (click)="closeEvidenceModal()" style="background: none; border: none; color: #8b949e; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+
+      <!-- Cuerpo -->
+      <div>
+        <p style="font-size: 13px; color: #8b949e; margin-bottom: 20px;">
+          Aportar evidencia conductual para la misión: <strong style="color: #fff;">"{{ activeModalTask?.title }}"</strong>.
+        </p>
+
+        <!-- Título -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 11px; text-transform: uppercase; color: #8b949e; font-weight: 600; margin-bottom: 6px;">Título del Envío</label>
+          <input type="text" [(ngModel)]="evidenceForm.title" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; padding: 10px; font-size: 14px; box-sizing: border-box;" placeholder="Ej: Registro del compromiso familiar" />
+        </div>
+
+        <!-- REGISTRO SÚPER RÁPIDO (< 30 SEGUNDOS) -->
+        @if (evidenceForm.evidenceType === 'BITACORA') {
+          <div style="background: rgba(168, 85, 247, 0.05); border: 1px dashed rgba(168, 85, 247, 0.25); border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #c084fc; display: flex; align-items: center; gap: 6px;">
+              <span>⚡</span> Registro Rápido Familiar
+            </h4>
+            
+            <!-- Emojis de Sentimiento -->
+            <div style="margin-bottom: 12px;">
+              <label style="display: block; font-size: 11px; text-transform: uppercase; color: #8b949e; font-weight: 600; margin-bottom: 6px;">¿Cómo se sintieron hoy realizando la misión?</label>
+              <div style="display: flex; gap: 12px;">
+                <button type="button" (click)="setFeelingEmoji('😊')" [style.background]="evidenceForm.feelingEmoji === '😊' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.03)'" [style.borderColor]="evidenceForm.feelingEmoji === '😊' ? '#10b981' : 'rgba(255,255,255,0.1)'" style="flex: 1; border: 1px solid; border-radius: 8px; padding: 8px; font-size: 20px; cursor: pointer; transition: all 0.2s;">😊 <span style="font-size: 11px; display: block; margin-top: 4px; color: #8b949e;">Conectados</span></button>
+                <button type="button" (click)="setFeelingEmoji('😐')" [style.background]="evidenceForm.feelingEmoji === '😐' ? 'rgba(245, 158, 110, 0.2)' : 'rgba(255,255,255,0.03)'" [style.borderColor]="evidenceForm.feelingEmoji === '😐' ? '#f59e0b' : 'rgba(255,255,255,0.1)'" style="flex: 1; border: 1px solid; border-radius: 8px; padding: 8px; font-size: 20px; cursor: pointer; transition: all 0.2s;">😐 <span style="font-size: 11px; display: block; margin-top: 4px; color: #8b949e;">Normal</span></button>
+                <button type="button" (click)="setFeelingEmoji('😞')" [style.background]="evidenceForm.feelingEmoji === '😞' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255,255,255,0.03)'" [style.borderColor]="evidenceForm.feelingEmoji === '😞' ? '#ef4444' : 'rgba(255,255,255,0.1)'" style="flex: 1; border: 1px solid; border-radius: 8px; padding: 8px; font-size: 20px; cursor: pointer; transition: all 0.2s;">😞 <span style="font-size: 11px; display: block; margin-top: 4px; color: #8b949e;">Tensión</span></button>
+              </div>
+            </div>
+            
+            <!-- Micro-reflexión -->
+            <div>
+              <label style="display: block; font-size: 11px; text-transform: uppercase; color: #8b949e; font-weight: 600; margin-bottom: 6px;">Micro-Reflexión Familiar (Máx. 140 carac.)</label>
+              <input type="text" [(ngModel)]="evidenceForm.textContent" maxlength="140" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.10); border-radius: 6px; color: #fff; padding: 8px 12px; font-size: 13.5px; box-sizing: border-box;" placeholder="Cuéntanos en pocas palabras tu micro-victoria de hoy..." />
+              <span style="font-size: 10px; color: #8b949e; display: block; margin-top: 4px; text-align: right;">{{ 140 - (evidenceForm.textContent?.length || 0) }} caracteres restantes</span>
+            </div>
+          </div>
+        }
+
+        <!-- Descripción Ampliada (Opcional) -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 11px; text-transform: uppercase; color: #8b949e; font-weight: 600; margin-bottom: 6px;">Observaciones Adicionales (Opcional)</label>
+          <textarea [(ngModel)]="evidenceForm.description" rows="2" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; padding: 10px; font-size: 13px; resize: none; box-sizing: border-box;" placeholder="Cualquier detalle clínico o familiar extra..."></textarea>
+        </div>
+
+        <!-- URL de Archivo (fileUrl) -->
+        @if (evidenceForm.evidenceType === 'PHOTO') {
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 11px; text-transform: uppercase; color: #58a6ff; font-weight: 600; margin-bottom: 6px;">📷 URL de la Captura / Foto</label>
+            <input type="text" [(ngModel)]="evidenceForm.fileUrl" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; padding: 10px; font-size: 14px; box-sizing: border-box;" placeholder="https://ejemplo.com/evidencia.jpg" />
+          </div>
+        }
+
+        <!-- Responsable -->
+        <div style="margin-bottom: 24px;">
+          <label style="display: block; font-size: 11px; text-transform: uppercase; color: #8b949e; font-weight: 600; margin-bottom: 6px;">Miembro Responsable</label>
+          <select [(ngModel)]="evidenceForm.submittedBy" style="width: 100%; background: rgba(18, 18, 18, 0.9); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; color: #fff; padding: 10px; font-size: 14px; cursor: pointer; box-sizing: border-box;">
+            <option value="">Selecciona quién lideró la dinámica...</option>
+            @for (m of familyMembers; track m.id) {
+              <option [value]="m.fullName">{{ m.fullName }} ({{ m.roleType }})</option>
+            }
+            <option value="William Rivera">William Rivera (Terapeuta)</option>
+          </select>
+        </div>
+
+        <!-- Botones de Control -->
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <button (click)="closeEvidenceModal()" style="background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #c9d1d9; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">Cancelar</button>
+          <button [disabled]="submittingEvidence" (click)="submitEvidence()" style="background: #238636; border: 1px solid #30853c; color: #fff; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; border-radius: 6px;">
+            @if (submittingEvidence) {
+              <span>⌛ Analizando Coherencia...</span>
+            } @else {
+              <span>🚀 Enviar a Sentinel AI</span>
+            }
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+}

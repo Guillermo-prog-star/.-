@@ -19,6 +19,7 @@ public class ChecklistItem {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "family_id", nullable = false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Family family;
 
     @Column(nullable = false, columnDefinition = "TEXT")

@@ -43,4 +43,8 @@ export class FamilyLogbookService {
       request
     );
   }
+
+  getCorrelation(familyId: number): Observable<any> {
+    return this.http.get<any>(`/api/v1/ai/sentiment/family/${familyId}/correlation`);
+  }
 }

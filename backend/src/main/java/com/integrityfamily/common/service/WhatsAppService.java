@@ -31,11 +31,11 @@ public class WhatsAppService {
 
     /**
      * [FIX SDD] Requerido por AutomatedReportingService:[70]
-     * EnvÃƒÂ­a un reporte o alerta al contacto principal de la familia.
+     * Envía un reporte o alerta al contacto principal de la familia.
      */
     public void sendToFamily(Family family, String message) {
         String phoneNumber = family.getWhatsapp();
-        log.info("Ã°Å¸â€œÂ¢ [WHATSAPP-FAMILY] Despachando reporte a Familia: {} al nÃƒÂºmero: {}", family.getId(), phoneNumber);
+        log.info("📢 [WHATSAPP-FAMILY] Despachando reporte a Familia: {} al número: {}", family.getId(), phoneNumber);
 
         NotificationLog nl = new NotificationLog();
         nl.setFamily(family);
@@ -54,7 +54,7 @@ public class WhatsAppService {
         String phoneNumber = FamilyMember.getFamily().getWhatsapp();
 
         String copy = generateRoleBasedCopy(name, role, type, context);
-        log.info("Ã°Å¸â€œÂ± [WHATSAPP-MENTOR] Para: {} ({}) >> {}", name, role, copy);
+        log.info("📱 [WHATSAPP-MENTOR] Para: {} ({}) >> {}", name, role, copy);
 
         NotificationLog nl = new NotificationLog();
         nl.setFamily(FamilyMember.getFamily());
@@ -69,7 +69,7 @@ public class WhatsAppService {
     }
 
     /**
-     * SDD: EnvÃ­o de invitaciÃ³n de acceso al sistema para nuevos miembros.
+     * SDD: Envío de invitación de acceso al sistema para nuevos miembros.
      */
     public void sendInvitation(String phoneNumber, String name, String familyName, String familyCode) {
         String message = String.format(
@@ -87,19 +87,19 @@ public class WhatsAppService {
         boolean isLeader = "ADMIN".equalsIgnoreCase(role) || "SENTINEL".equalsIgnoreCase(role);
 
         return isLeader ? switch (type) {
-            case "CRISIS_ALERT" -> base + "Ã¢Å¡Â Ã¯Â¸Â Sentinel detectÃƒÂ³ tensiÃƒÂ³n. Tu calma lidera el hogar: " + context;
-            case "PLAN_ASSIGNED" -> base + "Ã°Å¸Å½Â¯ Nuevo plan de acciÃƒÂ³n activado: " + context;
+            case "CRISIS_ALERT" -> base + "⚠️ Sentinel detectó tensión. Tu calma lidera el hogar: " + context;
+            case "PLAN_ASSIGNED" -> base + "🎯 Nuevo plan de acción activado: " + context;
             default -> base + "Consejo de integridad: " + context;
         } : switch (type) {
-            case "CRISIS_ALERT" -> base + "Ã°Å¸â€ºÂ¡Ã¯Â¸Â Mantengamos la armonÃƒÂ­a. Ã‚Â¡Tu actitud suma!";
-            case "PLAN_ASSIGNED" -> base + "Ã°Å¸Å¡â‚¬ Ã‚Â¡Nueva misiÃƒÂ³n familiar!: " + context;
-            default -> base + "PequeÃƒÂ±o reto de hoy para ti.";
+            case "CRISIS_ALERT" -> base + "🛡️ Mantengamos la armonía. ¡Tu actitud suma!";
+            case "PLAN_ASSIGNED" -> base + "🚀 ¡Nueva misión familiar!: " + context;
+            default -> base + "Pequeño reto de hoy para ti.";
         };
     }
 
     public void sendMessage(String phoneNumber, String message) {
         if ("MOCK_TOKEN".equals(apiToken) || phoneNumber == null) {
-            log.info("Ã°Å¸â€œÂ± [SIMULACIÃƒâ€œN/LOG] +{} >> {}", phoneNumber, message);
+            log.info("📱 [SIMULACIÓN/LOG] +{} >> {}", phoneNumber, message);
             return;
         }
         try {
@@ -115,9 +115,7 @@ public class WhatsAppService {
                     .retrieve()
                     .toBodilessEntity();
         } catch (Exception e) {
-            log.error("Ã¢ÂÅ’ [WHATSAPP-ERROR] {}", e.getMessage());
+            log.error("❌ [WHATSAPP-ERROR] {}", e.getMessage());
         }
     }
 }
-
-

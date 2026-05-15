@@ -25,12 +25,16 @@ public class MasterDataInitializer implements CommandLineRunner {
     private final QuestionRepository questionRepository;
     private final MilestoneRepository milestoneRepository; // Inyección de hitos
     private final FamilyRepository familyRepository;
+    private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(String... args) {
         log.info(">>>> [SYSTEM] Iniciando Protocolo de Sincronización de Datos Maestro...");
+
+        // SDD-Proactive-Self-Healing: Enforce unicidad y resolver colisiones de familias antes de continuar
+        cleanAndMergeDuplicateFamilies();
 
         // 1. Asegurar Roles Base
         Role adminRole = ensureRole("ROLE_ADMIN");
@@ -53,20 +57,110 @@ public class MasterDataInitializer implements CommandLineRunner {
         log.info(">>>> [SYSTEM] Sincronización completada satisfactoriamente.");
     }
 
+    private void cleanAndMergeDuplicateFamilies() {
+        log.info(">>>> [SELF-HEALING] Verificando duplicados de la Familia Lopez Rivera...");
+        
+        // 1. Desactivar temporalmente códigos duplicados en otras familias para evitar ConstraintViolationException
+        List<Family> allFamilies = familyRepository.findAll();
+        for (Family f : allFamilies) {
+            if (f.getId() != null && !f.getId().equals(1L)) {
+                boolean updated = false;
+                if ("IF-CO-QUI-2026-0004".equals(f.getFamilyCode())) {
+                    log.warn("⚠️ [CLEANUP] Detectada familia duplicada con código IF-CO-QUI-2026-0004 en ID: {}. Renombrando código...", f.getId());
+                    f.setFamilyCode("DUPLICATE-CODE-" + f.getId() + "-" + System.currentTimeMillis());
+                    updated = true;
+                }
+                if ("Familia Lopez Rivera".equals(f.getName())) {
+                    log.warn("⚠️ [CLEANUP] Detectada familia duplicada con nombre Familia Lopez Rivera en ID: {}. Renombrando nombre...", f.getId());
+                    f.setName("Duplicada " + f.getId() + " - Familia Lopez Rivera");
+                    updated = true;
+                }
+                if (updated) {
+                    familyRepository.saveAndFlush(f);
+                }
+            }
+        }
+
+        // 2. Ahora que las restricciones de clave única están liberadas, buscamos si existe la de ID 1.
+        Family targetFamily = familyRepository.findById(1L).orElse(null);
+        if (targetFamily == null) {
+            log.info(">>>> [SELF-HEALING] No existe la familia base ID 1. Se creará en ensureDefaultFamily.");
+            return;
+        }
+
+        // 3. Migrar cualquier miembro o usuario de las familias duplicadas renombradas a la familia ID 1
+        allFamilies = familyRepository.findAll();
+        for (Family f : allFamilies) {
+            if (f.getId() != null && !f.getId().equals(1L) && f.getName() != null && f.getName().startsWith("Duplicada ")) {
+                log.info("🏥 [SELF-HEALING] Migrando recursos de familia duplicada ID {} a la familia principal ID 1...", f.getId());
+                
+                // Migrar miembros
+                if (f.getMembers() != null && !f.getMembers().isEmpty()) {
+                    List<FamilyMember> membersToMigrate = new java.util.ArrayList<>(f.getMembers());
+                    f.getMembers().clear();
+                    familyRepository.saveAndFlush(f);
+                    
+                    for (FamilyMember member : membersToMigrate) {
+                        member.setFamily(targetFamily);
+                        memberRepository.save(member);
+                    }
+                    log.info("🏥 [SELF-HEALING] Migrados {} miembros.", membersToMigrate.size());
+                }
+                
+                // Migrar usuarios
+                List<User> usersToMigrate = userRepository.findAll();
+                int userCount = 0;
+                for (User user : usersToMigrate) {
+                    if (user.getFamily() != null && user.getFamily().getId().equals(f.getId())) {
+                        user.setFamily(targetFamily);
+                        userRepository.save(user);
+                        userCount++;
+                    }
+                }
+                if (userCount > 0) {
+                    log.info("🏥 [SELF-HEALING] Migrados {} usuarios.", userCount);
+                }
+
+                // No intentar eliminación física para evitar marcar la transacción como rollback-only en caso de restricciones de clave ajena
+                log.info("🏥 [SELF-HEALING] Familia duplicada ID {} neutralizada y renombrada con éxito.", f.getId());
+            }
+        }
+    }
+
     private Family ensureDefaultFamily() {
-        Family family = familyRepository.findByName("Familia López Rivera")
-                .orElseGet(() -> {
-                    log.info(">>>> [SEEDER] Creando familia base: Familia López Rivera");
-                    return familyRepository.save(Family.builder()
-                            .name("Familia López Rivera")
-                            .description("Nodo de prueba inicial para el sistema de integridad.")
-                            .familyCode("FAM-001")
-                            .pin("1234")
-                            .currentMilestone("W1")
-                            .sentinelActive(true)
-                            .municipio("Armenia")
-                            .build());
-                });
+        Family family = familyRepository.findById(1L).orElse(null);
+        if (family == null) {
+            List<Family> families = familyRepository.findByName("Familia Lopez Rivera");
+            if (!families.isEmpty()) {
+                family = families.get(0);
+            } else {
+                log.info(">>>> [SEEDER] Creando familia base: Familia Lopez Rivera");
+                family = familyRepository.save(Family.builder()
+                        .name("Familia Lopez Rivera")
+                        .description("Nodo de prueba inicial para el sistema de integridad.")
+                        .familyCode("IF-CO-QUI-2026-0004")
+                        .pin("1234")
+                        .currentMilestone("W1")
+                        .sentinelActive(true)
+                        .municipio("Armenia")
+                        .build());
+            }
+        } else {
+            // Self-Healing: Asegurar consistencia absoluta del Nodo Armenia de forma proactiva
+            boolean needsUpdate = false;
+            if (!"Familia Lopez Rivera".equals(family.getName())) {
+                family.setName("Familia Lopez Rivera");
+                needsUpdate = true;
+            }
+            if (!"IF-CO-QUI-2026-0004".equals(family.getFamilyCode())) {
+                family.setFamilyCode("IF-CO-QUI-2026-0004");
+                needsUpdate = true;
+            }
+            if (needsUpdate) {
+                family = familyRepository.save(family);
+                log.info("🏥 [SELF-HEALING] Familia base ID 1 corregida de forma proactiva a: Familia Lopez Rivera (IF-CO-QUI-2026-0004)");
+            }
+        }
         log.info(">>>> [SYSTEM] Familia Base Identificada: {} (ID: {})", family.getName(), family.getId());
         return family;
     }
@@ -189,5 +283,11 @@ public class MasterDataInitializer implements CommandLineRunner {
                 userRepository.save(newUser);
             }
         );
+
+        // Sincronizar también en la tabla de miembros de familia para consistencia absoluta
+        memberRepository.findByEmail(email).ifPresent(member -> {
+            member.setFamily(family);
+            memberRepository.save(member);
+        });
     }
 }

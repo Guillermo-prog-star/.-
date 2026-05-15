@@ -89,6 +89,21 @@ public class ChecklistService {
         return result;
     }
 
+    @Transactional
+    public ChecklistItem createChecklistItem(Long familyId, String description, String dimension, String source) {
+        Family family = familyRepository.findById(familyId)
+                .orElseThrow(() -> new IllegalArgumentException("Familia no encontrada: " + familyId));
+        ChecklistItem item = ChecklistItem.builder()
+                .family(family)
+                .description(description)
+                .dimension(dimension != null ? dimension : "General")
+                .source(source != null ? source : "SENTINEL")
+                .completed(false)
+                .createdAt(LocalDateTime.now())
+                .build();
+        return checklistRepository.save(item);
+    }
+
     private String detectDimension(String text) {
         String t = text.toLowerCase();
         if (t.contains("reconoci") || t.contains("identidad") || t.contains("ver") || t.contains("observar")) return "Reconocimiento";

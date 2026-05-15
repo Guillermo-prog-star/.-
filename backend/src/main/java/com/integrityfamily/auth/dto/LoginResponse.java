@@ -1,6 +1,3 @@
 package com.integrityfamily.auth.dto;
 
-
-public record LoginResponse(String token, long expiresInMs, UserResponse user) {}
-
-
+public record LoginResponse(String token, String refreshToken, long expiresInMs, UserResponse user) {}

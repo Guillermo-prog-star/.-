@@ -59,9 +59,14 @@
 
       <!-- Checklist de Micro-acciones de Fricción Cero -->
       <section class="checklist-section">
-        <div class="section-header">
-          <h2>📝 Acciones de Hoy</h2>
-          <span class="badge" *ngIf="checklistItems.length">{{ checklistItems.length }} misiones</span>
+        <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h2>📝 Acciones de Hoy</h2>
+            <span class="badge" *ngIf="checklistItems.length">{{ checklistItems.length }} misiones</span>
+          </div>
+          <button class="btn-sentinel-inject" (click)="injectSentinelMission()" style="background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 4px; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3); transition: all 0.2s ease; outline: none;">
+            ✨ Propuesta AI
+          </button>
         </div>
 
         <div *ngIf="loading" class="inner-loading">Sincronizando el checklist...</div>

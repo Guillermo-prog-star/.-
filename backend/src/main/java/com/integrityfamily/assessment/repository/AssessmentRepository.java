@@ -4,6 +4,7 @@ package com.integrityfamily.assessment.repository;
 /**
  * @deprecated Logic migrated to Evaluation system.
  */
+@Deprecated
 public interface AssessmentRepository {
     // Neutralizado para evitar conflictos de arquitectura.
 }

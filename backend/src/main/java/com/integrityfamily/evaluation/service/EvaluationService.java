@@ -21,6 +21,7 @@ import java.util.stream.Collectors;
 
 /**
  * SDD: Motor de Evaluación del Nodo Armenia.
+ * Implementación rigurosa del Algoritmo Oficial de Riesgo Familiar RISK_ALGO_V1.
  */
 @Slf4j
 @Service
@@ -62,6 +63,7 @@ public class EvaluationService {
         evaluation.setFamily(family);
         evaluation.setStatus(EvaluationStatus.STARTED);
         evaluation.setStartedAt(LocalDateTime.now());
+        evaluation.setAlgorithmVersion("RISK_ALGO_V1");
 
         if (req.memberId() != null) {
             FamilyMember member = memberRepository.findById(req.memberId()).orElse(null);
@@ -72,26 +74,51 @@ public class EvaluationService {
     }
 
     /**
-     * Finaliza un diagnóstico real enviado desde el Frontend.
-     * SDD-FIX: Ahora calcula ICF y Dimensiones si el frontend no los envía.
+     * Finaliza un diagnóstico ejecutando el algoritmo oficial RISK_ALGO_V1.
      */
     @Transactional
     public Evaluation finalize(Long id, EvaluationDtos.EvaluationFinalizeRequest request) {
-        log.info("🏁 [EVALUATION] Finalizando diagnóstico ID: {}", id);
+        log.info("🏁 [EVALUATION-ALGO] Finalizando diagnóstico ID: {} bajo RISK_ALGO_V1", id);
         Evaluation existing = findById(id);
 
         existing.setStatus(EvaluationStatus.FINALIZED);
         existing.setFinalizedAt(LocalDateTime.now());
+        existing.setAlgorithmVersion("RISK_ALGO_V1");
 
-        // Lógica de Autocalculo si vienen nulos
-        double icf = (request.icf() != null) ? request.icf() : calculateIcf(request.answers());
-        boolean hasCrisis = (request.hasCrisis() != null) ? request.hasCrisis() : icf < 30.0;
-        Map<String, Double> scores = (request.dimensionScores() != null) ? request.dimensionScores() : calculateDimensionScores(request.answers());
+        // Guardar respuestas individuales en persistencia
+        if (request.answers() != null) {
+            for (EvaluationDtos.AnswerDto a : request.answers()) {
+                questionRepository.findById(a.questionId()).ifPresent(q -> {
+                    EvaluationAnswer answer = new EvaluationAnswer();
+                    answer.setEvaluation(existing);
+                    answer.setQuestionKey(q.getQuestionKey() != null ? q.getQuestionKey() : "Q-" + q.getId());
+                    answer.setScore(a.getEffectiveValue());
+                    try {
+                        if (q.getDimension() != null) {
+                            answer.setDimension(DimensionType.valueOf(q.getDimension().toUpperCase().trim()));
+                        } else {
+                            answer.setDimension(DimensionType.COMMITMENT);
+                        }
+                    } catch (Exception ex) {
+                        answer.setDimension(DimensionType.COMMITMENT);
+                    }
+                    existing.getAnswers().add(answer);
+                });
+            }
+        }
 
-        existing.setIcf(icf);
-        existing.setHasCrisis(hasCrisis);
+        // Ejecutar Algoritmo Oficial de Riesgo RISK_ALGO_V1
+        Map<String, Double> dimensionScores = calculateDimensionScoresAlgo(request.answers());
+        double healthyIndex = calculateHealthyIndexAlgo(dimensionScores);
+        String riskLevel = determineRiskLevelAlgo(healthyIndex, dimensionScores);
+        String criticalDimension = detectCriticalDimensionAlgo(dimensionScores);
 
-        scores.forEach((name, score) -> {
+        existing.setIcf(healthyIndex);
+        existing.setRiskLevel(riskLevel);
+        existing.setCriticalDimension(criticalDimension);
+        existing.setHasCrisis("CRITICO".equalsIgnoreCase(riskLevel) || "HIGH".equalsIgnoreCase(riskLevel) || "ALTO".equalsIgnoreCase(riskLevel));
+
+        dimensionScores.forEach((name, score) -> {
             EvaluationDimensionScore ds = new EvaluationDimensionScore();
             ds.setEvaluation(existing);
             ds.setDimensionName(name);
@@ -100,35 +127,115 @@ public class EvaluationService {
         });
 
         Evaluation saved = evaluationRepository.save(existing);
-        log.info("✅ [EVALUATION] Evaluación guardada con éxito (ICF: {}). ID: {}", icf, saved.getId());
+        log.info("✅ [EVALUATION-ALGO] Evaluación persistida con éxito. ICF/HealthyIndex: {} | Riesgo: {} | Dim Crítica: {}", 
+                healthyIndex, riskLevel, criticalDimension);
         
         processPostFinalization(saved);
         return saved;
     }
 
-    private double calculateIcf(List<EvaluationDtos.AnswerDto> answers) {
-        if (answers == null || answers.isEmpty()) return 0.0;
-        double sum = answers.stream().mapToInt(a -> a.getEffectiveValue()).sum();
-        return (sum / (answers.size() * 5.0)) * 100.0;
-    }
+    /**
+     * Normalización 0-100 y cálculo de promedios por dimensión.
+     * Positiva: ((val - 1) / 4) * 100
+     * Negativa: ((5 - val) / 4) * 100
+     */
+    private Map<String, Double> calculateDimensionScoresAlgo(List<EvaluationDtos.AnswerDto> answers) {
+        Map<String, List<Double>> dimNormalizedValues = new HashMap<>();
+        // Inicializar dimensiones requeridas
+        dimNormalizedValues.put("emociones", new ArrayList<>());
+        dimNormalizedValues.put("comunicacion", new ArrayList<>());
+        dimNormalizedValues.put("habitos", new ArrayList<>());
+        dimNormalizedValues.put("tiempos", new ArrayList<>());
 
-    private Map<String, Double> calculateDimensionScores(List<EvaluationDtos.AnswerDto> answers) {
-        if (answers == null || answers.isEmpty()) return Collections.emptyMap();
-        
-        Map<String, List<Integer>> dimValues = new HashMap<>();
-        for (EvaluationDtos.AnswerDto a : answers) {
-            questionRepository.findById(a.questionId()).ifPresent(q -> {
-                String dim = q.getDimension() != null ? q.getDimension() : "GENERAL";
-                dimValues.computeIfAbsent(dim, k -> new ArrayList<>()).add(a.getEffectiveValue());
-            });
+        if (answers != null) {
+            for (EvaluationDtos.AnswerDto a : answers) {
+                questionRepository.findById(a.questionId()).ifPresent(q -> {
+                    String dim = q.getDimension() != null ? q.getDimension().toLowerCase().trim() : "emociones";
+                    if (!dimNormalizedValues.containsKey(dim)) {
+                        dim = "emociones"; // Fallback seguro
+                    }
+                    double val = a.getEffectiveValue();
+                    double normScore;
+                    if ("NEGATIVE".equalsIgnoreCase(q.getDirection())) {
+                        normScore = ((5.0 - val) / 4.0) * 100.0;
+                    } else {
+                        normScore = ((val - 1.0) / 4.0) * 100.0;
+                    }
+                    dimNormalizedValues.get(dim).add(normScore);
+                });
+            }
         }
 
         Map<String, Double> result = new HashMap<>();
-        dimValues.forEach((dim, vals) -> {
-            double avg = vals.stream().mapToInt(Integer::intValue).average().orElse(0.0);
-            result.put(dim, (avg / 5.0) * 100.0);
+        dimNormalizedValues.forEach((dim, vals) -> {
+            double avg = vals.isEmpty() ? 100.0 : vals.stream().mapToDouble(Double::doubleValue).average().orElse(100.0);
+            result.put(dim, avg);
         });
         return result;
+    }
+
+    /**
+     * Fórmula Ponderada Oficial:
+     * emotions * 0.30 + communication * 0.30 + habits * 0.20 + time * 0.20
+     */
+    private double calculateHealthyIndexAlgo(Map<String, Double> scores) {
+        double emo = scores.getOrDefault("emociones", 100.0);
+        double com = scores.getOrDefault("comunicacion", 100.0);
+        double hab = scores.getOrDefault("habitos", 100.0);
+        double tim = scores.getOrDefault("tiempos", 100.0);
+
+        return (emo * 0.30) + (com * 0.30) + (hab * 0.20) + (tim * 0.20);
+    }
+
+    /**
+     * Clasificación y Regla de Seguridad Crítica.
+     */
+    private String determineRiskLevelAlgo(double healthyIndex, Map<String, Double> scores) {
+        String baseRisk;
+        if (healthyIndex >= 80.0) {
+            baseRisk = "BAJO";
+        } else if (healthyIndex >= 60.0) {
+            baseRisk = "MODERADO";
+        } else if (healthyIndex >= 40.0) {
+            baseRisk = "ALTO";
+        } else {
+            baseRisk = "CRITICO";
+        }
+
+        // Regla de Seguridad Crítica
+        boolean anyUnder25 = scores.values().stream().anyMatch(s -> s < 25.0);
+        boolean anyUnder40 = scores.values().stream().anyMatch(s -> s < 40.0);
+
+        if (anyUnder25) {
+            return "CRITICO";
+        } else if (anyUnder40 && ("BAJO".equals(baseRisk) || "MODERADO".equals(baseRisk))) {
+            return "ALTO";
+        }
+
+        return baseRisk;
+    }
+
+    private String detectCriticalDimensionAlgo(Map<String, Double> scores) {
+        return scores.entrySet().stream()
+                .min(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse("emociones");
+    }
+
+    @Transactional(readOnly = true)
+    public List<EvaluationDtos.TimelineEntryDto> getTimeline(Long familyId) {
+        return evaluationRepository.findByFamilyId(familyId).stream()
+                .filter(e -> e.getStatus() == EvaluationStatus.FINALIZED)
+                .sorted(Comparator.comparing(Evaluation::getFinalizedAt).reversed())
+                .map(e -> new EvaluationDtos.TimelineEntryDto(
+                        e.getId(),
+                        e.getFinalizedAt(),
+                        e.getIcf(),
+                        e.getRiskLevel() != null ? e.getRiskLevel() : "MODERADO",
+                        e.getCriticalDimension() != null ? e.getCriticalDimension() : "comunicacion",
+                        e.getAlgorithmVersion() != null ? e.getAlgorithmVersion() : "RISK_ALGO_V1"
+                ))
+                .collect(Collectors.toList());
     }
 
     @Transactional
@@ -140,10 +247,13 @@ public class EvaluationService {
         Evaluation eval = new Evaluation();
         eval.setFamily(family);
         eval.setIcf(icf);
+        eval.setRiskLevel(hasCrisis ? "CRITICO" : "MODERADO");
+        eval.setCriticalDimension("comunicacion");
         eval.setHasCrisis(hasCrisis);
         eval.setStatus(EvaluationStatus.FINALIZED);
         eval.setFinalizedAt(LocalDateTime.now());
         eval.setMilestoneKey(family.getCurrentMilestone());
+        eval.setAlgorithmVersion("RISK_ALGO_V1");
 
         EvaluationDimensionScore ds = new EvaluationDimensionScore();
         ds.setEvaluation(eval);
@@ -156,13 +266,29 @@ public class EvaluationService {
     }
 
     private void processPostFinalization(Evaluation saved) {
-        riskService.calculateAndCreate(saved.getFamily(), saved.getIcf(), saved.getHasCrisis());
-        milestoneService.advanceMilestone(saved.getFamily().getId());
+        String riskLevel = saved.getRiskLevel() != null ? saved.getRiskLevel() : "MODERADO";
+        try {
+            com.integrityfamily.domain.RiskSnapshot snapshot = riskService.calculateAndCreate(saved.getFamily(), saved.getIcf(), saved.getHasCrisis());
+            if (snapshot != null && snapshot.getRiskLevel() != null) {
+                riskLevel = snapshot.getRiskLevel();
+            }
+        } catch (Exception e) {
+            log.error("⚠️ [EVALUATION] Error al calcular instantánea de riesgo: {}", e.getMessage());
+        }
+
+        try {
+            milestoneService.advanceMilestone(saved.getFamily().getId());
+            log.info("🚀 [EVALUATION] Hito de la familia ID {} avanzado correctamente.", saved.getFamily().getId());
+        } catch (Exception e) {
+            log.warn("⚠️ [EVALUATION] Avance de hito omitido para la familia ID {} (No bloqueante para la evaluación): {}", 
+                    saved.getFamily().getId(), e.getMessage());
+        }
 
         Map<String, Object> payload = new HashMap<>();
         payload.put("evaluationId", saved.getId());
         payload.put("icf", saved.getIcf());
         payload.put("familyId", saved.getFamily().getId());
+        payload.put("riskLevel", riskLevel);
 
         com.integrityfamily.common.event.SystemEvent eventObj = 
             com.integrityfamily.common.event.SystemEvent.of(
@@ -173,7 +299,8 @@ public class EvaluationService {
             );
 
         rabbitTemplate.convertAndSend(com.integrityfamily.common.config.RabbitConfig.EXCHANGE_NAME, "evaluation.completed", eventObj);
-        log.info("📧 [EVALUATION] Evento 'evaluation.completed' enviado para familia: {}", saved.getFamily().getId());
+        log.info("📧 [EVALUATION] Evento 'evaluation.completed' enviado para familia: {} con riesgo: {}", 
+                saved.getFamily().getId(), riskLevel);
     }
 
     @Transactional

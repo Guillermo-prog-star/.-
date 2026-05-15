@@ -28,16 +28,17 @@ import { SentinelCoreService } from '../core/services/sentinel-core.service';
       <div class="flex-1 md:ml-[280px] flex flex-col min-w-0">
         
         <div *ngIf="sentinel.hasCriticalAlert()" 
-             class="bg-red-600 text-white px-6 py-2 flex justify-between items-center animate-pulse z-[60] shadow-2xl border-b border-red-500">
+             class="bg-red-500/10 backdrop-blur-md border-b border-red-500/20 text-white px-6 py-3 flex justify-between items-center z-[60] shadow-[0_4px_30px_rgba(239,68,68,0.15)] relative overflow-hidden">
+           <div class="absolute bottom-0 left-0 h-[2px] w-full bg-gradient-to-r from-transparent via-red-500 to-transparent animate-pulse"></div>
            <div class="flex items-center gap-3">
-              <span class="text-xl">🚨</span>
-              <span class="text-[10px] font-black uppercase tracking-widest text-red-100">
+              <span class="text-xl animate-bounce">🚨</span>
+              <span class="text-xs font-extrabold uppercase tracking-widest text-red-200">
                 Alerta Sentinel: Se requiere intervención en red Alfa
               </span>
            </div>
            <a [routerLink]="['/admin/stats']" 
-              class="text-[9px] font-bold bg-white text-red-600 px-4 py-1.5 rounded-full hover:bg-black hover:text-white transition-all uppercase">
-              Analizar Crisis
+              class="text-[10px] font-black bg-gradient-to-r from-red-600 to-rose-600 text-white px-5 py-2 rounded-xl hover:shadow-[0_0_15px_rgba(239,68,68,0.5)] transform hover:scale-105 transition-all uppercase tracking-wider border border-red-500/30">
+              Analizar Crisis →
            </a>
         </div>
 

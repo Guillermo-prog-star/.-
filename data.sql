@@ -19,8 +19,8 @@ AND NOT EXISTS (SELECT 1 FROM user_roles ur WHERE ur.user_id = u.id AND ur.role_
 
 -- 3. Familia Lopez Rivera
 INSERT INTO families (id, name, family_code, current_milestone, icf_score, total_tasks, completed_tasks, sentinel_active, created_by_id, created_at)
-VALUES (1, 'Familia Lopez Rivera', 'IF-CO-QUI-2026-0001', 'MES_00_DIAGNOSTICO_BASE', 75, 12, 8, false, 1, NOW())
-ON DUPLICATE KEY UPDATE name=VALUES(name);
+VALUES (1, 'Familia Lopez Rivera', 'IF-CO-QUI-2026-0004', 'MES_00_DIAGNOSTICO_BASE', 75, 12, 8, false, 1, NOW())
+ON DUPLICATE KEY UPDATE name=VALUES(name), family_code=VALUES(family_code);
 
 -- 4. Miembros de Familia
 INSERT INTO family_members (full_name, first_name, password, role, email, family_id, user_id)
@@ -30,20 +30,20 @@ AND NOT EXISTS (SELECT 1 FROM family_members WHERE email = 'william@integrity.fa
 
 INSERT INTO family_members (full_name, first_name, password, role, email, family_id)
 SELECT 'Maria Rivera', 'Maria', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xdqD1884W6G6G2DW', 'MADRE', 'maria@example.com', f.id
-FROM families f WHERE f.family_code = 'IF-CO-QUI-2026-0001'
+FROM families f WHERE f.family_code = 'IF-CO-QUI-2026-0004'
 AND NOT EXISTS (SELECT 1 FROM family_members WHERE email = 'maria@example.com');
 
 -- 5. Items de Checklist
 INSERT INTO checklist_items (description, dimension, source, completed, family_id, created_at)
 SELECT 'Establecer rutina de dialogo familiar diaria', 'COMUNICACION', 'MES_00_DIAGNOSTICO_BASE', true, f.id, NOW()
-FROM families f WHERE f.family_code = 'IF-CO-QUI-2026-0001';
+FROM families f WHERE f.family_code = 'IF-CO-QUI-2026-0004';
 
 INSERT INTO checklist_items (description, dimension, source, completed, family_id, created_at)
 SELECT 'Definir presupuesto de ahorro colaborativo', 'FINANZAS', 'MES_00_DIAGNOSTICO_BASE', true, f.id, NOW()
-FROM families f WHERE f.family_code = 'IF-CO-QUI-2026-0001';
+FROM families f WHERE f.family_code = 'IF-CO-QUI-2026-0004';
 
 INSERT INTO checklist_items (description, dimension, source, completed, family_id, created_at)
 SELECT 'Implementar tablero de compromisos visibles', 'INTEGRIDAD', 'MES_00_DIAGNOSTICO_BASE', false, f.id, NOW()
-FROM families f WHERE f.family_code = 'IF-CO-QUI-2026-0001';
+FROM families f WHERE f.family_code = 'IF-CO-QUI-2026-0004';
 
 SET FOREIGN_KEY_CHECKS = 1;

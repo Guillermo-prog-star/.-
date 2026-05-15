@@ -2,6 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { Plan } from '../../core/models/models';
 import { FamilyStateService } from '../../core/services/family-state.service';
@@ -10,7 +11,7 @@ import { TelemetryService } from '../../core/services/telemetry.service';
 @Component({
   selector: 'app-plan-list-page', 
   standalone: true, 
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './plan-list-page.component.html',
   styleUrls: ['./plan-list-page.component.css']
 })
@@ -22,11 +23,28 @@ export class PlanListPageComponent implements OnInit {
   private telemetry = inject(TelemetryService);
 
   plans: Plan[] = []; 
+  evidences: any[] = [];
   loading = false;
   isWaitingForPlan = false;
   terminalLogs: string[] = [];
   selectedTaskId: number | null = null;
   isCliCollapsed = false;
+
+  proposedMissions: any[] = [];
+
+  // Modal State Properties
+  isEvidenceModalOpen = false;
+  activeModalTask: any = null;
+  submittingEvidence = false;
+  evidenceForm = {
+    title: '',
+    description: '',
+    textContent: '',
+    fileUrl: '',
+    evidenceType: 'BITACORA',
+    submittedBy: '',
+    feelingEmoji: ''
+  };
   
   // Dynamic Milestone states and family metadata
   milestones: any[] = [
@@ -124,6 +142,96 @@ export class PlanListPageComponent implements OnInit {
       });
   }
 
+  loadFamilyEvidences() {
+    this.http.get<any>(`${this.api.base}/evidences/family/${this.familyId}`)
+      .subscribe({
+        next: (res) => {
+          if (res && res.data) {
+            this.evidences = res.data;
+          }
+        },
+        error: (err) => console.error('Error fetching family evidences:', err)
+      });
+  }
+
+  getTaskEvidence(taskId: number) {
+    return this.evidences.find(e => e.task?.id === taskId);
+  }
+
+  openEvidenceModal(task: any, type: string) {
+    this.activeModalTask = task;
+    this.isEvidenceModalOpen = true;
+    this.evidenceForm = {
+      title: `Evidencia: ${task.title}`,
+      description: '',
+      textContent: '',
+      fileUrl: type === 'PHOTO' ? 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=800' : '',
+      evidenceType: type,
+      submittedBy: this.familyMembers[0]?.fullName || '',
+      feelingEmoji: ''
+    };
+  }
+
+  closeEvidenceModal() {
+    this.isEvidenceModalOpen = false;
+    this.activeModalTask = null;
+  }
+
+  isFormValid(): boolean {
+    if (!this.evidenceForm.title || !this.evidenceForm.submittedBy) return false;
+    if (this.evidenceForm.evidenceType === 'BITACORA' && !this.evidenceForm.textContent) return false;
+    if (this.evidenceForm.evidenceType === 'PHOTO' && !this.evidenceForm.fileUrl) return false;
+    return true;
+  }
+
+  submitEvidence() {
+    this.submittingEvidence = true;
+
+    // Acompañar el texto de la evidencia con el sentimiento para análisis asíncrono asertivo de la IA
+    let textContentPayload = this.evidenceForm.textContent;
+    if (this.evidenceForm.feelingEmoji) {
+      textContentPayload = `[Cohesión Emocional Familiar: ${this.evidenceForm.feelingEmoji}] ${textContentPayload}`;
+    }
+
+    const payload = {
+      taskId: this.activeModalTask.id,
+      familyId: this.familyId,
+      evidenceType: this.evidenceForm.evidenceType,
+      title: this.evidenceForm.title,
+      description: this.evidenceForm.description,
+      fileUrl: this.evidenceForm.fileUrl,
+      textContent: textContentPayload,
+      submittedBy: this.evidenceForm.submittedBy
+    };
+
+    this.http.post<any>(`${this.api.base}/evidences/submit`, payload)
+      .subscribe({
+        next: (res) => {
+          this.submittingEvidence = false;
+          this.closeEvidenceModal();
+          this.load(true); // Recargar evidencias de manera silenciosa
+          this.loadDashboard();
+          
+          this.terminalLogs.push(`📥 Evidencia "${payload.title}" enviada exitosamente para análisis cognitivo.`);
+          this.terminalLogs.push(`🤖 Sentinel AI ha recibido la evidencia. Iniciando análisis en segundo plano...`);
+          this.scrollToBottom();
+
+          // Esperar y refrescar de nuevo de forma asíncrona para cargar la validación de la IA
+          setTimeout(() => {
+            this.loadFamilyEvidences();
+            this.terminalLogs.push(`🔄 Sentinel AI ha finalizado el análisis de la evidencia. Revisa la tarjeta de la misión.`);
+            this.scrollToBottom();
+          }, 3500);
+        },
+        error: (err) => {
+          this.submittingEvidence = false;
+          console.error('Error submitting evidence:', err);
+          this.terminalLogs.push(`❌ Error al subir la evidencia: ${err.message || 'Error del servidor'}`);
+          this.scrollToBottom();
+        }
+      });
+  }
+
   load(silent: boolean = false) {
     if (!silent) this.loading = true;
     this.http.get<any>(`${this.api.base}/plans/family/${this.familyId}`)
@@ -131,9 +239,115 @@ export class PlanListPageComponent implements OnInit {
         next: ({ data }) => { 
           this.plans = data; 
           this.loading = false;
+          this.loadFamilyEvidences(); // Carga secundaria
+
+          // Seccionar y proponer micro-misiones dinámicamente si no se han elegido aún
+          if (this.plans.length > 0) {
+            const planTasks = this.plans[0].tasks || [];
+            // Si no se tiene una tarea activa con estos nombres, proponemos las micro-misiones
+            const hasScreenFree = planTasks.some((t: any) => t.title.includes('Cena sin celulares'));
+            const hasGratitude = planTasks.some((t: any) => t.title.includes('Reconocimiento sincero'));
+            
+            if (!hasScreenFree && !hasGratitude) {
+              this.proposedMissions = [
+                {
+                  title: 'Cena sin celulares',
+                  description: 'Establecer una cena familiar de 15 minutos donde todos guarden sus dispositivos móviles para dialogar cara a cara.',
+                  dimension: 'comunicacion',
+                  objetivo: 'Desconectar la tecnología para reconectar emocionalmente.',
+                  accion: 'Implementar una caja recolectora de celulares decorada en la mesa del comedor.',
+                  indicador: 'Cena sin ninguna interrupción digital.',
+                  evidencia: 'Subir una nota corta detallando las risas o temas de conversación de la cena.',
+                  impacto: 15
+                },
+                {
+                  title: 'Reconocimiento sincero',
+                  description: 'Espacio diario nocturno para que cada integrante reconozca el valor y agradezca una acción específica realizada por otro.',
+                  dimension: 'emociones',
+                  objetivo: 'Fomentar un clima de validación y afecto sincero en el hogar.',
+                  accion: 'Dedicar 5 minutos al finalizar el día para decir una palabra de aliento.',
+                  indicador: 'Agradecimiento verbal compartido.',
+                  evidencia: 'Compartir cómo reaccionaron los hijos ante el reconocimiento.',
+                  impacto: 20
+                },
+                {
+                  title: 'Cartel de responsabilidades',
+                  description: 'Discutir, consensuar y diagramar la asignación de las tareas domésticas y cuidado colaborativo dentro del hogar.',
+                  dimension: 'habitos',
+                  objetivo: 'Disminuir el estrés parental mediante corresponsabilidad equitativa.',
+                  accion: 'Elaborar un cartel visual en un área común con los roles firmados por todos.',
+                  indicador: 'Asignación visual de responsabilidades.',
+                  evidencia: 'Describir el acuerdo o subir una foto del cartel.',
+                  impacto: 10
+                }
+              ];
+            } else {
+              this.proposedMissions = [];
+            }
+          }
         }, 
         error: () => this.loading = false 
       });
+  }
+
+  selectProposedMission(mission: any) {
+    if (!this.plans || this.plans.length === 0) return;
+    
+    const payload = {
+      title: mission.title,
+      description: mission.description,
+      dimension: mission.dimension.toUpperCase(),
+      fase: 'EJECUCION',
+      riesgoAsociado: 'BAJO',
+      objetivo: mission.objetivo,
+      accionConcreta: mission.accion,
+      indicadorCumplimiento: mission.indicador,
+      evidenciaRequerida: mission.evidencia,
+      impactoIcf: mission.impacto,
+      completed: false,
+      plan: { id: this.plans[0].id }
+    };
+
+    this.http.post<any>(`${this.api.base}/plans/tasks`, payload)
+      .subscribe({
+        next: () => {
+          this.terminalLogs.push(`✅ DECISIÓN ACTIVA: Han elegido la micro-misión "${mission.title}". ¡A por esa micro-victoria!`);
+          this.terminalLogs.push(`🌱 Sentinel AI ha registrado su racha de autonomía y la ha acoplado a su plan clínico.`);
+          this.proposedMissions = []; // Remover tras selección para conservar la interfaz impecable
+          this.load(true);
+          this.loadDashboard();
+          this.scrollToBottom();
+        },
+        error: (err) => {
+          console.error('Error activating micro-mission:', err);
+          this.terminalLogs.push(`❌ Error al activar la micro-misión: ${err.message || 'Error del servidor'}`);
+          this.scrollToBottom();
+        }
+      });
+  }
+
+  setFeelingEmoji(emoji: string) {
+    this.evidenceForm.feelingEmoji = emoji;
+  }
+
+  getDimensionColor(dim: string): string {
+    const map: { [key: string]: string } = {
+      'emociones': '#fb7185',
+      'comunicacion': '#38bdf8',
+      'habitos': '#fbbf24',
+      'tiempos': '#a78bfa'
+    };
+    return map[dim.toLowerCase()] || '#94a3b8';
+  }
+
+  getDimensionBg(dim: string): string {
+    const map: { [key: string]: string } = {
+      'emociones': 'rgba(251, 113, 133, 0.1)',
+      'comunicacion': 'rgba(56, 189, 248, 0.1)',
+      'habitos': 'rgba(251, 191, 36, 0.1)',
+      'tiempos': 'rgba(167, 139, 250, 0.1)'
+    };
+    return map[dim.toLowerCase()] || 'rgba(255,255,255,0.05)';
   }
 
   toggle(taskId: number, completed: boolean) {
@@ -247,6 +461,8 @@ export class PlanListPageComponent implements OnInit {
         '  avanzar hito      - Evaluar y avanzar de fase evolutiva familiar',
         '  reporte           - Exportar reporte evolutivo clínico (PDF)',
         '  dashboard         - Retornar al panóptico general',
+        '  portal            - Abrir el Portal Familiar Móvil interactivo',
+        '  inyectar [mision] - Inyectar micro-misión de prueba al plan activo',
         '  clear             - Limpiar historial de la consola',
         '─────────────────────────────────────────────────'
       );
@@ -375,6 +591,71 @@ export class PlanListPageComponent implements OnInit {
       this.terminalLogs.push('🌱 [SISTEMA]: Redireccionando a /checklist (Evidencias)...');
       this.scrollToBottom();
       setTimeout(() => this.router.navigate(['/checklist']), 1000);
+      return;
+    }
+
+    if (lower === 'portal' || lower === 'portal movil' || lower === 'portal familiar' || lower === 'movil' || lower === 'móvil') {
+      this.terminalLogs.push('📱 [PORTAL]: Redireccionando al Portal Familiar Móvil...');
+      this.terminalLogs.push('📱 [PORTAL]: Sincronizando estado móvil...');
+      this.scrollToBottom();
+      setTimeout(() => this.router.navigate(['/portal']), 1000);
+      return;
+    }
+
+    if (lower.startsWith('inyectar') || lower.startsWith('inject')) {
+      this.terminalLogs.push('⚡ [SENTINEL INJECTOR]: Buscando micro-misiones interactivas...');
+      
+      const sub = trimmed.substring(trimmed.indexOf(' ') + 1).trim().toLowerCase();
+      let targetMission = null;
+      
+      const demoMissions = [
+        {
+          title: 'Cena sin celulares',
+          description: 'Establecer una cena familiar de 15 minutos donde todos guarden sus dispositivos móviles para dialogar cara a cara.',
+          dimension: 'comunicacion',
+          objetivo: 'Desconectar la tecnología para reconectar emocionalmente.',
+          accion: 'Implementar una caja recolectora de celulares decorada en la mesa del comedor.',
+          indicador: 'Cena sin ninguna interrupción digital.',
+          evidencia: 'Subir una nota corta detallando las risas o temas de conversación de la cena.',
+          impacto: 15
+        },
+        {
+          title: 'Reconocimiento sincero',
+          description: 'Espacio diario nocturno para que cada integrante reconozca el valor y agradezca una acción específica realizada por otro.',
+          dimension: 'emociones',
+          objetivo: 'Fomentar un clima de validación y afecto sincero en el hogar.',
+          accion: 'Dedicar 5 minutos al finalizar el día para decir una palabra de aliento.',
+          indicador: 'Agradecimiento verbal compartido.',
+          evidencia: 'Compartir cómo reaccionaron los hijos ante el reconocimiento.',
+          impacto: 20
+        },
+        {
+          title: 'Cartel de responsabilidades',
+          description: 'Discutir, consensuar y diagramar la asignación de las tareas domésticas y cuidado colaborativo dentro del hogar.',
+          dimension: 'habitos',
+          objetivo: 'Disminuir el estrés parental mediante corresponsabilidad equitativa.',
+          accion: 'Elaborar un cartel visual en un área común con los roles firmados por todos.',
+          indicador: 'Asignación visual de responsabilidades.',
+          evidencia: 'Describir el acuerdo o subir una foto del cartel.',
+          impacto: 10
+        }
+      ];
+
+      if (sub && sub !== 'inyectar' && sub !== 'inject' && sub !== 'mision') {
+        targetMission = demoMissions.find(m => m.title.toLowerCase().includes(sub));
+      } else {
+        targetMission = demoMissions[0];
+      }
+
+      if (targetMission) {
+        this.terminalLogs.push(`⚡ [SENTINEL INJECTOR]: Preparando inyección de "${targetMission.title}"...`);
+        this.scrollToBottom();
+        this.selectProposedMission(targetMission);
+      } else {
+        this.terminalLogs.push('❌ [SENTINEL INJECTOR]: Misión no reconocida. Use:');
+        this.terminalLogs.push('   inyectar cena | inyectar reconocimiento | inyectar cartel');
+        this.scrollToBottom();
+      }
       return;
     }
 

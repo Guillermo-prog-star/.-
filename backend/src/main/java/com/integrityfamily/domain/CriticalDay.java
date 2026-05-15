@@ -35,12 +35,18 @@ public class CriticalDay {
     @Column(columnDefinition = "TEXT")
     private String aiContainmentGuide;
 
+    @Column(name = "day_date", nullable = false)
+    private java.time.LocalDate dayDate;
+
     private LocalDateTime createdAt;
 
     @PrePersist
     public void prePersist() {
         if (this.createdAt == null) {
             this.createdAt = LocalDateTime.now();
+        }
+        if (this.dayDate == null) {
+            this.dayDate = java.time.LocalDate.now();
         }
     }
 }

@@ -20,6 +20,7 @@ export class ChecklistPageComponent implements OnInit {
 
   items: any[] = []; 
   resolvedEvidences: any[] = []; // Archivo permanente de evidencias (Victorias de todos los hitos)
+  taskEvidences: any[] = [];    // Victorias de misiones validadas por Sentinel AI (Claude)
   loading = false; 
   
   get familyId() { return this.familyState.getSelectedFamilyId(); }
@@ -64,6 +65,17 @@ export class ChecklistPageComponent implements OnInit {
       .subscribe({
         next: (data) => {
           this.resolvedEvidences = data || [];
+        },
+        error: () => {}
+      });
+
+    // Cargar evidencias de misiones validadas por Sentinel AI
+    this.http.get<any>(`${this.api.base}/evidences/family/${this.familyId}`)
+      .subscribe({
+        next: (res) => {
+          if (res && res.data) {
+            this.taskEvidences = res.data.filter((e: any) => e.status === 'VALIDATED');
+          }
         },
         error: () => {}
       });

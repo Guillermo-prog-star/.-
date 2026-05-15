@@ -23,11 +23,21 @@ public class RabbitConfig {
     public static final String AI_INSIGHTS_QUEUE = "if.queue.ai.insights";
     public static final String PLAN_QUEUE = "if.queue.plan.generation";
     public static final String SUGGESTED_TASKS_QUEUE = "if.queue.suggested.tasks";
+    public static final String EVIDENCE_ANALYSIS_QUEUE = "if.queue.evidence.analysis";
+    public static final String AI_INFERENCE_QUEUE = "q.ai.inference";
     public static final String DLQ_NAME = "if.queue.deadletter";
+
+    // Exchanges Adicionales
+    public static final String AI_EVENTS_EXCHANGE = "x.ai.events";
 
     @Bean
     public TopicExchange eventExchange() {
         return new TopicExchange(EXCHANGE_NAME);
+    }
+
+    @Bean
+    public TopicExchange aiEventsExchange() {
+        return new TopicExchange(AI_EVENTS_EXCHANGE);
     }
 
     @Bean
@@ -86,6 +96,22 @@ public class RabbitConfig {
                 .build();
     }
 
+    @Bean
+    public Queue evidenceAnalysisQueue() {
+        return QueueBuilder.durable(EVIDENCE_ANALYSIS_QUEUE)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .withArgument("x-dead-letter-routing-key", "evidence.analysis.dead")
+                .build();
+    }
+
+    @Bean
+    public Queue aiInferenceQueue() {
+        return QueueBuilder.durable(AI_INFERENCE_QUEUE)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .withArgument("x-dead-letter-routing-key", "ai.crisis.dead")
+                .build();
+    }
+
     // Bindings Estratégicos (Escucha selectiva de eventos)
     @Bean
     public Binding bitacoraBinding(Queue bitacoraQueue, TopicExchange eventExchange) {
@@ -114,6 +140,16 @@ public class RabbitConfig {
     public Binding suggestedTasksBinding(Queue suggestedTasksQueue, TopicExchange eventExchange) {
         // El plan de acción escucha de forma reactiva las recomendaciones del dashboard
         return BindingBuilder.bind(suggestedTasksQueue).to(eventExchange).with("tasks.suggested");
+    }
+
+    @Bean
+    public Binding evidenceAnalysisBinding(Queue evidenceAnalysisQueue, TopicExchange eventExchange) {
+        return BindingBuilder.bind(evidenceAnalysisQueue).to(eventExchange).with("evidence.submitted");
+    }
+
+    @Bean
+    public Binding aiInferenceBinding(Queue aiInferenceQueue, TopicExchange aiEventsExchange) {
+        return BindingBuilder.bind(aiInferenceQueue).to(aiEventsExchange).with("crisis.detected");
     }
 
     @Bean

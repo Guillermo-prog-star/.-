@@ -1,36 +1,55 @@
-<div class="timeline-container glass-dark p-8 rounded-3xl border border-white/10 overflow-hidden relative">
+<div class="timeline-container glass-dark p-8 rounded-3xl border border-white/10 overflow-hidden relative shadow-[0_8px_32px_0_rgba(0,0,0,0.37)]">
   <div class="absolute top-0 right-0 p-4">
-    <span class="bg-indigo-500/20 text-indigo-400 text-[10px] font-bold px-2 py-1 rounded-full border border-indigo-500/30">IA PROSPECTIVA</span>
+    <span class="bg-indigo-500/20 text-indigo-400 text-[10px] font-bold px-3 py-1 rounded-full border border-indigo-500/30 tracking-wider">IA PROSPECTIVA</span>
   </div>
   
-  <h3 class="text-xl font-bold mb-10 text-white/90">Misiones de Transformación</h3>
+  <h3 class="text-xl font-bold mb-10 text-white/90 flex items-center gap-2">
+    <span>🛡️</span> Misiones de Transformación Familiar
+  </h3>
   
-  <div class="relative flex justify-between items-center px-10 min-h-[150px]">
-    <!-- Connecting Line -->
-    <div class="absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-teal-500/50 via-indigo-500/50 to-purple-500/50 -translate-y-1/2 z-0"></div>
+  <div class="relative flex justify-between items-center px-10 min-h-[160px]">
+    <!-- Connecting Line (Background) -->
+    <div class="absolute top-1/2 left-0 w-full h-1 bg-white/5 -translate-y-1/2 z-0 rounded-full"></div>
+    
+    <!-- Connecting Line (Active Glowing Progress) -->
+    <div class="absolute top-1/2 left-0 h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-teal-400 -translate-y-1/2 z-0 rounded-full transition-all duration-1000 shadow-[0_0_15px_rgba(99,102,241,0.6)]"
+         [style.width.%]="getProgressPercentage()"></div>
     
     <div *ngFor="let action of actions; let i = index" 
          class="relative z-10 flex flex-col items-center group cursor-pointer"
          (click)="toggleComplete(action)">
-      <div class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 border-2"
-           [ngClass]="action.completed ? 'bg-indigo-600 border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.6)]' : 'bg-slate-800 border-slate-600 group-hover:border-slate-400'">
-        <span class="text-2xl">{{ getIconForDimension(action.dimension) }}</span>
+      
+      <!-- Node Outer Circle -->
+      <div class="w-14 h-14 rounded-full flex items-center justify-center transition-all duration-500 border-2 relative"
+           [ngClass]="action.completed ? 'bg-indigo-600 border-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.6)] scale-110' : 'bg-slate-800 border-slate-600 group-hover:border-indigo-400 group-hover:scale-105 group-hover:shadow-[0_0_15px_rgba(99,102,241,0.3)]'">
+        
+        <span class="text-2xl transition-transform duration-300 group-hover:scale-110">{{ getIconForDimension(action.dimension) }}</span>
+        
+        <!-- Glowing Checkmark Badge for Completed Tasks -->
+        <span *ngIf="action.completed" 
+              class="absolute -top-1 -right-1 bg-emerald-500 text-white text-[9px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-slate-950 font-black animate-bounce-subtle shadow-[0_0_10px_rgba(16,185,129,0.8)]">✓</span>
       </div>
-      <div class="mt-4 text-center max-w-[120px]">
-        <span class="block text-[10px] font-bold text-white/40 uppercase tracking-tighter">{{ action.dimension }}</span>
-        <span class="block text-xs font-semibold text-white/80 mt-1 line-clamp-2">{{ action.description }}</span>
+      
+      <!-- Text details below node -->
+      <div class="mt-4 text-center max-w-[120px] transition-transform duration-300 group-hover:translate-y-0.5">
+        <span class="block text-[10px] font-bold text-white/40 uppercase tracking-wider">{{ action.dimension || 'GENERAL' }}</span>
+        <span class="block text-xs font-semibold text-white/80 mt-1 line-clamp-2 transition-colors duration-300 group-hover:text-white"
+              [ngClass]="{'line-through text-white/40': action.completed}">{{ action.description }}</span>
       </div>
       
       <!-- Tooltip-like details on hover -->
-      <div class="absolute -bottom-20 bg-slate-900/90 backdrop-blur-md border border-white/10 p-3 rounded-xl opacity-0 translate-y-4 pointer-events-none transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 w-48 text-center z-20">
-        <p class="text-[10px] text-white/60 mb-1 uppercase">Misión del Mentor</p>
-        <p class="text-xs text-indigo-300">{{ action.description }}</p>
+      <div class="absolute -bottom-24 bg-slate-950/95 backdrop-blur-md border border-white/10 p-3 rounded-xl opacity-0 translate-y-4 pointer-events-none transition-all duration-300 group-hover:opacity-100 group-hover:translate-y-0 w-52 text-center z-20 shadow-[0_10px_25px_rgba(0,0,0,0.5)]">
+        <p class="text-[9px] text-indigo-400 font-bold mb-1 uppercase tracking-widest">Misión del Hito</p>
+        <p class="text-xs text-white/90 leading-relaxed">{{ action.description }}</p>
+        <p *ngIf="action.completed" class="text-[9px] text-emerald-400 font-medium mt-1">✓ Completada con éxito</p>
+        <p *ngIf="!action.completed" class="text-[9px] text-white/30 font-medium mt-1">Haga clic para completar</p>
       </div>
     </div>
 
     <!-- Empty State -->
-    <div *ngIf="actions.length === 0" class="w-full text-center py-10">
-        <p class="text-white/30 italic">Esperando que el Mentor defina las próximas misiones...</p>
+    <div *ngIf="actions.length === 0" class="w-full text-center py-10 flex flex-col items-center gap-2">
+        <p class="text-2xl">⏳</p>
+        <p class="text-white/30 italic text-sm">Esperando que el Mentor defina las próximas misiones...</p>
     </div>
   </div>
 </div>

@@ -17,6 +17,11 @@ public interface AnalyticsService {
      * Disparador manual para invalidar cachÃƒÂ© y forzar actualizaciÃƒÂ³n del motor.
      */
     void invalidateCacheAndRecalculate(Long familyId);
+
+    /**
+     * Obtiene los datos comparativos de evolución en formato de radar (Baseline vs Actual).
+     */
+    java.util.List<java.util.Map<String, Object>> getEvolutionRadarData(Long familyId);
 }
 
 

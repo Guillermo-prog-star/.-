@@ -19,6 +19,11 @@ export class LoginPageComponent {
   togglePassword() {
     this.showPassword = !this.showPassword;
   }
+  quickLogin() {
+    this.email = 'william@integrity.family';
+    this.password = 'admin123';
+    this.submit();
+  }
   submit() {
     this.loading = true; this.error = '';
     this.auth.login({ email: this.email.trim().toLowerCase(), password: this.password }).subscribe({

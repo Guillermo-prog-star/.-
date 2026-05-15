@@ -5,7 +5,7 @@ import lombok.*;
 
 /**
  * SDD SPEC: Entidad de Pregunta (Question) centralizada.
- * Extendida para soportar la taxonomía del Modelo Híbrido Adaptativo Longitudinal.
+ * Extendida con taxonomía psicométrica formal para el algoritmo RISK_ALGO_V1.
  */
 @Entity
 @Table(name = "questions")
@@ -31,13 +31,21 @@ public class Question {
     @Column(length = 50)
     private String area; // EMOCIONES, COMUNICACION, etc. (Legado)
 
+    @Column(length = 20)
+    @Builder.Default
+    private String direction = "POSITIVE"; // POSITIVE o NEGATIVE
+
+    @Column(length = 20)
+    @Builder.Default
+    private String version = "1.0"; // Versión del reactivo
+
     @Builder.Default
     private boolean active = true;
 
     private int vertice;
 
     @Builder.Default
-    private int weight = 1; // Legado
+    private int weight = 1;
 
     private Integer sortOrder;
 

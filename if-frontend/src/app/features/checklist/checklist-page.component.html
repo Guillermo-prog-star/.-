@@ -70,6 +70,73 @@
   </div>
 }
 
+<!-- VICTORIAS DE MISIÓN VALIDADAS (SENTINEL AI COGNITIVE SEALS) -->
+<div class="evidence-archive-section mt-48" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 32px; margin-bottom: 32px;">
+  <div class="section-header flex-between mb-24 flex-wrap gap-16" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 24px;">
+    <div>
+      <h2 class="flex items-center gap-12 text-white m-0" style="display: flex; align-items: center; gap: 12px; margin: 0; color: #fff;">
+        <i>🏆</i> Victorias de Misión Validadas (Sentinel AI)
+      </h2>
+      <p class="text-muted small m-0 mt-4" style="color: #8b949e; font-size: 13px; margin: 4px 0 0 0;">Compromisos y reflexiones con coherencia conductual certificada asíncronamente.</p>
+    </div>
+    <span class="badge-dim count-badge" style="background: rgba(56, 139, 253, 0.1); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.2); padding: 6px 12px; border-radius: 20px; font-size: 13px;">
+      {{ taskEvidences.length }} misiones selladas
+    </span>
+  </div>
+
+  @if (taskEvidences.length === 0) {
+    <div class="glass-dark p-40 text-center rounded-24" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; padding: 40px; text-align: center;">
+      <div style="font-size: 40px; opacity: 0.3;" class="mb-16">🔒</div>
+      <p class="text-muted mb-0" style="color: #8b949e; margin: 0;">No se han validado misiones mediante análisis cognitivo aún. Ve a tu sección de Planes para aportar tu primera reflexión familiar.</p>
+    </div>
+  } @else {
+    <div class="evidence-timeline" style="display: flex; flex-direction: column; gap: 16px;">
+      @for (ev of taskEvidences; track ev.id) {
+        <div class="evidence-log-card glass-card p-24" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 24px; border-radius: 12px; animation: fadeInUp 0.5s ease-out; position: relative;">
+          
+          <div class="flex-between border-bottom pb-12 mb-16" style="border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; padding-bottom: 12px;">
+            <div class="flex items-center gap-12" style="display: flex; align-items: center; gap: 12px;">
+              <span class="evidence-badge" style="background: rgba(56,139,253,0.15); color: #58a6ff; font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(56,139,253,0.3);">
+                ★ SENTINEL CERTIFIED
+              </span>
+              <span class="evidence-dimension-tag text-capitalize" style="background: rgba(121,192,255,0.1); color: #79c0ff; font-size: 11px; padding: 4px 10px; border-radius: 6px; font-weight: bold;">
+                {{ ev.task?.dimension || 'GENERAL' }}
+              </span>
+            </div>
+            <span class="text-muted small" style="color: #8b949e; font-size: 12px;">{{ ev.createdAt | date:'medium' }}</span>
+          </div>
+
+          <div class="evidence-details-grid" style="display: flex; flex-direction: column; gap: 12px;">
+            <div class="detail-item">
+              <span class="detail-lbl text-muted small" style="display: block; opacity: 0.7; color: #8b949e; font-size: 11px;">🎯 Misión de Plan de Acción</span>
+              <strong class="text-white" style="display: block; margin-top: 4px; font-size: 15px; color: #fff;">{{ ev.task?.title }}</strong>
+            </div>
+
+            <div class="detail-item">
+              <span class="detail-lbl text-muted small" style="display: block; opacity: 0.7; color: #8b949e; font-size: 11px;">📋 Evidencia Subida: {{ ev.title }}</span>
+              @if (ev.textContent) {
+                <div class="text-white mb-0" style="margin-top: 6px; font-style: italic; font-size: 13px; line-height: 1.5; opacity: 0.95; padding: 12px; background: rgba(0,0,0,0.2); border-radius: 6px; border: 1px solid rgba(255,255,255,0.03);">
+                  "{{ ev.textContent }}"
+                </div>
+              }
+            </div>
+
+            <div class="detail-item highlight-evidence p-16 rounded-12 mt-12" style="background: rgba(56, 139, 253, 0.04); border-left: 3px solid #58a6ff; padding: 16px; border-radius: 12px; margin-top: 12px;">
+              <span class="detail-lbl success small" style="display: block; color: #58a6ff; font-weight: bold; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">🧠 Diagnóstico de Coherencia Conductual (Claude)</span>
+              <p class="text-white mb-0" style="margin-top: 6px; font-size: 13px; line-height: 1.5; opacity: 0.95; white-space: pre-line;">{{ ev.description }}</p>
+            </div>
+          </div>
+          
+          <div class="evidence-footer mt-16 text-right" style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; opacity: 0.8; font-size: 11.5px; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 12px;">
+            <span style="color: #58a6ff; font-weight: bold; font-size: 12px;">Puntaje Clínico: {{ ev.aiScore }}/100</span>
+            <span class="text-muted" style="color: #8b949e;">Liderado por: <strong style="color: #c9d1d9;">{{ ev.submittedBy }}</strong></span>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+
 <!-- HISTORIAL DE EVIDENCIAS ACUMULADAS (ARCHIVO DE VICTORIAS DE TODOS LOS HITOS) -->
 <div class="evidence-archive-section mt-48" style="border-top: 1px solid rgba(255,255,255,0.08); padding-top: 32px;">
   <div class="section-header flex-between mb-24 flex-wrap gap-16">
@@ -124,8 +191,9 @@
             </div>
           </div>
           
-          <div class="evidence-footer mt-16 text-right" style="text-align: right; margin-top: 16px; opacity: 0.7; font-size: 11.5px;">
-            <span class="text-muted">Registrado y verificado por: <strong style="color: #c9d1d9;">{{ entry.createdBy }}</strong></span>
+          <div class="evidence-footer mt-16 text-right" style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; opacity: 0.8; font-size: 11.5px; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 12px;">
+            <span style="color: #58a6ff; font-weight: 500;">✍️ Firma de Verificación: <strong>{{ entry.resolvedBy || 'SENTINEL_AUTO_AI' }}</strong></span>
+            <span class="text-muted">Registrado por: <strong style="color: #c9d1d9;">{{ entry.createdBy }}</strong></span>
           </div>
         </div>
       }

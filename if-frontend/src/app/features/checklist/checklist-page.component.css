@@ -1,1 +1,258 @@
-/* Estilos específicos para checklist-page */
+/* 🌟 INTEGRITY FAMILY PREMIUM MODERN DESIGN SYSTEM - CHECKLIST & EVIDENCIAS (v4.5) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap');
+
+:host {
+  display: block;
+  font-family: 'Outfit', sans-serif;
+  background-color: #050811;
+  color: #e6edf3;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* Page Layout Container */
+.checklist-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+
+.page-header h1 {
+  font-size: 26px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #ab7df6 0%, #58a6ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.5px;
+}
+
+/* Glassmorphism Card System */
+.glass-card {
+  background: rgba(13, 17, 28, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: rgba(171, 125, 246, 0.25);
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+}
+
+/* Progress Global Area */
+.progress-info h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #f0f6fc;
+}
+
+.pct-badge {
+  font-family: 'Fira Code', monospace;
+  font-weight: 700;
+  font-size: 18px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  color: #c084fc;
+}
+
+.progress-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dimension Headers */
+.dimension-section {
+  background: rgba(255, 255, 255, 0.01);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.dimension-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ab7df6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 10px;
+}
+
+.badge-dim {
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #8b949e;
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Checklist Items */
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.checklist-item:hover {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(4px);
+}
+
+.checklist-item.is-done {
+  border-color: rgba(63, 185, 80, 0.15);
+  background: rgba(63, 185, 80, 0.02);
+}
+
+.item-text {
+  font-size: 15px;
+  color: #f0f6fc;
+}
+
+.checklist-item.is-done .item-text {
+  text-decoration: line-through;
+  color: #8b949e;
+  opacity: 0.75;
+}
+
+.item-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 6px;
+}
+
+.badge-source {
+  font-family: 'Fira Code', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(88, 166, 255, 0.1);
+  color: #58a6ff;
+  border: 1px solid rgba(88, 166, 255, 0.2);
+}
+
+.item-action {
+  display: flex;
+  align-items: center;
+}
+
+.check-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 14px;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.check-circle:hover {
+  border-color: #3fb950;
+  background: rgba(63, 185, 80, 0.1);
+}
+
+.check-circle.active {
+  background: #3fb950;
+  border-color: #3fb950;
+  color: #050811;
+  transform: scale(1.1);
+}
+
+/* Timeline Evidence Cards */
+.evidence-archive-section h2 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #f0f6fc;
+}
+
+.evidence-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.evidence-log-card {
+  background: rgba(13, 17, 28, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.3s ease;
+}
+
+.evidence-log-card:hover {
+  border-color: rgba(88, 166, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.border-bottom {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Premium Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.spinner-premium {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.05);
+  border-top: 3px solid #ab7df6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.glass-dark {
+  background: rgba(2, 4, 10, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}

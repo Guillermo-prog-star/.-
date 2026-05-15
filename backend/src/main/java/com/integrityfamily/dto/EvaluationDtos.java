@@ -53,6 +53,18 @@ public class EvaluationDtos {
                         Long memberId,
                         EvaluationStatus status,
                         LocalDateTime startedAt,
-                        LocalDateTime finalizedAt) {
+                        LocalDateTime finalizedAt,
+                        Double icf,
+                        String riskLevel,
+                        String criticalDimension) {
+        }
+
+        public record TimelineEntryDto(
+                        Long evaluationId,
+                        LocalDateTime finalizedAt,
+                        Double healthyIndex,
+                        String riskLevel,
+                        String criticalDimension,
+                        String algorithmVersion) {
         }
 }

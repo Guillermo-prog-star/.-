@@ -1,10 +1,11 @@
 .glass-dark {
-  background: rgba(15, 23, 42, 0.4);
-  backdrop-filter: blur(20px);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
 }
 
 .timeline-container {
-    min-height: 280px;
+  min-height: 310px;
 }
 
 .line-clamp-2 {
@@ -12,4 +13,23 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;  
   overflow: hidden;
+}
+
+@keyframes bounce-subtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.animate-bounce-subtle {
+  animation: bounce-subtle 2s infinite ease-in-out;
+}
+
+/* Efectos premium de hover */
+.group:hover .w-14 {
+  transform: scale(1.08);
+  box-shadow: 0 0 25px rgba(99, 102, 241, 0.45);
 }

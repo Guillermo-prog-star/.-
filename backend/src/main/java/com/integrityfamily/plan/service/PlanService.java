@@ -1,26 +1,21 @@
 package com.integrityfamily.plan.service;
 
-import com.integrityfamily.domain.ImprovementPlan;
-import com.integrityfamily.domain.PlanTask;
-import com.integrityfamily.domain.PlanTaskStep;
-import com.integrityfamily.domain.FamilyLogbookEntry;
-import com.integrityfamily.domain.LogbookStatus;
+import com.integrityfamily.domain.*;
 import com.integrityfamily.plan.dto.PlanDtos.*;
-import com.integrityfamily.domain.repository.ImprovementPlanRepository;
-import com.integrityfamily.domain.repository.PlanTaskRepository;
-import com.integrityfamily.domain.repository.FamilyLogbookEntryRepository;
+import com.integrityfamily.domain.repository.*;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
  * SDD: Servicio de Planificación Harmonizado.
  * Gestiona el ciclo de vida de los planes de transformación familiar.
- * Integra un motor de Auto-Evidencias [Sentinel Auto-Evidence Engine].
+ * Integra un Motor Determinístico de Generación de Planes (Sin IA) y el motor Sentinel Auto-Evidence.
  */
 @Service
 @RequiredArgsConstructor
@@ -30,6 +25,9 @@ public class PlanService {
     private final ImprovementPlanRepository planRepository;
     private final PlanTaskRepository planTaskRepository;
     private final FamilyLogbookEntryRepository logbookEntryRepository;
+    private final EvaluationRepository evaluationRepository;
+    private final PlanTemplateRepository planTemplateRepository;
+    private final PlanTemplateActivityRepository planTemplateActivityRepository;
 
     @Transactional(readOnly = true)
     public List<PlanResponse> findAllPlans() {
@@ -65,6 +63,158 @@ public class PlanService {
     @Transactional
     public void deletePlan(Long id) {
         planRepository.deleteById(id);
+    }
+
+    // --- Motor Determinístico (Sprint 3) ---
+
+    @Transactional
+    public PlanResponse generateDeterministicPlan(Long evaluationId) {
+        log.info("🎯 [PLAN DETERMINÍSTICO] Iniciando ensamblado dinámico para Evaluation ID: {}", evaluationId);
+        Evaluation evaluation = evaluationRepository.findById(evaluationId)
+                .orElseThrow(() -> new RuntimeException("Evaluación no encontrada: " + evaluationId));
+
+        Family family = evaluation.getFamily();
+        if (family == null) {
+            throw new RuntimeException("La evaluación no tiene una familia asociada.");
+        }
+
+        String criticalDimension = evaluation.getCriticalDimension();
+        if (criticalDimension == null || criticalDimension.isBlank()) {
+            criticalDimension = "COMUNICACION";
+        }
+
+        String riskLevel = evaluation.getRiskLevel();
+        if (riskLevel == null || riskLevel.isBlank()) {
+            riskLevel = "MODERATE";
+        }
+
+        log.info("📊 Diagnóstico detectado -> Dimensión Crítica: {}, Nivel de Riesgo: {}", criticalDimension, riskLevel);
+
+        // Buscar plantilla maestra
+        List<PlanTemplate> templates = planTemplateRepository.findByDimensionAndRiskLevel(criticalDimension, riskLevel);
+        if (templates.isEmpty()) {
+            templates = planTemplateRepository.findByDimension(criticalDimension);
+        }
+
+        PlanTemplate template;
+        if (templates.isEmpty()) {
+            // Generar plantilla de respaldo de forma determinística
+            template = PlanTemplate.builder()
+                    .code("TMPL-" + criticalDimension.toUpperCase() + "-" + riskLevel)
+                    .name("Plan de Transformación en " + criticalDimension)
+                    .dimension(criticalDimension)
+                    .riskLevel(riskLevel)
+                    .build();
+            template = planTemplateRepository.save(template);
+            log.info("📦 Plantilla de respaldo generada automáticamente: {}", template.getCode());
+        } else {
+            template = templates.get(0);
+            log.info("📦 Plantilla maestra seleccionada: {} - {}", template.getCode(), template.getName());
+        }
+
+        // Crear el ImprovementPlan
+        ImprovementPlan plan = ImprovementPlan.builder()
+                .family(family)
+                .evaluation(evaluation)
+                .title("Plan de Transformación: " + template.getName())
+                .description(String.format("Intervención clínica ensamblada determinísticamente para el nivel de riesgo %s en la dimensión %s.", riskLevel, criticalDimension))
+                .vision3y("Consolidar un hogar íntegro, consciente y con comunicación plena en un horizonte longitudinal de 36 meses.")
+                .aiReport("Generado por Motor de Reglas Determinístico v3.0 (Sin IA).")
+                .aiGeneratedAt(LocalDateTime.now())
+                .tasks(new ArrayList<>())
+                .build();
+        plan = planRepository.save(plan);
+
+        // Buscar actividades de la plantilla
+        List<PlanTemplateActivity> activities = planTemplateActivityRepository.findByTemplateCode(template.getCode());
+        if (activities.isEmpty()) {
+            // Sembrar actividades clínicas estándar por fase para asegurar suficiencia e incrementalidad
+            activities = List.of(
+                PlanTemplateActivity.builder()
+                    .templateCode(template.getCode())
+                    .title("Mesa de diálogo sin dispositivos electrónicos")
+                    .frequency("DAILY")
+                    .durationDays(7)
+                    .phase("1 semana")
+                    .build(),
+                PlanTemplateActivity.builder()
+                    .templateCode(template.getCode())
+                    .title("Asamblea Familiar de Reconocimiento y Gratitud")
+                    .frequency("3_PER_WEEK")
+                    .durationDays(30)
+                    .phase("1 mes")
+                    .build(),
+                PlanTemplateActivity.builder()
+                    .templateCode(template.getCode())
+                    .title("Revisión de Acuerdos y Convivencia")
+                    .frequency("WEEKLY")
+                    .durationDays(90)
+                    .phase("3 meses")
+                    .build(),
+                PlanTemplateActivity.builder()
+                    .templateCode(template.getCode())
+                    .title("Hito Longitudinal de Celebración de Integridad")
+                    .frequency("MONTHLY")
+                    .durationDays(180)
+                    .phase("6 meses")
+                    .build()
+            );
+            activities = planTemplateActivityRepository.saveAll(activities);
+            log.info("🌱 Actividades clínicas de plantilla sembradas automáticamente.");
+        }
+
+        // Ensamblar tareas (Misiones)
+        for (PlanTemplateActivity activity : activities) {
+            int impacto = switch(activity.getPhase()) {
+                case "1 semana" -> 15;
+                case "1 mes" -> 25;
+                case "3 meses" -> 30;
+                default -> 50;
+            };
+
+            String objetivo = switch(activity.getPhase()) {
+                case "1 semana" -> "Establecer presencia plena y escucha activa durante la convivencia diaria.";
+                case "1 mes" -> "Fomentar el aprecio mutuo y la validación emocional entre los miembros.";
+                case "3 meses" -> "Ajustar rutinas familiares y resolver tensiones acumuladas de forma constructiva.";
+                default -> "Consolidar el sentido de pertenencia y amor incondicional en el hogar.";
+            };
+
+            String accion = switch(activity.getPhase()) {
+                case "1 semana" -> "Apagar televisores y dejar celulares en una canasta antes de compartir momentos clave.";
+                case "1 mes" -> "Cada miembro expresa una gratitud o reconocimiento genuino hacia otro miembro de la familia.";
+                case "3 meses" -> "Dedicación de 45 minutos semanales para revisar el tablero de tareas y acuerdos.";
+                default -> "Salida familiar especial o actividad conmemorativa de los logros alcanzados.";
+            };
+
+            String evidencia = switch(activity.getPhase()) {
+                case "1 semana" -> "Fotografía de la canasta con celulares o nota de compromiso en bitácora.";
+                case "1 mes" -> "Registro en el muro de gratitud o entrada reflexiva en la bitácora familiar.";
+                case "3 meses" -> "Acta breve o check de confirmación en la bitácora de convivencia.";
+                default -> "Reflexión compartida de la evolución familiar en el sistema.";
+            };
+
+            PlanTask task = PlanTask.builder()
+                    .plan(plan)
+                    .title(activity.getTitle())
+                    .description("Misión clínica asignada para la fase: " + activity.getPhase())
+                    .dimension(template.getDimension())
+                    .dueDate(LocalDateTime.now().plusDays(activity.getDurationDays()))
+                    .fase(activity.getPhase())
+                    .riesgoAsociado(riskLevel)
+                    .objetivo(objetivo)
+                    .accionConcreta(accion)
+                    .indicadorCumplimiento("Cumplimiento constante en el periodo asignado según frecuencia: " + activity.getFrequency())
+                    .evidenciaRequerida(evidencia)
+                    .impactoIcf(impacto)
+                    .completed(false)
+                    .steps(new ArrayList<>())
+                    .build();
+            task = planTaskRepository.save(task);
+            plan.getTasks().add(task);
+        }
+
+        log.info("✅ Plan ensamblado con éxito con {} misiones/tareas clínicas.", plan.getTasks().size());
+        return toPlanResponse(plan);
     }
 
     // --- Tareas ---
@@ -105,7 +255,6 @@ public class PlanService {
         PlanTask savedTask = planTaskRepository.save(task);
 
         // [SDD SPEC: Sentinel Auto-Evidence Engine]
-        // Si la tarea se marca como completada, generamos automáticamente su evidencia en la bitácora familiar (logbook)
         if (completed && task.getPlan() != null && task.getPlan().getFamily() != null) {
             try {
                 com.integrityfamily.domain.Family family = task.getPlan().getFamily();

@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * SDD: Entidad de Evaluación.
- * Refactorizada para evitar fallas de serialización en el inicio del diagnóstico.
+ * Refactorizada con campos para trazabilidad del algoritmo oficial RISK_ALGO_V1.
  */
 @Entity
 @Table(name = "evaluations")
@@ -43,7 +43,17 @@ public class Evaluation {
     @Builder.Default
     private Boolean hasCrisis = false;
 
-    private Double icf;
+    private Double icf; // Índice Saludable General (healthyIndex)
+
+    @Column(length = 30)
+    private String riskLevel; // LOW, MODERATE, HIGH, CRITICAL
+
+    @Column(length = 50)
+    private String criticalDimension; // Dimensión más vulnerable
+
+    @Column(length = 50)
+    @Builder.Default
+    private String algorithmVersion = "RISK_ALGO_V1";
 
     @Column(length = 50)
     private String milestoneKey;
@@ -67,5 +77,7 @@ public class Evaluation {
             startedAt = LocalDateTime.now();
         if (status == null)
             status = EvaluationStatus.STARTED;
+        if (algorithmVersion == null)
+            algorithmVersion = "RISK_ALGO_V1";
     }
 }

@@ -30,6 +30,15 @@ public class AnalyticsEventConsumer {
     @RabbitListener(queues = RabbitConfig.ANALYTICS_QUEUE)
     @Transactional
     public void handleSystemEvent(SystemEvent event) {
+        if (event == null) {
+            log.warn("⚠️ [ANALYTICS-SYNC] Recibido evento nulo");
+            return;
+        }
+        if (event.routingKey() == null || event.familyId() == null) {
+            log.warn("⚠️ [ANALYTICS-SYNC] Recibido evento incompleto o con campos nulos: {}", event);
+            return;
+        }
+
         log.info("📊 [ANALYTICS-SYNC] Actualizando Read Model para familia: {} -> Evento: {}", 
                  event.familyId(), event.routingKey());
 

@@ -136,6 +136,39 @@ export class PortalFamiliarComponent implements OnInit {
       });
   }
 
+  injectSentinelMission(): void {
+    const demoMissions = [
+      {
+        description: 'Cena sin celulares: Cenar juntos durante 15 minutos sin ningún dispositivo móvil.',
+        dimension: 'Comunicación',
+        source: 'SENTINEL'
+      },
+      {
+        description: 'Reconocimiento sincero: Dedicar 5 minutos al final del día para agradecerse mutuamente.',
+        dimension: 'Amor',
+        source: 'SENTINEL'
+      },
+      {
+        description: 'Cartel de responsabilidades: Diseñar juntos un cartel visual de roles y tareas domésticas.',
+        dimension: 'Entrega',
+        source: 'SENTINEL'
+      }
+    ];
+
+    const randomIndex = Math.floor(Math.random() * demoMissions.length);
+    const body = demoMissions[randomIndex];
+
+    this.http.post<any>(`${this.api.base}/checklist/family/${this.familyId}`, body)
+      .subscribe({
+        next: () => {
+          this.loadAllData();
+        },
+        error: () => {
+          this.errorMessage = 'No se pudo inyectar la micro-misión interactiva.';
+        }
+      });
+  }
+
   submitQuickGratitude(): void {
     if (!this.gratitudeForm.toMember.trim() || !this.gratitudeForm.description.trim()) {
       return;

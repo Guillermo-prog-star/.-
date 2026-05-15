@@ -18,15 +18,17 @@ import org.springframework.web.bind.annotation.*;
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
+    private final com.integrityfamily.domain.repository.UserRepository userRepository;
 
     /**
      * Obtiene el resumen ejecutivo del dashboard familiar.
-     * SDD: Optimizado para devolver el cÃƒÂ¡lculo mÃƒÂ¡s reciente sin re-procesar si no
+     * SDD: Optimizado para devolver el cálculo más reciente sin re-procesar si no
      * es necesario.
      */
     @GetMapping("/dashboard/family/{familyId}")
+    @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<DashboardSummaryResponse> getFamilySummary(@PathVariable Long familyId) {
-        log.info("Ã°Å¸â€œÅ  [ANALYTICS] Solicitando resumen ejecutivo para familia: {}", familyId);
+        log.info("📊 [ANALYTICS] Solicitando resumen ejecutivo para familia: {}", familyId);
 
         // El servicio debe decidir internamente si calcula de nuevo o entrega cache
         DashboardSummaryResponse response = analyticsService.calculateLatestResults(familyId);
@@ -35,41 +37,51 @@ public class AnalyticsController {
     }
 
     /**
-     * Endpoint de compatibilidad para resultados rÃƒÂ¡pidos.
-     * SDD: Alias para integraciÃƒÂ³n con sistemas legados o componentes especÃƒÂ­ficos.
+     * Endpoint de compatibilidad para resultados rápidos.
+     * SDD: Alias para integración con sistemas legados o componentes específicos.
      */
     @GetMapping("/family/{familyId}/latest")
+    @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<DashboardSummaryResponse> getLatestResult(@PathVariable Long familyId) {
-        return getFamilySummary(familyId); // ReutilizaciÃƒÂ³n de lÃƒÂ³gica interna
+        return getFamilySummary(familyId); // Reutilización de lógica interna
     }
 
     /**
-     * SDD: Obtiene los datos para el radar de evoluciÃƒÂ³n de la familia.
+     * SDD: Obtiene los datos para el radar de evolución de la familia.
      */
     @GetMapping("/radar")
-    public ApiResponse<Object> getRadarData() {
-        log.info("Ã°Å¸Å½Â¯ [ANALYTICS] Generando datos de radar de evoluciÃƒÂ³n");
-        // Por ahora devolvemos un objeto compatible con lo que espera Chart.js en el frontend
-        return ApiResponse.ok(java.util.Map.of(
-            "labels", java.util.List.of("Reconocimiento", "Amor", "Compromiso", "AutonomÃƒÂ­a", "Responsabilidad"),
-            "datasets", java.util.List.of(
-                java.util.Map.of(
-                    "label", "Estado Actual",
-                    "data", java.util.List.of(80, 70, 90, 65, 75)
-                )
-            )
-        ));
+    public ApiResponse<Object> getRadarData(org.springframework.security.core.Authentication auth) {
+        log.info("🎯 [ANALYTICS] Generando datos de radar de evolución dinámicos");
+        
+        if (auth == null) {
+            log.warn("⚠️ [ANALYTICS] Solicitud de radar sin autenticación. Retornando vacío.");
+            return ApiResponse.ok(java.util.Collections.emptyList());
+        }
+
+        com.integrityfamily.domain.User user = userRepository.findByEmail(auth.getName())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (user.getFamily() == null) {
+            log.warn("⚠️ [ANALYTICS] Usuario sin familia vinculada: {}", auth.getName());
+            return ApiResponse.ok(java.util.Collections.emptyList());
+        }
+
+        Long familyId = user.getFamily().getId();
+        var radarData = analyticsService.getEvolutionRadarData(familyId);
+
+        return ApiResponse.ok(radarData);
     }
 
     /**
-     * SDD EXTRA: Disparador manual de analÃƒÂ­tica profunda.
-     * ÃƒÅ¡til cuando el admin quiere forzar una actualizaciÃƒÂ³n del motor Sentinel.
+     * SDD EXTRA: Disparador manual de analítica profunda.
+     * Útil cuando el admin quiere forzar una actualización del motor Sentinel.
      */
     @PostMapping("/family/{familyId}/recalculate")
+    @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<String> forceRecalculation(@PathVariable Long familyId) {
-        log.warn("Ã°Å¸â€â€ž [ANALYTICS] RecÃƒÂ¡lculo forzado solicitado para familia: {}", familyId);
+        log.warn("🔄 [ANALYTICS] Recálculo forzado solicitado para familia: {}", familyId);
         analyticsService.invalidateCacheAndRecalculate(familyId);
-        return ApiResponse.ok("RecÃƒÂ¡lculo iniciado exitosamente.");
+        return ApiResponse.ok("Recálculo iniciado exitosamente.");
     }
 }
 

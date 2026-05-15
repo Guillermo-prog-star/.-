@@ -23,7 +23,7 @@ export class StatsComponent {
    * Retorna las entradas de hitos con tipado explícito.
    */
   getMilestoneEntries(): [string, number][] {
-    const data = this.stats()?.milestoneDistribution;
+    const data = this.stats?.milestoneDistribution;
     if (!data) return [];
     return Object.entries(data) as [string, number][];
   }
@@ -33,7 +33,7 @@ export class StatsComponent {
    * El cast 'as number' previene el error de compilación NG9 en Docker.
    */
   getSentimentEntries(): [string, number][] {
-    const data = this.sentiment()?.sentimentDistribution;
+    const data = this.sentiment?.sentimentDistribution;
     if (!data) return [];
     return (Object.entries(data) as [string, number][])
       .sort((a, b) => b[1] - a[1]);

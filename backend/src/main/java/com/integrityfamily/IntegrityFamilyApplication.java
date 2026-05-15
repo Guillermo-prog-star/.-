@@ -26,7 +26,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         "com.integrityfamily.assessment.domain",
         "com.integrityfamily.analytics.domain",
         "com.integrityfamily.common.domain",
-        "com.integrityfamily.report.domain"
+        "com.integrityfamily.report.domain",
+        "com.integrityfamily.adaptive"
 })
 public class IntegrityFamilyApplication {
 

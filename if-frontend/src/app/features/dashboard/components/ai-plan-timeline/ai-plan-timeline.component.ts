@@ -16,14 +16,36 @@ export class AiPlanTimelineComponent {
 
   getIconForDimension(dimension: string): string {
     const dim = dimension?.toLowerCase() || '';
+    if (dim.includes('emocio')) return '🧠';
+    if (dim.includes('comunica')) return '💬';
+    if (dim.includes('habito') || dim.includes('hábito')) return '📅';
+    if (dim.includes('tiempo')) return '⏳';
     if (dim.includes('reconoci')) return '🔍';
     if (dim.includes('amor')) return '❤️';
     if (dim.includes('entrega')) return '🤝';
     return '✨';
   }
 
+  getProgressPercentage(): number {
+    if (!this.actions || this.actions.length === 0) return 0;
+    const completedCount = this.actions.filter(a => a.completed).length;
+    return (completedCount / this.actions.length) * 100;
+  }
+
   toggleComplete(action: any) {
     if (action.completed) return;
-    this.dashboardService.completeTask(action.id).subscribe();
+    
+    // Actualización de UI Optimista (Optimistic Update) para respuesta instantánea
+    action.completed = true;
+    
+    this.dashboardService.completeTask(action.id).subscribe({
+      next: () => {
+        console.log(`[TIMELINE] Tarea ${action.id} marcada como completada con éxito.`);
+      },
+      error: (err) => {
+        console.error('[TIMELINE] Error al completar tarea, revirtiendo estado:', err);
+        action.completed = false; // Reversión segura en caso de error
+      }
+    });
   }
 }

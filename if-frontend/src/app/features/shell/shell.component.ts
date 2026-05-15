@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 // [SDD] CORRECCIÓN CRÍTICA: Importación del servicio faltante
-import { SentinelCoreService } from './services/sentinel-core.service';
+import { SentinelCoreService } from '../../core/services/sentinel-core.service';
 
 @Component({
   selector: 'app-shell',

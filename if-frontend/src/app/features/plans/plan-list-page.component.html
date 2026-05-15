@@ -361,7 +361,7 @@
             <div>
               <label style="display: block; font-size: 11px; text-transform: uppercase; color: #8b949e; font-weight: 600; margin-bottom: 6px;">Micro-Reflexión Familiar (Máx. 140 carac.)</label>
               <input type="text" [(ngModel)]="evidenceForm.textContent" maxlength="140" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.10); border-radius: 6px; color: #fff; padding: 8px 12px; font-size: 13.5px; box-sizing: border-box;" placeholder="Cuéntanos en pocas palabras tu micro-victoria de hoy..." />
-              <span style="font-size: 10px; color: #8b949e; display: block; margin-top: 4px; text-align: right;">{{ 140 - (evidenceForm.textContent?.length || 0) }} caracteres restantes</span>
+              <span style="font-size: 10px; color: #8b949e; display: block; margin-top: 4px; text-align: right;">{{ 140 - (evidenceForm.textContent.length || 0) }} caracteres restantes</span>
             </div>
           </div>
         }

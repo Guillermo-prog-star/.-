@@ -1,6 +1,5 @@
 /* 1. LÍNEAS DE IMPORTACIÓN (Deben ir estrictamente al inicio) */
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
-
+/* Google Fonts movidas a index.html para evitar css-inline-fonts en el bundle */
 /* 2. DIRECTIVAS DE TAILWIND */
 @tailwind base;
 @tailwind components;

@@ -1,0 +1,80 @@
+<div class="my-space-container">
+  <header class="section-header">
+    <h1>Mi Espacio</h1>
+    <p>Tu bitácora privada de evolución consciente. Lo que escribes aquí es solo para ti.</p>
+  </header>
+
+  <div class="content-grid">
+    <!-- Formulario de Nueva Entrada -->
+    <div class="glass-container form-section">
+      <h2>Nueva Reflexión</h2>
+      <form (ngSubmit)="saveEntry()">
+        <div class="form-group">
+          <label for="title">Título</label>
+          <input type="text" id="title" [(ngModel)]="newEntry.title" name="title" placeholder="¿Sobre qué quieres reflexionar?" required>
+        </div>
+
+        <div class="form-group">
+          <label for="category">Categoría</label>
+          <select id="category" [(ngModel)]="newEntry.category" name="category">
+            <option *ngFor="let cat of categories" [value]="cat.value">{{cat.label}}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>¿Cómo te sientes hoy?</label>
+          <div class="emotion-selector">
+            <button type="button" *ngFor="let state of emotionalStates" 
+                    [class.selected]="newEntry.emotionalState === state.value"
+                    (click)="newEntry.emotionalState = state.value"
+                    [title]="state.label">
+              <span class="emotion-icon">{{state.icon}}</span>
+              <span class="emotion-label">{{state.label}}</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="content">Contenido</label>
+          <textarea id="content" [(ngModel)]="newEntry.content" name="content" rows="6" placeholder="Escribe aquí tus pensamientos, emociones o desahogos..." required></textarea>
+        </div>
+
+        <button type="submit" class="btn-submit" [disabled]="loading">
+          {{ loading ? 'Guardando...' : 'Guardar en mi Bitácora' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Listado de Entradas -->
+    <div class="entries-section">
+      <h2>Mis Reflexiones Pasadas</h2>
+      
+      <div *ngIf="loading && entries.length === 0" class="loading-state">
+        <p>Cargando tus recuerdos...</p>
+      </div>
+
+      <div *ngIf="!loading && entries.length === 0" class="empty-state glass-container">
+        <span class="empty-icon">🍃</span>
+        <p>Aún no has escrito nada. Este es un espacio seguro para ti.</p>
+      </div>
+
+      <div class="entries-list">
+        <div *ngFor="let entry of entries" class="glass-container entry-card">
+          <div class="entry-header">
+            <div class="entry-title-area">
+              <span class="entry-emotion">{{getEmotionIcon(entry.emotionalState)}}</span>
+              <h3>{{entry.title}}</h3>
+            </div>
+            <span class="entry-date">{{entry.createdAt | date:'mediumDate'}}</span>
+          </div>
+          <div class="entry-badge" [class]="entry.category.toLowerCase()">
+            {{entry.category}}
+          </div>
+          <div class="entry-content">
+            <p>{{entry.content}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

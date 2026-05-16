@@ -10,6 +10,19 @@
     </div>
   </div>
 
+  <!-- ACCIONES RÁPIDAS / CAPA PRIVADA -->
+  <div class="quick-actions-bar" style="margin-bottom: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+    <div class="glass-card" style="padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid rgba(168, 85, 247, 0.2);" [routerLink]="['/my-space']">
+      <div>
+        <h3 style="margin: 0; color: #fff; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+          <span>🔒</span> Mi Espacio Privado
+        </h3>
+        <p style="margin: 4px 0 0 0; color: #8b949e; font-size: 12px;">Tu bitácora personal de evolución.</p>
+      </div>
+      <span style="font-size: 20px; color: #a855f7;">➔</span>
+    </div>
+  </div>
+
   <!-- SECCIÓN 1: RUTA DE TRANSFORMACIÓN LONGITUDINAL (36 MESES) -->
   <div class="glass-card">
     <h2 class="card-title">
@@ -232,6 +245,11 @@
                           <button (click)="openEvidenceModal(task, 'PHOTO')" class="btn btn-outline btn-small" style="font-size: 11px; padding: 4px 10px; cursor: pointer; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #c9d1d9; border-radius: 4px;">
                             📷 Adjuntar Foto
                           </button>
+                          @if (task.title.toLowerCase().includes('bitácora') || task.description.toLowerCase().includes('bitácora') || task.title.toLowerCase().includes('reflexión') || task.description.toLowerCase().includes('reflexión')) {
+                            <button [routerLink]="['/my-space']" class="btn btn-outline btn-small" style="font-size: 11px; padding: 4px 10px; cursor: pointer; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); color: #c084fc; border-radius: 4px;">
+                              📝 Ir a mi Bitácora Privada
+                            </button>
+                          }
                         </div>
                       }
                     </div>

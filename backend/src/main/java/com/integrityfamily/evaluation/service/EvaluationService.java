@@ -9,6 +9,7 @@ import com.integrityfamily.domain.repository.MemberRepository;
 import com.integrityfamily.domain.repository.QuestionRepository;
 import com.integrityfamily.risk.service.RiskService;
 import com.integrityfamily.milestone.service.MilestoneService;
+import com.integrityfamily.plan.service.PlanTaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -36,6 +37,7 @@ public class EvaluationService {
     private final RabbitTemplate rabbitTemplate;
     private final MilestoneService milestoneService;
     private final AiService aiService;
+    private final PlanTaskService planTaskService;
 
     public List<Evaluation> findAll() {
         return evaluationRepository.findAll();
@@ -126,12 +128,60 @@ public class EvaluationService {
             existing.getDimensionScores().add(ds);
         });
 
+        // Adaptación al Nuevo Modelo: Diagnóstico Consciente
+        generateConsciousInterpretation(existing);
+
         Evaluation saved = evaluationRepository.save(existing);
         log.info("✅ [EVALUATION-ALGO] Evaluación persistida con éxito. ICF/HealthyIndex: {} | Riesgo: {} | Dim Crítica: {}", 
                 healthyIndex, riskLevel, criticalDimension);
         
         processPostFinalization(saved);
         return saved;
+    }
+
+    /**
+     * Genera una interpretación cualitativa basada en el rol del miembro y el resultado,
+     * alineada con el modelo de "Sistema de Evolución Consciente".
+     */
+    private void generateConsciousInterpretation(Evaluation evaluation) {
+        if (evaluation.getMember() == null) return;
+        
+        String role = evaluation.getMember().getRole();
+        if (role == null) return;
+        
+        log.info("🧠 [DIAGNOSTICO-CONSCIENTE] Interpretando resultado para rol: {}", role);
+        StringBuilder synthesis = new StringBuilder();
+        synthesis.append("[DIAGNÓSTICO CONSCIENTE]\n");
+        
+        switch (role.toUpperCase()) {
+            case "PADRE":
+                synthesis.append("Foco: Liderazgo emocional y presencia física consciente.\n");
+                if (evaluation.getIcf() < 60) {
+                    synthesis.append("Recomendación: Espacios de escucha activa para reducir el estrés y la desconexión.");
+                }
+                break;
+            case "MADRE":
+                synthesis.append("Foco: Distribución de la carga mental y autocuidado.\n");
+                if (evaluation.getIcf() < 60) {
+                    synthesis.append("Recomendación: Delegar tareas y buscar apoyo emocional en la familia.");
+                }
+                break;
+            case "ADOLESCENTE":
+                synthesis.append("Foco: Expresión emocional segura y pertenencia.\n");
+                synthesis.append("Recomendación: Evitar la imposición; fomentar la participación voluntaria.");
+                break;
+            case "NINO":
+            case "NIÑO":
+                synthesis.append("Foco: Hábitos positivos y juego consciente.\n");
+                synthesis.append("Recomendación: Rutinas divertidas y seguridad emocional.");
+                break;
+            default:
+                synthesis.append("Foco: Seguimiento adaptativo general.");
+                break;
+        }
+        
+        evaluation.setSpiritualSynthesis(synthesis.toString());
+        log.info("💡 Síntesis generada: {}", synthesis.toString().replace("\n", " | "));
     }
 
     /**
@@ -282,6 +332,13 @@ public class EvaluationService {
         } catch (Exception e) {
             log.warn("⚠️ [EVALUATION] Avance de hito omitido para la familia ID {} (No bloqueante para la evaluación): {}", 
                     saved.getFamily().getId(), e.getMessage());
+        }
+
+        try {
+            planTaskService.generateTasksFromDiagnosis(saved);
+            log.info("🎯 [EVALUATION] Misiones automáticas generadas para el diagnóstico.");
+        } catch (Exception e) {
+            log.error("⚠️ [EVALUATION] Error al generar misiones automáticas: {}", e.getMessage());
         }
 
         Map<String, Object> payload = new HashMap<>();

@@ -35,6 +35,7 @@ import { AuthService } from '../../core/services/auth.service';
         <a routerLink="/checklist" class="nav-item" routerLinkActive="active"><span class="icon">📸</span> 5. Evidencias</a>
         <a routerLink="/logbook"   class="nav-item" routerLinkActive="active"><span class="icon">📔</span> 6. Bitácora</a>
         <a routerLink="/gratitude" class="nav-item" routerLinkActive="active"><span class="icon">💖</span> 7. Gratitud</a>
+        <a routerLink="/my-space"  class="nav-item" routerLinkActive="active"><span class="icon">🔒</span> 8. Mi Espacio</a>
         
         <div class="divider"></div>
         <a routerLink="/chat"   class="nav-item" routerLinkActive="active"><span class="icon">✨</span> Consultor IA</a>

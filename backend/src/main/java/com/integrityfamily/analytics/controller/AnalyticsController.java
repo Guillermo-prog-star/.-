@@ -3,6 +3,10 @@ package com.integrityfamily.analytics.controller;
 import com.integrityfamily.analytics.dto.DashboardSummaryResponse;
 import com.integrityfamily.analytics.service.AnalyticsService;
 import com.integrityfamily.common.dto.ApiResponse;
+import com.integrityfamily.evaluation.service.EvaluationService;
+import com.integrityfamily.domain.Evaluation;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +23,7 @@ public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
     private final com.integrityfamily.domain.repository.UserRepository userRepository;
+    private final EvaluationService evaluationService;
 
     /**
      * Obtiene el resumen ejecutivo del dashboard familiar.
@@ -82,6 +87,37 @@ public class AnalyticsController {
         log.warn("🔄 [ANALYTICS] Recálculo forzado solicitado para familia: {}", familyId);
         analyticsService.invalidateCacheAndRecalculate(familyId);
         return ApiResponse.ok("Recálculo iniciado exitosamente.");
+    }
+
+    /**
+     * SDD: Obtiene los resultados de una evaluación específica.
+     * Mapea los datos para el frontend, incluyendo el diagnóstico consciente.
+     */
+    @GetMapping("/results/{id}")
+    public ApiResponse<Object> getResultById(@PathVariable Long id) {
+        log.info("📊 [ANALYTICS] Solicitando resultados para evaluación ID: {}", id);
+        Evaluation eval = evaluationService.findById(id);
+        
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", eval.getId());
+        result.put("riskLevel", eval.getRiskLevel());
+        result.put("globalScore", eval.getIcf());
+        result.put("aiReport", eval.getSpiritualSynthesis());
+        result.put("hasCrisis", eval.getHasCrisis());
+        
+        eval.getDimensionScores().forEach(ds -> {
+            String name = ds.getDimensionName().toUpperCase();
+            String key = switch (name) {
+                case "EMOCIONES", "EMOTIONS" -> "scoreEmotions";
+                case "COMUNICACION", "COMMUNICATION" -> "scoreCommunication";
+                case "HABITOS", "HABITS" -> "scoreHabits";
+                case "TIEMPOS", "TIMES" -> "scoreTimes";
+                default -> "score" + name.substring(0, 1).toUpperCase() + name.substring(1).toLowerCase();
+            };
+            result.put(key, ds.getScore());
+        });
+        
+        return ApiResponse.ok(result);
     }
 }
 

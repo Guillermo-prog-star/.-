@@ -4,7 +4,7 @@ spring:
   application:
     name: integrity-family
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${DB_HOST:if-mysql}:${DB_PORT:3306}/${DB_NAME:integrity_family}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota&connectTimeout=10000}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${DB_HOST:if-mysql}:${DB_PORT:3306}/${DB_NAME:integrity_family}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota&connectTimeout=10000&useUnicode=true&characterEncoding=UTF-8}
     username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:root}}
     password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:root}}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -69,7 +69,7 @@ app:
     anthropic:
       enabled: ${CLAUDE_ENABLED:true}
       api-key: ${CLAUDE_API_KEY:MOCK_KEY}
-      model: ${CLAUDE_MODEL:claude-3-5-sonnet-20241022}
+      model: ${CLAUDE_MODEL:claude-3-5-haiku-latest}
       base-url: ${CLAUDE_BASE_URL:https://api.anthropic.com/v1}
     openai:
       api-key: ${OPENAI_API_KEY:MOCK_KEY}
@@ -86,9 +86,6 @@ app:
       base-url: ${ELEVENLABS_BASE_URL:https://api.elevenlabs.io/v1}
 
 logging:
-  level:
-    com.integrityfamily: ${LOG_LEVEL:DEBUG}
-    org.hibernate.SQL: DEBUG
   file:
     name: /app/logs/backend.log
 
@@ -115,3 +112,19 @@ app:
         enabled: true
     elevenlabs:
       enabled: true
+
+---
+# Perfil 'prod': configuracion para produccion
+spring:
+  config:
+    activate:
+      on-profile: prod
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+
+logging:
+  level:
+    com.integrityfamily: INFO
+    org.hibernate.SQL: WARN

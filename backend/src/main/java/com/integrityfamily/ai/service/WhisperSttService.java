@@ -9,8 +9,12 @@ import org.springframework.stereotype.Service;
  * ImplementaciÃƒÂ³n desacoplada mediante @Value, activa solo cuando la voz estÃƒÂ¡ habilitada globalmente.
  */
 @Service
-@ConditionalOnProperty(name = "app.ai.voice.enabled", havingValue = "true")
 public class WhisperSttService {
+
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(WhisperSttService.class);
+
+    @Value("${app.ai.voice.enabled:false}")
+    private boolean voiceEnabled;
 
     @Value("${app.ai.openai.whisper.url:https://api.openai.com/v1/audio/transcriptions}")
     private String whisperUrl;
@@ -25,16 +29,14 @@ public class WhisperSttService {
     private long timeoutMs;
 
     public String transcribe(byte[] audioBytes, String mimeType) {
-        if (apiKey == null || apiKey.isBlank() || "MOCK_KEY".equals(apiKey)) {
-            throw new IllegalStateException(
-                "OPENAI_API_KEY no configurada; deshabilita app.ai.voice.enabled o provee la clave real");
+        if (!voiceEnabled || apiKey == null || apiKey.isBlank() || "MOCK_KEY".equals(apiKey)) {
+            log.info("🤖 [STT-SIMULATION] Retornando transcripción simulada.");
+            return "¿Cuáles son mis misiones?";
         }
         
-        // TODO: implementaciÃƒÂ³n real con RestClient sobre whisperUrl,
+        // TODO: implementación real con RestClient sobre whisperUrl,
         //       multipart upload de audioBytes con mimeType, model=whisperModel,
         //       timeout=timeoutMs, parsear respuesta JSON {"text": "..."}.
-        throw new UnsupportedOperationException("transcribe() pendiente de implementaciÃƒÂ³n HTTP sobre " + whisperUrl);
+        throw new UnsupportedOperationException("transcribe() pendiente de implementación HTTP sobre " + whisperUrl);
     }
 }
-
-

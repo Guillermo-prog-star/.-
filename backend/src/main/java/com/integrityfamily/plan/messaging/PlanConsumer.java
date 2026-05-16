@@ -50,18 +50,30 @@ public class PlanConsumer {
     }
 
     /**
-     * Extrae líneas que parecen acciones (empiezan con -, * o número)
-     * para transformarlas en tareas de base de datos.
+     * Extrae líneas que parecen acciones (viñetas markdown o párrafos con contenido significativo).
+     * Soporta tanto el formato estructurado de Claude como el texto libre del modo simulación.
      */
     private List<String> parseAiRecommendation(String text) {
         if (text == null || text.isBlank())
             return List.of();
 
-        return Arrays.stream(text.split("\n"))
+        List<String> bulleted = Arrays.stream(text.split("\n"))
                 .map(String::trim)
                 .filter(line -> line.startsWith("-") || line.startsWith("*") || line.matches("^\\d+\\..*"))
-                .map(line -> line.replaceAll("^[-*\\d.]+\\s*", "")) // Limpiar viñetas
-                .filter(line -> line.length() > 5) // Filtrar ruido
+                .map(line -> line.replaceAll("^[-*\\d.]+\\s*", ""))
+                .filter(line -> line.length() > 5)
+                .toList();
+
+        // Si Claude encontró viñetas, usarlas directamente
+        if (!bulleted.isEmpty()) {
+            return bulleted;
+        }
+
+        // Fallback: parsear párrafos (modo simulación sin Claude)
+        return Arrays.stream(text.split("[.!?]"))
+                .map(String::trim)
+                .filter(sentence -> sentence.length() > 20) // Oración suficientemente larga
+                .limit(3)                                    // Máximo 3 tareas por ciclo
                 .toList();
     }
 }

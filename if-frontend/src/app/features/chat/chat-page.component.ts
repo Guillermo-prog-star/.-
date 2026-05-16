@@ -5,24 +5,24 @@ import { HttpClient } from '@angular/common/http';
 import { FamilyStateService } from '../../core/services/family-state.service';
 
 @Component({
-  selector: 'app-chat-page', 
-  standalone: true, 
+  selector: 'app-chat-page',
+  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './chat-page.component.html',
   styleUrls: ['./chat-page.component.css']
 })
 export class ChatPageComponent implements OnInit {
   @ViewChild('anchor') anchor!: ElementRef;
-  private http = inject(HttpClient); 
+  private http = inject(HttpClient);
   private familyState = inject(FamilyStateService);
 
-  messages: any[] = []; 
-  inputText = ''; 
+  messages: any[] = [];
+  inputText = '';
   loading = false;
   recording = false;
   private mediaRecorder: any;
   private audioChunks: any[] = [];
-  
+
   get familyId() { return this.familyState.currentFamilyId(); }
   familyName = localStorage.getItem('selectedFamilyName') ?? 'Familia';
 
@@ -35,11 +35,11 @@ export class ChatPageComponent implements OnInit {
       next: (res) => {
         this.messages = res.data;
         if (this.messages.length === 0) {
-            this.messages.push({
-                content: `Hola familia ${this.familyName}. Soy su Mentor de Integridad Proactiva. Estoy analizando su hito actual para guiarlos. ¿Tienen alguna duda sobre sus misiones o el diagnóstico?`,
-                isAi: true,
-                createdAt: new Date()
-            });
+          this.messages.push({
+            content: `Hola familia ${this.familyName}. Soy su Mentor de Integridad Proactiva. Estoy analizando su hito actual para guiarlos. ¿Tienen alguna duda sobre sus misiones o el diagnóstico?`,
+            isAi: true,
+            createdAt: new Date()
+          });
         }
         this.scroll();
       }
@@ -52,7 +52,7 @@ export class ChatPageComponent implements OnInit {
 
     // UI Optimista
     this.messages.push({ content: text, isAi: false, createdAt: new Date() });
-    this.inputText = ''; 
+    this.inputText = '';
     this.loading = true;
     this.scroll();
 
@@ -60,12 +60,12 @@ export class ChatPageComponent implements OnInit {
       .subscribe({
         next: (res: any) => {
           this.messages.push(res.data);
-          this.loading = false; 
+          this.loading = false;
           this.scroll();
         },
         error: () => {
           this.messages.push({ content: 'Disculpen, hay una interferencia en la red neuronal. Inténtenlo de nuevo en un momento.', isAi: true, createdAt: new Date() });
-          this.loading = false; 
+          this.loading = false;
           this.scroll();
         }
       });
@@ -111,14 +111,9 @@ export class ChatPageComponent implements OnInit {
     this.http.post<any>(`/api/chat/voice/${this.familyId}`, formData).subscribe({
       next: (res) => {
         // Añadir transcripción a la UI
-        this.messages.push({ content: res.data.transcription, isAi: false, createdAt: new Date() });
+        this.messages.push({ content: res.transcript, isAi: false, createdAt: new Date() });
         // Añadir respuesta de la IA
-        this.messages.push({ content: res.data.aiResponse, isAi: true, createdAt: new Date() });
-        
-        // Reproducir respuesta de voz si existe
-        if (res.data.audioBase64) {
-          this.playAudio(res.data.audioBase64);
-        }
+        this.messages.push({ content: res.assistantReply, isAi: true, createdAt: new Date() });
 
         this.loading = false;
         this.scroll();
@@ -135,12 +130,12 @@ export class ChatPageComponent implements OnInit {
     audio.play().catch(err => console.error("Error playing audio", err));
   }
 
-  scroll() { 
+  scroll() {
     setTimeout(() => {
-        const chatContainer = document.querySelector('.chat-messages');
-        if (chatContainer) {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-    }, 100); 
+      const chatContainer = document.querySelector('.chat-messages');
+      if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    }, 100);
   }
 }

@@ -3,6 +3,7 @@ package com.integrityfamily.analytics.service;
 import com.integrityfamily.ai.service.AiService;
 import com.integrityfamily.analytics.dto.DashboardSummaryResponse;
 import com.integrityfamily.analytics.dto.SuggestedActionDto;
+import com.integrityfamily.common.event.SystemEvent;
 import com.integrityfamily.domain.ChecklistItem;
 import com.integrityfamily.domain.repository.ChecklistItemRepository;
 import com.integrityfamily.common.config.RabbitConfig;
@@ -30,8 +31,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * SDD: ImplementaciÃƒÂ³n del Servicio de AnalÃƒÂ­tica Proyectiva.
- * Integra IA, Riesgo e Hitos con persistencia de snapshots y sincronizaciÃƒÂ³n asÃƒÂ­ncrona.
+ * SDD: Implementacion del Servicio de Analitica Proyectiva.
+ * Integra IA, Riesgo e Hitos con persistencia de snapshots y sincronizacion asincrona.
  */
 @Slf4j
 @Service
@@ -49,22 +50,22 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     @Override
     @Transactional
     public DashboardSummaryResponse calculateLatestResults(Long familyId) {
-        log.info("Ã°Å¸â€œÅ  [ANALYTICS] Iniciando cÃƒÂ¡lculo integral para familia ID: {}", familyId);
+        log.info("📊 [ANALYTICS] Iniciando calculo integral para familia ID: {}", familyId);
 
         // 1. Recuperar Entidad Core
         Family family = familyRepository.findById(familyId)
                 .orElseGet(() -> familyRepository.findAll().stream().findFirst()
-                .orElseThrow(() -> new RuntimeException("No se encontrÃƒÂ³ ninguna familia en el sistema.")));
+                .orElseThrow(() -> new RuntimeException("No se encontro ninguna familia en el sistema.")));
 
         // 2. Recuperar Historial de Evaluaciones
         List<Evaluation> allEvals = evaluationRepository.findByFamilyIdOrderByFinalizedAtAsc(familyId);
         Evaluation firstEval = allEvals.isEmpty() ? null : allEvals.get(0);
         Evaluation lastEval = allEvals.isEmpty() ? null : allEvals.get(allEvals.size() - 1);
 
-        // 3. Recuperar ÃƒÅ¡ltimo Riesgo
+        // 3. Recuperar ultimo Riesgo
         RiskSnapshot lastRisk = riskSnapshotRepository.findFirstByFamilyIdOrderByCreatedAtDesc(familyId).orElse(null);
 
-        // 4. CÃƒÂ¡lculo de Crecimiento de Consciencia
+        // 4. Calculo de Crecimiento de Consciencia
         double growth = 0.0;
         if (firstEval != null && firstEval.getIcf() != null && lastEval != null && lastEval.getIcf() != null) {
             growth = lastEval.getIcf() - firstEval.getIcf();
@@ -88,16 +89,16 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             }
         }
 
-        // 7. GeneraciÃƒÂ³n de Insight mediante IA (Motor de Pensamiento CrÃƒÂ­tico)
+        // 7. Generacion de Insight mediante IA (Motor de Pensamiento Critico)
         String insight;
         try {
             insight = aiService.generateDashboardInsight(family, dims, mappedLevel.name());
         } catch (Exception e) {
-            log.error("Ã¢Å¡Â Ã¯Â¸Â [ANALYTICS] No se pudo generar insight de IA: {}", e.getMessage());
-            insight = "Sincronizando reflexiones profundas... El motor de IA estÃƒÂ¡ procesando el contexto familiar.";
+            log.error("⚠️ [ANALYTICS] No se pudo generar insight de IA: {}", e.getMessage());
+            insight = "Sincronizando reflexiones profundas... El motor de IA esta procesando el contexto familiar.";
         }
 
-        // 8. RecuperaciÃƒÂ³n de Tareas del Plan de AcciÃƒÂ³n
+        // 8. Recuperacion de Tareas del Plan de Accion
         List<ChecklistItem> allChecklist = checklistRepository.findByFamilyIdOrderByCreatedAtDesc(familyId);
         long totalItems = allChecklist.size();
         long completedItems = allChecklist.stream().filter(ChecklistItem::isCompleted).count();
@@ -112,7 +113,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                         .build())
                 .collect(Collectors.toList());
 
-        // 9. Recuperación de Bitácora (Novedad)
+        // 9. Recuperacion de Bitacora
         long openLogbookItems = logbookRepository.findByFamilyIdAndStatusOrderByCreatedAtDesc(familyId, LogbookStatus.OPEN).size();
         String latestAgreement = logbookRepository.findByFamilyIdOrderByCreatedAtDesc(familyId).stream()
                 .filter(e -> e.getFamilyAgreement() != null && !e.getFamilyAgreement().isBlank())
@@ -120,20 +121,20 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .findFirst()
                 .orElse("No hay acuerdos recientes registrados.");
 
-        // 10. Motor de Activación Proactiva Sentinel (Capa de Contención)
+        // 10. Motor de Activacion Proactiva Sentinel (Capa de Contencion)
         boolean sentinelTriggered = Boolean.TRUE.equals(family.getSentinelActive())
                 || (lastEval != null && lastEval.getIcf() != null && lastEval.getIcf() < 40.0)
                 || (growth < -15.0)
-                || (openLogbookItems > 3); // Nueva condición: más de 3 dificultades abiertas
+                || (openLogbookItems > 3);
 
-        // 11. Ajuste de recomendación IA ante estado de crisis
-        String finalInsight = sentinelTriggered ? "⚠️ [S.O.S NODO] Protocolo de Contención Activado. " + insight : insight;
-        
+        // 11. Ajuste de recomendacion IA ante estado de crisis
+        String finalInsight = sentinelTriggered ? "⚠️ [S.O.S NODO] Protocolo de Contencion Activado. " + insight : insight;
+
         if (openLogbookItems > 0) {
-            finalInsight += " Hay " + openLogbookItems + " situaciones pendientes en la bitácora.";
+            finalInsight += " Hay " + openLogbookItems + " situaciones pendientes en la bitacora.";
         }
 
-        // 11. Persistencia del Snapshot (Memoria Histórica)
+        // 12. Persistencia del Snapshot (Memoria Historica)
         RiskSnapshot snapshot = RiskSnapshot.builder()
                 .family(family)
                 .icf(lastEval != null && lastEval.getIcf() != null ? lastEval.getIcf() : 0.0)
@@ -145,7 +146,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .build();
         riskSnapshotRepository.save(snapshot);
 
-        // 12. ConstrucciÃƒÂ³n del DTO de Respuesta
+        // 13. Construccion del DTO de Respuesta
         DashboardSummaryResponse response = DashboardSummaryResponse.builder()
                 .familyId(familyId)
                 .familyName(family.getName())
@@ -161,8 +162,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .isSentinelActive(sentinelTriggered)
                 .totalChecklistItems(totalItems)
                 .completedChecklistItems(completedItems)
-                .totalPlanTasks(totalItems)       // SincronizaciÃƒÂ³n para el frontend
-                .completedPlanTasks(completedItems) // SincronizaciÃƒÂ³n para el frontend
+                .totalPlanTasks(totalItems)
+                .completedPlanTasks(completedItems)
                 .pillarProgress((double) (totalItems > 0 ? (completedItems * 100 / totalItems) : 0))
                 .awarenessGrowth(growth)
                 .dimensionScores(dims)
@@ -172,13 +173,30 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .latestFamilyAgreement(latestAgreement)
                 .build();
 
-        // 13. SincronizaciÃƒÂ³n AsÃƒÂ­ncrona via RabbitMQ (Disparar generaciÃƒÂ³n de planes)
-        log.info("Ã°Å¸â€œÂ§ [ANALYTICS] Intentando sincronizar con RabbitMQ...");
+        // 14. Sincronizacion Asincrona via RabbitMQ
+        log.info("📤 [ANALYTICS] Sincronizando resultados con RabbitMQ...");
         try {
-            rabbitTemplate.convertAndSend(RabbitConfig.EXCHANGE_NAME, "tasks.suggested", response);
-            log.info("Ã¢Å“â€¦ [ANALYTICS] SincronizaciÃƒÂ³n RabbitMQ completada.");
+            // A) DashboardSummaryResponse -> PlanConsumer genera tareas adaptativas
+            rabbitTemplate.convertAndSend(
+                    RabbitConfig.EXCHANGE_NAME,
+                    "tasks.suggested",
+                    response);
+
+            // B) SystemEvent bien formado -> AnalyticsEventConsumer actualiza el Read Model
+            //    FIX: antes se publicaba un objeto nulo que causaba el warning "campos nulos"
+            SystemEvent analyticsEvent = SystemEvent.of(
+                    "analytics.updated",
+                    familyId,
+                    response,
+                    "SYSTEM");
+            rabbitTemplate.convertAndSend(
+                    RabbitConfig.EXCHANGE_NAME,
+                    "analytics.updated",
+                    analyticsEvent);
+
+            log.info("✅ [ANALYTICS] Sincronizacion RabbitMQ completada.");
         } catch (Exception e) {
-            log.error("Ã¢ÂÅ’ [ANALYTICS] Error al enviar a RabbitMQ (No crÃƒÂ­tico para el Dashboard): {}", e.getMessage());
+            log.error("❌ [ANALYTICS] Error al enviar a RabbitMQ (no critico): {}", e.getMessage());
         }
 
         return response;
@@ -186,9 +204,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     @Override
     public void invalidateCacheAndRecalculate(Long familyId) {
-        log.warn("Ã°Å¸â€â€ž [ANALYTICS] Invalidando cachÃƒÂ© y recalculando para familia: {}", familyId);
-        // En una implementaciÃƒÂ³n real con Redis, aquÃƒÂ­ se borrarÃƒÂ­a la llave.
-        // Por ahora, forzamos el cÃƒÂ¡lculo directo.
+        log.warn("🔄 [ANALYTICS] Invalidando cache y recalculando para familia: {}", familyId);
         calculateLatestResults(familyId);
     }
 
@@ -269,5 +285,3 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             .orElse(50.0);
     }
 }
-
-

@@ -5,6 +5,8 @@ import com.integrityfamily.domain.FamilyMember;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.MemberRepository;
 import com.integrityfamily.common.exception.NotFoundException;
+import com.integrityfamily.domain.User;
+import com.integrityfamily.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,6 +25,7 @@ public class SecurityValidator {
 
     private final FamilyRepository familyRepository;
     private final MemberRepository memberRepository;
+    private final UserRepository userRepository;
 
     public void validateFamilyOwnership(Long familyId, Principal principal) {
         if (principal == null) {
@@ -30,6 +33,13 @@ public class SecurityValidator {
         }
         
         String userEmail = principal.getName();
+        
+        // 0. Verificar si es Administrador Clínico (Bypass)
+        User user = userRepository.findByEmailIgnoreCase(userEmail).orElse(null);
+        if (user != null && user.getRoles().stream().anyMatch(r -> "ROLE_ADMIN".equals(r.getName()))) {
+            return;
+        }
+
         Family family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new NotFoundException("Familia no encontrada"));
         

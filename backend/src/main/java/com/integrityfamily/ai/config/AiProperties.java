@@ -32,7 +32,7 @@ public class AiProperties {
     public static class Anthropic {
         private boolean enabled = true;
         private String apiKey = "";
-        private String model = "claude-3-5-sonnet-20241022";
+        private String model = "claude-3-5-haiku-20241022";
         private String baseUrl = "https://api.anthropic.com/v1";
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean v) { this.enabled = v; }

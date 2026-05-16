@@ -10,7 +10,8 @@ RUN mvn package -DskipTests
 # ETAPA 2: Ejecución (JRE)
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
+ENV LANG C.UTF-8
 RUN apk add --no-cache curl bash
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-Xmx512m", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Xmx512m", "-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-jar", "app.jar"]

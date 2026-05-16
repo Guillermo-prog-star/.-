@@ -3,6 +3,7 @@ package com.integrityfamily.ai.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrityfamily.ai.dto.CopilotDtos.*;
 import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.ai.config.AiProperties;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class CopilotService {
     private final AiInferenceRepository inferenceRepository;
     private final AiProvider aiProvider;
     private final ObjectMapper objectMapper;
+    private final AiProperties aiProperties;
 
     @Transactional(readOnly = true)
     public CompactFamilyContext buildContext(Long familyId) {
@@ -186,7 +188,7 @@ public class CopilotService {
                 .inferenceResult(outputJson)
                 .priority(structuredResponse.priority())
                 .promptUsed(prompt)
-                .modelVersion("claude-3-5-sonnet")
+                .modelVersion(aiProperties.getAnthropic().getModel())
                 .createdAt(LocalDateTime.now())
                 .build();
         inferenceRepository.save(inferenceEntity);

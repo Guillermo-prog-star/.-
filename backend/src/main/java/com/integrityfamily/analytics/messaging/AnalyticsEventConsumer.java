@@ -63,6 +63,21 @@ public class AnalyticsEventConsumer {
                 // Lógica de conteo de miembros (simplificada por ahora)
                 view.setTotalMembers(view.getTotalMembers() + 1);
                 break;
+            case "analytics.updated":
+                if (event.payload() instanceof Map) {
+                    Map<?, ?> payloadMap = (Map<?, ?>) event.payload();
+                    view.setFamilyName(getStringValue(payloadMap, "familyName"));
+                    view.setFamilyCode(getStringValue(payloadMap, "familyCode"));
+                    view.setLatestIcf(getBigDecimalValue(payloadMap, "latestGlobalScore"));
+                    view.setRiskLevel(getStringValue(payloadMap, "latestRiskLevel"));
+                    view.setTotalMembers(getLongValue(payloadMap, "totalMembers"));
+                    view.setTasksCompleted(getLongValue(payloadMap, "completedPlanTasks"));
+                    view.setTasksTotal(getLongValue(payloadMap, "totalPlanTasks"));
+                    view.setAdherencePercentage(getDoubleValue(payloadMap, "pillarProgress"));
+                    view.setOpenCrisesCount(getLongValue(payloadMap, "openLogbookEntriesCount"));
+                    view.setLatestAiRecommendation(getStringValue(payloadMap, "aiRecommendation"));
+                }
+                break;
             // Otros casos: plan.created, task.completed, crisis.reported...
         }
 
@@ -83,5 +98,34 @@ public class AnalyticsEventConsumer {
                 .openCrisesCount(0L)
                 .learningEntriesCount(0L)
                 .build();
+    }
+
+    private String getStringValue(Map<?, ?> map, String key) {
+        Object val = map.get(key);
+        return val != null ? val.toString() : null;
+    }
+
+    private Long getLongValue(Map<?, ?> map, String key) {
+        Object val = map.get(key);
+        if (val instanceof Number) {
+            return ((Number) val).longValue();
+        }
+        return null;
+    }
+
+    private Double getDoubleValue(Map<?, ?> map, String key) {
+        Object val = map.get(key);
+        if (val instanceof Number) {
+            return ((Number) val).doubleValue();
+        }
+        return null;
+    }
+
+    private BigDecimal getBigDecimalValue(Map<?, ?> map, String key) {
+        Object val = map.get(key);
+        if (val instanceof Number) {
+            return BigDecimal.valueOf(((Number) val).doubleValue());
+        }
+        return null;
     }
 }

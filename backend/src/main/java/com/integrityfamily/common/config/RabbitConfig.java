@@ -153,14 +153,14 @@ public class RabbitConfig {
     }
 
     @Bean
-    public Jackson2JsonMessageConverter producerJackson2MessageConverter() {
+    public Jackson2JsonMessageConverter messageConverter() {
         return new Jackson2JsonMessageConverter();
     }
 
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
-        template.setMessageConverter(producerJackson2MessageConverter());
+        template.setMessageConverter(messageConverter());
         return template;
     }
 }

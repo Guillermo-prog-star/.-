@@ -49,7 +49,8 @@ export const routes: Routes = [
         path: 'families',
         children: [
           { path: '', loadComponent: () => import('./features/families/family-list-page.component').then(m => m.FamilyListPageComponent) },
-          { path: 'create', loadComponent: () => import('./features/families/family-create-page.component').then(m => m.FamilyCreatePageComponent) }
+          { path: 'create', loadComponent: () => import('./features/families/family-create-page.component').then(m => m.FamilyCreatePageComponent) },
+          { path: ':id/report', title: 'Reporte Territorial', loadComponent: () => import('./features/families/territorial-report/territorial-report.component').then(m => m.TerritorialReportComponent) }
         ]
       },
 

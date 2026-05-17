@@ -17,6 +17,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.integrityfamily.common.exception.BusinessException;
+import org.springframework.http.HttpStatus;
 
 import java.util.Collections;
 
@@ -44,18 +46,18 @@ public class AuthService {
                     new UsernamePasswordAuthenticationToken(request.email(), request.password())
             );
             User user = userRepository.findByEmail(request.email())
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado post-auth"));
+                    .orElseThrow(() -> new BusinessException("Usuario no encontrado post-auth", "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
             
             // [SEGURIDAD DE PROTOCOLO] Confidencialidad y aislamiento total de datos del Nodo Armenia
             if (user.getFamily() != null) {
                 String code = user.getFamily().getFamilyCode();
                 if (code != null && !code.equals("IF-CO-QUI-2026-0004") && !user.getRole().equals("ROLE_ADMIN")) {
                     log.warn("[SECURITY] Acceso bloqueado. Usuario {} pertenece a familia no autorizada: {}", request.email(), code);
-                    throw new RuntimeException("Acceso restringido: Esta cuenta no pertenece a la red familiar autorizada.");
+                    throw new BusinessException("Acceso restringido: Esta cuenta no pertenece a la red familiar autorizada.", "RESTRICTED_ACCESS", HttpStatus.FORBIDDEN);
                 }
             } else if (!user.getRole().equals("ROLE_ADMIN")) {
                 log.warn("[SECURITY] Acceso bloqueado. Usuario {} no tiene familia asignada.", request.email());
-                throw new RuntimeException("Acceso restringido: Esta cuenta no tiene una red familiar asignada.");
+                throw new BusinessException("Acceso restringido: Esta cuenta no tiene una red familiar asignada.", "RESTRICTED_ACCESS", HttpStatus.FORBIDDEN);
             }
 
             String token = jwtTokenProvider.generate(user);
@@ -66,7 +68,10 @@ public class AuthService {
         } catch (Exception e) {
             log.error("[AUTH] Error de autenticación para {}: {}", request.email(), e.getMessage());
             accountLockService.registerFailure(request.email());
-            throw new RuntimeException(e.getMessage() != null && e.getMessage().contains("Acceso restringido") ? e.getMessage() : "Credenciales inválidas");
+            if (e instanceof BusinessException) {
+                throw e;
+            }
+            throw new BusinessException("Credenciales inválidas", "INVALID_CREDENTIALS", HttpStatus.UNAUTHORIZED);
         }
     }
 

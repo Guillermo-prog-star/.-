@@ -9,6 +9,7 @@ import com.integrityfamily.evaluation.service.EvaluationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -27,11 +28,13 @@ public class EvaluationController {
     private final AuditService auditService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ApiResponse<List<Evaluation>> getAll() {
         return ApiResponse.ok(evaluationService.findAll());
     }
 
     @GetMapping("/family/{familyId}")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<List<Evaluation>> getByFamily(@PathVariable Long familyId) {
         return ApiResponse.ok(evaluationService.findByFamilyId(familyId));
     }
@@ -40,6 +43,7 @@ public class EvaluationController {
      * SDD: Inicia el ciclo de diagnóstico delegando la construcción al Service y registrando la telemetría.
      */
     @PostMapping("/start")
+    @PreAuthorize("@familySecurity.check(#req.familyId)")
     public ApiResponse<Evaluation> start(
             @RequestBody EvaluationDtos.EvaluationStartRequest req,
             Principal principal,
@@ -58,6 +62,7 @@ public class EvaluationController {
     }
 
     @PostMapping("/{id}/finalize")
+    @PreAuthorize("@familySecurity.checkEvaluation(#id)")
     public ApiResponse<Long> finalize(
             @PathVariable Long id,
             @Valid @RequestBody EvaluationDtos.EvaluationFinalizeRequest request,
@@ -77,11 +82,13 @@ public class EvaluationController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@familySecurity.checkEvaluation(#id)")
     public ApiResponse<Evaluation> getById(@PathVariable Long id) {
         return ApiResponse.ok(evaluationService.findById(id));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@familySecurity.checkEvaluation(#id)")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         evaluationService.delete(id);
         return ApiResponse.ok(null);

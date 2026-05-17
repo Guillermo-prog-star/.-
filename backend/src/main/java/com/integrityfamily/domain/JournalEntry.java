@@ -8,8 +8,11 @@ import java.time.LocalDateTime;
  * SDD Sprint 4: Entidad de Bitácora Estructurada (JournalEntry).
  * Posee arquitectura híbrida (metadatos estructurados + síntesis narrativa).
  */
+import org.hibernate.annotations.Filter;
+
 @Entity
 @Table(name = "journal_entries")
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter
 @Setter
 @NoArgsConstructor

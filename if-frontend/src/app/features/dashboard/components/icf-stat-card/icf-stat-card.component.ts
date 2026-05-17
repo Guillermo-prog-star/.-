@@ -14,7 +14,7 @@ import { CommonModule } from '@angular/common';
         </span>
       </div>
       <div class="flex items-baseline gap-2">
-        <h2 class="text-5xl font-bold tracking-tight">{{ value }}</h2>
+        <h2 class="text-5xl font-bold tracking-tight">{{ value | number:'1.0-0' }}</h2>
         <span class="text-xl opacity-60">/ 100</span>
       </div>
       <p class="mt-4 text-xs font-medium uppercase tracking-widest opacity-50">{{ status }}</p>

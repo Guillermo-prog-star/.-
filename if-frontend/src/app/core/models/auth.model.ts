@@ -1,6 +1,6 @@
 /**
- * Modelos de Autenticación - Nodo Armenia
- * Sincronizados con las clases Java del Backend para asegurar el flujo de datos.
+ * Modelos de Autenticación — Multi-Tenant
+ * Sincronizados con las clases Java del Backend (AuthService, JwtTokenProvider).
  */
 
 export interface LoginRequest {
@@ -22,6 +22,15 @@ export interface AuthResponse {
   email: string;
   fullName: string;
   roles: string[];
+  familyId?: number;      // ID de la familia del usuario (claim 'fid' del JWT)
+  familyName?: string;    // Nombre de la familia para el estado de sesión
+  user?: {
+    familyId?: number;
+    familyName?: string;
+    fullName?: string;
+    email?: string;
+    role?: string;
+  };
 }
 
 export interface User {
@@ -36,4 +45,5 @@ export interface RegisterFamilyRequest {
   fullName: string;
   email: string;
   password: string;
+  confirmPassword: string;  // Requerido por el backend para validación
 }

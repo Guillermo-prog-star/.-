@@ -27,6 +27,10 @@ public class RiskService {
         return riskSnapshotRepository.findAll();
     }
 
+    public List<RiskSnapshot> findByFamilyId(Long familyId) {
+        return riskSnapshotRepository.findByFamilyIdOrderByCreatedAtDesc(familyId);
+    }
+
     public RiskSnapshot findById(Long id) {
         return riskSnapshotRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("InstantÃƒÂ¡nea de riesgo no encontrada"));

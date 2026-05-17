@@ -26,20 +26,25 @@ public class PlanTaskService {
     private final ImprovementPlanRepository planRepository;
     private final FamilyRepository familyRepository;
 
-    @Transactional
-    public void createTasksFromAi(Long familyId, List<String> tasks) {
+    public void createTasksFromAi(Long familyId, List<com.integrityfamily.plan.dto.PlanDtos.AiMissionProposal> tasks) {
         log.info("📌 [PLAN-TASK] Iniciando persistencia de {} tareas para familia ID: {}", tasks.size(), familyId);
 
         ImprovementPlan plan = planRepository.findByFamilyId(familyId).stream()
                 .findFirst()
                 .orElseGet(() -> createDefaultPlan(familyId));
 
-        tasks.forEach(taskDescription -> {
+        tasks.forEach(proposal -> {
             PlanTask task = PlanTask.builder()
-                    .title("Misión Sugerida por IA")
-                    .description(taskDescription)
+                    .title(proposal.title() != null ? proposal.title() : "Misión Sugerida por IA")
+                    .description(proposal.description())
                     .completed(false)
                     .plan(plan)
+                    .dimension(proposal.dimension())
+                    .riesgoAsociado(proposal.problemDetected())
+                    .objetivo(proposal.objective())
+                    .indicadorCumplimiento(proposal.successMetric())
+                    .accionConcreta(proposal.missionType() + " - " + proposal.frequency())
+                    .impactoIcf(proposal.riskLevel() != null && proposal.riskLevel().equalsIgnoreCase("high") ? 20 : 10)
                     .build();
             plan.getTasks().add(task);
         });

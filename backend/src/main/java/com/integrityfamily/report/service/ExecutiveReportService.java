@@ -78,12 +78,17 @@ public class ExecutiveReportService {
     private Double calculateRegionalAverage(String municipio) {
         if (municipio == null) return 50.0; // Default de plataforma
         
-        // En una implementaciÃƒÂ³n real, esto serÃƒÂ­a un Query agregado en el Repository
-        // List<Family> families = familyRepository.findByMunicipio(municipio);
-        // double avg = families.stream().mapToDouble(f -> getLatestIcf(f.getId())).average().orElse(50.0);
+        List<Family> families = familyRepository.findByMunicipio(municipio);
         
-        log.info("Ã°Å¸â€œÅ  [BENCHMARK] Calculando promedio regional para: {}", municipio);
-        return 48.5; // SimulaciÃƒÂ³n para Armenia/QuindÃƒÂ­o
+        double avg = families.stream()
+                .map(f -> riskSnapshotRepository.findFirstByFamilyIdOrderByCreatedAtDesc(f.getId()))
+                .filter(java.util.Optional::isPresent)
+                .mapToDouble(opt -> opt.get().getIcf())
+                .average()
+                .orElse(50.0);
+        
+        log.info("📊 [BENCHMARK] Calculando promedio regional para: {}. Resultado: {}", municipio, avg);
+        return avg;
     }
 }
 

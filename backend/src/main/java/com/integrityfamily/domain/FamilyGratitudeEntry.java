@@ -7,8 +7,11 @@ import java.time.LocalDateTime;
 /**
  * SDD: Entidad de Registro de Gratitud Familiar.
  */
+import org.hibernate.annotations.Filter;
+
 @Entity
 @Table(name = "family_gratitude_entries")
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
 public class FamilyGratitudeEntry {

@@ -19,7 +19,7 @@ public class RiskSnapshotService {
     @Transactional
     public void saveSnapshot(RiskSnapshot snapshot) {
         repository.save(snapshot);
-        log.info("[NODO ARMENIA] Snapshot persistido. ICF: {}", snapshot.getIcf());
+        log.info("[ANALYTICS] Snapshot persistido. ICF: {}", snapshot.getIcf());
         
         // SDD Fix: Si getFamilyId() falla, intentamos obtenerlo de la relaciÃƒÂ³n o el campo directo
         if (snapshot.getHasCrisis() != null && snapshot.getHasCrisis()) {

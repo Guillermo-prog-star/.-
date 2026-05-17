@@ -52,6 +52,20 @@ public class PlanDtos {
             String aiReport,
             LocalDateTime aiGeneratedAt,
             List<PlanTaskResponse> tasks
+    @Builder
+    public record AiMissionProposal(
+            String dimension,
+            String riskLevel,
+            String problemDetected,
+            String objective,
+            String missionType,
+            List<String> targetMembers,
+            String frequency,
+            int estimatedDuration,
+            String successMetric,
+            String adaptiveReason,
+            String title,
+            String description
     ) {}
 
     public record TaskCompleteRequest(Boolean completed) {}

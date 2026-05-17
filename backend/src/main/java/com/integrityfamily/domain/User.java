@@ -6,8 +6,11 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.hibernate.annotations.Filter;
+
 @Entity
 @Table(name = "users")
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter
 @Setter
 @NoArgsConstructor

@@ -58,7 +58,7 @@ public class FamilyService {
 
     /**
      * Crea un nuevo nÃƒÂºcleo familiar vinculÃƒÂ¡ndolo al usuario y generando el cÃƒÂ³digo de nodo.
-     * Formato requerido: IF-CO-QUI-{YEAR}-{SEQUENCE}
+     * Formato requerido: IF-{YEAR}-{SEQUENCE}
      */
     @Transactional
     public FamilyResponse create(Family family, String creatorEmail) {
@@ -73,7 +73,7 @@ public class FamilyService {
         int currentYear = java.time.Year.now().getValue();
         long count = familyRepository.count() + 1;
         String sequence = String.format("%04d", count);
-        String familyCode = "IF-CO-QUI-" + currentYear + "-" + sequence;
+        String familyCode = "IF-" + currentYear + "-" + sequence;
         
         family.setFamilyCode(familyCode);
         family.setCreatedBy(creator);
@@ -120,7 +120,6 @@ public class FamilyService {
     @Transactional(readOnly = true)
     public List<FamilyResponse> findAll() {
         return familyRepository.findAll().stream()
-                .filter(f -> "IF-CO-QUI-2026-0004".equals(f.getFamilyCode()))
                 .map(this::toResponse)
                 .toList();
     }

@@ -21,6 +21,7 @@ export class RegisterPageComponent {
   fullName = '';
   email = '';
   password = '';
+  confirmPassword = '';
   voucher = ''; 
   familyName = '';
   
@@ -43,6 +44,11 @@ export class RegisterPageComponent {
       return;
     }
 
+    if (this.mode === 'NEW_FAMILY' && this.password !== this.confirmPassword) {
+      this.error = 'Las contraseñas no coinciden.';
+      return;
+    }
+
     this.loading = true;
     this.error = '';
 
@@ -55,9 +61,11 @@ export class RegisterPageComponent {
       };
 
       this.auth.register(payload).subscribe({
-        next: () => {
+        next: (res: any) => {
           this.loading = false;
-          this.router.navigate(['/members']); 
+          // Si obtuvo una familia, ir al dashboard; si no, a crear familia
+          const familyId = res?.user?.familyId || res?.familyId;
+          this.router.navigate(familyId ? ['/dashboard'] : ['/families/create']);
         },
         error: (e: any) => {
           this.loading = false;
@@ -69,18 +77,21 @@ export class RegisterPageComponent {
         familyName: this.familyName,
         fullName: this.fullName,
         email: this.email.trim().toLowerCase(),
-        password: this.password
+        password: this.password,
+        confirmPassword: this.confirmPassword
       };
 
 
+
       this.auth.registerFamily(payload).subscribe({
-        next: () => {
+        next: (res: any) => {
           this.loading = false;
-          this.router.navigate(['/members']);
+          // El nuevo admin de familia siempre tiene familyId asignado
+          this.router.navigate(['/dashboard']);
         },
         error: (e: any) => {
           this.loading = false;
-          this.error = e?.error?.message ?? 'Error al crear familia.';
+          this.error = e?.error?.message ?? 'Error al crear familia. Verifica los datos e intenta de nuevo.';
         }
       });
 

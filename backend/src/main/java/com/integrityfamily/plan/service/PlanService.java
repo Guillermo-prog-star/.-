@@ -28,6 +28,7 @@ public class PlanService {
     private final EvaluationRepository evaluationRepository;
     private final PlanTemplateRepository planTemplateRepository;
     private final PlanTemplateActivityRepository planTemplateActivityRepository;
+    private final org.springframework.amqp.rabbit.core.RabbitTemplate rabbitTemplate;
 
     @Transactional(readOnly = true)
     public List<PlanResponse> findAllPlans() {
@@ -298,6 +299,24 @@ public class PlanService {
             } catch (Exception e) {
                 log.error("❌ Error en generación automática de evidencia: {}", e.getMessage());
             }
+
+            // Publicar evento para WebSockets / Desacoplamiento
+            Map<String, Object> payload = new java.util.HashMap<>();
+            payload.put("taskId", savedTask.getId());
+            payload.put("completed", savedTask.isCompleted());
+            payload.put("familyId", task.getPlan().getFamily().getId());
+            payload.put("title", savedTask.getTitle());
+
+            com.integrityfamily.common.event.SystemEvent eventObj = 
+                com.integrityfamily.common.event.SystemEvent.of(
+                    "task.completed", 
+                    task.getPlan().getFamily().getId(), 
+                    payload, 
+                    "SYSTEM"
+                );
+
+            rabbitTemplate.convertAndSend(com.integrityfamily.common.config.RabbitConfig.EXCHANGE_NAME, "task.completed", eventObj);
+            log.info("📧 [PLAN] Evento 'task.completed' enviado para familia: {}", task.getPlan().getFamily().getId());
         }
 
         return toTaskResponse(savedTask);

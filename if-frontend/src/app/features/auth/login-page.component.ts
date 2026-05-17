@@ -12,17 +12,12 @@ import { AuthService } from '../../core/services/auth.service';
 export class LoginPageComponent {
   private auth   = inject(AuthService);
   private router = inject(Router);
-  email = 'william@integrity.family'; password = 'admin123';
+  email = ''; password = '';
   showPassword = false; rememberMe = true;
   loading = false; error = '';
   
   togglePassword() {
     this.showPassword = !this.showPassword;
-  }
-  quickLogin() {
-    this.email = 'william@integrity.family';
-    this.password = 'admin123';
-    this.submit();
   }
   submit() {
     this.loading = true; this.error = '';

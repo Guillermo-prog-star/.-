@@ -13,7 +13,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * entidades legacy en paquetes modulares.
  *
  * La inicialización de datos (usuarios, roles) se delega a:
- *   - NodoArmeniaMasterInitializer (auth/service) → usuarios william y admin demo
+ *   - MasterDataInitializer (common/initializer) → usuarios william y admin demo
  * No se duplica lógica aquí para evitar race conditions al arrancar.
  */
 @SpringBootApplication

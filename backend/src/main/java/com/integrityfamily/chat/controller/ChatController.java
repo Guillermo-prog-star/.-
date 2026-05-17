@@ -36,11 +36,10 @@ public class ChatController {
     private final SecurityValidator securityValidator;
 
     @GetMapping("/family/{familyId}")
-    public ApiResponse<List<ChatMessage>> getHistory(@PathVariable Long familyId, Principal principal) {
+    public ApiResponse<List<com.integrityfamily.domain.repository.ChatMessageSummary>> getHistory(@PathVariable Long familyId, Principal principal) {
         securityValidator.validateFamilyOwnership(familyId, principal);
-        // FIX: Requiere que el repositorio tenga
-        // findByFamilyIdOrderByCreatedAtAsc(Long)
-        return ApiResponse.ok(chatMessageRepository.findByFamilyIdOrderByCreatedAtAsc(familyId));
+        // FIX: Uso de proyecciones para evitar serialización circular
+        return ApiResponse.ok(chatMessageRepository.findProjectedByFamilyIdOrderByCreatedAtAsc(familyId));
     }
 
     @PostMapping("/send")

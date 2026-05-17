@@ -8,8 +8,11 @@ import java.time.LocalDateTime;
  * SDD: Entidad para el Registro Cronológico de Eventos Conductuales (Fricciones y Reparaciones).
  * Soporta la medición del Índice de Velocidad de Reparación Familiar (IVR).
  */
+import org.hibernate.annotations.Filter;
+
 @Entity
 @Table(name = "family_behavioral_events")
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
 public class FamilyBehavioralEvent {

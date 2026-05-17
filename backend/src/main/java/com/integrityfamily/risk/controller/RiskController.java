@@ -5,6 +5,7 @@ import com.integrityfamily.domain.RiskSnapshot;
 import com.integrityfamily.risk.service.RiskService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 
@@ -23,23 +24,24 @@ public class RiskController {
      * Obtiene el histÃƒÂ³rico de estados de riesgo.
      * SDD FIX: Sincronizado con la firma unificada del Service.
      */
-    @GetMapping
-    public ApiResponse<List<RiskSnapshot>> getAll() {
-        // SDD: Se asume refactorizaciÃƒÂ³n a nombres estÃƒÂ¡ndar en RiskService
-        return ApiResponse.ok(riskService.findAll());
+    @GetMapping("/family/{familyId}")
+    @PreAuthorize("@familySecurity.check(#familyId)")
+    public ApiResponse<List<RiskSnapshot>> getByFamily(@PathVariable Long familyId) {
+        return ApiResponse.ok(riskService.findByFamilyId(familyId));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@familySecurity.checkRiskSnapshot(#id)")
     public ApiResponse<RiskSnapshot> getById(@PathVariable Long id) {
         return ApiResponse.ok(riskService.findById(id));
     }
 
     /**
-     * Persiste un nuevo estado de riesgo (Uso tÃƒÂ©cnico/Sentinel).
+     * Persiste un nuevo estado de riesgo (Uso técnico/Sentinel).
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ApiResponse<RiskSnapshot> create(@RequestBody RiskSnapshot snapshot) {
-        // SDD FIX: Sincronizado con la firma real para evitar "cannot find symbol"
         return ApiResponse.ok(riskService.save(snapshot));
     }
 }

@@ -10,8 +10,14 @@ import java.util.List;
  * SDD: Entidad de Evaluación.
  * Refactorizada con campos para trazabilidad del algoritmo oficial RISK_ALGO_V1.
  */
+import org.hibernate.annotations.Filter;
+import org.hibernate.annotations.FilterDef;
+import org.hibernate.annotations.ParamDef;
+
 @Entity
 @Table(name = "evaluations")
+@FilterDef(name = "familyFilter", parameters = @ParamDef(name = "familyId", type = Long.class))
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter
 @Setter
 @NoArgsConstructor

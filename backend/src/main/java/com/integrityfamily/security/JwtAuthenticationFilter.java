@@ -17,6 +17,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+import jakarta.persistence.EntityManager;
+import org.hibernate.Session;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -24,6 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService userDetailsService;
+    private final EntityManager entityManager;
 
     @Override
     protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
@@ -43,8 +47,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             String token = extractJwtFromRequest(request);
             if (token != null) {
-                Claims claims = jwtTokenProvider.parse(token);
+                io.jsonwebtoken.Claims claims = jwtTokenProvider.parse(token);
                 String email = claims.getSubject();
+                
+                // Extract familyId and set in TenantContext
+                Number fid = claims.get("fid", Number.class);
+                if (fid != null) {
+                    Long familyId = fid.longValue();
+                    TenantContext.setCurrentFamilyId(familyId);
+                }
 
                 if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = userDetailsService.loadUserByUsername(email);
@@ -59,12 +70,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
+            filterChain.doFilter(request, response);
         } catch (Exception ex) {
             log.error("Fallo de validaciÃƒÂ³n de seguridad JWT. Solicitud denegada. Motivo: {}", ex.getMessage());
             SecurityContextHolder.clearContext();
+        } finally {
+            // Limpiar el contexto para evitar fugas de memoria entre hilos
+            TenantContext.clear();
         }
-        
-        filterChain.doFilter(request, response);
     }
 
     private String extractJwtFromRequest(HttpServletRequest request) {

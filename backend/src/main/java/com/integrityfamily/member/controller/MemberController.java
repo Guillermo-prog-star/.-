@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -88,21 +89,25 @@ public class MemberController {
     }
 
     @GetMapping("/family/{familyId}")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<List<FamilyMember>> getByFamily(@PathVariable Long familyId) {
         return ApiResponse.ok(memberService.findByFamily(familyId));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@familySecurity.checkMember(#id)")
     public ApiResponse<FamilyMember> getById(@PathVariable Long id) {
         return ApiResponse.ok(memberService.findById(id));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@familySecurity.checkMember(#id)")
     public ApiResponse<FamilyMember> update(@PathVariable Long id, @RequestBody FamilyMember member) {
         return ApiResponse.ok(memberService.update(id, member));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@familySecurity.checkMember(#id)")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         memberService.delete(id);
         return ApiResponse.ok(null);

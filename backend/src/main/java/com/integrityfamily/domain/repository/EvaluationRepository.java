@@ -14,4 +14,8 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     Optional<Evaluation> findFirstByFamilyIdAndStatusOrderByFinalizedAtDesc(Long familyId, EvaluationStatus status);
     Optional<Evaluation> findTopByFamilyIdAndStatusOrderByFinalizedAtDesc(Long familyId, EvaluationStatus status);
     List<Evaluation> findByFamilyIdOrderByFinalizedAtAsc(Long familyId);
+    List<EvaluationSummary> findSummaryByFamilyId(Long familyId);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"dimensionScores"})
+    List<Evaluation> findWithScoresByFamilyId(Long familyId);
 }

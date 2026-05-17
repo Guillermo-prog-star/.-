@@ -7,8 +7,11 @@ import java.time.LocalDateTime;
 /**
  * SDD Sprint 4: Entidad de Reflexión Guiada Estructurada.
  */
+import org.hibernate.annotations.Filter;
+
 @Entity
 @Table(name = "reflections")
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter
 @Setter
 @NoArgsConstructor

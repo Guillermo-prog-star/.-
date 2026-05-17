@@ -10,8 +10,11 @@ import java.util.List;
  * SDD: Entidad de Miembro de Familia.
  * Refactorizada para evitar LazyInitializationException en serialización.
  */
+import org.hibernate.annotations.Filter;
+
 @Entity
 @Table(name = "family_members")
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter
 @Setter
 @Builder

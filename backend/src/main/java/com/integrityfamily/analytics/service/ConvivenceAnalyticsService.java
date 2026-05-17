@@ -35,7 +35,9 @@ public class ConvivenceAnalyticsService {
                 .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + familyId));
 
         // 1. Diagnóstico Actual
-        List<Evaluation> evals = evaluationRepository.findByFamilyIdOrderByFinalizedAtAsc(familyId);
+        List<Evaluation> evals = evaluationRepository.findWithScoresByFamilyId(familyId).stream()
+                .sorted(Comparator.comparing(Evaluation::getFinalizedAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
         Evaluation latestEval = evals.isEmpty() ? null : evals.get(evals.size() - 1);
         Evaluation firstEval = evals.isEmpty() ? null : evals.get(0);
 

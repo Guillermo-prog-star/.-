@@ -16,7 +16,7 @@ import java.util.Map;
 
 /**
  * SDD-AI-04.2: Anthropic Claude Production Implementation.
- * Puente de inteligencia sistÃƒÂ©mica para el Nodo Armenia.
+ * Puente de inteligencia sistémica para el sistema.
  */
 @Service
 @Primary
@@ -34,9 +34,9 @@ public class ClaudeAiProvider implements AiProvider {
         String model = aiProperties.getAnthropic().getModel();
         String baseUrl = aiProperties.getAnthropic().getBaseUrl();
 
-        // ValidaciÃƒÂ³n de Conciencia (Secretos)
+        // Validación de Conciencia (Secretos)
         if ("MOCK_KEY".equals(apiKey) || apiKey == null || apiKey.isEmpty()) {
-            log.warn("[NODO ARMENIA] API Key de Claude ausente. Generando simulaciÃƒÂ³n.");
+            log.warn("[SYSTEM] API Key de Claude ausente. Generando simulación.");
             
             if (userMessage.contains("ALINEACIÓN ADAPTATIVA") || userMessage.contains("ANÁLISIS CUALITATIVO")) {
                 return """
@@ -101,7 +101,7 @@ public class ClaudeAiProvider implements AiProvider {
                     "messages", List.of(Map.of("role", "user", "content", fullPrompt)));
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
-            log.info("[NODO ARMENIA] Invocando Claude ({}) via {}...", model, baseUrl);
+            log.info("[SYSTEM] Invocando Claude ({}) via {}...", model, baseUrl);
 
             String url = baseUrl + "/messages";
             ResponseEntity<Map> response = restTemplate.postForEntity(url, entity, Map.class);

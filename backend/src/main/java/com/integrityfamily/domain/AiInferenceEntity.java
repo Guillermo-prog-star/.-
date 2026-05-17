@@ -2,7 +2,7 @@ package com.integrityfamily.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDateTime;
+import org.hibernate.annotations.Filter;
 
 /**
  * SDD Sprint 6: Entidad de Persistencia de Inferencia Estructurada y Gobernanza IA.
@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "ai_inferences")
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter
 @Setter
 @NoArgsConstructor

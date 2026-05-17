@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS families (
     pin_hash        VARCHAR(255),
     whatsapp        VARCHAR(30),
     municipio       VARCHAR(80),
+    country_code    VARCHAR(10),
+    department_code VARCHAR(10),
     created_by_id   BIGINT,
     sentinel_active BOOLEAN DEFAULT FALSE,
     icf_score       INT,

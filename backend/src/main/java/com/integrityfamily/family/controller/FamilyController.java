@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 /**
  * SDD: Controlador de Núcleos Familiares.
@@ -26,6 +27,7 @@ public class FamilyController {
     private final FamilyService familyService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Transactional(readOnly = true)
     public ApiResponse<List<FamilyResponse>> getAll() {
         return ApiResponse.ok(familyService.findAll());
@@ -45,6 +47,7 @@ public class FamilyController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@familySecurity.check(#id)")
     public ApiResponse<FamilyResponse> getById(@PathVariable Long id) {
         return ApiResponse.ok(familyService.findById(id));
     }
@@ -63,11 +66,13 @@ public class FamilyController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@familySecurity.check(#id)")
     public ApiResponse<FamilyResponse> update(@PathVariable Long id, @RequestBody Family family) {
         return ApiResponse.ok(familyService.update(id, family));
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@familySecurity.check(#id)")
     public ApiResponse<Void> delete(@PathVariable Long id) {
         familyService.delete(id);
         return ApiResponse.ok(null);

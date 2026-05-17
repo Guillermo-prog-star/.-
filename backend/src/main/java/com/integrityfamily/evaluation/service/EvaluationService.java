@@ -21,7 +21,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * SDD: Motor de Evaluación del Nodo Armenia.
+ * SDD: Motor de Evaluación.
  * Implementación rigurosa del Algoritmo Oficial de Riesgo Familiar RISK_ALGO_V1.
  */
 @Slf4j
@@ -45,6 +45,10 @@ public class EvaluationService {
 
     public List<Evaluation> findByFamilyId(Long familyId) {
         return evaluationRepository.findByFamilyId(familyId);
+    }
+
+    public List<EvaluationSummary> findSummaryByFamilyId(Long familyId) {
+        return evaluationRepository.findSummaryByFamilyId(familyId);
     }
 
     public Evaluation findById(Long id) {

@@ -9,7 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
+
 
 /**
  * SDD: Inicializador de Datos Maestro Unificado (v4.3).
@@ -23,146 +23,74 @@ public class MasterDataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final QuestionRepository questionRepository;
-    private final MilestoneRepository milestoneRepository; // Inyección de hitos
+    private final MilestoneRepository milestoneRepository;
     private final FamilyRepository familyRepository;
-    private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     @Transactional
     public void run(String... args) {
-        log.info(">>>> [SYSTEM] Iniciando Protocolo de Sincronización de Datos Maestro...");
+        log.info(">>>> [SYSTEM] Iniciando Protocolo Multi-Tenant de Sincronización...");
 
-        // SDD-Proactive-Self-Healing: Enforce unicidad y resolver colisiones de familias antes de continuar
-        cleanAndMergeDuplicateFamilies();
-
-        // 1. Asegurar Roles Base
+        // 1. Asegurar Roles Base (datos maestros globales, compartidos por todas las familias)
         Role adminRole = ensureRole("ROLE_ADMIN");
         ensureRole("ROLE_USER");
         ensureRole("ROLE_FAMILY_ADMIN");
         ensureRole("ROLE_FAMILY_MEMBER");
 
-        // 5. Asegurar Familia de Prueba para el Nodo Armenia
-        Family defaultFamily = ensureDefaultFamily();
-        
-        // 2. Sincronizar Usuarios Administrativos (Vinculado a Familia)
-        syncAdminUser("william@integrity.family", "William Lopez", "admin123", adminRole, defaultFamily);
+        // 2. Asegurar usuario administrador del sistema (sin familia fija — acceso global)
+        ensureSystemAdmin("william@integrity.family", "William Lopez", "admin123", adminRole);
 
-        // 3. Sembrar Banco de Preguntas
+        // 3. Sembrar Banco de Preguntas (datos maestros globales)
         seedQuestions();
 
-        // 4. Sembrar Línea de Tiempo (Hitos)
+        // 4. Sembrar Línea de Tiempo de Hitos (datos maestros globales)
         seedMilestones();
 
-        log.info(">>>> [SYSTEM] Sincronización completada satisfactoriamente.");
+        log.info(">>>> [SYSTEM] Sincronización multi-tenant completada. {} familia(s) activa(s).",
+                familyRepository.count());
     }
 
     private void cleanAndMergeDuplicateFamilies() {
-        log.info(">>>> [SELF-HEALING] Verificando duplicados de la Familia Lopez Rivera...");
-        
-        // 1. Desactivar temporalmente códigos duplicados en otras familias para evitar ConstraintViolationException
-        List<Family> allFamilies = familyRepository.findAll();
-        for (Family f : allFamilies) {
-            if (f.getId() != null && !f.getId().equals(1L)) {
-                boolean updated = false;
-                if ("IF-CO-QUI-2026-0004".equals(f.getFamilyCode())) {
-                    log.warn("⚠️ [CLEANUP] Detectada familia duplicada con código IF-CO-QUI-2026-0004 en ID: {}. Renombrando código...", f.getId());
-                    f.setFamilyCode("DUPLICATE-CODE-" + f.getId() + "-" + System.currentTimeMillis());
-                    updated = true;
-                }
-                if ("Familia Lopez Rivera".equals(f.getName())) {
-                    log.warn("⚠️ [CLEANUP] Detectada familia duplicada con nombre Familia Lopez Rivera en ID: {}. Renombrando nombre...", f.getId());
-                    f.setName("Duplicada " + f.getId() + " - Familia Lopez Rivera");
-                    updated = true;
-                }
-                if (updated) {
-                    familyRepository.saveAndFlush(f);
-                }
-            }
-        }
-
-        // 2. Ahora que las restricciones de clave única están liberadas, buscamos si existe la de ID 1.
-        Family targetFamily = familyRepository.findById(1L).orElse(null);
-        if (targetFamily == null) {
-            log.info(">>>> [SELF-HEALING] No existe la familia base ID 1. Se creará en ensureDefaultFamily.");
-            return;
-        }
-
-        // 3. Migrar cualquier miembro o usuario de las familias duplicadas renombradas a la familia ID 1
-        allFamilies = familyRepository.findAll();
-        for (Family f : allFamilies) {
-            if (f.getId() != null && !f.getId().equals(1L) && f.getName() != null && f.getName().startsWith("Duplicada ")) {
-                log.info("🏥 [SELF-HEALING] Migrando recursos de familia duplicada ID {} a la familia principal ID 1...", f.getId());
-                
-                // Migrar miembros
-                if (f.getMembers() != null && !f.getMembers().isEmpty()) {
-                    List<FamilyMember> membersToMigrate = new java.util.ArrayList<>(f.getMembers());
-                    f.getMembers().clear();
-                    familyRepository.saveAndFlush(f);
-                    
-                    for (FamilyMember member : membersToMigrate) {
-                        member.setFamily(targetFamily);
-                        memberRepository.save(member);
-                    }
-                    log.info("🏥 [SELF-HEALING] Migrados {} miembros.", membersToMigrate.size());
-                }
-                
-                // Migrar usuarios
-                List<User> usersToMigrate = userRepository.findAll();
-                int userCount = 0;
-                for (User user : usersToMigrate) {
-                    if (user.getFamily() != null && user.getFamily().getId().equals(f.getId())) {
-                        user.setFamily(targetFamily);
-                        userRepository.save(user);
-                        userCount++;
-                    }
-                }
-                if (userCount > 0) {
-                    log.info("🏥 [SELF-HEALING] Migrados {} usuarios.", userCount);
-                }
-
-                // No intentar eliminación física para evitar marcar la transacción como rollback-only en caso de restricciones de clave ajena
-                log.info("🏥 [SELF-HEALING] Familia duplicada ID {} neutralizada y renombrada con éxito.", f.getId());
-            }
-        }
+        // [MULTI-TENANT] Lógica destructiva eliminada — cada familia es autónoma y sus datos son propios.
     }
 
-    private Family ensureDefaultFamily() {
-        Family family = familyRepository.findById(1L).orElse(null);
-        if (family == null) {
-            List<Family> families = familyRepository.findByName("Familia Lopez Rivera");
-            if (!families.isEmpty()) {
-                family = families.get(0);
-            } else {
-                log.info(">>>> [SEEDER] Creando familia base: Familia Lopez Rivera");
-                family = familyRepository.save(Family.builder()
-                        .name("Familia Lopez Rivera")
-                        .description("Nodo de prueba inicial para el sistema de integridad.")
-                        .familyCode("IF-CO-QUI-2026-0004")
-                        .pin("1234")
-                        .currentMilestone("W1")
-                        .sentinelActive(true)
-                        .municipio("Armenia")
-                        .build());
+    /**
+     * [MULTI-TENANT] Asegura que el administrador del sistema exista.
+     * El administrador global NO pertenece a ninguna familia específica —
+     * FamilySecurityEvaluator le concede acceso de lectura a todos los nodos.
+     * Si ya existe con familia asignada, se preserva esa asignación.
+     */
+    private void ensureSystemAdmin(String email, String fullName, String rawPassword, Role role) {
+        userRepository.findByEmailIgnoreCase(email).ifPresentOrElse(
+            user -> {
+                // Solo actualizar password y rol — NUNCA tocar family_id existente
+                user.setPasswordHash(passwordEncoder.encode(rawPassword));
+                user.setFullName(fullName);
+                user.setEnabled(true);
+                if (user.getRoles() == null) user.setRoles(new java.util.ArrayList<>());
+                if (user.getRoles().stream().noneMatch(r -> r.getName().equals(role.getName()))) {
+                    user.getRoles().add(role);
+                }
+                userRepository.save(user);
+                log.info(">>>> [SYSTEM] Admin del sistema verificado: {} — familia: {}",
+                        email, user.getFamily() != null ? user.getFamily().getFamilyCode() : "GLOBAL");
+            },
+            () -> {
+                // Crear admin global sin familia — podrá acceder a todas por su ROLE_ADMIN
+                Family seed = familyRepository.findAll().stream().findFirst().orElse(null);
+                User newAdmin = User.builder()
+                        .email(email)
+                        .fullName(fullName)
+                        .passwordHash(passwordEncoder.encode(rawPassword))
+                        .enabled(true)
+                        .family(seed) // Asociar a la primera familia disponible si existe
+                        .roles(new java.util.ArrayList<>(java.util.List.of(role)))
+                        .build();
+                userRepository.save(newAdmin);
+                log.info(">>>> [SYSTEM] Admin del sistema creado: {}", email);
             }
-        } else {
-            // Self-Healing: Asegurar consistencia absoluta del Nodo Armenia de forma proactiva
-            boolean needsUpdate = false;
-            if (!"Familia Lopez Rivera".equals(family.getName())) {
-                family.setName("Familia Lopez Rivera");
-                needsUpdate = true;
-            }
-            if (!"IF-CO-QUI-2026-0004".equals(family.getFamilyCode())) {
-                family.setFamilyCode("IF-CO-QUI-2026-0004");
-                needsUpdate = true;
-            }
-            if (needsUpdate) {
-                family = familyRepository.save(family);
-                log.info("🏥 [SELF-HEALING] Familia base ID 1 corregida de forma proactiva a: Familia Lopez Rivera (IF-CO-QUI-2026-0004)");
-            }
-        }
-        log.info(">>>> [SYSTEM] Familia Base Identificada: {} (ID: {})", family.getName(), family.getId());
-        return family;
+        );
     }
 
     private void seedMilestones() {
@@ -255,39 +183,6 @@ public class MasterDataInitializer implements CommandLineRunner {
 
     private Role ensureRole(String name) {
         return roleRepository.findByName(name)
-                .orElseGet(() -> {
-                    return roleRepository.save(Role.builder().name(name).build());
-                });
-    }
-
-    private void syncAdminUser(String email, String fullName, String rawPassword, Role role, Family family) {
-        userRepository.findByEmailIgnoreCase(email).ifPresentOrElse(
-            user -> {
-                user.setPasswordHash(passwordEncoder.encode(rawPassword));
-                user.setFullName(fullName);
-                user.setEnabled(true);
-                user.setFamily(family);
-                if (user.getRoles() == null) user.setRoles(new java.util.ArrayList<>());
-                if (!user.getRoles().contains(role)) user.getRoles().add(role);
-                userRepository.save(user);
-            },
-            () -> {
-                User newUser = User.builder()
-                        .email(email)
-                        .fullName(fullName)
-                        .passwordHash(passwordEncoder.encode(rawPassword))
-                        .enabled(true)
-                        .family(family)
-                        .roles(new java.util.ArrayList<>(java.util.List.of(role)))
-                        .build();
-                userRepository.save(newUser);
-            }
-        );
-
-        // Sincronizar también en la tabla de miembros de familia para consistencia absoluta
-        memberRepository.findByEmail(email).ifPresent(member -> {
-            member.setFamily(family);
-            memberRepository.save(member);
-        });
+                .orElseGet(() -> roleRepository.save(Role.builder().name(name).build()));
     }
 }

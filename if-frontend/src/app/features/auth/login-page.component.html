@@ -52,16 +52,7 @@
         {{ loading ? 'Ingresando...' : 'Iniciar sesión' }}
       </button>
 
-      <div class="quick-access-box">
-        <button
-          type="button"
-          class="btn-quick-access"
-          (click)="quickLogin()"
-          [disabled]="loading"
-        >
-          <span class="pulse-icon">🔑</span> Acceso Directo (Familia Lopez Rivera)
-        </button>
-      </div>
+
     </form>
 
     <div class="secure-info">
@@ -71,7 +62,7 @@
     <div class="divider"></div>
 
     <div class="footer">
-      ¿Eres nuevo? <a routerLink="/register">Crea tu cuenta familiar</a>
+      ¿Eres nuevo? <a routerLink="/auth/register">Crea tu cuenta familiar</a>
     </div>
 
     <div class="footer-legal">

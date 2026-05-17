@@ -7,8 +7,11 @@ import java.time.LocalDateTime;
 /**
  * SDD: Entidad de Bitácora de Transformación Familiar.
  */
+import org.hibernate.annotations.Filter;
+
 @Entity
 @Table(name = "family_logbook_entries")
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter @Setter @Builder
 @NoArgsConstructor @AllArgsConstructor
 public class FamilyLogbookEntry {

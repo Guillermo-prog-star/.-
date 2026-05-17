@@ -54,12 +54,14 @@ public class ReportService {
     public ConsolidatedReport generateConsolidatedReport() {
         log.info("Ã°Å¸â€œÅ  [REPORT-SERVICE] Iniciando generaciÃƒÂ³n de reporte consolidado SDD...");
         
-        List<Family> families = familyRepository.findAll();
+        List<com.integrityfamily.domain.repository.FamilySummary> families = familyRepository.findProjectedBy();
         Map<String, List<Double>> dimensionScoresMap = new HashMap<>();
         List<CaseRegistry> highRiskCases = new ArrayList<>();
 
-        for (Family family : families) {
-            List<Evaluation> evals = evaluationRepository.findByFamilyIdOrderByFinalizedAtAsc(family.getId());
+        for (com.integrityfamily.domain.repository.FamilySummary family : families) {
+            List<Evaluation> evals = evaluationRepository.findWithScoresByFamilyId(family.getId()).stream()
+                    .sorted(Comparator.comparing(Evaluation::getFinalizedAt, Comparator.nullsLast(Comparator.naturalOrder())))
+                    .toList();
             if (evals.isEmpty()) continue;
 
             Evaluation preTest = evals.get(0);

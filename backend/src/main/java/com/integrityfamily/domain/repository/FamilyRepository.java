@@ -29,6 +29,10 @@ public interface FamilyRepository extends JpaRepository<Family, Long> {
 
     Optional<Family> findByCreatedBy_Email(String email);
 
+    List<FamilySummary> findProjectedBy();
+
+    Optional<FamilySummary> findProjectedById(Long id);
+
     List<Family> findByNextEvaluationAtBeforeOrNextEvaluationAtIsNull(LocalDateTime now);
 
     List<Family> findBySentinelActiveTrue();
@@ -36,4 +40,6 @@ public interface FamilyRepository extends JpaRepository<Family, Long> {
     Optional<Family> findByFamilyCode(String familyCode);
     
     List<Family> findByName(String name);
+
+    List<Family> findByMunicipio(String municipio);
 }

@@ -6,7 +6,7 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
- * CorsConfig: El puente de confianza del Nodo Armenia.
+ * CorsConfig: El puente de confianza del sistema.
  * Autoriza al Frontend (4200) para comunicarse con el Backend (8080).
  */
 // Archivo desactivado. La configuracion CORS se maneja exclusivamente en SecurityConfig.java

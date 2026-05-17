@@ -81,6 +81,13 @@ public class PlanTask {
     @Column(name = "impacto_icf")
     private Integer impactoIcf;
 
+    @com.fasterxml.jackson.annotation.JsonProperty("planId")
+    public void setPlanId(Long planId) {
+        if (planId != null) {
+            this.plan = ImprovementPlan.builder().id(planId).build();
+        }
+    }
+
     // SDD-FIX: Métodos explícitos para el build de Docker
     public String getDescription() { return this.description; }
     public void setDescription(String description) { this.description = description; }

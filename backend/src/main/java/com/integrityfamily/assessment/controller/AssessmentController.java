@@ -150,10 +150,24 @@ public class AssessmentController {
     @Operation(summary = "Obtener historial de evaluaciones de la familia", description = "Devuelve todas las sesiones de evaluación asociadas a un núcleo familiar.")
     @GetMapping("/family/{familyId}/history")
     public ResponseEntity<ApiResponse<List<EvaluationDtos.EvaluationResponse>>> getHistory(@PathVariable Long familyId) {
-        List<EvaluationDtos.EvaluationResponse> history = evaluationService.findByFamilyId(familyId).stream()
+        List<EvaluationDtos.EvaluationResponse> history = evaluationService.findSummaryByFamilyId(familyId).stream()
             .map(this::mapToResponse)
             .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.ok(history));
+    }
+
+    private EvaluationDtos.EvaluationResponse mapToResponse(com.integrityfamily.domain.repository.EvaluationSummary evaluation) {
+        return new EvaluationDtos.EvaluationResponse(
+            evaluation.getId(),
+            evaluation.getFamilyId(),
+            evaluation.getMemberId(),
+            evaluation.getStatus(),
+            evaluation.getStartedAt(),
+            evaluation.getFinalizedAt(),
+            evaluation.getIcf(),
+            evaluation.getRiskLevel(),
+            evaluation.getCriticalDimension()
+        );
     }
 
     @Operation(summary = "Consultar timeline de evolución diagnóstica", description = "Devuelve el historial evolutivo con el cálculo de índice saludable, nivel de riesgo y dimensión crítica por fecha.")

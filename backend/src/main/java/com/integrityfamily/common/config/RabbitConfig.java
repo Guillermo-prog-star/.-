@@ -25,6 +25,7 @@ public class RabbitConfig {
     public static final String SUGGESTED_TASKS_QUEUE = "if.queue.suggested.tasks";
     public static final String EVIDENCE_ANALYSIS_QUEUE = "if.queue.evidence.analysis";
     public static final String AI_INFERENCE_QUEUE = "q.ai.inference";
+    public static final String WEBSOCKET_DASHBOARD_QUEUE = "if.queue.websocket.dashboard";
     public static final String DLQ_NAME = "if.queue.deadletter";
 
     // Exchanges Adicionales
@@ -112,6 +113,14 @@ public class RabbitConfig {
                 .build();
     }
 
+    @Bean
+    public Queue websocketDashboardQueue() {
+        return QueueBuilder.durable(WEBSOCKET_DASHBOARD_QUEUE)
+                .withArgument("x-dead-letter-exchange", DLX_NAME)
+                .withArgument("x-dead-letter-routing-key", "websocket.dashboard.dead")
+                .build();
+    }
+
     // Bindings Estratégicos (Escucha selectiva de eventos)
     @Bean
     public Binding bitacoraBinding(Queue bitacoraQueue, TopicExchange eventExchange) {
@@ -150,6 +159,16 @@ public class RabbitConfig {
     @Bean
     public Binding aiInferenceBinding(Queue aiInferenceQueue, TopicExchange aiEventsExchange) {
         return BindingBuilder.bind(aiInferenceQueue).to(aiEventsExchange).with("crisis.detected");
+    }
+
+    @Bean
+    public Binding websocketDashboardBinding(Queue websocketDashboardQueue, TopicExchange eventExchange) {
+        return BindingBuilder.bind(websocketDashboardQueue).to(eventExchange).with("evaluation.completed");
+    }
+
+    @Bean
+    public Binding websocketDashboardTaskBinding(Queue websocketDashboardQueue, TopicExchange eventExchange) {
+        return BindingBuilder.bind(websocketDashboardQueue).to(eventExchange).with("task.completed");
     }
 
     @Bean

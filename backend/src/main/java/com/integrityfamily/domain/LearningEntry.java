@@ -8,8 +8,11 @@ import java.time.LocalDateTime;
  * SDD Sprint 4: Entidad de Aprendizaje Familiar Longitudinal.
  * Certifica cambios reales en el comportamiento y nivel de consciencia familiar.
  */
+import org.hibernate.annotations.Filter;
+
 @Entity
 @Table(name = "learning_entries")
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter
 @Setter
 @NoArgsConstructor

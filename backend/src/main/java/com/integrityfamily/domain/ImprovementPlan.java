@@ -9,8 +9,11 @@ import java.util.List;
 /**
  * SDD SPEC 6.3: Plan de Mejora Unificado (Plan Híbrido).
  */
+import org.hibernate.annotations.Filter;
+
 @Entity
 @Table(name = "plans")
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter
 @Setter
 @Builder

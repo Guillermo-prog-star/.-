@@ -24,10 +24,10 @@ public class SecurityWatchdogService {
     private final AdminAlertRepository alertRepository;
 
     /**
-     * Ciclo de Vigilancia de Datos: EjecuciÃƒÂ³n cada minuto.
-     * Escanea anomalÃƒÂ­as crÃƒÂ­ticas en los 50 nodos Alfa.
+     * Ciclo de Vigilancia de Datos: Ejecución cada 5 minutos.
+     * Escanea anomalías críticas en los 50 nodos Alfa.
      */
-    @Scheduled(fixedRate = 60000)
+    @Scheduled(fixedRate = 300000)
     @Transactional
     public void scanForAnomalies() {
         log.debug("Ã°Å¸â€ºÂ¡Ã¯Â¸Â [WATCHDOG] Escaneando anomalÃƒÂ­as en la red familiar...");

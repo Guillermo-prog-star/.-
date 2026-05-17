@@ -103,7 +103,26 @@ public class AiServiceImpl implements AiService {
     public String generateMissions(Family family) {
         log.info("[AI_MISSIONS] Generando misiones pedagógicas básicas para familia: {}", family.getName());
         AiContext aiContext = contextSynthesizer.synthesize(family, "NEUTRAL");
-        String prompt = "Como Mentor de Integridad, genera una lista de 3 misiones pedagógicas inmediatas para esta familia en formato JSON: [{\"title\": \"...\", \"description\": \"...\"}].";
+        String prompt = "Como Mentor de Integridad, genera una lista de 3 misiones pedagógicas inmediatas para esta familia. " +
+                "IMPORTANTE: No hables como un terapeuta ni uses lenguaje corporativo o clínico. Usa un tono sumamente cálido, sencillo, humano y directo, como un consejo de un amigo sabio. " +
+                "Las misiones deben ser microacciones cotidianas de fricción casi nula, fáciles de cumplir y recordar. " +
+                "Responde ÚNICAMENTE con un arreglo JSON válido siguiendo estrictamente este esquema:\n" +
+                "[\n" +
+                "  {\n" +
+                "    \"dimension\": \"EMOCIONES | COMUNICACION | HABITOS | TIEMPOS\",\n" +
+                "    \"riskLevel\": \"LOW | MEDIUM | HIGH | CRISIS\",\n" +
+                "    \"problemDetected\": \"Descripción sencilla del problema detectado (ej: Comparten poco tiempo)\",\n" +
+                "    \"objective\": \"Objetivo real (ej: Mejorar sintonía)\",\n" +
+                "    \"missionType\": \"Tipo de misión (ej: Cena, Paseo)\",\n" +
+                "    \"targetMembers\": [\"Todos\" o nombres específicos],\n" +
+                "    \"frequency\": \"Frecuencia (ej: Hoy, 1 vez)\",\n" +
+                "    \"estimatedDuration\": 15,\n" +
+                "    \"successMetric\": \"Evidencia simple (ej: Una foto o frase)\",\n" +
+                "    \"adaptiveReason\": \"Razón de la adaptación\",\n" +
+                "    \"title\": \"Título corto y cálido (ej: 🍽 Cena sin celulares)\",\n" +
+                "    \"description\": \"Instrucción muy corta, humana y motivadora (ej: Intenten comer juntos hoy sin pantallas. Lo importante es compartir el momento.)\"\n" +
+                "  }\n" +
+                "]";
         return aiProvider.generateResponse(prompt, aiContext);
     }
 

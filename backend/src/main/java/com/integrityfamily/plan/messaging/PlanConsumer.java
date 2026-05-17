@@ -9,12 +9,11 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
  * SDD-PLAN-01: Consumidor Asíncrono de Planes de Acción.
- * Procesa la recomendación de la IA y la convierte en tareas ejecutables.
+ * Procesa la recomendación de la IA y la convierte en tareas estructuradas.
  */
 @Component
 @Slf4j
@@ -22,6 +21,9 @@ import java.util.List;
 public class PlanConsumer {
 
     private final PlanTaskService planTaskService;
+    private final com.integrityfamily.ai.service.AiService aiService;
+    private final com.integrityfamily.domain.repository.FamilyRepository familyRepository;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @RabbitListener(queues = RabbitConfig.SUGGESTED_TASKS_QUEUE)
     @Transactional
@@ -29,16 +31,35 @@ public class PlanConsumer {
         log.info("🚀 [PLAN-CONSUMER] Iniciando orquestación de tareas para: {}", summary.familyName());
 
         try {
-            // 1. Extraer potenciales tareas del texto de la IA
-            List<String> suggestedTasks = parseAiRecommendation(summary.aiRecommendation());
+            // 1. Obtener la familia
+            com.integrityfamily.domain.Family family = familyRepository.findById(summary.familyId())
+                    .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + summary.familyId()));
 
-            if (suggestedTasks.isEmpty()) {
-                log.warn("⚠️ [PLAN-CONSUMER] El reporte de IA no contenía acciones claras para procesar.");
+            // 2. Generar misiones estructuradas usando la IA
+            String jsonMissions = aiService.generateMissions(family);
+            
+            // 3. Parsear el JSON
+            List<com.integrityfamily.plan.dto.PlanDtos.AiMissionProposal> proposals = objectMapper.readValue(
+                    jsonMissions, 
+                    new com.fasterxml.jackson.core.type.TypeReference<List<com.integrityfamily.plan.dto.PlanDtos.AiMissionProposal>>() {}
+            );
+
+            if (proposals.isEmpty()) {
+                log.warn("⚠️ [PLAN-CONSUMER] La IA no generó misiones válidas.");
                 return;
             }
 
-            // 2. Persistir tareas en el Plan de Acción de la familia
-            planTaskService.createTasksFromAi(summary.familyId(), suggestedTasks);
+            // 4. Persistir tareas en el Plan de Acción de la familia
+            planTaskService.createTasksFromAi(summary.familyId(), proposals);
+
+            log.info("✅ [PLAN-CONSUMER] Sincronización exitosa: {} nuevas misiones estructuradas para la familia.",
+                    proposals.size());
+
+        } catch (Exception e) {
+            log.error("❌ [PLAN-CONSUMER] Fallo crítico en el procesamiento de mensajes: {}", e.getMessage());
+            throw new RuntimeException("Fallo en PlanConsumer al procesar recomendaciones de la IA", e);
+        }
+    }
 
             log.info("✅ [PLAN-CONSUMER] Sincronización exitosa: {} nuevas tareas para la familia.",
                     suggestedTasks.size());

@@ -8,6 +8,7 @@ import com.integrityfamily.risk.service.CrisisService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ public class CrisisController {
      * POST /api/crisis/report — Registra una crisis e invoca al Mentor IA para contención.
      */
     @PostMapping("/report")
+    @PreAuthorize("@familySecurity.check(#request.familyId)")
     public ApiResponse<CriticalDay> reportCrisis(@Valid @RequestBody CreateCrisisRequest request) {
         CriticalDay response = crisisService.registerCrisis(
                 request.familyId(),
@@ -42,6 +44,7 @@ public class CrisisController {
      * GET /api/crisis/family/{familyId} — Recupera el historial de días críticos/crisis de una familia.
      */
     @GetMapping("/family/{familyId}")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<List<CriticalDay>> getHistory(@PathVariable Long familyId) {
         List<CriticalDay> history = crisisService.getHistory(familyId);
         return ApiResponse.ok(history, "Historial de contención recuperado.");
@@ -51,6 +54,7 @@ public class CrisisController {
      * POST /api/crisis/protocol/activate — Forzar activación de protocolo.
      */
     @PostMapping("/protocol/activate")
+    @PreAuthorize("@familySecurity.check(#body['familyId'])")
     public ApiResponse<Void> activate(@RequestBody Map<String, Object> body) {
         Long familyId = ((Number) body.get("familyId")).longValue();
         String reason = (String) body.get("reason");
@@ -63,6 +67,7 @@ public class CrisisController {
      * POST /api/crisis/FamilyMember/handle — Solicitud genérica de membresía de crisis.
      */
     @PostMapping("/FamilyMember/handle")
+    @PreAuthorize("@familySecurity.check(#body['familyId'])")
     public ApiResponse<Void> handleMemberCrisis(@RequestBody Map<String, Object> body) {
         Long familyId = ((Number) body.get("familyId")).longValue();
         String observation = (String) body.get("observation");
@@ -76,6 +81,7 @@ public class CrisisController {
      * GET /api/crisis/status/{familyId} — Estado actual de crisis de la familia.
      */
     @GetMapping("/status/{familyId}")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<Boolean> getStatus(@PathVariable Long familyId) {
         return ApiResponse.ok(crisisService.isUnderCrisis(familyId));
     }

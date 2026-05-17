@@ -25,7 +25,7 @@ public class AiInferenceService {
 
     @RabbitListener(queues = "q.ai.inference")
     public void handleCrisisSignal(String familyId) {
-        log.info("Ã°Å¸â€Â¥ [NODO ARMENIA] SEÃƒâ€˜AL CAPTURADA: ID {}", familyId);
+        log.info("Ã°Å¸â€Â¥ [AI-INFERENCE] SEÃƒâ€˜AL CAPTURADA: ID {}", familyId);
 
         try {
             Long id = Long.parseLong(familyId.trim());
@@ -56,7 +56,7 @@ public class AiInferenceService {
 
             criticalDayRepository.save(criticalDay);
 
-            log.info("Ã°Å¸â€™Â¾ [NODO ARMENIA] Flujo completado con ÃƒÂ©xito para familia {}", family.getName());
+            log.info("Ã°Å¸â€™Â¾ [AI-INFERENCE] Flujo completado con ÃƒÂ©xito para familia {}", family.getName());
 
         } catch (Exception e) {
             log.error("Ã¢ÂÅ’ FALLO CRÃƒÂTICO EN PROCESO DE IA: {}", e.getMessage(), e);

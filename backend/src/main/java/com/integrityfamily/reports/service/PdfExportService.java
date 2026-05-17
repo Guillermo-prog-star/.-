@@ -208,7 +208,7 @@ public class PdfExportService {
                     .setBorder(Border.NO_BORDER).setVerticalAlignment(VerticalAlignment.MIDDLE));
             document.add(headerTable.setMarginBottom(8));
             
-            document.add(new Paragraph("Motor de Diagnóstico Adaptativo Híbrido · Análisis Psicométrico Longitudinal · Armenia Nodo Central")
+            document.add(new Paragraph("Motor de Diagnóstico Adaptativo Híbrido · Análisis Psicométrico Longitudinal · Nodo Central")
                     .setFontSize(8).setItalic().setFontColor(ColorConstants.GRAY).setMarginBottom(20));
 
             // 2. FAMILY INFO CARD (Ficha de Caracterización)
@@ -216,7 +216,7 @@ public class PdfExportService {
             
             Cell leftInfo = new Cell().add(new Paragraph("NÚCLEO FAMILIAR: ").setBold().setFontColor(PRIMARY_BLUE).setFontSize(9))
                     .add(new Paragraph(family.getName()).setFontSize(12).setBold().setFontColor(ACCENT_BLUE))
-                    .add(new Paragraph("Código Familiar: " + family.getFamilyCode() + "  |  Ubicación: " + (family.getMunicipio() != null ? family.getMunicipio() : "Armenia")).setFontSize(8).setFontColor(ColorConstants.GRAY))
+                    .add(new Paragraph("Código Familiar: " + family.getFamilyCode() + "  |  Ubicación: " + (family.getMunicipio() != null ? family.getMunicipio() : "No especificada")).setFontSize(8).setFontColor(ColorConstants.GRAY))
                     .setBorder(new SolidBorder(BORDER_GRAY, 1)).setPadding(10).setBackgroundColor(LIGHT_GRAY);
             
             String currentMilestone = family.getCurrentMilestone() != null ? family.getCurrentMilestone() : "W1";

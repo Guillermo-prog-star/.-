@@ -21,10 +21,10 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public TerritorialEvolutionReportDto getTerritorialReport(Long familyId) {
-        Family family = familyRepository.findById(familyId)
+        com.integrityfamily.domain.repository.FamilySummary family = familyRepository.findProjectedById(familyId)
                 .orElseThrow(() -> new RuntimeException("Familia no encontrada"));
 
-        List<Evaluation> evaluations = evaluationRepository.findByFamilyId(familyId);
+        List<Evaluation> evaluations = evaluationRepository.findWithScoresByFamilyId(familyId);
 
         List<TerritorialEvolutionReportDto.MilestoneReportDto> milestones = evaluations.stream()
                 .filter(e -> e.getMilestoneKey() != null)
@@ -76,7 +76,7 @@ public class ReportService {
                 family.getFamilyCode(),
                 family.getId(),
                 family.getName(),
-                "CO", "QUI", null, family.getMunicipio(), null, null, null, null,
+                family.getCountryCode(), family.getDepartmentCode(), null, family.getMunicipio(), null, null, null, null,
                 milestones,
                 "UP", "ESTABLE", java.util.Collections.emptyList(), "Reporte generado"
         );

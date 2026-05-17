@@ -123,7 +123,7 @@ public class GlobalExceptionHandler {
         ErrorResponse error = new ErrorResponse();
         error.setSuccess(false);
         error.setCode("INTERNAL_SERVER_ERROR");
-        error.setMessage("Error interno en el Nodo Armenia: " + ex.getMessage());
+        error.setMessage("Error interno en el sistema: " + ex.getMessage());
         error.setPath(path);
         error.setTimestamp(LocalDateTime.now().toString());
 

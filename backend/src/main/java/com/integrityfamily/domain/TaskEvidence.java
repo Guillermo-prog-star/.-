@@ -7,8 +7,11 @@ import java.time.LocalDateTime;
 /**
  * SDD SPEC 6.4: Entidad de Persistencia de Evidencia Multimodal para Tareas del Plan.
  */
+import org.hibernate.annotations.Filter;
+
 @Entity
 @Table(name = "task_evidences")
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter
 @Setter
 @Builder

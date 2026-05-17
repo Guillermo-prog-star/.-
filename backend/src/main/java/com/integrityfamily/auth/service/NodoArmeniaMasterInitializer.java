@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import java.util.Collections;
 
-@Component("authNodoArmeniaMasterInitializer")
+// @Component("authNodoArmeniaMasterInitializer")
 @RequiredArgsConstructor
 @Slf4j
 public class NodoArmeniaMasterInitializer implements CommandLineRunner {
@@ -21,6 +21,6 @@ public class NodoArmeniaMasterInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         // SDD: Lógica movida a MasterDataInitializer para centralización arquitectónica.
-        log.debug(">>>> [NODO ARMENIA] Inicializador legacy (Auth) omitido.");
+        log.debug(">>>> [SYSTEM] Inicializador legacy (Auth) omitido.");
     }
 }

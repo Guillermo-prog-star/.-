@@ -200,7 +200,7 @@ public class SentimentAnalysisService {
             // 4. Prompt clínico estructurado para Claude
             String prompt = String.format(
                 "ALINEACIÓN ADAPTATIVA Y ANÁLISIS CUALITATIVO DE BITÁCORAS:\n\n" +
-                "Hola Claude. Como Mentor de Integridad Familiar del Nodo Armenia, realiza un análisis clínico cualitativo profundo " +
+                "Hola Claude. Como Mentor de Integridad Familiar, realiza un análisis clínico cualitativo profundo " +
                 "de las vivencias reales registradas por la familia en su bitácora semanal y contrástalas contra su última evaluación formal.\n\n" +
                 "=== DATOS GENERALES DE LA FAMILIA ===\n" +
                 "Nombre: %s\n" +
@@ -275,7 +275,7 @@ public class SentimentAnalysisService {
         double score = 0.0;
         int wordCount = 0;
 
-        // Lexicón de valencias del Nodo Armenia
+        // Lexicón de valencias del sistema
         Map<String, Double> lexicon = new HashMap<>();
         // Negativos / Crisis
         lexicon.put("crisis", -1.0);

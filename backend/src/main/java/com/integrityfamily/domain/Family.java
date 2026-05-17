@@ -48,6 +48,12 @@ public class Family {
 
     private String municipio;
 
+    @Column(name = "country_code")
+    private String countryCode;
+
+    @Column(name = "department_code")
+    private String departmentCode;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

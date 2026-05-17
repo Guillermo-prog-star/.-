@@ -5,11 +5,14 @@ import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.Filter;
+
 /**
  * SDD Sprint 5: Snapshot histórico de métricas operativas de convivencia familiar.
  */
 @Entity
 @Table(name = "family_metrics_snapshots")
+@Filter(name = "familyFilter", condition = "family_id = :familyId")
 @Getter
 @Setter
 @NoArgsConstructor

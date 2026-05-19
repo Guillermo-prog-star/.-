@@ -93,6 +93,33 @@ public class AnalyticsController {
     }
 
     /**
+     * SDD Analytics v2: Historial de ICF para gráfico de tendencia.
+     * Devuelve todos los puntos (id, icf, riskLevel, fecha) de evaluaciones finalizadas.
+     */
+    @GetMapping("/family/{familyId}/icf-history")
+    @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
+    public ApiResponse<java.util.List<java.util.Map<String, Object>>> getIcfHistory(@PathVariable Long familyId) {
+        log.info("📈 [ANALYTICS] Solicitando historial ICF para familia: {}", familyId);
+
+        java.util.List<java.util.Map<String, Object>> history =
+            evaluationService.findByFamilyId(familyId).stream()
+                .filter(e -> com.integrityfamily.domain.EvaluationStatus.FINALIZED == e.getStatus())
+                .filter(e -> e.getIcf() != null)
+                .map(e -> {
+                    java.util.Map<String, Object> pt = new java.util.LinkedHashMap<>();
+                    pt.put("evaluationId", e.getId());
+                    pt.put("icf",          Math.round(e.getIcf() * 10.0) / 10.0);
+                    pt.put("riskLevel",    e.getRiskLevel());
+                    pt.put("hasCrisis",    Boolean.TRUE.equals(e.getHasCrisis()));
+                    pt.put("finalizedAt",  e.getFinalizedAt() != null ? e.getFinalizedAt().toString() : null);
+                    return pt;
+                })
+                .toList();
+
+        return ApiResponse.ok(history);
+    }
+
+    /**
      * SDD EXTRA: Disparador manual de analítica profunda.
      * Útil cuando el admin quiere forzar una actualización del motor Sentinel.
      */

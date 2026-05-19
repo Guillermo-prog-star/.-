@@ -4,7 +4,7 @@ import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import {
   CognitiveSnapshot, NarrativeResponse,
-  GraphResponse, ReflectionResponse
+  GraphResponse, ReflectionResponse, IcfHistoryPoint
 } from '../models/cognitive.model';
 
 interface ApiResponse<T> { success: boolean; data: T; message: string; }
@@ -35,6 +35,16 @@ export class CognitiveService {
     return this.http.get<ApiResponse<GraphResponse>>(`${this.base}/${familyId}/graph`).pipe(
       map(r => r.data),
       catchError(() => of(null))
+    );
+  }
+
+  /** Historial ICF de todas las evaluaciones finalizadas — para gráfico de tendencia */
+  getIcfHistory(familyId: number): Observable<IcfHistoryPoint[]> {
+    return this.http.get<ApiResponse<IcfHistoryPoint[]>>(
+      `/api/analytics/family/${familyId}/icf-history`
+    ).pipe(
+      map(r => r.data),
+      catchError(() => of([]))
     );
   }
 

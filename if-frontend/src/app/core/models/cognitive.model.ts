@@ -1,3 +1,12 @@
+// ─── SDD Analytics v2 ────────────────────────────────────────────────────────
+export interface IcfHistoryPoint {
+  evaluationId: number;
+  icf: number;
+  riskLevel: string;
+  hasCrisis: boolean;
+  finalizedAt: string | null;
+}
+
 // ─── SDD Fases 1–5: Modelos del Sistema Cognitivo Familiar ───────────────────
 
 export type NarrativePhase =

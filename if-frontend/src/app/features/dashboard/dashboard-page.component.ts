@@ -20,6 +20,7 @@ import { ScenariosGridComponent } from './components/scenarios-grid/scenarios-gr
 import { AiInsightPanelComponent } from './components/ai-insight-panel/ai-insight-panel.component';
 import { SentinelAlertComponent } from './components/sentinel-alert/sentinel-alert.component';
 import { CognitivePreviewComponent } from './components/cognitive-preview/cognitive-preview.component';
+import { IcfTrendChartComponent } from './components/icf-trend-chart/icf-trend-chart.component';
 
 /**
  * SDD: Dashboard Page Component
@@ -38,7 +39,8 @@ import { CognitivePreviewComponent } from './components/cognitive-preview/cognit
     ScenariosGridComponent,
     AiInsightPanelComponent,
     SentinelAlertComponent,
-    CognitivePreviewComponent
+    CognitivePreviewComponent,
+    IcfTrendChartComponent
   ],
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.css'],

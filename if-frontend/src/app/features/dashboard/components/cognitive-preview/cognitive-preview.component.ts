@@ -50,13 +50,13 @@ import { CognitiveSnapshot } from '../../../../core/models/cognitive.model';
           <div class="p-3 bg-white/[0.02] rounded-2xl border border-white/5">
             <span class="text-[9px] text-white/25 uppercase tracking-widest block mb-1">Etapa</span>
             <span class="text-xs font-black text-violet-400 uppercase">
-              {{ snapshot()!.identityProfile?.evolutionStage ?? 'INITIAL' }}
+              {{ snapshot()!.identityProfile.evolutionStage }}
             </span>
           </div>
           <div class="p-3 bg-white/[0.02] rounded-2xl border border-white/5">
             <span class="text-[9px] text-white/25 uppercase tracking-widest block mb-1">Ciclos</span>
             <span class="text-xs font-black text-white/80">
-              {{ snapshot()!.identityProfile?.completedCycles ?? 0 }}
+              {{ snapshot()!.identityProfile.completedCycles }}
             </span>
           </div>
         </div>
@@ -78,8 +78,8 @@ import { CognitiveSnapshot } from '../../../../core/models/cognitive.model';
         <div class="flex items-center justify-between text-[10px]">
           <span class="text-white/30 uppercase tracking-widest">Grafo relacional</span>
           <div class="flex items-center gap-2">
-            <span [ngClass]="snapshot()!.graphSummary?.healthy ? 'text-emerald-400' : 'text-amber-400'">
-              {{ snapshot()!.graphSummary?.healthy ? '✓ Saludable' : '⚠ Atención' }}
+            <span [ngClass]="snapshot()!.graphSummary.healthy ? 'text-emerald-400' : 'text-amber-400'">
+              {{ snapshot()!.graphSummary.healthy ? '✓ Saludable' : '⚠ Atención' }}
             </span>
             <span class="text-white/20">·</span>
             <span class="text-white/40">{{ snapshot()?.graphSummary?.totalDyads ?? 0 }} díadas</span>

@@ -4,12 +4,20 @@ import com.integrityfamily.ai.service.AiService;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.dto.EvaluationDtos;
 import com.integrityfamily.domain.repository.EvaluationRepository;
+import com.integrityfamily.domain.repository.EvaluationSummary;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.MemberRepository;
 import com.integrityfamily.domain.repository.QuestionRepository;
 import com.integrityfamily.risk.service.RiskService;
 import com.integrityfamily.milestone.service.MilestoneService;
 import com.integrityfamily.plan.service.PlanTaskService;
+import com.integrityfamily.plan.service.PlanGenerationService;
+import com.integrityfamily.analytics.service.FamilyProgressAnalyticsService;
+import com.integrityfamily.cognitive.service.FamilyMemoryService;
+import com.integrityfamily.cognitive.service.FamilySkillEngine;
+import com.integrityfamily.cognitive.service.FamilyReflectionService;
+import com.integrityfamily.cognitive.service.NarrativeEvolutionEngine;
+import com.integrityfamily.cognitive.service.FamilyIdentityGraphService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -38,6 +46,13 @@ public class EvaluationService {
     private final MilestoneService milestoneService;
     private final AiService aiService;
     private final PlanTaskService planTaskService;
+    private final PlanGenerationService planGenerationService;
+    private final FamilyProgressAnalyticsService familyProgressAnalyticsService;
+    private final FamilyMemoryService familyMemoryService;
+    private final FamilySkillEngine familySkillEngine;
+    private final FamilyReflectionService familyReflectionService;
+    private final NarrativeEvolutionEngine narrativeEvolutionEngine;
+    private final FamilyIdentityGraphService familyIdentityGraphService;
 
     public List<Evaluation> findAll() {
         return evaluationRepository.findAll();
@@ -270,10 +285,16 @@ public class EvaluationService {
     }
 
     private String detectCriticalDimensionAlgo(Map<String, Double> scores) {
-        return scores.entrySet().stream()
-                .min(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse("emociones");
+        String criticalDim = "emociones";
+        double minScore = Double.MAX_VALUE;
+        for (String dim : List.of("emociones", "comunicacion", "habitos", "tiempos")) {
+            double score = scores.getOrDefault(dim, 100.0);
+            if (score < minScore) {
+                minScore = score;
+                criticalDim = dim;
+            }
+        }
+        return criticalDim;
     }
 
     @Transactional(readOnly = true)
@@ -339,10 +360,88 @@ public class EvaluationService {
         }
 
         try {
-            planTaskService.generateTasksFromDiagnosis(saved);
-            log.info("🎯 [EVALUATION] Misiones automáticas generadas para el diagnóstico.");
+            planGenerationService.generatePlanFromEvaluation(Map.of(
+                "evaluationId", saved.getId(),
+                "familyId", saved.getFamily().getId(),
+                "riskLevel", saved.getRiskLevel() != null ? saved.getRiskLevel() : "MEDIUM",
+                "requiresImmediatePlan", saved.getHasCrisis() != null ? saved.getHasCrisis() : false
+            ));
+            log.info("🎯 [EVALUATION] Plan híbrido generado por IA exitosamente.");
         } catch (Exception e) {
-            log.error("⚠️ [EVALUATION] Error al generar misiones automáticas: {}", e.getMessage());
+            log.error("⚠️ [EVALUATION] Error al generar plan híbrido por IA: {}", e.getMessage());
+        }
+
+        // [DIAGNOSTICO CONSCIENTE] Generar misiones automáticas según rol del miembro
+        try {
+            planTaskService.generateTasksFromDiagnosis(saved);
+            log.info("🎯 [EVALUATION] Misiones automáticas de diagnóstico generadas.");
+        } catch (Exception e) {
+            log.error("⚠️ [EVALUATION] Error al generar misiones de diagnóstico: {}", e.getMessage());
+        }
+
+        // [MEMORIA COGNITIVA] Capturar episodio y consolidar patrón semántico
+        try {
+            familyMemoryService.captureEvaluationMemory(saved);
+            log.info("🧠 [EVALUATION] Memoria episódica capturada en el sistema cognitivo.");
+        } catch (Exception e) {
+            log.error("⚠️ [EVALUATION] Error al capturar memoria cognitiva: {}", e.getMessage());
+        }
+
+        // [SKILL ENGINE] Detectar patrones, aplicar skills y extraer nuevas habilidades
+        try {
+            FamilySkillEngine.SkillEngineResult result =
+                    familySkillEngine.analyze(saved.getFamily().getId(), saved);
+            if (result.hasNewSkill()) {
+                log.info("🌱 [EVALUATION] Nueva habilidad cognitiva extraída: '{}'",
+                        result.newSkillExtracted().getSkillName());
+            }
+            if (result.hasAppliedSkills()) {
+                log.info("⚙️ [EVALUATION] {} skills activadas para esta familia.",
+                        result.appliedSkills().size());
+            }
+        } catch (Exception e) {
+            log.error("⚠️ [EVALUATION] Error en motor de habilidades cognitivas: {}", e.getMessage());
+        }
+
+        // [GRAFO DE IDENTIDAD] Actualizar dinámicas relacionales entre miembros
+        try {
+            FamilyIdentityGraphService.GraphSnapshot graph =
+                    familyIdentityGraphService.updateGraph(saved.getFamily().getId(), saved);
+            log.info("🕸️ [EVALUATION] Grafo de identidad actualizado. Díadas: {} | Cohesión: {} | Conflictos: {}",
+                    graph.totalDyads(), String.format("%.1f", graph.cohesionDensity()), graph.conflictiveEdges());
+        } catch (Exception e) {
+            log.error("⚠️ [EVALUATION] Error en grafo de identidad: {}", e.getMessage());
+        }
+
+        // [NARRATIVA] Evolucionar la historia familiar y detectar puntos de inflexión
+        try {
+            NarrativeEvolutionEngine.NarrativeSnapshot narrative =
+                    narrativeEvolutionEngine.evolve(saved.getFamily().getId(), saved);
+            log.info("📖 [EVALUATION] Narrativa evolucionada. Capítulo #{}: '{}' | Fase: {} | Turning point: {}",
+                    narrative.currentChapter() != null ? narrative.currentChapter().getChapterNumber() : 1,
+                    narrative.currentChapter() != null ? narrative.currentChapter().getTitle() : "—",
+                    narrative.currentPhase(),
+                    narrative.turningPointDetected());
+        } catch (Exception e) {
+            log.error("⚠️ [EVALUATION] Error en motor narrativo: {}", e.getMessage());
+        }
+
+        // [REFLEXIÓN AUTÓNOMA] Autoevaluación del sistema sobre efectividad de intervenciones
+        try {
+            FamilyReflectionService.ReflectionReport report =
+                    familyReflectionService.reflect(saved.getFamily().getId());
+            log.info("🪞 [EVALUATION] Reflexión autónoma completada. Efectividad: {} | Abandono: {}",
+                    report.effectiveness().level(), report.abandonmentRisk().level());
+        } catch (Exception e) {
+            log.error("⚠️ [EVALUATION] Error en reflexión autónoma: {}", e.getMessage());
+        }
+
+        // [ANALYTICS] Análisis de Progreso Longitudinal (Rediseño 6.6)
+        try {
+            familyProgressAnalyticsService.analyzeProgress(saved.getId());
+            log.info("📊 [EVALUATION] Análisis de progreso completado y snapshot guardado.");
+        } catch (Exception e) {
+            log.error("⚠️ [EVALUATION] Error al analizar el progreso: {}", e.getMessage());
         }
 
         Map<String, Object> payload = new HashMap<>();

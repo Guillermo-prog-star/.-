@@ -3,7 +3,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { adminGuard } from './core/guards/admin.guard';
 
 /**
- * SDD: Mapa de Rutas del Nodo Armenia.
+ * SDD: Mapa de Rutas del Nodo Central.
  * Postura Técnica: Optimización de carga por chunks y segmentación por dominios de seguridad.
  * REGISTRO: Se activa el 'Admin Sentinel Guard' siguiendo el protocolo de auditoría de William.
  * HMR-TRIGGER: Forzando reconstrucción del grafo de chunks interactivos del Portal Familiar.
@@ -84,6 +84,7 @@ export const routes: Routes = [
       { path: 'logbook', title: 'Bitácora Familiar', loadComponent: () => import('./features/family-logbook/family-logbook.component').then(m => m.FamilyLogbookComponent) },
       { path: 'gratitude', title: 'Muro de Gratitud', loadComponent: () => import('./features/family-gratitude/family-gratitude.component').then(m => m.FamilyGratitudeComponent) },
       { path: 'my-space', title: 'Mi Espacio', loadComponent: () => import('./features/my-space/my-space.component').then(m => m.MySpaceComponent) },
+      { path: 'cognitive', title: 'Sistema Cognitivo', loadComponent: () => import('./features/cognitive/cognitive-page.component').then(m => m.CognitivePageComponent) },
 
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]

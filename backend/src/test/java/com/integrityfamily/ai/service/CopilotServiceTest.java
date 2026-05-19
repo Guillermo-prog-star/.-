@@ -1,7 +1,6 @@
 package com.integrityfamily.ai.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.integrityfamily.ai.dto.AiContext;
 import com.integrityfamily.ai.dto.CopilotDtos.*;
 import com.integrityfamily.ai.provider.AiProvider;
 import com.integrityfamily.domain.*;
@@ -53,6 +52,9 @@ public class CopilotServiceTest {
     @Mock
     private ObjectMapper objectMapper;
 
+    @Mock
+    private com.integrityfamily.ai.config.AiProperties aiProperties;
+
     @InjectMocks
     private CopilotService copilotService;
 
@@ -69,6 +71,8 @@ public class CopilotServiceTest {
                 .criticalDimension("comunicacion")
                 .finalizedAt(LocalDateTime.now())
                 .build();
+        
+        Mockito.lenient().when(aiProperties.getAnthropic()).thenReturn(new com.integrityfamily.ai.config.AiProperties.Anthropic());
     }
 
     @Test
@@ -100,10 +104,8 @@ public class CopilotServiceTest {
         Mockito.when(taskEvidenceRepository.findAll()).thenReturn(List.of());
         Mockito.when(learningEntryRepository.findByFamilyId(1L)).thenReturn(List.of());
 
-        // Simular que ObjectMapper falla al parsear un texto libre para disparar el fallback determinístico
+        // aiProvider.generateRawResponse devuelve null → NPE en replace() → fallback determinístico se activa
         Mockito.when(objectMapper.writeValueAsString(any())).thenReturn("{\"familyId\": 1}");
-        Mockito.when(aiProvider.generateResponse(any(String.class), any(AiContext.class))).thenReturn("Respuesta de texto libre de Claude");
-        Mockito.when(objectMapper.readValue(any(String.class), Mockito.eq(StructuredAiInferenceResponse.class))).thenThrow(new RuntimeException("JSON Invalido"));
 
         Mockito.when(inferenceRepository.save(any(AiInferenceEntity.class))).thenAnswer(i -> i.getArgument(0));
 

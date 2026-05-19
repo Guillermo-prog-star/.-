@@ -16,7 +16,7 @@ import { AuthService } from '../../core/services/auth.service';
       <div class="brand">
         <div class="logo-circle">IF</div>
         <div class="brand-title">INTEGRITY FAMILY</div>
-        <div class="version-tag">NODO ARMENIA v4.2</div>
+        <div class="version-tag">NODO CENTRAL v4.2</div>
       </div>
       
       <nav>
@@ -38,6 +38,7 @@ import { AuthService } from '../../core/services/auth.service';
         <a routerLink="/my-space"  class="nav-item" routerLinkActive="active"><span class="icon">🔒</span> 8. Mi Espacio</a>
         
         <div class="divider"></div>
+        <a routerLink="/cognitive" class="nav-item" routerLinkActive="active"><span class="icon">🧠</span> Sistema Cognitivo</a>
         <a routerLink="/chat"   class="nav-item" routerLinkActive="active"><span class="icon">✨</span> Consultor IA</a>
         <a routerLink="/crisis" class="nav-item crisis-btn" routerLinkActive="active"><span class="icon">🆘</span> Crisis</a>
       </nav>
@@ -75,7 +76,7 @@ export class SidebarComponent {
 
 
   handleLogout() {
-    if (confirm('¿Finalizar sesión en el Nodo Armenia?')) {
+    if (confirm('¿Finalizar sesión en el Nodo Central?')) {
       this.authService.logout();
     }
   }

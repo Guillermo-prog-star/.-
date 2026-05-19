@@ -19,6 +19,7 @@ import { AiPlanTimelineComponent } from './components/ai-plan-timeline/ai-plan-t
 import { ScenariosGridComponent } from './components/scenarios-grid/scenarios-grid.component';
 import { AiInsightPanelComponent } from './components/ai-insight-panel/ai-insight-panel.component';
 import { SentinelAlertComponent } from './components/sentinel-alert/sentinel-alert.component';
+import { CognitivePreviewComponent } from './components/cognitive-preview/cognitive-preview.component';
 
 /**
  * SDD: Dashboard Page Component
@@ -36,7 +37,8 @@ import { SentinelAlertComponent } from './components/sentinel-alert/sentinel-ale
     AiPlanTimelineComponent,
     ScenariosGridComponent,
     AiInsightPanelComponent,
-    SentinelAlertComponent
+    SentinelAlertComponent,
+    CognitivePreviewComponent
   ],
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.css'],

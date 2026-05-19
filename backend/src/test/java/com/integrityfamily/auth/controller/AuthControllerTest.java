@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrityfamily.auth.dto.*;
 import com.integrityfamily.auth.service.AuthService;
 import com.integrityfamily.plan.scheduler.PlanComplianceScheduler;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -15,7 +16,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -37,6 +37,14 @@ public class AuthControllerTest {
 
     @MockitoBean
     private com.integrityfamily.security.JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @MockitoBean
+    private com.integrityfamily.security.TenantInterceptor tenantInterceptor;
+
+    @BeforeEach
+    void setUp() throws Exception {
+        Mockito.lenient().when(tenantInterceptor.preHandle(any(), any(), any())).thenReturn(true);
+    }
 
     @Test
     @DisplayName("Debe autenticar exitosamente y devolver JWT y Refresh Token")

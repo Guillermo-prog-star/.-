@@ -1,6 +1,21 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { Observable } from 'rxjs';
+
+export interface FamilyProgressResponse {
+    familyId: number;
+    currentEvaluationId: number;
+    previousEvaluationId: number | null;
+    milestoneCode: string;
+    previousIcf: number;
+    currentIcf: number;
+    deltaIcf: number;
+    classification: string;
+    interpretation: string;
+    dimensionEvolution: { [key: string]: number };
+    recommendedAction: string;
+}
 
 @Injectable({ providedIn: 'root' })
 export class DashboardService {
@@ -14,12 +29,19 @@ export class DashboardService {
      * SDD: Sincronización de métricas solicitada por ScenariosGrid
      */
     updateMetrics(payload: any): void {
-        console.log('SDD: Sincronizando Nodo Armenia...', payload);
+        console.log('SDD: Sincronizando Métricas...', payload);
         this._metrics.set({ ...this._metrics(), ...payload });
 
         this.http.patch(`${this.apiUrl}/metrics`, payload).subscribe({
             next: (res: any) => console.log('Métricas persistidas.'),
             error: (err: any) => console.error('Error de persistencia:', err)
         });
+    }
+
+    /**
+     * Obtiene el análisis de progreso longitudinal de la familia.
+     */
+    getFamilyProgress(familyId: number): Observable<FamilyProgressResponse> {
+        return this.http.get<FamilyProgressResponse>(`${environment.apiUrl}/api/analytics/family/${familyId}/progress`);
     }
 }

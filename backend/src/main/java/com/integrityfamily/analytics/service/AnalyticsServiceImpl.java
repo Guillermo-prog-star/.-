@@ -17,6 +17,7 @@ import com.integrityfamily.domain.LogbookStatus;
 import com.integrityfamily.domain.FamilyLogbookEntry;
 import com.integrityfamily.domain.repository.FamilyLogbookRepository;
 import com.integrityfamily.domain.repository.RiskSnapshotRepository;
+import com.integrityfamily.domain.repository.ImprovementPlanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -45,6 +46,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final RiskSnapshotRepository riskSnapshotRepository;
     private final ChecklistItemRepository checklistRepository;
     private final FamilyLogbookRepository logbookRepository;
+    private final ImprovementPlanRepository planRepository;
     private final RabbitTemplate rabbitTemplate;
 
     @Override
@@ -121,6 +123,12 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .findFirst()
                 .orElse("No hay acuerdos recientes registrados.");
 
+        // 9.5 Recuperación de Reporte de Plan IA
+        String planAiReport = planRepository.findByFamilyId(familyId).stream()
+                .findFirst()
+                .map(com.integrityfamily.domain.ImprovementPlan::getAiReport)
+                .orElse("No hay reporte de plan disponible.");
+
         // 10. Motor de Activacion Proactiva Sentinel (Capa de Contencion)
         boolean sentinelTriggered = Boolean.TRUE.equals(family.getSentinelActive())
                 || (lastEval != null && lastEval.getIcf() != null && lastEval.getIcf() < 40.0)
@@ -169,6 +177,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .dimensionScores(dims)
                 .suggestedActions(suggestedActions)
                 .aiRecommendation(finalInsight)
+                .planAiReport(planAiReport)
                 .openLogbookEntriesCount(openLogbookItems)
                 .latestFamilyAgreement(latestAgreement)
                 .build();

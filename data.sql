@@ -9,7 +9,7 @@ INSERT INTO roles (name) VALUES ('ROLE_USER') ON DUPLICATE KEY UPDATE name=VALUE
 -- Password: admin123
 INSERT INTO users (full_name, email, password_hash, enabled, created_at, family_id) 
 VALUES ('William Lopez', 'william@integrity.family', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xdqD1884W6G6G2DW', true, NOW(), 1)
-ON DUPLICATE KEY UPDATE full_name=VALUES(full_name);
+ON DUPLICATE KEY UPDATE full_name=VALUES(full_name), password_hash=VALUES(password_hash);
 
 -- Vinculacion de Rol
 INSERT INTO user_roles (user_id, role_id) 

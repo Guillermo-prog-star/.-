@@ -21,15 +21,20 @@ export class DashboardDataService {
     if (!id) return of(null);
     return forkJoin({
       dashboard: this.http.get<any>(`/api/analytics/dashboard/family/${id}`),
-      advanceStatus: this.http.get<boolean>(`/api/milestones/family/${id}/check-advance`)
+      advanceStatus: this.http.get<boolean>(`/api/milestones/family/${id}/check-advance`),
+      progress: this.http.get<any>(`/api/analytics/family/${id}/progress`).pipe(
+        map(res => res.data),
+        catchError(() => of(null))
+      )
     }).pipe(
-      map(({ dashboard, advanceStatus }) => {
+      map(({ dashboard, advanceStatus, progress }) => {
         const rawData = dashboard.data;
         return {
           ...rawData,
           readyToAdvance: advanceStatus,
           awarenessGrowth: rawData.awarenessGrowth ?? rawData.pillarProgress ?? 0,
-          totalEvaluations: rawData.totalEvaluations ?? rawData.totalPlanTasks ?? 0
+          totalEvaluations: rawData.totalEvaluations ?? rawData.totalPlanTasks ?? 0,
+          progress: progress
         } as DashboardDTO;
       }),
       tap(data => {

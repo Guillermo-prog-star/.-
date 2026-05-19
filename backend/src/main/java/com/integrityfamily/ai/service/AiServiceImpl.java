@@ -36,7 +36,7 @@ public class AiServiceImpl implements AiService {
         chatMessageRepository.save(ChatMessage.builder()
                 .content(message)
                 .family(family)
-                .isAi(false)
+                .ai(false)
                 .build());
 
         // 2. Análisis de Sentimiento para adaptar la respuesta
@@ -53,7 +53,7 @@ public class AiServiceImpl implements AiService {
         return chatMessageRepository.save(ChatMessage.builder()
                 .content(response)
                 .family(family)
-                .isAi(true)
+                .ai(true)
                 .build());
     }
 

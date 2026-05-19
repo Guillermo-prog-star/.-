@@ -4,7 +4,7 @@ spring:
   application:
     name: integrity-family
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${DB_HOST:if-mysql}:${DB_PORT:3306}/${DB_NAME:integrity_family}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota&connectTimeout=10000&useUnicode=true&characterEncoding=UTF-8}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/${DB_NAME:integrity_family}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota&connectTimeout=10000&useUnicode=true&characterEncoding=UTF-8}
     username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:root}}
     password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:root}}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -21,13 +21,14 @@ spring:
   flyway:
     enabled: true
     baseline-on-migrate: true
+    validate-on-migrate: false
     locations: classpath:db/migration
     properties:
       hibernate:
         format_sql: false
         dialect: org.hibernate.dialect.MySQLDialect
   rabbitmq:
-    host: ${SPRING_RABBITMQ_HOST:${RABBITMQ_HOST:if-rabbitmq}}
+    host: ${SPRING_RABBITMQ_HOST:${RABBITMQ_HOST:localhost}}
     port: ${SPRING_RABBITMQ_PORT:${RABBITMQ_PORT:5672}}
     username: ${SPRING_RABBITMQ_USERNAME:${RABBITMQ_USER:guest}}
     password: ${SPRING_RABBITMQ_PASSWORD:${RABBITMQ_PASSWORD:guest}}
@@ -47,6 +48,7 @@ spring:
 
 server:
   port: 8080
+  address: 127.0.0.1
   error:
     include-message: always
 

@@ -35,7 +35,7 @@ import { StorageService } from '../../core/services/storage.service';
       <div class="card">
         <h3>Seguridad de la Sesión</h3>
         <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
-          Tu sesión está protegida mediante tokens JWT cifrados y comunicación segura con el servidor de Armenia.
+          Tu sesión está protegida mediante tokens JWT cifrados y comunicación segura con el servidor central.
         </p>
         
         <div class="security-status" [class.secure]="isSecure">

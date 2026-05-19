@@ -78,13 +78,11 @@ public class MasterDataInitializer implements CommandLineRunner {
             },
             () -> {
                 // Crear admin global sin familia — podrá acceder a todas por su ROLE_ADMIN
-                Family seed = familyRepository.findAll().stream().findFirst().orElse(null);
                 User newAdmin = User.builder()
                         .email(email)
                         .fullName(fullName)
                         .passwordHash(passwordEncoder.encode(rawPassword))
                         .enabled(true)
-                        .family(seed) // Asociar a la primera familia disponible si existe
                         .roles(new java.util.ArrayList<>(java.util.List.of(role)))
                         .build();
                 userRepository.save(newAdmin);

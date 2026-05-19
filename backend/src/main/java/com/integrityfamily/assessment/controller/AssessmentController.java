@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,6 +37,7 @@ public class AssessmentController {
     private final EvaluationRepository evaluationRepository;
 
     @Operation(summary = "Obtener set psicométrico adaptativo", description = "Selecciona inteligentemente un set de 20 preguntas balanceadas entre núcleo, adaptativas por riesgo, fase actual, espejo y exploratorias.")
+    @PreAuthorize("#familyId == null or @familySecurity.check(#familyId)")
     @GetMapping("/random")
     public ApiResponse<List<Question>> getRandomQuestions(
             @Parameter(description = "ID de la familia para adaptar reactivos al riesgo", required = false) @RequestParam(required = false) Long familyId) {
@@ -148,6 +150,7 @@ public class AssessmentController {
     }
 
     @Operation(summary = "Obtener historial de evaluaciones de la familia", description = "Devuelve todas las sesiones de evaluación asociadas a un núcleo familiar.")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @GetMapping("/family/{familyId}/history")
     public ResponseEntity<ApiResponse<List<EvaluationDtos.EvaluationResponse>>> getHistory(@PathVariable Long familyId) {
         List<EvaluationDtos.EvaluationResponse> history = evaluationService.findSummaryByFamilyId(familyId).stream()
@@ -171,6 +174,7 @@ public class AssessmentController {
     }
 
     @Operation(summary = "Consultar timeline de evolución diagnóstica", description = "Devuelve el historial evolutivo con el cálculo de índice saludable, nivel de riesgo y dimensión crítica por fecha.")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @GetMapping("/family/{familyId}/timeline")
     public ResponseEntity<ApiResponse<List<EvaluationDtos.TimelineEntryDto>>> getTimeline(
             @Parameter(description = "ID del núcleo familiar", required = true) @PathVariable Long familyId) {
@@ -178,6 +182,7 @@ public class AssessmentController {
     }
 
     @Operation(summary = "Iniciar nueva sesión de evaluación", description = "Crea una nueva instancia de evaluación en estado STARTED.")
+    @PreAuthorize("@familySecurity.check(#req.familyId)")
     @PostMapping("/start")
     public ResponseEntity<ApiResponse<EvaluationDtos.EvaluationResponse>> startEvaluation(@RequestBody EvaluationDtos.EvaluationStartRequest req) {
         Evaluation evaluation = evaluationService.start(req);
@@ -185,6 +190,7 @@ public class AssessmentController {
     }
 
     @Operation(summary = "Finalizar evaluación y aplicar RISK_ALGO_V1", description = "Recibe las respuestas del usuario, normaliza puntajes, clasifica el nivel de riesgo y emite el evento para el plan de mejora.")
+    @PreAuthorize("@familySecurity.checkEvaluation(#id)")
     @PostMapping("/{id}/finalize")
     public ResponseEntity<ApiResponse<EvaluationDtos.EvaluationResponse>> finalizeEvaluation(
             @PathVariable Long id,

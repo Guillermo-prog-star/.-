@@ -125,69 +125,61 @@ public class PlanGenerationService {
         String jsonResponse = aiService.generateHybridPlan(evaluation.getFamily(), dimensions, riskLevel, continuityAnalysis);
         
         try {
-            // Parsear respuesta inicial
-            HybridPlanDto rawPlanDto = objectMapper.readValue(jsonResponse, HybridPlanDto.class);
-
-            // 3. Pasar por PlanValidator para validar y sanear
-            HybridPlanDto planDto = planValidator.validateAndSanitize(rawPlanDto);
+            // Parsear respuesta inicial (Extrayendo el bloque JSON si hay texto libre)
+            String jsonContent = extractJson(jsonResponse);
+            HybridPlanDto planDto = objectMapper.readValue(jsonContent, HybridPlanDto.class);
 
             ImprovementPlan p = ImprovementPlan.builder()
                     .family(evaluation.getFamily())
                     .evaluation(evaluation)
                     .title("PLAN DE TRANSFORMACIÓN: " + evaluation.getFamily().getName())
-                    .vision3y(planDto.vision3y())
+                    .vision3y(planDto.vision() != null ? planDto.vision().vision3y() : "Construir una convivencia más tranquila y conectada.")
                     .aiReport(jsonResponse)
                     .aiGeneratedAt(LocalDateTime.now())
                     .tasks(new java.util.ArrayList<>())
                     .build();
 
             List<Milestone> allMilestones = milestoneRepository.findAll();
-            for (MilestoneDto mDto : planDto.milestones()) {
-                Milestone milestone = milestoneRepository.findByCode(mDto.code())
-                        .orElseGet(() -> allMilestones.isEmpty() ? null : allMilestones.get(0));
+            
+            if (planDto.milestones() != null) {
+                for (MilestoneDto mDto : planDto.milestones()) {
+                    Milestone milestone = milestoneRepository.findByCode(mDto.code())
+                            .orElseGet(() -> allMilestones.isEmpty() ? null : allMilestones.get(0));
 
-                for (TaskDto tDto : mDto.tasks()) {
-                    int daysForMilestone = resolveMilestoneDays(mDto.code());
-                    int periodicityMonths = resolveMilestonePeriodicityMonths(mDto.code());
+                    if (mDto.microActions() != null) {
+                        for (MicroActionDto tDto : mDto.microActions()) {
+                            int daysForMilestone = resolveMilestoneDays(mDto.code());
+                            int periodicityMonths = resolveMilestonePeriodicityMonths(mDto.code());
 
-                    PlanTask task = PlanTask.builder()
-                            .plan(p)
-                            .title(tDto.title())
-                            .dimension(tDto.dimension())
-                            .milestone(milestone)
-                            .fase(tDto.fase())
-                            .riesgoAsociado(tDto.riesgoAsociado())
-                            .objetivo(tDto.objetivo())
-                            .accionConcreta(tDto.accionConcreta())
-                            .indicadorCumplimiento(tDto.indicadorCumplimiento())
-                            .evidenciaRequerida(tDto.evidenciaRequerida())
-                            .impactoIcf(tDto.impactoIcf())
-                            .dueDate(LocalDateTime.now().plusDays(daysForMilestone))
-                            .periodicityMonths(periodicityMonths)
-                            .completed(false)
-                            .steps(new java.util.ArrayList<>())
-                            .build();
+                            PlanTask task = PlanTask.builder()
+                                    .plan(p)
+                                    .title(tDto.title())
+                                    .dimension("EMOCIONES") // Fallback
+                                    .milestone(milestone)
+                                    .fase("RECONOCIMIENTO") // Fallback
+                                    .objetivo(mDto.goal()) // Usamos la meta del hito como objetivo
+                                    .accionConcreta(tDto.description())
+                                    .indicadorCumplimiento("Completar la acción")
+                                    .evidenciaRequerida(tDto.evidenceType())
+                                    .impactoIcf(5) // Default impact
+                                    .dueDate(LocalDateTime.now().plusDays(daysForMilestone))
+                                    .periodicityMonths(periodicityMonths)
+                                    .completed(false)
+                                    .steps(new java.util.ArrayList<>())
+                                    .build();
 
-                    log.info("📅 [PLAN-ENGINE] Microacción '{}' → Hito {} → Vence: {} ({} meses)",
-                            tDto.title(), mDto.code(), task.getDueDate().toLocalDate(), periodicityMonths);
+                            log.info("📅 [PLAN-ENGINE] Microacción '{}' → Hito {} → Vence: {} ({} meses)",
+                                    tDto.title(), mDto.code(), task.getDueDate().toLocalDate(), periodicityMonths);
 
-                    for (StepDto sDto : tDto.steps()) {
-                        try {
-                            PlanTaskStep step = new PlanTaskStep();
-                            step.setTask(task);
-                            // Robustez ante variaciones de la IA (case-insensitive)
-                            String typeStr = sDto.type() != null ? sDto.type().toUpperCase().trim() : "PLANIFICAR";
-                            step.setType(StepType.valueOf(typeStr));
-                            step.setDetail(sDto.detail());
-                            task.getSteps().add(step);
-                        } catch (Exception e) {
-                            log.warn("⚠️ [AI-PARSER] Tipo de paso inválido: {}. Ignorando.", sDto.type());
+                            p.getTasks().add(task);
                         }
                     }
-                    p.getTasks().add(task);
                 }
             }
 
+            if (p.getTasks().isEmpty()) {
+                throw new RuntimeException("AI generó un plan vacío — activando motor determinístico de contingencia.");
+            }
             planService.createPlan(p);
             log.info("✅ [PLAN-ENGINE] Plan Híbrido persistido con éxito.");
 
@@ -221,14 +213,33 @@ public class PlanGenerationService {
     }
 
     public record HybridPlanDto(
-        @JsonProperty("vision_3y") String vision3y,
+        @JsonProperty("family_state") FamilyStateDto familyState,
+        VisionDto vision,
         List<MilestoneDto> milestones
+    ) {}
+
+    public record FamilyStateDto(
+        String risk,
+        Integer icf,
+        @JsonProperty("main_problem") String mainProblem
+    ) {}
+
+    public record VisionDto(
+        @JsonProperty("3y") String vision3y
     ) {}
 
     public record MilestoneDto(
         String code,
-        String objective,
-        List<TaskDto> tasks
+        String goal,
+        @JsonProperty("micro_actions") List<MicroActionDto> microActions
+    ) {}
+
+    public record MicroActionDto(
+        String title,
+        String description,
+        @JsonProperty("duration_minutes") Integer durationMinutes,
+        List<String> participants,
+        @JsonProperty("evidence_type") String evidenceType
     ) {}
 
     public record TaskDto(
@@ -299,5 +310,27 @@ public class PlanGenerationService {
             case "M36" -> 36;
             default    -> 1;
         };
+    }
+
+    private String extractJson(String response) {
+        if (response == null) return "{}";
+        
+        // Intentar buscar el bloque delimitado por ```json y ```
+        int startIndex = response.indexOf("```json");
+        if (startIndex != -1) {
+            int endIndex = response.indexOf("```", startIndex + 7);
+            if (endIndex != -1) {
+                return response.substring(startIndex + 7, endIndex).trim();
+            }
+        }
+        
+        // Fallback: buscar el primer '{' y el último '}'
+        int firstBrace = response.indexOf("{");
+        int lastBrace = response.lastIndexOf("}");
+        if (firstBrace != -1 && lastBrace != -1 && firstBrace < lastBrace) {
+            return response.substring(firstBrace, lastBrace + 1).trim();
+        }
+        
+        return response.trim();
     }
 }

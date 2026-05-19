@@ -346,8 +346,23 @@ public class PromptGenerator {
                 </logbook_sentiment_context>
 
                 <architectural_rules>
-                1. VISIÓN ESTRATÉGICA: Define una visión a 3 años potente, mística pero práctica.
-                2. HITOS LONGITUDINALES: Genera exactamente 1 o 2 misiones (tareas) por cada uno de los siguientes 14 hitos del timeline de transformación familiar:
+                1. FILOSOFÍA DE SIMPLICIDAD (AYUDA PEQUEÑA Y AMABLE): 
+                   - Integrity Family NO debe sentirse como terapia pesada ni como gestión corporativa de tareas.
+                   - Debe sentirse como vida cotidiana guiada y acompañamiento familiar natural.
+                   - Esconde la complejidad (métricas, riesgos, taxonomías) y muestra simplicidad absoluta al usuario.
+                   - Las misiones deben ser cortas, cálidas, fáciles de cumplir y fáciles de recordar.
+                
+                2. TONO Y ESTILO:
+                   - Habla como un guía humano y empático, no como un sistema clínico o corporativo.
+                   - Usa un lenguaje cotidiano. En lugar de "Objetivo: Fomentar la validación", usa "💛 Reconocer algo bueno del otro".
+                   - Descripciones de máximo 2 o 3 líneas. Directas al grano.
+                
+                3. TAXONOMÍA DE MISIONES (ALINEACIÓN TEMPORAL INTERNA): Aunque la IA maneja esta complejidad internamente para secuenciar el plan, al usuario se le presenta como acciones simples:
+                   - NIVEL OPERATIVO (Hitos W1 a M1): Microacciones de bajo esfuerzo (Ej: "Cena sin celulares").
+                   - NIVEL TÁCTICO (Hitos M3 a M6): Cambios estructurales sencillos (Ej: "Cartel de responsabilidades").
+                   - NIVEL ESTRATÉGICO (Hitos M12 a M36): Proyectos familiares sencillos (Ej: "Caminar y conversar").
+                
+                4. HITOS LONGITUDINALES: Genera exactamente 1 o 2 misiones (tareas) por cada uno de los siguientes 14 hitos del timeline de transformación familiar, aplicando la taxonomía anterior de forma invisible y simple:
                    - RECONOCIMIENTO Fase:
                      * W1 (1 semana): Acción táctica de contención.
                      * M1 (1 mes): Primera microrutina instalada.
@@ -366,46 +381,59 @@ public class PromptGenerator {
                      * M24 (24 meses): Madurez del sistema familiar.
                      * M36 (36 meses): Legado e impacto hacia el exterior.
                 
-                3. BUCLE CERRADO: Cada tarea DEBE tener exactamente 3 pasos secuenciales en la lista 'steps': PLANIFICAR, EJECUTAR y EVALUAR.
-                4. REGLA DE ADAPTACIÓN POR CRISIS: Si en <logbook_sentiment_context> "generalLabel" es "CRISIS" o el puntaje es menor a -0.40, los hitos iniciales (W1 y M1) deben centrarse de manera exclusiva en contención emocional de emergencia, pausando cualquier otra dimensión compleja.
-                5. REGLA DE MICROACCIONES: Cada tarea DEBE ser una microacción observable, cotidiana y de fricción casi nula (ej: 'cenar sin celulares', 'escribir una nota de agradecimiento de 1 línea', 'respirar juntos 2 minutos si hay tensión'). No sugieras misiones abstractas ni intervenciones psicológicas clínicas complejas.
-                6. CLASIFICACIÓN DE TAREAS: Cada tarea debe mapearse exactamente a:
+                5. BUCLE CERRADO (SIMPLIFICADO): NO uses los pasos PLANIFICAR, EJECUTAR y EVALUAR. En su lugar, describe la acción de forma directa y humana.
+                6. REGLA DE ADAPTACIÓN POR CRISIS: Si en <logbook_sentiment_context> "generalLabel" es "CRISIS" o el puntaje es menor a -0.40, los hitos iniciales (W1 y M1) deben centrarse de manera exclusiva en contención emocional de emergencia, pausando cualquier otra dimensión compleja.
+                7. REGLA DE MICROACCIONES: Cada tarea DEBE ser una microacción observable, cotidiana y de fricción casi nula (ej: 'cenar sin celulares', 'escribir una nota de agradecimiento de 1 línea', 'respirar juntos 2 minutos si hay tensión'). No sugieras misiones abstractas ni intervenciones psicológicas clínicas complejas.
+                8. CLASIFICACIÓN DE TAREAS: Cada tarea debe mapearse exactamente a:
                    - fase: "RECONOCIMIENTO" | "AMOR" | "ENTREGA" (debe coincidir con la fase correspondiente al hito).
                    - dimension: "EMOCIONES" | "COMUNICACION" | "HABITOS" | "TIEMPOS".
                 </architectural_rules>
 
                 <output_contract>
-                Responde ÚNICAMENTE con un JSON válido siguiendo estrictamente este esquema:
-                {
-                  "vision_3y": "Proyección y visión estratégica a 36 meses para esta familia",
-                  "milestones": [
-                    {
-                      "code": "W1",
-                      "objective": "Objetivo específico de este hito",
-                      "tasks": [
-                        {
-                          "title": "Título corto y motivador de la microacción",
-                          "dimension": "EMOCIONES | COMUNICACION | HABITOS | TIEMPOS",
-                          "fase": "RECONOCIMIENTO | AMOR | ENTREGA",
-                          "riesgo_asociado": "Dimensión de riesgo o área de mejora que aborda directamente",
-                          "objetivo": "Objetivo conductual específico de la tarea",
-                          "accion_concreta": "Descripción sumamente detallada, sencilla y clara de la microacción a realizar",
-                          "indicador_cumplimiento": "Cómo sabrá la familia que cumplió exitosamente la tarea de forma medible",
-                          "evidencia_requerida": "Evidencia concreta que deben registrar (ej: foto de la cena sin pantallas, nota escrita, bitácora de 1 línea)",
-                          "impacto_icf": 5,
-                          "steps": [
-                            {"type": "PLANIFICAR", "detail": "Cómo prepararse para la tarea"},
-                            {"type": "EJECUTAR", "detail": "La acción concreta durante la ejecución"},
-                            {"type": "EVALUAR", "detail": "Reflexión familiar final del aprendizaje"}
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
+                Tu respuesta DEBE estructurarse en dos partes secuenciales:
+
+                1. ANÁLISIS CRÍTICO (Texto libre en Markdown):
+                   Actúa como un Consultor IA Senior y realiza un análisis profundo antes de proponer el plan. Usa exactamente esta estructura:
+                   - Problema real: Identifica la raíz del conflicto o área de mejora en el nodo familiar.
+                   - Hechos, inferencias y vacíos: Separa los datos duros de tus asunciones y lo que falta por saber.
+                   - Fallas y riesgos: Detecta riesgos emocionales, contradicciones o fallas en el sistema familiar.
+                   - Contraargumento: Desafía tu propia primera impresión sobre la familia.
+                   - Alternativas: Plantea diferentes rutas de acción antes de decidirte por una.
+                   - Conclusión: Justificación de por qué el plan que propones en el JSON es el óptimo.
+
+                2. PLAN ESTRUCTURADO (Bloque JSON):
+                   Inmediatamente después de tu análisis, genera el plan en formato JSON delimitado por ```json y ``` siguiendo estrictamente este esquema:
+                   ```json
+                   {
+                     "family_state": {
+                       "risk": "MEDIUM | LOW | HIGH",
+                       "icf": 61,
+                       "main_problem": "Breve descripción del problema principal"
+                     },
+                     "vision": {
+                       "3y": "Visión de transformación a 3 años"
+                     },
+                     "milestones": [
+                       {
+                         "code": "W1 | M1 | M3 | M6 | M12 | M24 | M36",
+                         "goal": "Meta del hito",
+                         "micro_actions": [
+                           {
+                             "title": "Título corto y humano (ej: 🍽 Cena sin celulares)",
+                             "description": "Descripción corta y cálida de la acción (2 o 3 líneas)",
+                             "duration_minutes": 20,
+                             "participants": ["PADRE", "MADRE", "HIJO"],
+                             "evidence_type": "PHOTO | TEXT | AUDIO"
+                           }
+                         ]
+                       }
+                     ]
+                   }
+                   ```
                 </output_contract>
 
-                No incluyas explicaciones, saludos ni texto adicional fuera del JSON. El resultado debe ser directamente parseable por un ObjectMapper.
+                El bloque JSON debe ser directamente parseable por un ObjectMapper tras extraerlo del bloque de código. Asegúrate de que las comillas y comas sean válidas.
+                
                 """,
                 family.getName(),
                 riskLevel,

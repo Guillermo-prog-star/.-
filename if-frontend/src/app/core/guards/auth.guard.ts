@@ -3,7 +3,7 @@ import { Router, CanActivateFn } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 /**
- * authGuard: El vigilante de seguridad del Nodo Armenia.
+ * authGuard: El vigilante de seguridad del Nodo Central.
  * Utiliza el nuevo estándar de verificación de tokens para proteger las rutas.
  */
 export const authGuard: CanActivateFn = (route, state) => {

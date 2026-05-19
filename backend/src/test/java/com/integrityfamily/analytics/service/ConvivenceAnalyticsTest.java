@@ -67,7 +67,7 @@ public class ConvivenceAnalyticsTest {
     @DisplayName("Caso 1: Calcular Dashboard Operativo y evaluar alertas exitosamente")
     void shouldCalculateOperativeDashboardSuccessfully() {
         Mockito.when(familyRepository.findById(1L)).thenReturn(Optional.of(family));
-        Mockito.when(evaluationRepository.findByFamilyIdOrderByFinalizedAtAsc(1L)).thenReturn(List.of(evaluation));
+        Mockito.when(evaluationRepository.findWithScoresByFamilyId(1L)).thenReturn(List.of(evaluation));
         Mockito.when(planTaskRepository.findAll()).thenReturn(List.of()); // 0 tareas asignadas -> adherencia 100%
         Mockito.when(taskEvidenceRepository.findAll()).thenReturn(List.of());
         Mockito.when(reflectionRepository.findByFamilyId(1L)).thenReturn(List.of());

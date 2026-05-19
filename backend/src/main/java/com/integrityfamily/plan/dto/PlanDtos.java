@@ -52,6 +52,8 @@ public class PlanDtos {
             String aiReport,
             LocalDateTime aiGeneratedAt,
             List<PlanTaskResponse> tasks
+    ) {}
+
     @Builder
     public record AiMissionProposal(
             String dimension,
@@ -66,6 +68,30 @@ public class PlanDtos {
             String adaptiveReason,
             String title,
             String description
+    ) {}
+
+    // --- Contrato IA (Rediseño 6.4) ---
+    
+    public record IaStep(
+            String type,
+            String detail
+    ) {}
+
+    public record IaTask(
+            String title,
+            String dimension,
+            List<IaStep> steps
+    ) {}
+
+    public record IaMilestone(
+            String code,
+            String objective,
+            List<IaTask> tasks
+    ) {}
+
+    public record IaPlanResponse(
+            String vision_3y,
+            List<IaMilestone> milestones
     ) {}
 
     public record TaskCompleteRequest(Boolean completed) {}

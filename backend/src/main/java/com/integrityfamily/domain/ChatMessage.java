@@ -27,8 +27,9 @@ public class ChatMessage {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "is_ai")
     @Builder.Default
-    private boolean isAi = false;
+    private boolean ai = false;
 
     private LocalDateTime createdAt;
 

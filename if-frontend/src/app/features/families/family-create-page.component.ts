@@ -86,7 +86,7 @@ export class FamilyCreatePageComponent implements OnInit {
           this.router.navigate(['/families']);
           return;
         }
-        this.error = body.message || 'Falla de comunicación con el Nodo Armenia.';
+        this.error = body.message || 'Falla de comunicación con el Nodo Central.';
       }
     });
   }

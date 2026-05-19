@@ -24,6 +24,7 @@ public class AnalyticsController {
     private final AnalyticsService analyticsService;
     private final com.integrityfamily.domain.repository.UserRepository userRepository;
     private final EvaluationService evaluationService;
+    private final com.integrityfamily.analytics.service.FamilyProgressAnalyticsService familyProgressAnalyticsService;
 
     /**
      * Obtiene el resumen ejecutivo del dashboard familiar.
@@ -49,6 +50,20 @@ public class AnalyticsController {
     @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<DashboardSummaryResponse> getLatestResult(@PathVariable Long familyId) {
         return getFamilySummary(familyId); // Reutilización de lógica interna
+    }
+
+    /**
+     * SDD: Obtiene el último análisis de progreso longitudinal (ΔICF).
+     */
+    @GetMapping("/family/{familyId}/progress")
+    @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
+    public ApiResponse<com.integrityfamily.analytics.dto.FamilyProgressResponse> getFamilyProgress(@PathVariable Long familyId) {
+        log.info("📊 [ANALYTICS] Solicitando análisis de progreso para familia: {}", familyId);
+        
+        com.integrityfamily.analytics.dto.FamilyProgressResponse response = familyProgressAnalyticsService.getLatestProgress(familyId)
+                .orElseThrow(() -> new RuntimeException("No se encontró análisis de progreso para esta familia."));
+                
+        return ApiResponse.ok(response);
     }
 
     /**

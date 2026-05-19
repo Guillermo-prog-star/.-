@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * SDD: Servicio de Planificación Harmonizado.
@@ -28,6 +29,7 @@ public class PlanService {
     private final EvaluationRepository evaluationRepository;
     private final PlanTemplateRepository planTemplateRepository;
     private final PlanTemplateActivityRepository planTemplateActivityRepository;
+    private final MilestoneRepository milestoneRepository;
     private final org.springframework.amqp.rabbit.core.RabbitTemplate rabbitTemplate;
 
     @Transactional(readOnly = true)
@@ -215,6 +217,72 @@ public class PlanService {
         }
 
         log.info("✅ Plan ensamblado con éxito con {} misiones/tareas clínicas.", plan.getTasks().size());
+        return toPlanResponse(plan);
+    }
+
+    /**
+     * [PLAN ADAPTATIVO] Creando plan desde respuesta IA (Rediseño 6.4)
+     */
+    @Transactional
+    public PlanResponse createPlanFromAiResponse(Long evaluationId, IaPlanResponse aiResponse) {
+        log.info("🎯 [PLAN ADAPTATIVO] Creando plan desde respuesta IA para Evaluation ID: {}", evaluationId);
+        Evaluation evaluation = evaluationRepository.findById(evaluationId)
+                .orElseThrow(() -> new RuntimeException("Evaluación no encontrada: " + evaluationId));
+
+        Family family = evaluation.getFamily();
+        if (family == null) {
+            throw new RuntimeException("La evaluación no tiene una familia asociada.");
+        }
+
+        ImprovementPlan plan = ImprovementPlan.builder()
+                .family(family)
+                .evaluation(evaluation)
+                .title("Plan de Transformación Adaptativo")
+                .description("Intervención clínica generada por IA y validada por el sistema.")
+                .vision3y(aiResponse.vision_3y())
+                .aiReport("Generado por IA (Contrato Estructurado).")
+                .aiGeneratedAt(LocalDateTime.now())
+                .tasks(new ArrayList<>())
+                .build();
+        plan = planRepository.save(plan);
+
+        for (IaMilestone iaMilestone : aiResponse.milestones()) {
+            Milestone milestone = milestoneRepository.findByCode(iaMilestone.code())
+                    .orElseThrow(() -> new RuntimeException("Hito no encontrado: " + iaMilestone.code()));
+
+            for (IaTask iaTask : iaMilestone.tasks()) {
+                PlanTask task = PlanTask.builder()
+                        .plan(plan)
+                        .title(iaTask.title())
+                        .description(iaMilestone.objective())
+                        .dimension(iaTask.dimension())
+                        .dueDate(LocalDateTime.now().plusDays(milestone.getDurationDays() != null ? milestone.getDurationDays() : 30))
+                        .milestone(milestone)
+                        .completed(false)
+                        .steps(new ArrayList<>())
+                        .build();
+                
+                task = planTaskRepository.save(task);
+
+                List<PlanTaskStep> steps = new ArrayList<>();
+                for (IaStep iaStep : iaTask.steps()) {
+                    PlanTaskStep step = PlanTaskStep.builder()
+                            .task(task)
+                            .type(StepType.valueOf(iaStep.type().toUpperCase()))
+                            .detail(iaStep.detail())
+                            .completed(false)
+                            .build();
+                    steps.add(step);
+                }
+                
+                task.setSteps(steps);
+                planTaskRepository.save(task);
+                
+                plan.getTasks().add(task);
+            }
+        }
+
+        log.info("✅ Plan adaptativo creado con éxito con {} tareas.", plan.getTasks().size());
         return toPlanResponse(plan);
     }
 

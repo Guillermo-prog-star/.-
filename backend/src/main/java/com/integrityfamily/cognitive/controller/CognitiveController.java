@@ -6,6 +6,7 @@ import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.FamilyMemory.MemoryType;
 import com.integrityfamily.domain.repository.*;
+import com.integrityfamily.cognitive.service.FamilySkillEngine;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -33,12 +34,14 @@ public class CognitiveController {
     private final FamilyReflectionService familyReflectionService;
     private final NarrativeEvolutionEngine narrativeEvolutionEngine;
     private final FamilyIdentityGraphService familyIdentityGraphService;
+    private final FamilySkillEngine familySkillEngine;
     private final FamilyMemoryRepository memoryRepository;
     private final FamilyIdentityProfileRepository identityRepository;
     private final LearnedSkillRepository skillRepository;
     private final NarrativeChapterRepository chapterRepository;
     private final MemberRelationEdgeRepository edgeRepository;
     private final MemberRepository memberRepository;
+    private final EvaluationRepository evaluationRepository;
 
     // ─── 1. Snapshot completo ────────────────────────────────────────────────
 
@@ -227,6 +230,42 @@ public class CognitiveController {
                 report.requiresUrgentAttention(),
                 report.generatedAt()
         ));
+    }
+
+    // ─── 7. Bootstrap cognitivo (hidratación de familias pre-existentes) ────
+
+    @PostMapping("/{familyId}/bootstrap")
+    @PreAuthorize("@familySecurity.check(#familyId)")
+    @Operation(summary = "Hidratar sistema cognitivo con evaluaciones pre-existentes",
+               description = "Corre el pipeline completo (grafo + memoria + narrativa + skills) sobre la evaluación más reciente. " +
+                             "Útil para familias que existían antes de que el motor cognitivo estuviera activo.")
+    public ApiResponse<CognitiveSnapshotResponse> bootstrapCognitive(@PathVariable Long familyId) {
+        log.info("🚀 [COGNITIVE] Bootstrap cognitivo iniciado para familia ID: {}", familyId);
+
+        // Obtener la evaluación más reciente finalizada
+        Evaluation latestEval = evaluationRepository
+                .findByFamilyIdOrderByFinalizedAtAsc(familyId)
+                .stream()
+                .filter(e -> e.getStatus() == EvaluationStatus.FINALIZED && e.getIcf() != null)
+                .reduce((first, second) -> second)  // la más reciente
+                .orElseThrow(() -> new RuntimeException(
+                        "No hay evaluaciones finalizadas para la familia " + familyId));
+
+        log.info("📊 [COGNITIVE] Evaluación de referencia: ID={} | ICF={} | Risk={}",
+                latestEval.getId(), latestEval.getIcf(), latestEval.getRiskLevel());
+
+        // Correr el pipeline cognitivo completo
+        familyIdentityGraphService.updateGraph(familyId, latestEval);
+        familyMemoryService.captureEvaluationMemory(latestEval);
+        familyMemoryService.consolidateSemanticPattern(familyId, "evaluation-result");
+        familySkillEngine.analyze(familyId, latestEval);
+        narrativeEvolutionEngine.evolve(familyId, latestEval);
+        familyReflectionService.reflect(familyId);
+
+        log.info("✅ [COGNITIVE] Bootstrap completado para familia ID: {}", familyId);
+
+        // Devolver snapshot actualizado
+        return getSnapshot(familyId);
     }
 
     // ─── Mappers privados ────────────────────────────────────────────────────

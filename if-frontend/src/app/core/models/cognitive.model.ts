@@ -133,6 +133,13 @@ export interface CurrentChapter {
   turningPoint: boolean;
 }
 
+export interface MemoryResponse {
+  familyId: number;
+  episodic: MemoryDto[];
+  semantic: MemoryDto[];
+  procedural: MemoryDto[];
+}
+
 export interface CognitiveSnapshot {
   familyId: number;
   identityProfile: IdentityProfile;

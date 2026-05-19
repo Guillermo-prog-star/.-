@@ -5,7 +5,7 @@ import { forkJoin } from 'rxjs';
 import { CognitiveService } from '../../core/services/cognitive.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import {
-  NarrativeResponse, GraphResponse, ReflectionResponse,
+  NarrativeResponse, GraphResponse, ReflectionResponse, MemoryResponse, MemoryDto,
   NarrativeChapter, DyadDto, NarrativePhase,
   EffectivenessLevel, AbandonmentLevel
 } from '../../core/models/cognitive.model';
@@ -278,7 +278,62 @@ import {
           </div>
         </section>
 
-        <!-- ── SECCIÓN 4: REFLEXIÓN AUTÓNOMA ─────────────────────────────── -->
+        <!-- ── SECCIÓN 4: MEMORIA COGNITIVA ─────────────────────────────── -->
+        <section class="glass-card border-l-4 border-cyan-500 p-8 rounded-3xl">
+          <div class="flex items-center gap-3 mb-6">
+            <div class="w-10 h-10 bg-cyan-500/20 rounded-xl flex items-center justify-center text-xl">💾</div>
+            <div>
+              <h2 class="font-bold text-white/90 text-lg">Memoria Cognitiva</h2>
+              <span class="text-[9px] text-white/30 uppercase tracking-[0.2em]">Episódica · Semántica · Procedural</span>
+            </div>
+          </div>
+
+          <div *ngIf="!memory()" class="text-center py-8 text-white/20 text-sm">
+            Sin memorias registradas aún.
+          </div>
+
+          <div *ngIf="memory()" class="space-y-6">
+
+            <!-- Tabs: 3 tipos de memoria -->
+            <div class="flex gap-2 flex-wrap">
+              <button *ngFor="let tab of memoryTabs" (click)="activeMemoryTab.set(tab.key)"
+                      class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                      [ngClass]="activeMemoryTab() === tab.key
+                        ? tab.activeClass
+                        : 'bg-white/5 text-white/30 hover:bg-white/10'">
+                {{ tab.emoji }} {{ tab.label }}
+                <span class="ml-1 opacity-60">({{ memoryCount(tab.key) }})</span>
+              </button>
+            </div>
+
+            <!-- Lista de memorias activa -->
+            <div class="space-y-2">
+              <div *ngFor="let m of activeMemories(); trackBy: trackByMemory"
+                   class="p-4 bg-white/[0.02] rounded-2xl border border-white/5 hover:bg-white/[0.04] transition-all">
+                <div class="flex items-start justify-between gap-4 mb-2">
+                  <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                        [ngClass]="memoryTypeClass(m.memoryType)">
+                    {{ m.memoryType }}
+                  </span>
+                  <div class="flex items-center gap-2 text-[9px] text-white/25">
+                    <span>⭐ {{ m.importanceScore | number:'1.1-1' }}</span>
+                    <span *ngIf="m.semanticKey" class="text-white/20">· {{ m.semanticKey }}</span>
+                  </div>
+                </div>
+                <p class="text-white/70 text-xs leading-relaxed">{{ m.content }}</p>
+                <div class="mt-2 text-[9px] text-white/20">
+                  {{ m.sourceType }} · {{ m.createdAt | date:'dd/MM/yy HH:mm' }}
+                </div>
+              </div>
+
+              <div *ngIf="activeMemories().length === 0" class="text-center py-8 text-white/20 text-sm">
+                Sin memorias en esta categoría.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ── SECCIÓN 5: REFLEXIÓN AUTÓNOMA ─────────────────────────────────────── -->
         <section class="glass-card border-l-4 border-amber-500 p-8 rounded-3xl">
           <div class="flex items-center justify-between gap-3 mb-6">
             <div class="flex items-center gap-3">
@@ -391,13 +446,41 @@ export class CognitivePageComponent implements OnInit {
   private readonly familyState     = inject(FamilyStateService);
 
   // ─── State ──────────────────────────────────────────────────────────────
-  loading   = signal(true);
+  loading    = signal(true);
   reflecting = signal(false);
 
-  snapshot  = signal<any | null>(null);
-  narrative = signal<NarrativeResponse | null>(null);
-  graph     = signal<GraphResponse | null>(null);
+  snapshot   = signal<any | null>(null);
+  narrative  = signal<NarrativeResponse | null>(null);
+  graph      = signal<GraphResponse | null>(null);
+  memory     = signal<MemoryResponse | null>(null);
   reflection = signal<ReflectionResponse | null>(null);
+
+  activeMemoryTab = signal<'episodic' | 'semantic' | 'procedural'>('episodic');
+
+  readonly memoryTabs = [
+    { key: 'episodic'   as const, label: 'Episódica',   emoji: '📅',
+      activeClass: 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' },
+    { key: 'semantic'   as const, label: 'Semántica',   emoji: '🧩',
+      activeClass: 'bg-violet-500/10 text-violet-400 border border-violet-500/20' },
+    { key: 'procedural' as const, label: 'Procedural',  emoji: '⚙️',
+      activeClass: 'bg-amber-500/10 text-amber-400 border border-amber-500/20' }
+  ];
+
+  activeMemories = computed((): MemoryDto[] => {
+    const m = this.memory();
+    if (!m) return [];
+    return this.activeMemoryTab() === 'episodic'   ? m.episodic
+         : this.activeMemoryTab() === 'semantic'   ? m.semantic
+         :                                           m.procedural;
+  });
+
+  memoryCount(tab: 'episodic' | 'semantic' | 'procedural'): number {
+    const m = this.memory();
+    if (!m) return 0;
+    return tab === 'episodic' ? m.episodic.length
+         : tab === 'semantic' ? m.semantic.length
+         :                      m.procedural.length;
+  }
 
   // ─── Computed helpers ────────────────────────────────────────────────────
   get stageEmoji(): string {
@@ -430,12 +513,14 @@ export class CognitivePageComponent implements OnInit {
     forkJoin({
       snapshot:  this.cognitiveService.getSnapshot(familyId),
       narrative: this.cognitiveService.getNarrative(familyId),
-      graph:     this.cognitiveService.getGraph(familyId)
+      graph:     this.cognitiveService.getGraph(familyId),
+      memory:    this.cognitiveService.getMemory(familyId)
     }).subscribe({
-      next: ({ snapshot, narrative, graph }) => {
+      next: ({ snapshot, narrative, graph, memory }) => {
         this.snapshot.set(snapshot);
         this.narrative.set(narrative);
         this.graph.set(graph);
+        this.memory.set(memory);
         this.loading.set(false);
       },
       error: () => this.loading.set(false)
@@ -513,7 +598,17 @@ export class CognitivePageComponent implements OnInit {
     }[level] ?? 'text-white/50';
   }
 
+  memoryTypeClass(type: string): string {
+    return {
+      EPISODIC:   'bg-cyan-500/10 text-cyan-400',
+      SEMANTIC:   'bg-violet-500/10 text-violet-400',
+      PROCEDURAL: 'bg-amber-500/10 text-amber-400',
+      IDENTITY:   'bg-pink-500/10 text-pink-400'
+    }[type] ?? 'bg-white/10 text-white/40';
+  }
+
   // ─── TrackBy ─────────────────────────────────────────────────────────────
   trackByChapter(_: number, c: NarrativeChapter) { return c.chapterNumber; }
   trackByDyad(_: number, d: DyadDto) { return `${d.memberAId}-${d.memberBId}`; }
+  trackByMemory(_: number, m: MemoryDto) { return m.id; }
 }

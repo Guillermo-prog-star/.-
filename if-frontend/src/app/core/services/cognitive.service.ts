@@ -4,7 +4,7 @@ import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import {
   CognitiveSnapshot, NarrativeResponse,
-  GraphResponse, ReflectionResponse, IcfHistoryPoint
+  GraphResponse, ReflectionResponse, IcfHistoryPoint, MemoryResponse
 } from '../models/cognitive.model';
 
 interface ApiResponse<T> { success: boolean; data: T; message: string; }
@@ -33,6 +33,14 @@ export class CognitiveService {
   /** Grafo de dinámicas entre miembros */
   getGraph(familyId: number): Observable<GraphResponse | null> {
     return this.http.get<ApiResponse<GraphResponse>>(`${this.base}/${familyId}/graph`).pipe(
+      map(r => r.data),
+      catchError(() => of(null))
+    );
+  }
+
+  /** Memorias activas por tipo: episódicas, semánticas y procedurales */
+  getMemory(familyId: number): Observable<MemoryResponse | null> {
+    return this.http.get<ApiResponse<MemoryResponse>>(`${this.base}/${familyId}/memory`).pipe(
       map(r => r.data),
       catchError(() => of(null))
     );

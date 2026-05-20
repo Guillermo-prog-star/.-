@@ -5,7 +5,14 @@
   "outputDirectory": "dist/integrity-family-frontend/browser",
   "installCommand": "npm ci",
   "framework": "angular",
+  "env": {
+    "BACKEND_URL": "https://REEMPLAZA_CON_URL_RAILWAY.railway.app"
+  },
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://REEMPLAZA_CON_URL_RAILWAY.railway.app/api/:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

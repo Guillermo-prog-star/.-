@@ -133,3 +133,39 @@ logging:
   level:
     com.integrityfamily: INFO
     org.hibernate.SQL: WARN
+
+---
+# Perfil 'railway': despliegue en Railway.app
+# Variables de entorno requeridas en el servicio Railway:
+#   SPRING_DATASOURCE_URL, SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD
+#   JWT_SECRET, CLAUDE_API_KEY (opcional)
+spring:
+  config:
+    activate:
+      on-profile: railway
+  jpa:
+    hibernate:
+      ddl-auto: update     # Railway recrea el contenedor en cada deploy
+    show-sql: false
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false  # Sin RabbitMQ en Railway (plano Starter)
+
+# Logs a stdout — Railway los captura automáticamente
+logging:
+  file:
+    name: ""               # Sin archivo de log en Railway
+  level:
+    com.integrityfamily: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    rabbit:
+      enabled: false

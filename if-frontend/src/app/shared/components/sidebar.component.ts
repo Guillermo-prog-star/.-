@@ -14,8 +14,9 @@ import { AuthService } from '../../core/services/auth.service';
   template: `
     <div class="sidebar">
       <div class="brand">
-        <div class="logo-circle">IF</div>
-        <div class="brand-title">INTEGRITY FAMILY</div>
+        <div class="sidebar-logo-container">
+          <img src="assets/logo.svg" alt="Integrity Family" class="sidebar-logo" />
+        </div>
         <div class="version-tag">NODO CENTRAL v4.2</div>
       </div>
       
@@ -52,10 +53,11 @@ import { AuthService } from '../../core/services/auth.service';
   `,
   styles: [`
     .sidebar { width: 280px; background: #0a0a0c; height: 100vh; padding: 32px 0; display: flex; flex-direction: column; position: fixed; top: 0; left: 0; border-right: 1px solid rgba(255,255,255,0.05); z-index: 1000; }
-    .brand { display: flex; flex-direction: column; align-items: center; padding: 0 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 24px; }
-    .logo-circle { width: 50px; height: 50px; background: linear-gradient(135deg, #6366f1, #a855f7); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 900; font-size: 20px; box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
-    .brand-title { color: #fff; font-size: 12px; font-weight: 800; letter-spacing: 2px; margin-top: 14px; }
-    .version-tag { font-size: 8px; color: #6366f1; font-weight: bold; background: rgba(99, 102, 241, 0.1); padding: 2px 10px; border-radius: 20px; margin-top: 6px; }
+    .brand { display: flex; flex-direction: column; align-items: center; padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 24px; }
+    .sidebar-logo-container { width: 100px; height: 120px; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.05); transition: transform 0.3s; }
+    .sidebar-logo-container:hover { transform: scale(1.05); }
+    .sidebar-logo { width: 100%; height: 100%; object-fit: cover; }
+    .version-tag { font-size: 8px; color: #818cf8; font-weight: bold; background: rgba(99, 102, 241, 0.12); padding: 3px 12px; border-radius: 20px; margin-top: 12px; border: 1px solid rgba(99, 102, 241, 0.15); }
     nav { flex: 1; padding: 0 16px; overflow-y: auto; }
     .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; color: rgba(255,255,255,.5); font-size: 14px; transition: all .3s; text-decoration: none; margin-bottom: 4px; }
     .nav-item:hover { color: #fff; background: rgba(255,255,255,0.05); transform: translateX(4px); }

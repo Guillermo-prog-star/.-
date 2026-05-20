@@ -7,6 +7,8 @@ import { ApiService } from '../../core/services/api.service';
 import { Plan } from '../../core/models/models';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { TelemetryService } from '../../core/services/telemetry.service';
+import { PlanTransformacion, Mision } from '../../core/models/plan-transformacion.model';
+import { PLANES_MOCK } from '../../data/planes-transformacion.mock';
 
 @Component({
   selector: 'app-plan-list-page', 
@@ -23,6 +25,7 @@ export class PlanListPageComponent implements OnInit {
   private telemetry = inject(TelemetryService);
 
   plans: Plan[] = []; 
+  planes: PlanTransformacion[] = []; 
   evidences: any[] = [];
   loading = false;
   isWaitingForPlan = false;
@@ -237,57 +240,187 @@ export class PlanListPageComponent implements OnInit {
     this.http.get<any>(`${this.api.base}/plans/family/${this.familyId}`)
       .subscribe({ 
         next: ({ data }) => { 
-          this.plans = data; 
+          this.plans = data && data.length > 0 ? [data[data.length - 1]] : []; 
           this.loading = false;
           this.loadFamilyEvidences(); // Carga secundaria
 
-          // Seccionar y proponer micro-misiones dinámicamente si no se han elegido aún
+          // Sincronizar dinámicamente con el PLANES_MOCK
+          this.planes = JSON.parse(JSON.stringify(PLANES_MOCK));
+          
           if (this.plans.length > 0) {
             const planTasks = this.plans[0].tasks || [];
-            // Si no se tiene una tarea activa con estos nombres, proponemos las micro-misiones
-            const hasScreenFree = planTasks.some((t: any) => t.title.includes('Cena sin celulares'));
-            const hasGratitude = planTasks.some((t: any) => t.title.includes('Reconocimiento sincero'));
             
-            if (!hasScreenFree && !hasGratitude) {
-              this.proposedMissions = [
-                {
-                  title: 'Cena sin celulares',
-                  description: 'Establecer una cena familiar de 15 minutos donde todos guarden sus dispositivos móviles para dialogar cara a cara.',
-                  dimension: 'comunicacion',
-                  objetivo: 'Desconectar la tecnología para reconectar emocionalmente.',
-                  accion: 'Implementar una caja recolectora de celulares decorada en la mesa del comedor.',
-                  indicador: 'Cena sin ninguna interrupción digital.',
-                  evidencia: 'Subir una nota corta detallando las risas o temas de conversación de la cena.',
-                  impacto: 15
-                },
-                {
-                  title: 'Reconocimiento sincero',
-                  description: 'Espacio diario nocturno para que cada integrante reconozca el valor y agradezca una acción específica realizada por otro.',
-                  dimension: 'emociones',
-                  objetivo: 'Fomentar un clima de validación y afecto sincero en el hogar.',
-                  accion: 'Dedicar 5 minutos al finalizar el día para decir una palabra de aliento.',
-                  indicador: 'Agradecimiento verbal compartido.',
-                  evidencia: 'Compartir cómo reaccionaron los hijos ante el reconocimiento.',
-                  impacto: 20
-                },
-                {
-                  title: 'Cartel de responsabilidades',
-                  description: 'Discutir, consensuar y diagramar la asignación de las tareas domésticas y cuidado colaborativo dentro del hogar.',
-                  dimension: 'habitos',
-                  objetivo: 'Disminuir el estrés parental mediante corresponsabilidad equitativa.',
-                  accion: 'Elaborar un cartel visual en un área común con los roles firmados por todos.',
-                  indicador: 'Asignación visual de responsabilidades.',
-                  evidencia: 'Describir el acuerdo o subir una foto del cartel.',
-                  impacto: 10
+            // Recorrer los planes del Mock y mapear tareas del backend de manera inteligente y multidimensional
+            this.planes.forEach(plan => {
+              const matchedTasks = planTasks.filter((t: any) => t.dimension.toUpperCase() === plan.pilar.toUpperCase());
+              
+              // Mantener un conjunto de IDs de tareas del backend mapeadas
+              const mappedTaskIds = new Set<number>();
+              
+              // 1. Sincronizar misiones predefinidas en el mock con tareas que coincidan por título o contexto de hito
+              plan.misiones.forEach(mision => {
+                const titleLower = mision.titulo.toLowerCase();
+                const matchedTask = matchedTasks.find(t => {
+                  if (mappedTaskIds.has(t.id)) return false;
+                  
+                  const tTitle = t.title.toLowerCase();
+                  return tTitle.includes(titleLower) || 
+                         titleLower.includes(tTitle) ||
+                         (titleLower.includes('semáforo') && tTitle.includes('gratitud')) ||
+                         (titleLower.includes('cena') && tTitle.includes('diálogo')) ||
+                         (titleLower.includes('descanso') && tTitle.includes('responsabilidades'));
+                });
+                
+                if (matchedTask) {
+                  mision.backendTaskId = matchedTask.id;
+                  mision.estado = matchedTask.completed ? 'Completada' : 'En_Progreso';
+                  mision.titulo = matchedTask.title;
+                  mision.descripcionGeneral = matchedTask.description;
+                  mappedTaskIds.add(matchedTask.id);
+                } else {
+                  mision.backendTaskId = undefined;
+                  mision.estado = 'Pendiente';
                 }
-              ];
-            } else {
-              this.proposedMissions = [];
+              });
+              
+              // 2. Inyectar dinámicamente cualquier tarea del backend del pilar no mapeada aún (ej: IA o custom)
+              matchedTasks.forEach(task => {
+                if (!mappedTaskIds.has(task.id)) {
+                  const isAi = task.title.includes('[IA]') || task.title.includes('Sentinel');
+                  plan.misiones.push({
+                    id: 'backend-task-' + task.id,
+                    titulo: task.title,
+                    estado: task.completed ? 'Completada' : 'En_Progreso',
+                    backendTaskId: task.id,
+                    descripcionGeneral: task.description || 'Misión clínica adaptada por la IA.',
+                    isAi: isAi,
+                    microacciones: [
+                      { id: 'ma-ai-1-' + task.id, icono: isAi ? 'psychology' : 'settings', descripcion: task.accionConcreta || 'Realizar la dinámica principal recomendada.' },
+                      { id: 'ma-ai-2-' + task.id, icono: 'assignment', descripcion: task.indicadorCumplimiento || 'Registrar la asimilación o avance del compromiso.' },
+                      { id: 'ma-ai-3-' + task.id, icono: 'done_all', descripcion: task.evidenciaRequerida || 'Reportar la evidencia en el portal familiar.' }
+                    ]
+                  });
+                  mappedTaskIds.add(task.id);
+                }
+              });
+              
+              // 3. Calcular progreso dinámico del pilar real
+              const completedTasks = matchedTasks.filter((t: any) => t.completed).length;
+              plan.misionesLogradas = completedTasks;
+              plan.misionesTotales = plan.misiones.length;
+              plan.progresoPilar = plan.misionesTotales > 0 ? Math.round((completedTasks / plan.misionesTotales) * 100) : 0;
+            });
+
+            // Proponer 2 misiones clínicas proporcionadas por la IA adaptadas al diagnóstico
+            this.proposedMissions = [];
+            
+            const hasReactividadMission = planTasks.some((t: any) => t.title.includes('[IA] Escucha Activa Contra Reactividad'));
+            const hasDigitalMission = planTasks.some((t: any) => t.title.includes('[IA] Receso Digital y Conexión Activa'));
+
+            if (!hasReactividadMission) {
+              this.proposedMissions.push({
+                title: '[IA] Escucha Activa Contra Reactividad',
+                description: 'Espacio diario nocturno de escucha activa de 10 minutos al final del día para mitigar el estrés parental y la reactividad emocional.',
+                dimension: 'emociones',
+                objetivo: 'Fomentar la validación y corregulación emocional ante el estrés diario.',
+                accion: 'Pasar un objeto de habla para que cada miembro comparta sin ser juzgado o interrumpido.',
+                indicador: 'Dinámica completada 4 noches en la semana.',
+                evidencia: 'Registrar en la bitácora familiar el nivel de tranquilidad colectiva (1 al 5).',
+                impacto: 20,
+                isAi: true
+              });
+            }
+
+            if (!hasDigitalMission) {
+              this.proposedMissions.push({
+                title: '[IA] Receso Digital y Conexión Activa',
+                description: 'Desconexión colectiva de pantallas 45 minutos antes de dormir, depositando dispositivos en una cesta común fuera de las habitaciones.',
+                dimension: 'habitos',
+                objetivo: 'Restaurar la higiene de sueño familiar y contrarrestar la desconexión por pantallas.',
+                accion: 'Fijar una alarma familiar unificada y depositar celulares en la Caja de Presencia.',
+                indicador: 'Desconexión colectiva exitosa por 5 días consecutivos.',
+                evidencia: 'Cargar una bitácora detallando la asimilación del hábito y la calidad del descanso.',
+                impacto: 22,
+                isAi: true
+              });
             }
           }
         }, 
         error: () => this.loading = false 
       });
+  }
+
+  getEmoji(iconName: string): string {
+    const map: { [key: string]: string } = {
+      'palette': '🎨',
+      'rate_review': '📝',
+      'psychology': '🧠',
+      'volunteer_activism': '💝',
+      'settings': '⚙️',
+      'assignment': '📋',
+      'forum': '💬',
+      'phonelink_off': '📴',
+      'light_mode': '🔆',
+      'auto_stories': '📚',
+      'alarm': '⏰',
+      'done_all': '✅',
+      'calendar_today': '📅',
+      'sports_esports': '🎮',
+      'timer': '⏱️',
+      'photo_camera': '📷'
+    };
+    return map[iconName] || '✨';
+  }
+
+  comenzarMision(plan: PlanTransformacion, mision: Mision) {
+    if (mision.backendTaskId) {
+      const completada = mision.estado === 'Completada';
+      this.toggle(mision.backendTaskId, !completada);
+    } else {
+      if (!this.plans || this.plans.length === 0) {
+        this.terminalLogs.push(`❌ ERROR: No hay plan clínico activo para asociar esta misión.`);
+        this.scrollToBottom();
+        return;
+      }
+
+      this.terminalLogs.push(`⚡ [CONECTOR]: Instanciando misión "${mision.titulo}" en el pilar ${plan.pilar}...`);
+      this.scrollToBottom();
+
+      const payload = {
+        title: mision.titulo,
+        description: mision.descripcionGeneral,
+        dimension: plan.pilar.toUpperCase(),
+        fase: this.activePillar,
+        riesgoAsociado: 'BAJO',
+        objetivo: plan.visionFamiliar,
+        accionConcreta: mision.microacciones[0]?.descripcion || '',
+        indicadorCumplimiento: mision.microacciones[1]?.descripcion || '',
+        evidenciaRequerida: mision.microacciones[2]?.descripcion || '',
+        impactoIcf: 15,
+        completed: false,
+        plan: { id: this.plans[0].id }
+      };
+
+      this.http.post<any>(`${this.api.base}/plans/tasks`, payload)
+        .subscribe({
+          next: () => {
+            this.terminalLogs.push(`✅ ÉXITO: Misión "${mision.titulo}" activada e inyectada en la base de datos.`);
+            this.scrollToBottom();
+            this.load(true);
+            this.loadDashboard();
+          },
+          error: (err) => {
+            console.error('Error al instanciar misión:', err);
+            this.terminalLogs.push(`❌ ERROR: No se pudo instanciar la misión en el backend: ${err.message || 'Error del servidor'}`);
+            this.scrollToBottom();
+          }
+        });
+    }
+  }
+
+  openMisionEvidence(mision: Mision) {
+    if (!mision.backendTaskId) return;
+    this.openEvidenceModal({ id: mision.backendTaskId, title: mision.titulo }, 'BITACORA');
   }
 
   selectProposedMission(mission: any) {
@@ -297,7 +430,7 @@ export class PlanListPageComponent implements OnInit {
       title: mission.title,
       description: mission.description,
       dimension: mission.dimension.toUpperCase(),
-      fase: 'EJECUCION',
+      fase: this.activePillar,
       riesgoAsociado: 'BAJO',
       objetivo: mission.objetivo,
       accionConcreta: mission.accion,
@@ -311,16 +444,16 @@ export class PlanListPageComponent implements OnInit {
     this.http.post<any>(`${this.api.base}/plans/tasks`, payload)
       .subscribe({
         next: () => {
-          this.terminalLogs.push(`✅ DECISIÓN ACTIVA: Han elegido la micro-misión "${mission.title}". ¡A por esa micro-victoria!`);
-          this.terminalLogs.push(`🌱 Sentinel AI ha registrado su racha de autonomía y la ha acoplado a su plan clínico.`);
-          this.proposedMissions = []; // Remover tras selección para conservar la interfaz impecable
+          this.terminalLogs.push(`✅ DECISIÓN ACTIVA: Han elegido la misión sugerida por la IA: "${mission.title}".`);
+          this.terminalLogs.push(`🧠 Sentinel AI ha acoplado este compromiso a su plan clínico para análisis predictivo.`);
+          this.proposedMissions = []; // Remover tras selección
           this.load(true);
           this.loadDashboard();
           this.scrollToBottom();
         },
         error: (err) => {
-          console.error('Error activating micro-mission:', err);
-          this.terminalLogs.push(`❌ Error al activar la micro-misión: ${err.message || 'Error del servidor'}`);
+          console.error('Error activating proposed mission:', err);
+          this.terminalLogs.push(`❌ Error al activar la misión: ${err.message || 'Error del servidor'}`);
           this.scrollToBottom();
         }
       });
@@ -358,8 +491,39 @@ export class PlanListPageComponent implements OnInit {
       }});
   }
 
-  completedCount(p: Plan) { return p.tasks.filter(t => t.completed).length; }
-  planPct(p: Plan) { return p.tasks.length ? Math.round(this.completedCount(p) / p.tasks.length * 100) : 0; }
+  get activePillar(): string {
+    const code = this.familyDashboard?.currentMilestone || 'W1';
+    const c = code.toUpperCase().trim();
+    if (c === 'W1' || c === 'M1' || c === 'M2' || c === 'M3' || c === 'MES_00_DIAGNOSTICO') {
+      return 'RECONOCIMIENTO';
+    }
+    if (c === 'M4' || c === 'M5' || c === 'M6' || c === 'M9' || c === 'M12') {
+      return 'AMOR';
+    }
+    if (c === 'M15' || c === 'M18' || c === 'M21' || c === 'M24' || c === 'M36') {
+      return 'ENTREGA';
+    }
+    return 'RECONOCIMIENTO';
+  }
+
+  getActivePillarTasks(tasks: any[]): any[] {
+    if (!tasks) return [];
+    const pillar = this.activePillar;
+    return tasks.filter(t => t.fase === pillar);
+  }
+
+  activePillarTasksCount(p: Plan): number {
+    return p.tasks ? p.tasks.filter(t => t.fase === this.activePillar).length : 0;
+  }
+
+  completedActivePillarCount(p: Plan): number {
+    return p.tasks ? p.tasks.filter(t => t.fase === this.activePillar && t.completed).length : 0;
+  }
+
+  planPct(p: Plan): number {
+    const total = this.activePillarTasksCount(p);
+    return total ? Math.round(this.completedActivePillarCount(p) / total * 100) : 0;
+  }
   
   // Cálculo de circunferencia para el progreso visual circular
   getDashOffset(p: Plan) {

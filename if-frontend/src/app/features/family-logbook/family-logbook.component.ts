@@ -430,7 +430,7 @@ export class FamilyLogbookComponent implements OnInit {
   readonly filter          = signal<FilterMode>('ALL');
   readonly showForm        = signal(false);
   readonly form            = signal<FormState>({ ...EMPTY_FORM });
-  readonly resolveEvidence = signal<Record<number, string>>({});
+  readonly resolveEvidence = signal<Record<number, string | undefined>>({});
   readonly correlation     = signal<any>(null);
   readonly loadingCorrelation = signal(false);
 

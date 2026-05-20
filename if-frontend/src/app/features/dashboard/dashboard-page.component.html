@@ -16,6 +16,9 @@
       <app-sentinel-alert [active]="data.isSentinelActive"></app-sentinel-alert>
     </header>
     
+    <!-- [SDD Analytics v2] ABANDONMENT RISK BANNER — visible sólo si HIGH/CRITICAL -->
+    <app-abandonment-risk-banner></app-abandonment-risk-banner>
+
     <!-- [SDD Spec] MILESTONE ADVANCE REINFORCEMENT -->
     <!-- Activación determinista: Solo visible si el motor de validación aprueba el avance -->
     <div *ngIf="readyToAdvance$ | async" 

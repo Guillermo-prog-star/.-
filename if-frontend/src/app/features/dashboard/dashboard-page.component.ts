@@ -21,6 +21,7 @@ import { AiInsightPanelComponent } from './components/ai-insight-panel/ai-insigh
 import { SentinelAlertComponent } from './components/sentinel-alert/sentinel-alert.component';
 import { CognitivePreviewComponent } from './components/cognitive-preview/cognitive-preview.component';
 import { IcfTrendChartComponent } from './components/icf-trend-chart/icf-trend-chart.component';
+import { AbandonmentRiskBannerComponent } from './components/abandonment-risk-banner/abandonment-risk-banner.component';
 
 /**
  * SDD: Dashboard Page Component
@@ -40,7 +41,8 @@ import { IcfTrendChartComponent } from './components/icf-trend-chart/icf-trend-c
     AiInsightPanelComponent,
     SentinelAlertComponent,
     CognitivePreviewComponent,
-    IcfTrendChartComponent
+    IcfTrendChartComponent,
+    AbandonmentRiskBannerComponent
   ],
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.css'],

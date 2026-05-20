@@ -4,7 +4,8 @@ import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import {
   CognitiveSnapshot, NarrativeResponse,
-  GraphResponse, ReflectionResponse, IcfHistoryPoint, MemoryResponse
+  GraphResponse, ReflectionResponse, IcfHistoryPoint, MemoryResponse,
+  DimensionHistoryPoint
 } from '../models/cognitive.model';
 
 interface ApiResponse<T> { success: boolean; data: T; message: string; }
@@ -50,6 +51,16 @@ export class CognitiveService {
   getIcfHistory(familyId: number): Observable<IcfHistoryPoint[]> {
     return this.http.get<ApiResponse<IcfHistoryPoint[]>>(
       `/api/analytics/family/${familyId}/icf-history`
+    ).pipe(
+      map(r => r.data),
+      catchError(() => of([]))
+    );
+  }
+
+  /** Historial de puntuaciones por dimensión — para gráfico multidimensional */
+  getDimensionHistory(familyId: number): Observable<DimensionHistoryPoint[]> {
+    return this.http.get<ApiResponse<DimensionHistoryPoint[]>>(
+      `/api/analytics/family/${familyId}/dimension-history`
     ).pipe(
       map(r => r.data),
       catchError(() => of([]))

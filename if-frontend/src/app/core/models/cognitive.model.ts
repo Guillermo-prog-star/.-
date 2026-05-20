@@ -7,6 +7,18 @@ export interface IcfHistoryPoint {
   finalizedAt: string | null;
 }
 
+export interface DimensionHistoryPoint {
+  evaluationId: number;
+  finalizedAt: string | null;
+  dimensions: {
+    emociones?:    number;
+    comunicacion?: number;
+    habitos?:      number;
+    tiempos?:      number;
+    [key: string]: number | undefined;
+  };
+}
+
 // ─── SDD Fases 1–5: Modelos del Sistema Cognitivo Familiar ───────────────────
 
 export type NarrativePhase =

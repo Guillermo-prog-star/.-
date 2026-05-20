@@ -120,6 +120,46 @@ public class AnalyticsController {
     }
 
     /**
+     * SDD Analytics v2: Historial de puntuaciones por dimensión.
+     * Devuelve un punto por evaluación finalizada con las 4 dimensiones normalizadas.
+     * Usado por el gráfico de evolución multidimensional del dashboard.
+     */
+    @GetMapping("/family/{familyId}/dimension-history")
+    @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
+    public ApiResponse<java.util.List<java.util.Map<String, Object>>> getDimensionHistory(
+            @PathVariable Long familyId) {
+        log.info("📊 [ANALYTICS] Solicitando historial de dimensiones para familia: {}", familyId);
+
+        java.util.List<java.util.Map<String, Object>> history =
+            evaluationService.findByFamilyId(familyId).stream()
+                .filter(e -> com.integrityfamily.domain.EvaluationStatus.FINALIZED == e.getStatus())
+                .filter(e -> e.getDimensionScores() != null && !e.getDimensionScores().isEmpty())
+                .map(e -> {
+                    java.util.Map<String, Object> pt = new java.util.LinkedHashMap<>();
+                    pt.put("evaluationId", e.getId());
+                    pt.put("finalizedAt",  e.getFinalizedAt() != null ? e.getFinalizedAt().toString() : null);
+
+                    // Normalize dimension names to canonical Spanish keys
+                    java.util.Map<String, Double> dims = new java.util.LinkedHashMap<>();
+                    for (com.integrityfamily.domain.EvaluationDimensionScore ds : e.getDimensionScores()) {
+                        String key = switch (ds.getDimensionName().toUpperCase()) {
+                            case "EMOCIONES", "EMOTIONS"         -> "emociones";
+                            case "COMUNICACION", "COMMUNICATION" -> "comunicacion";
+                            case "HABITOS", "HABITS"             -> "habitos";
+                            case "TIEMPOS", "TIMES"              -> "tiempos";
+                            default -> ds.getDimensionName().toLowerCase();
+                        };
+                        dims.put(key, Math.round(ds.getScore() * 10.0) / 10.0);
+                    }
+                    pt.put("dimensions", dims);
+                    return pt;
+                })
+                .toList();
+
+        return ApiResponse.ok(history);
+    }
+
+    /**
      * SDD EXTRA: Disparador manual de analítica profunda.
      * Útil cuando el admin quiere forzar una actualización del motor Sentinel.
      */

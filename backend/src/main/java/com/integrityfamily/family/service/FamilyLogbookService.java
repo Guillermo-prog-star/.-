@@ -1,5 +1,6 @@
 package com.integrityfamily.family.service;
 
+import com.integrityfamily.cognitive.service.FamilyMemoryService;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.FamilyLogbookEntry;
 import com.integrityfamily.domain.LogbookStatus;
@@ -8,23 +9,33 @@ import com.integrityfamily.dto.FamilyLogbookEntryResponse;
 import com.integrityfamily.dto.ResolveFamilyLogbookEntryRequest;
 import com.integrityfamily.domain.repository.FamilyLogbookEntryRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * SDD: Servicio de Bitácora de Transformación Familiar.
+ * Integrado con FamilyMemoryService para capturar situaciones y resoluciones
+ * como memorias episódicas del sistema cognitivo.
+ */
+@Slf4j
 @Service
 public class FamilyLogbookService {
 
     private final FamilyRepository familyRepository;
     private final FamilyLogbookEntryRepository logbookRepository;
+    private final FamilyMemoryService familyMemoryService;
 
     public FamilyLogbookService(
             FamilyRepository familyRepository,
-            FamilyLogbookEntryRepository logbookRepository
+            FamilyLogbookEntryRepository logbookRepository,
+            FamilyMemoryService familyMemoryService
     ) {
         this.familyRepository = familyRepository;
         this.logbookRepository = logbookRepository;
+        this.familyMemoryService = familyMemoryService;
     }
 
     @Transactional
@@ -43,7 +54,13 @@ public class FamilyLogbookService {
                 request.createdBy()
         );
 
-        return toResponse(logbookRepository.save(entry));
+        FamilyLogbookEntry saved = logbookRepository.save(entry);
+        try {
+            familyMemoryService.captureLogbookOpenMemory(saved);
+        } catch (Exception e) {
+            log.warn("⚠️ [LOGBOOK] Error capturando memoria abierta: {}", e.getMessage());
+        }
+        return toResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -76,8 +93,13 @@ public class FamilyLogbookService {
                 .orElseThrow(() -> new IllegalArgumentException("Entrada de bitácora no encontrada: " + id));
 
         entry.resolve(request.progressEvidence(), request.resolvedBy());
-
-        return toResponse(entry);
+        FamilyLogbookEntry saved = logbookRepository.save(entry);
+        try {
+            familyMemoryService.captureLogbookResolutionMemory(saved);
+        } catch (Exception e) {
+            log.warn("⚠️ [LOGBOOK] Error capturando memoria de resolución: {}", e.getMessage());
+        }
+        return toResponse(saved);
     }
 
     private FamilyLogbookEntryResponse toResponse(FamilyLogbookEntry entry) {

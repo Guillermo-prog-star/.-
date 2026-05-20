@@ -203,8 +203,27 @@ public class CognitiveController {
         return ApiResponse.ok(mapIdentity(profile));
     }
 
-    // ─── 6. Reflexión (trigger manual) ──────────────────────────────────────
+    // ─── 6. Reflexión ────────────────────────────────────────────────────────
 
+    /**
+     * GET: Devuelve la última reflexión calculada (caché o análisis read-only).
+     * Usar para carga del dashboard — no tiene efectos secundarios de escritura.
+     */
+    @GetMapping("/{familyId}/reflection/latest")
+    @PreAuthorize("@familySecurity.check(#familyId)")
+    @Operation(summary = "Última reflexión autónoma (read-only)",
+               description = "Devuelve la reflexión más reciente del sistema. Si no hay caché, realiza análisis sin persistir cambios.")
+    public ApiResponse<ReflectionResponse> getLatestReflection(@PathVariable Long familyId) {
+        log.info("📋 [COGNITIVE] Solicitando última reflexión para familia ID: {}", familyId);
+
+        FamilyReflectionService.ReflectionReport report = familyReflectionService.getLatest(familyId);
+        return ApiResponse.ok(mapReflectionReport(familyId, report));
+    }
+
+    /**
+     * POST: Dispara un ciclo completo de reflexión autónoma (escribe lecciones y narrativa).
+     * Usar sólo desde acciones explícitas del usuario o triggers automatizados.
+     */
     @PostMapping("/{familyId}/reflect")
     @PreAuthorize("@familySecurity.check(#familyId)")
     @Operation(summary = "Ejecutar ciclo de reflexión autónoma",
@@ -213,8 +232,12 @@ public class CognitiveController {
         log.info("🪞 [COGNITIVE] Reflexión manual disparada para familia ID: {}", familyId);
 
         FamilyReflectionService.ReflectionReport report = familyReflectionService.reflect(familyId);
+        return ApiResponse.ok(mapReflectionReport(familyId, report));
+    }
 
-        return ApiResponse.ok(new ReflectionResponse(
+    private ReflectionResponse mapReflectionReport(Long familyId,
+                                                    FamilyReflectionService.ReflectionReport report) {
+        return new ReflectionResponse(
                 familyId,
                 report.effectiveness().level().name(),
                 report.effectiveness().evaluationCount(),
@@ -229,7 +252,7 @@ public class CognitiveController {
                 report.updatedNarrative(),
                 report.requiresUrgentAttention(),
                 report.generatedAt()
-        ));
+        );
     }
 
     // ─── 7. Bootstrap cognitivo (hidratación de familias pre-existentes) ────

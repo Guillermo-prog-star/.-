@@ -311,7 +311,45 @@ class CognitiveControllerTest {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  8. POST /reflect — ciclo de reflexión
+    //  8a. GET /reflection/latest — última reflexión (read-only)
+    // ═══════════════════════════════════════════════════════════════════════
+
+    @Test
+    @DisplayName("GET /reflection/latest sin autenticación → 403")
+    void reflectionLatest_unauthenticated_returns403() throws Exception {
+        mockMvc.perform(get("/api/cognitive/1/reflection/latest"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @DisplayName("GET /reflection/latest → 200 invoca getLatest() y retorna reporte sin efectos secundarios")
+    void reflectionLatest_authorized_invokesGetLatestAndReturns200() throws Exception {
+        FamilyReflectionService.ReflectionReport report = buildMockReport();
+        when(familyReflectionService.getLatest(1L)).thenReturn(report);
+
+        mockMvc.perform(get("/api/cognitive/1/reflection/latest"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.familyId").value(1))
+                .andExpect(jsonPath("$.data.effectivenessLevel").value("MODERATE"))
+                .andExpect(jsonPath("$.data.abandonmentLevel").value("LOW"))
+                .andExpect(jsonPath("$.data.requiresUrgentAttention").value(false));
+
+        // Debe llamar getLatest, NO reflect
+        verify(familyReflectionService, times(1)).getLatest(1L);
+        verify(familyReflectionService, never()).reflect(anyLong());
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    @DisplayName("GET /reflection/latest sin permiso de familia → 403")
+    void reflectionLatest_noFamilyPermission_returns403() throws Exception {
+        mockMvc.perform(get("/api/cognitive/2/reflection/latest"))
+                .andExpect(status().isForbidden());
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  8b. POST /reflect — ciclo de reflexión con efectos secundarios
     // ═══════════════════════════════════════════════════════════════════════
 
     @Test

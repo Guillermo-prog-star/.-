@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -46,6 +47,9 @@ public class FamilyReflectionService {
     private final FamilyRepository familyRepository;
     private final ObjectMapper objectMapper;
 
+    /** Cache de última reflexión por familia (sólo en memoria, se pierde en restart). */
+    private final Map<Long, ReflectionReport> latestReportCache = new ConcurrentHashMap<>();
+
     // ─── Punto de entrada principal ──────────────────────────────────────────
 
     /**
@@ -77,6 +81,38 @@ public class FamilyReflectionService {
                 effectiveness.level(), abandonmentRisk.level(),
                 lessonLearned.map(l -> l.substring(0, Math.min(60, l.length())) + "...").orElse("ninguna"));
 
+        latestReportCache.put(familyId, report);
+        return report;
+    }
+
+    /**
+     * Devuelve la última reflexión calculada para la familia.
+     * Si no hay caché (primer acceso o reinicio), realiza un análisis de sólo lectura
+     * (sin persistir lecciones ni actualizar narrativa) para que el banner pueda
+     * cargarse sin disparar el ciclo completo.
+     */
+    @Transactional(readOnly = true)
+    public ReflectionReport getLatest(Long familyId) {
+        ReflectionReport cached = latestReportCache.get(familyId);
+        if (cached != null) {
+            log.debug("📋 [REFLECTION] Devolviendo reporte cacheado para familia ID: {}", familyId);
+            return cached;
+        }
+
+        log.info("🔍 [REFLECTION] Sin caché para familia ID: {} — análisis read-only", familyId);
+        InterventionEffectiveness effectiveness = evaluateInterventionEffectiveness(familyId);
+        AbandonmentRisk abandonmentRisk = detectAbandonmentRisk(familyId);
+
+        // Read-only: no se persiste lección ni se actualiza narrativa
+        ReflectionReport report = new ReflectionReport(
+                familyId,
+                LocalDateTime.now(),
+                effectiveness,
+                abandonmentRisk,
+                null,
+                null
+        );
+        latestReportCache.put(familyId, report);
         return report;
     }
 

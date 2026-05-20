@@ -117,8 +117,8 @@ export class AbandonmentRiskBannerComponent implements OnInit {
   ngOnInit(): void {
     const id = this.familyState.getSelectedFamilyId();
     if (!id) { this.loading.set(false); return; }
-    // Trigger a reflection to get fresh abandonment data
-    this.cognitiveService.triggerReflection(id).subscribe({
+    // Use read-only GET — avoids triggering the full reflection cycle on every dashboard load
+    this.cognitiveService.getLatestReflection(id).subscribe({
       next: r => { this.reflection.set(r); this.loading.set(false); },
       error: ()  => this.loading.set(false)
     });

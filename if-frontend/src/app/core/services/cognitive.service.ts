@@ -56,7 +56,23 @@ export class CognitiveService {
     );
   }
 
-  /** Ejecutar ciclo de reflexión autónoma */
+  /**
+   * Última reflexión calculada — read-only, sin side-effects de escritura.
+   * Usar para carga del dashboard (banner de riesgo de abandono).
+   */
+  getLatestReflection(familyId: number): Observable<ReflectionResponse | null> {
+    return this.http.get<ApiResponse<ReflectionResponse>>(
+      `${this.base}/${familyId}/reflection/latest`
+    ).pipe(
+      map(r => r.data),
+      catchError(() => of(null))
+    );
+  }
+
+  /**
+   * Ejecutar ciclo completo de reflexión autónoma.
+   * Persiste lecciones y actualiza narrativa — usar sólo en acciones explícitas.
+   */
   triggerReflection(familyId: number): Observable<ReflectionResponse | null> {
     return this.http.post<ApiResponse<ReflectionResponse>>(`${this.base}/${familyId}/reflect`, {}).pipe(
       map(r => r.data),

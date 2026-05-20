@@ -350,13 +350,13 @@ import {
                            hover:bg-amber-500/20 transition-all disabled:opacity-40
                            disabled:cursor-not-allowed flex items-center gap-2">
               <span *ngIf="reflecting()" class="w-3 h-3 rounded-full border border-amber-400 border-t-transparent animate-spin"></span>
-              {{ reflecting() ? 'Analizando...' : '▶ Ejecutar Reflexión' }}
+              {{ reflecting() ? 'Analizando...' : '↻ Actualizar Reflexión' }}
             </button>
           </div>
 
-          <!-- Estado: sin reflexión aún -->
+          <!-- Estado: sin reflexión disponible -->
           <div *ngIf="!reflection()" class="text-center py-12">
-            <p class="text-white/20 text-sm">Ejecuta la reflexión para ver el análisis de efectividad del sistema.</p>
+            <p class="text-white/20 text-sm">Sin datos de reflexión todavía — realiza un diagnóstico primero.</p>
           </div>
 
           <!-- Resultado de reflexión -->
@@ -511,16 +511,18 @@ export class CognitivePageComponent implements OnInit {
     if (!familyId) { this.loading.set(false); return; }
 
     forkJoin({
-      snapshot:  this.cognitiveService.getSnapshot(familyId),
-      narrative: this.cognitiveService.getNarrative(familyId),
-      graph:     this.cognitiveService.getGraph(familyId),
-      memory:    this.cognitiveService.getMemory(familyId)
+      snapshot:   this.cognitiveService.getSnapshot(familyId),
+      narrative:  this.cognitiveService.getNarrative(familyId),
+      graph:      this.cognitiveService.getGraph(familyId),
+      memory:     this.cognitiveService.getMemory(familyId),
+      reflection: this.cognitiveService.getLatestReflection(familyId)
     }).subscribe({
-      next: ({ snapshot, narrative, graph, memory }) => {
+      next: ({ snapshot, narrative, graph, memory, reflection }) => {
         this.snapshot.set(snapshot);
         this.narrative.set(narrative);
         this.graph.set(graph);
         this.memory.set(memory);
+        this.reflection.set(reflection);
         this.loading.set(false);
       },
       error: () => this.loading.set(false)

@@ -21,7 +21,7 @@ mvnw.cmd
 **/dist/
 **/.angular/
 .npm/
-package-lock.json
+# package-lock.json is committed for the frontend (needed for CI/CD cache)
 
 # === Docker & Bases de Datos ===
 docker/data/

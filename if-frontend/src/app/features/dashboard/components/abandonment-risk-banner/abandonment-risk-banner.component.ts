@@ -52,7 +52,7 @@ import { ReflectionResponse, AbandonmentLevel } from '../../../../core/models/co
             <span class="text-[9px] text-white/30 uppercase tracking-widest block">ICF Δ</span>
             <span class="text-lg font-black"
                   [ngClass]="reflection()!.icfTrend >= 0 ? 'text-emerald-400' : 'text-red-400'">
-              {{ reflection()!.icfTrend >= 0 ? '+' : '' }}{{ reflection()!.icfTrend | number:'1.1-1' }}
+              {{ reflection()!.icfTrend >= 0 ? '+' : '' }}{{ reflection()!.icfTrend | number:'1.0-0' }}
             </span>
           </div>
           <div>

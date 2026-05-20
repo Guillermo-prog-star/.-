@@ -362,31 +362,36 @@ public class PromptGenerator {
                    - NIVEL TÁCTICO (Hitos M3 a M6): Cambios estructurales sencillos (Ej: "Cartel de responsabilidades").
                    - NIVEL ESTRATÉGICO (Hitos M12 a M36): Proyectos familiares sencillos (Ej: "Caminar y conversar").
                 
-                4. HITOS LONGITUDINALES: Genera exactamente 1 o 2 misiones (tareas) por cada uno de los siguientes 14 hitos del timeline de transformación familiar, aplicando la taxonomía anterior de forma invisible y simple:
-                   - RECONOCIMIENTO Fase:
-                     * W1 (1 semana): Acción táctica de contención.
+                4. RUTA DE EVOLUCIÓN (3 PILARES Y SECUENCIACIÓN TEMPORAL):
+                   El plan de 36 meses se divide estrictamente en 3 Pilares de Conciencia. Genera exactamente de 6 a 12 microacciones (misiones) en total por cada uno de los siguientes pilares de conciencia, distribuyéndolas de forma equilibrada entre los hitos temporales que pertenecen a dicho pilar:
+                   - PILAR 1: RECONOCIMIENTO (Fase de Conciencia Inicial. Hitos: W1, M1, M2, M3):
+                     * W1 (1 semana): Acción táctica de contención y estabilización inicial.
                      * M1 (1 mes): Primera microrutina instalada.
                      * M2 (2 meses): Profundización de rutinas básicas.
                      * M3 (3 meses): Consolidación de toma de conciencia.
-                   - AMOR Fase:
+                     *(Debes generar de 6 a 12 tareas en total en este pilar, asignadas a estos hitos)*
+                   - PILAR 2: AMOR (Fase de Conciencia Vincular. Hitos: M4, M5, M6, M9, M12):
                      * M4 (4 meses): Instalación de diálogo asertivo.
                      * M5 (5 meses): Co-regulación y confianza mutua.
                      * M6 (6 meses): Hábitos recurrentes y rituales.
                      * M9 (9 meses): Balance de tiempos y cuidado del nodo.
                      * M12 (12 meses): Crecimiento y sintonía familiar.
-                   - ENTREGA Fase:
+                     *(Debes generar de 6 a 12 tareas en total en este pilar, asignadas a estos hitos)*
+                   - PILAR 3: ENTREGA (Fase de Conciencia Plena / Transformadora. Hitos: M15, M18, M21, M24, M36):
                      * M15 (15 meses): Propósito trascendental compartido.
                      * M18 (18 meses): Trascendencia y apoyo mutuo.
                      * M21 (21 meses): Proyección del legado familiar.
                      * M24 (24 meses): Madurez del sistema familiar.
                      * M36 (36 meses): Legado e impacto hacia el exterior.
+                     *(Debes generar de 6 a 12 tareas en total en este pilar, asignadas a estos hitos)*
                 
                 5. BUCLE CERRADO (SIMPLIFICADO): NO uses los pasos PLANIFICAR, EJECUTAR y EVALUAR. En su lugar, describe la acción de forma directa y humana.
                 6. REGLA DE ADAPTACIÓN POR CRISIS: Si en <logbook_sentiment_context> "generalLabel" es "CRISIS" o el puntaje es menor a -0.40, los hitos iniciales (W1 y M1) deben centrarse de manera exclusiva en contención emocional de emergencia, pausando cualquier otra dimensión compleja.
                 7. REGLA DE MICROACCIONES: Cada tarea DEBE ser una microacción observable, cotidiana y de fricción casi nula (ej: 'cenar sin celulares', 'escribir una nota de agradecimiento de 1 línea', 'respirar juntos 2 minutos si hay tensión'). No sugieras misiones abstractas ni intervenciones psicológicas clínicas complejas.
-                8. CLASIFICACIÓN DE TAREAS: Cada tarea debe mapearse exactamente a:
-                   - fase: "RECONOCIMIENTO" | "AMOR" | "ENTREGA" (debe coincidir con la fase correspondiente al hito).
+                8. CLASIFICACIÓN DE TAREAS: Cada tarea debe tener obligatoriamente su fase y dimensión asignada en el JSON:
+                   - fase: "RECONOCIMIENTO" | "AMOR" | "ENTREGA" (debe coincidir con la fase correspondiente al pilar del hito).
                    - dimension: "EMOCIONES" | "COMUNICACION" | "HABITOS" | "TIEMPOS".
+                9. REGLA DE SOLUCIÓN Y EVOLUCIÓN (80/20): Las misiones deben enfocarse en un 80% en acciones positivas de transformación, fortalezas y construcción proactiva del vínculo. Solo el 20% puede hacer referencia a mitigar problemas o diagnosticar conflictos identificados. Priorizar siempre la evolución y soluciones por encima de la presentación de patologías o problemas clínicos.
                 </architectural_rules>
 
                 <output_contract>
@@ -415,7 +420,7 @@ public class PromptGenerator {
                      },
                      "milestones": [
                        {
-                         "code": "W1 | M1 | M3 | M6 | M12 | M24 | M36",
+                         "code": "W1 | M1 | M2 | M3 | M4 | M5 | M6 | M9 | M12 | M15 | M18 | M21 | M24 | M36",
                          "goal": "Meta del hito",
                          "micro_actions": [
                            {
@@ -423,8 +428,11 @@ public class PromptGenerator {
                              "description": "Descripción corta y cálida de la acción (2 o 3 líneas)",
                              "duration_minutes": 20,
                              "participants": ["PADRE", "MADRE", "HIJO"],
-                             "evidence_type": "PHOTO | TEXT | AUDIO"
+                             "evidence_type": "PHOTO | TEXT | AUDIO",
+                             "fase": "RECONOCIMIENTO | AMOR | ENTREGA",
+                             "dimension": "EMOCIONES | COMUNICACION | HABITOS | TIEMPOS"
                            }
+                           // Agrega de 1 a 3 microacciones por hito para lograr de 6 a 12 misiones por pilar en total.
                          ]
                        }
                      ]

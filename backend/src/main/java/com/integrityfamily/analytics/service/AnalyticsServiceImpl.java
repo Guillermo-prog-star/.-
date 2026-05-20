@@ -124,10 +124,10 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .orElse("No hay acuerdos recientes registrados.");
 
         // 9.5 Recuperación de Reporte de Plan IA
-        String planAiReport = planRepository.findByFamilyId(familyId).stream()
-                .findFirst()
-                .map(com.integrityfamily.domain.ImprovementPlan::getAiReport)
-                .orElse("No hay reporte de plan disponible.");
+        List<com.integrityfamily.domain.ImprovementPlan> familyPlans = planRepository.findByFamilyId(familyId);
+        String planAiReport = (familyPlans != null && !familyPlans.isEmpty()) ?
+                familyPlans.get(familyPlans.size() - 1).getAiReport() :
+                "No hay reporte de plan disponible.";
 
         // 10. Motor de Activacion Proactiva Sentinel (Capa de Contencion)
         boolean sentinelTriggered = Boolean.TRUE.equals(family.getSentinelActive())

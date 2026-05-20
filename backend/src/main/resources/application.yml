@@ -169,3 +169,39 @@ management:
   health:
     rabbit:
       enabled: false
+
+---
+# Perfil 'render': despliegue en Render.com
+# Variables de entorno requeridas en el dashboard de Render:
+#   SPRING_DATASOURCE_URL  → jdbc:mysql://<RAILWAY_PUBLIC_HOST>:<PORT>/<DB>?useSSL=true&allowPublicKeyRetrieval=true&serverTimezone=UTC
+#   SPRING_DATASOURCE_USERNAME, SPRING_DATASOURCE_PASSWORD
+#   JWT_SECRET, CLAUDE_API_KEY (opcional)
+spring:
+  config:
+    activate:
+      on-profile: render
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  rabbitmq:
+    listener:
+      simple:
+        auto-startup: false
+
+logging:
+  file:
+    name: ""
+  level:
+    com.integrityfamily: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  health:
+    rabbit:
+      enabled: false

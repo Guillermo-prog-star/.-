@@ -29,9 +29,14 @@ public class PlanTaskService {
     public void createTasksFromAi(Long familyId, List<com.integrityfamily.plan.dto.PlanDtos.AiMissionProposal> tasks) {
         log.info("📌 [PLAN-TASK] Iniciando persistencia de {} tareas para familia ID: {}", tasks.size(), familyId);
 
-        ImprovementPlan plan = planRepository.findByFamilyId(familyId).stream()
-                .findFirst()
-                .orElseGet(() -> createDefaultPlan(familyId));
+        List<ImprovementPlan> existingPlans = planRepository.findByFamilyId(familyId);
+        ImprovementPlan plan = (existingPlans != null && !existingPlans.isEmpty()) ?
+                existingPlans.get(existingPlans.size() - 1) :
+                createDefaultPlan(familyId);
+
+        com.integrityfamily.domain.Family family = plan.getFamily();
+        String currentMilestone = family != null ? family.getCurrentMilestone() : "W1";
+        String activeFase = resolveFaseFromMilestone(currentMilestone);
 
         tasks.forEach(proposal -> {
             PlanTask task = PlanTask.builder()
@@ -45,6 +50,7 @@ public class PlanTaskService {
                     .indicadorCumplimiento(proposal.successMetric())
                     .accionConcreta(proposal.missionType() + " - " + proposal.frequency())
                     .impactoIcf(proposal.riskLevel() != null && proposal.riskLevel().equalsIgnoreCase("high") ? 20 : 10)
+                    .fase(activeFase)
                     .build();
             plan.getTasks().add(task);
         });
@@ -68,9 +74,14 @@ public class PlanTaskService {
         
         log.info("🎯 [PLAN-TASK] Generando misiones automáticas para rol: {} en familia ID: {}", role, familyId);
 
-        ImprovementPlan plan = planRepository.findByFamilyId(familyId).stream()
-                .findFirst()
-                .orElseGet(() -> createDefaultPlan(familyId));
+        List<ImprovementPlan> existingPlans = planRepository.findByFamilyId(familyId);
+        ImprovementPlan plan = (existingPlans != null && !existingPlans.isEmpty()) ?
+                existingPlans.get(existingPlans.size() - 1) :
+                createDefaultPlan(familyId);
+
+        com.integrityfamily.domain.Family family = evaluation.getFamily();
+        String currentMilestone = family != null ? family.getCurrentMilestone() : "W1";
+        String activeFase = resolveFaseFromMilestone(currentMilestone);
 
         List<PlanTask> newTasks = new ArrayList<>();
 
@@ -84,6 +95,7 @@ public class PlanTaskService {
                             .plan(plan)
                             .dimension("COMUNICACION")
                             .responsible(evaluation.getMember())
+                            .fase(activeFase)
                             .build());
                     newTasks.add(PlanTask.builder()
                             .title("Liderazgo sin Pantallas")
@@ -92,6 +104,7 @@ public class PlanTaskService {
                             .plan(plan)
                             .dimension("TIEMPOS")
                             .responsible(evaluation.getMember())
+                            .fase(activeFase)
                             .build());
                     break;
                 case "MADRE":
@@ -102,6 +115,7 @@ public class PlanTaskService {
                             .plan(plan)
                             .dimension("HABITOS")
                             .responsible(evaluation.getMember())
+                            .fase(activeFase)
                             .build());
                     newTasks.add(PlanTask.builder()
                             .title("Espacio de Autocuidado")
@@ -110,6 +124,7 @@ public class PlanTaskService {
                             .plan(plan)
                             .dimension("EMOCIONES")
                             .responsible(evaluation.getMember())
+                            .fase(activeFase)
                             .build());
                     break;
                 case "ADOLESCENTE":
@@ -120,6 +135,7 @@ public class PlanTaskService {
                             .plan(plan)
                             .dimension("EMOCIONES")
                             .responsible(evaluation.getMember())
+                            .fase(activeFase)
                             .build());
                     newTasks.add(PlanTask.builder()
                             .title("Propuesta de Conexión")
@@ -128,6 +144,7 @@ public class PlanTaskService {
                             .plan(plan)
                             .dimension("COMUNICACION")
                             .responsible(evaluation.getMember())
+                            .fase(activeFase)
                             .build());
                     break;
                 case "NINO":
@@ -139,6 +156,7 @@ public class PlanTaskService {
                             .plan(plan)
                             .dimension("HABITOS")
                             .responsible(evaluation.getMember())
+                            .fase(activeFase)
                             .build());
                     newTasks.add(PlanTask.builder()
                             .title("Juego Consciente")
@@ -147,6 +165,7 @@ public class PlanTaskService {
                             .plan(plan)
                             .dimension("TIEMPOS")
                             .responsible(evaluation.getMember())
+                            .fase(activeFase)
                             .build());
                     break;
                 default:
@@ -157,6 +176,7 @@ public class PlanTaskService {
                             .plan(plan)
                             .dimension("COMUNICACION")
                             .responsible(evaluation.getMember())
+                            .fase(activeFase)
                             .build());
                     break;
             }
@@ -165,6 +185,16 @@ public class PlanTaskService {
         plan.getTasks().addAll(newTasks);
         planRepository.save(plan);
         log.info("✅ [PLAN-TASK] {} misiones automáticas generadas y asignadas.", newTasks.size());
+    }
+
+    private String resolveFaseFromMilestone(String code) {
+        if (code == null) return "RECONOCIMIENTO";
+        return switch (code.toUpperCase().trim()) {
+            case "W1", "M1", "M2", "M3" -> "RECONOCIMIENTO";
+            case "M4", "M5", "M6", "M9", "M12" -> "AMOR";
+            case "M15", "M18", "M21", "M24", "M36" -> "ENTREGA";
+            default -> "RECONOCIMIENTO";
+        };
     }
 
     private ImprovementPlan createDefaultPlan(Long familyId) {

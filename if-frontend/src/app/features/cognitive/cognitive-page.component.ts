@@ -381,7 +381,7 @@ import {
                 <span class="text-[9px] text-white/30 uppercase tracking-widest block mb-2">Tendencia ICF</span>
                 <span class="text-2xl font-black"
                       [ngClass]="reflection()!.icfTrend >= 0 ? 'text-emerald-400' : 'text-red-400'">
-                  {{ reflection()!.icfTrend >= 0 ? '+' : '' }}{{ reflection()!.icfTrend | number:'1.1-1' }}
+                  {{ reflection()!.icfTrend >= 0 ? '+' : '' }}{{ reflection()!.icfTrend | number:'1.0-0' }}
                 </span>
               </div>
               <div class="p-4 bg-white/[0.03] rounded-2xl border border-white/5 text-center">

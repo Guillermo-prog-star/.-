@@ -76,3 +76,4 @@ Thumbs.db
 backend_logs/
 maven_build_error.log
 **/target/
+.vercel

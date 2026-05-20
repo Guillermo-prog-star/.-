@@ -72,7 +72,7 @@
           </h4>
           <div class="flex items-baseline gap-2">
             <span class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
-              {{ data.progress.deltaIcf >= 0 ? '+' : '' }}{{ data.progress.deltaIcf }}
+              {{ data.progress.deltaIcf >= 0 ? '+' : '' }}{{ data.progress.deltaIcf | number:'1.0-0' }}
             </span>
             <span class="text-sm font-bold text-teal-500 uppercase tracking-wide">puntos</span>
           </div>
@@ -98,7 +98,7 @@
               <span class="text-white/80 text-sm capitalize font-medium">{{ dim.key }}</span>
               <span class="px-3 py-1 text-xs font-bold rounded-full" 
                     [ngClass]="dim.value >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'">
-                {{ dim.value >= 0 ? '+' : '' }}{{ dim.value }}
+                {{ dim.value >= 0 ? '+' : '' }}{{ dim.value | number:'1.0-0' }}
               </span>
             </div>
           </div>

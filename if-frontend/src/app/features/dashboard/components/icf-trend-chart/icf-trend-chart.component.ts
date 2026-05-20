@@ -37,7 +37,7 @@ import { IcfHistoryPoint } from '../../../../core/models/cognitive.model';
              [ngClass]="deltaIcf()! >= 0
                ? 'bg-emerald-500/10 text-emerald-400'
                : 'bg-red-500/10 text-red-400'">
-          {{ deltaIcf()! >= 0 ? '+' : '' }}{{ deltaIcf()! | number:'1.1-1' }} pts
+          {{ deltaIcf()! >= 0 ? '+' : '' }}{{ deltaIcf()! | number:'1.0-0' }} pts
         </div>
       </div>
 
@@ -122,7 +122,7 @@ import { IcfHistoryPoint } from '../../../../core/models/cognitive.model';
             <span class="text-3xl font-black"
                   [ngClass]="lastIcf() >= 70 ? 'text-emerald-400' :
                               lastIcf() >= 40 ? 'text-amber-400' : 'text-red-400'">
-              {{ lastIcf() | number:'1.1-1' }}
+              {{ lastIcf() | number:'1.0-0' }}
             </span>
           </div>
           <div *ngIf="lastCrisis()" class="mb-1">

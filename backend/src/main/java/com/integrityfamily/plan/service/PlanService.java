@@ -115,6 +115,14 @@ public class PlanService {
             log.info("📦 Plantilla maestra seleccionada: {} - {}", template.getCode(), template.getName());
         }
 
+        // De-duplication: ensure only one active plan exists per family
+        List<ImprovementPlan> existingPlans = planRepository.findByFamilyId(family.getId());
+        if (existingPlans != null && !existingPlans.isEmpty()) {
+            log.info("🧹 [PLAN-SERVICE] Eliminando {} planes existentes para la familia ID: {}", existingPlans.size(), family.getId());
+            planRepository.deleteAll(existingPlans);
+            planRepository.flush();
+        }
+
         // Crear el ImprovementPlan
         ImprovementPlan plan = ImprovementPlan.builder()
                 .family(family)
@@ -196,13 +204,19 @@ public class PlanService {
                 default -> "Reflexión compartida de la evolución familiar en el sistema.";
             };
 
+            String pilarFase = switch (activity.getPhase()) {
+                 case "1 semana", "1 mes", "3 meses" -> "RECONOCIMIENTO";
+                 case "6 meses" -> "AMOR";
+                 default -> "ENTREGA";
+            };
+
             PlanTask task = PlanTask.builder()
                     .plan(plan)
                     .title(activity.getTitle())
-                    .description("Misión clínica asignada para la fase: " + activity.getPhase())
+                    .description("Misión clínica asignada para la fase: " + pilarFase)
                     .dimension(template.getDimension())
                     .dueDate(LocalDateTime.now().plusDays(activity.getDurationDays()))
-                    .fase(activity.getPhase())
+                    .fase(pilarFase)
                     .riesgoAsociado(riskLevel)
                     .objetivo(objetivo)
                     .accionConcreta(accion)
@@ -232,6 +246,14 @@ public class PlanService {
         Family family = evaluation.getFamily();
         if (family == null) {
             throw new RuntimeException("La evaluación no tiene una familia asociada.");
+        }
+
+        // De-duplication: ensure only one active plan exists per family
+        List<ImprovementPlan> existingPlans = planRepository.findByFamilyId(family.getId());
+        if (existingPlans != null && !existingPlans.isEmpty()) {
+            log.info("🧹 [PLAN-SERVICE] Eliminando {} planes existentes para la familia ID: {}", existingPlans.size(), family.getId());
+            planRepository.deleteAll(existingPlans);
+            planRepository.flush();
         }
 
         ImprovementPlan plan = ImprovementPlan.builder()

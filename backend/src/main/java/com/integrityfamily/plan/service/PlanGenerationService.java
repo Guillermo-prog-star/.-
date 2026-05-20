@@ -9,6 +9,7 @@ import com.integrityfamily.domain.Evaluation;
 import com.integrityfamily.domain.EvaluationDimensionScore;
 import com.integrityfamily.domain.repository.EvaluationRepository;
 import com.integrityfamily.domain.repository.MilestoneRepository;
+import com.integrityfamily.domain.repository.ImprovementPlanRepository;
 import com.integrityfamily.ai.service.AiService;
 import com.integrityfamily.common.service.WhatsAppService;
 import com.integrityfamily.checklist.service.ChecklistService;
@@ -43,6 +44,7 @@ public class PlanGenerationService {
     private final MilestoneRepository milestoneRepository;
     private final ContinuityEngine continuityEngine;
     private final PlanValidator planValidator;
+    private final ImprovementPlanRepository planRepository;
 
     public PlanGenerationService(PlanService planService,
                                 EvaluationRepository evaluationRepository,
@@ -52,7 +54,8 @@ public class PlanGenerationService {
                                 ChecklistService checklistService,
                                 MilestoneRepository milestoneRepository,
                                 ContinuityEngine continuityEngine,
-                                PlanValidator planValidator) {
+                                PlanValidator planValidator,
+                                ImprovementPlanRepository planRepository) {
         this.planService = planService;
         this.evaluationRepository = evaluationRepository;
         this.aiService = aiService;
@@ -62,6 +65,7 @@ public class PlanGenerationService {
         this.milestoneRepository = milestoneRepository;
         this.continuityEngine = continuityEngine;
         this.planValidator = planValidator;
+        this.planRepository = planRepository;
     }
 
     @RabbitListener(queues = com.integrityfamily.common.config.RabbitConfig.PLAN_QUEUE)
@@ -129,6 +133,15 @@ public class PlanGenerationService {
             String jsonContent = extractJson(jsonResponse);
             HybridPlanDto planDto = objectMapper.readValue(jsonContent, HybridPlanDto.class);
 
+            // De-duplicación estricta (SDD SPEC): Solo 1 plan activo por familia
+            List<ImprovementPlan> existingPlans = planRepository.findByFamilyId(evaluation.getFamily().getId());
+            if (existingPlans != null && !existingPlans.isEmpty()) {
+                log.info("🧹 [PLAN-ENGINE] Eliminando {} planes duplicados existentes para la familia ID: {}", 
+                        existingPlans.size(), evaluation.getFamily().getId());
+                planRepository.deleteAll(existingPlans);
+                planRepository.flush();
+            }
+
             ImprovementPlan p = ImprovementPlan.builder()
                     .family(evaluation.getFamily())
                     .evaluation(evaluation)
@@ -151,12 +164,15 @@ public class PlanGenerationService {
                             int daysForMilestone = resolveMilestoneDays(mDto.code());
                             int periodicityMonths = resolveMilestonePeriodicityMonths(mDto.code());
 
+                            String resolvedFase = tDto.fase() != null ? tDto.fase().toUpperCase().trim() : resolveFase(mDto.code());
+                            String resolvedDimension = tDto.dimension() != null ? tDto.dimension().toUpperCase().trim() : resolveDimension(mDto.code());
+
                             PlanTask task = PlanTask.builder()
                                     .plan(p)
                                     .title(tDto.title())
-                                    .dimension("EMOCIONES") // Fallback
+                                    .dimension(resolvedDimension)
                                     .milestone(milestone)
-                                    .fase("RECONOCIMIENTO") // Fallback
+                                    .fase(resolvedFase)
                                     .objetivo(mDto.goal()) // Usamos la meta del hito como objetivo
                                     .accionConcreta(tDto.description())
                                     .indicadorCumplimiento("Completar la acción")
@@ -168,8 +184,8 @@ public class PlanGenerationService {
                                     .steps(new java.util.ArrayList<>())
                                     .build();
 
-                            log.info("📅 [PLAN-ENGINE] Microacción '{}' → Hito {} → Vence: {} ({} meses)",
-                                    tDto.title(), mDto.code(), task.getDueDate().toLocalDate(), periodicityMonths);
+                            log.info("📅 [PLAN-ENGINE] Microacción '{}' (fase: {}, dim: {}) → Hito {} → Vence: {} ({} meses)",
+                                    tDto.title(), resolvedFase, resolvedDimension, mDto.code(), task.getDueDate().toLocalDate(), periodicityMonths);
 
                             p.getTasks().add(task);
                         }
@@ -239,7 +255,9 @@ public class PlanGenerationService {
         String description,
         @JsonProperty("duration_minutes") Integer durationMinutes,
         List<String> participants,
-        @JsonProperty("evidence_type") String evidenceType
+        @JsonProperty("evidence_type") String evidenceType,
+        String fase,
+        String dimension
     ) {}
 
     public record TaskDto(
@@ -309,6 +327,27 @@ public class PlanGenerationService {
             case "M24" -> 24;
             case "M36" -> 36;
             default    -> 1;
+        };
+    }
+
+    private String resolveFase(String code) {
+        if (code == null) return "RECONOCIMIENTO";
+        return switch (code.toUpperCase().trim()) {
+            case "W1", "M1", "M2", "M3" -> "RECONOCIMIENTO";
+            case "M4", "M5", "M6", "M9", "M12" -> "AMOR";
+            case "M15", "M18", "M21", "M24", "M36" -> "ENTREGA";
+            default -> "RECONOCIMIENTO";
+        };
+    }
+
+    private String resolveDimension(String code) {
+        if (code == null) return "EMOCIONES";
+        return switch (code.toUpperCase().trim()) {
+            case "W1", "M1" -> "EMOCIONES";
+            case "M2", "M3", "M4" -> "COMUNICACION";
+            case "M5", "M6", "M9" -> "HABITOS";
+            case "M12", "M15", "M18", "M21", "M24", "M36" -> "TIEMPOS";
+            default -> "EMOCIONES";
         };
     }
 

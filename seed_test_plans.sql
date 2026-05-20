@@ -25,6 +25,11 @@ VALUES
 (1, 1, 'FINALIZED', DATE_SUB(NOW(), INTERVAL 1 DAY), DATE_SUB(NOW(), INTERVAL 23 HOUR), false, 75.0, 'M1', 'Síntesis espiritual inicial de la Familia Lopez Rivera.')
 ON DUPLICATE KEY UPDATE status=VALUES(status), finalized_at=VALUES(finalized_at);
 
+-- Limpiar de forma absoluta todos los planes, tareas y pasos de ejecución anteriores para evitar duplicados históricos
+DELETE FROM plan_task_steps;
+DELETE FROM plan_tasks;
+DELETE FROM plans;
+
 -- 4. Crear plan de mejora para la familia
 INSERT INTO plans (id, family_id, evaluation_id, title, description, created_at, ai_report)
 VALUES
@@ -47,7 +52,7 @@ DATE_ADD(NOW(), INTERVAL 7 DAY),
 'COMUNICACION', 
 1, 
 md.id, 
-'EJECUCION', 
+'RECONOCIMIENTO', 
 'BAJO', 
 'Desconectar la tecnología para reconectar emocionalmente.', 
 'Implementar una caja decorada en la mesa donde todos los miembros depositen sus dispositivos móviles antes de cenar.', 
@@ -68,7 +73,7 @@ DATE_ADD(NOW(), INTERVAL 14 DAY),
 'EMOCIONES', 
 1, 
 md.id, 
-'ESTABILIZACION', 
+'RECONOCIMIENTO', 
 'MEDIO', 
 'Fomentar un clima de validación y afecto sincero en el hogar.', 
 'Dedicar 10 minutos al finalizar el día para la dinámica grupal de agradecimiento verbal.', 
@@ -89,7 +94,7 @@ DATE_ADD(NOW(), INTERVAL 21 DAY),
 'HABITOS', 
 3, 
 md.id, 
-'EVALUACION', 
+'RECONOCIMIENTO', 
 'BAJO', 
 'Disminuir el estrés parental mediante corresponsabilidad equitativa.', 
 'Elaborar un cartel o rotativo visual pegado en un área común con los roles firmados por todos.', 
@@ -98,8 +103,51 @@ md.id,
 10
 FROM milestone_definitions md WHERE md.code = 'M3';
 
+-- Misiones IA Clínicas de respuesta al diagnóstico
+INSERT INTO plan_tasks (id, plan_id, title, description, completed, created_at, due_date, dimension, periodicity_months, milestone_id, fase, riesgo_asociado, objetivo, accion_concreta, indicador_cumplimiento, evidencia_requerida, impacto_icf)
+SELECT 
+4, 
+1, 
+'[IA] Escucha Activa Contra Reactividad', 
+'Espacio diario nocturno de escucha activa de 10 minutos al final del día para mitigar el estrés parental y la reactividad emocional.', 
+false, 
+NOW(), 
+DATE_ADD(NOW(), INTERVAL 7 DAY), 
+'EMOCIONES', 
+1, 
+md.id, 
+'RECONOCIMIENTO', 
+'BAJO', 
+'Fomentar la validación y corregulación emocional ante el estrés diario.', 
+'Pasar un objeto de habla para que cada miembro comparta sin ser juzgado o interrumpido.', 
+'Dinámica completada 4 noches en la semana.', 
+'Registrar en la bitácora familiar el nivel de tranquilidad colectiva (1 al 5).', 
+20
+FROM milestone_definitions md WHERE md.code = 'M1';
+
+INSERT INTO plan_tasks (id, plan_id, title, description, completed, created_at, due_date, dimension, periodicity_months, milestone_id, fase, riesgo_asociado, objetivo, accion_concreta, indicador_cumplimiento, evidencia_requerida, impacto_icf)
+SELECT 
+5, 
+1, 
+'[IA] Receso Digital y Conexión Activa', 
+'Desconexión colectiva de pantallas 45 minutos antes de dormir, depositando dispositivos en una cesta común fuera de las habitaciones.', 
+false, 
+NOW(), 
+DATE_ADD(NOW(), INTERVAL 7 DAY), 
+'HABITOS', 
+1, 
+md.id, 
+'RECONOCIMIENTO', 
+'BAJO', 
+'Restaurar la higiene de sueño familiar y contrarrestar la desconexión por pantallas.', 
+'Fijar una alarma familiar unificada y depositar celulares en la Caja de Presencia.', 
+'Desconexión colectiva exitosa por 5 días consecutivos.', 
+'Cargar una bitácora detallando la asimilación del hábito y la calidad del descanso.', 
+22
+FROM milestone_definitions md WHERE md.code = 'M1';
+
 -- 7. Vincular los pasos de ejecución (plan_task_steps) para habilitar el pipeline visual
-DELETE FROM plan_task_steps WHERE task_id IN (1, 2, 3);
+DELETE FROM plan_task_steps WHERE task_id IN (1, 2, 3, 4, 5);
 
 INSERT INTO plan_task_steps (task_id, type, detail, completed) VALUES
 (1, 'PLANIFICAR', 'Decorar en familia la caja recolectora de celulares y pactar el día del diálogo.', true),
@@ -112,7 +160,15 @@ INSERT INTO plan_task_steps (task_id, type, detail, completed) VALUES
 
 (3, 'PLANIFICAR', 'Hacer una lluvia de ideas de todas las tareas del hogar necesarias.', true),
 (3, 'EJECUTAR', 'Diagramar y consensuar la cartografía de responsabilidades domésticas.', false),
-(3, 'EVALUAR', 'Subir la captura del cartel firmado y consolidar el progreso.', false);
+(3, 'EVALUAR', 'Subir la captura del cartel firmado y consolidar el progreso.', false),
+
+(4, 'PLANIFICAR', 'Seleccionar el objeto de habla familiar y acordar la pauta de no interrupción.', true),
+(4, 'EJECUTAR', 'Realizar la dinámica de descompresión emocional y escucha empática al final del día.', false),
+(4, 'EVALUAR', 'Registrar en la bitácora familiar el nivel de tranquilidad colectiva alcanzado.', false),
+
+(5, 'PLANIFICAR', 'Ubicar la Caja de Presencia digital y establecer la alarma familiar de apagón.', true),
+(5, 'EJECUTAR', 'Depositar los dispositivos móviles colectivamente 45 minutos antes de dormir.', false),
+(5, 'EVALUAR', 'Registrar la asimilación del hábito y la calidad del descanso reparador.', false);
 
 -- 8. Inyectar ítems de hábitos/checklist activos para la familia 1 (Lopez Rivera)
 DELETE FROM checklist_items WHERE family_id = 1;

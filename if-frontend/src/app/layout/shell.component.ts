@@ -22,10 +22,10 @@ import { SentinelCoreService } from '../core/services/sentinel-core.service';
     FeedbackDialogComponent
   ],
   template: `
-    <div class="flex min-h-screen bg-[#0a0a0c]">
+    <div class="flex h-screen bg-[#0a0a0c] overflow-hidden">
       <app-sidebar class="hidden md:block w-[280px] fixed h-full border-r border-white/5" />
       
-      <div class="flex-1 md:ml-[280px] flex flex-col min-w-0">
+      <div class="flex-1 md:ml-[280px] flex flex-col min-w-0 h-full">
         
         <div *ngIf="sentinel.hasCriticalAlert()" 
              class="bg-red-500/10 backdrop-blur-md border-b border-red-500/20 text-white px-6 py-3 flex justify-between items-center z-[60] shadow-[0_4px_30px_rgba(239,68,68,0.15)] relative overflow-hidden">

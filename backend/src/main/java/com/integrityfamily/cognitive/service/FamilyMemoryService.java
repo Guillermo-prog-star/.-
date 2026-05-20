@@ -141,6 +141,85 @@ public class FamilyMemoryService {
         return memoryRepository.save(memory);
     }
 
+    /**
+     * Captura una nueva entrada de bitácora como memoria episódica de situación abierta.
+     * Importancia media: el sistema conoce la dificultad pero aún no hay resolución.
+     */
+    @Transactional
+    public FamilyMemory captureLogbookOpenMemory(FamilyLogbookEntry entry) {
+        log.info("📓 [MEMORY] Capturando situación abierta de bitácora ID: {} para familia ID: {}",
+                entry.getId(), entry.getFamily().getId());
+
+        Map<String, Object> content = new LinkedHashMap<>();
+        content.put("entryId",            entry.getId());
+        content.put("situation",          entry.getSituation());
+        content.put("difficultyDetected", entry.getDifficultyDetected());
+        content.put("emotionIdentified",  entry.getEmotionIdentified());
+        content.put("familyAgreement",    entry.getFamilyAgreement());
+        content.put("status",             "OPEN");
+        content.put("createdBy",          entry.getCreatedBy());
+        content.put("date",               entry.getCreatedAt().toString());
+
+        FamilyMemory memory = FamilyMemory.builder()
+                .family(entry.getFamily())
+                .memoryType(MemoryType.EPISODIC)
+                .semanticKey("logbook-open")
+                .content(toJson(content))
+                .importanceScore(0.45) // situación detectada, aún sin resolver
+                .sourceType("LOGBOOK")
+                .sourceId(entry.getId())
+                .build();
+
+        return memoryRepository.save(memory);
+    }
+
+    /**
+     * Captura la resolución de una bitácora como memoria episódica de alta importancia.
+     * La evidencia de avance + el acuerdo familiar son los datos más valiosos del sistema.
+     * Si hay ≥3 resoluciones previas, también consolida un patrón semántico de "acuerdos familiares".
+     */
+    @Transactional
+    public FamilyMemory captureLogbookResolutionMemory(FamilyLogbookEntry entry) {
+        log.info("✅ [MEMORY] Capturando resolución de bitácora ID: {} para familia ID: {}",
+                entry.getId(), entry.getFamily().getId());
+
+        Map<String, Object> content = new LinkedHashMap<>();
+        content.put("entryId",          entry.getId());
+        content.put("situation",        entry.getSituation());
+        content.put("familyAgreement",  entry.getFamilyAgreement());
+        content.put("correctionAction", entry.getCorrectionAction());
+        content.put("understanding",    entry.getUnderstanding());
+        content.put("progressEvidence", entry.getProgressEvidence());
+        content.put("resolvedBy",       entry.getResolvedBy());
+        content.put("status",           "RESOLVED");
+        content.put("date",             entry.getResolvedAt() != null
+                                            ? entry.getResolvedAt().toString()
+                                            : LocalDateTime.now().toString());
+
+        // Resoluciones = crecimiento demostrado → alta importancia
+        FamilyMemory memory = FamilyMemory.builder()
+                .family(entry.getFamily())
+                .memoryType(MemoryType.EPISODIC)
+                .semanticKey("logbook-resolution")
+                .content(toJson(content))
+                .importanceScore(0.85)
+                .sourceType("LOGBOOK")
+                .sourceId(entry.getId())
+                .build();
+
+        FamilyMemory saved = memoryRepository.save(memory);
+
+        // Intentar consolidar patrón semántico si hay historial de acuerdos
+        consolidateSemanticPattern(entry.getFamily().getId(), "logbook-resolution");
+
+        log.info("📌 [MEMORY] Acuerdo familiar capturado: \"{}\"",
+                entry.getFamilyAgreement() != null
+                    ? entry.getFamilyAgreement().substring(0, Math.min(60, entry.getFamilyAgreement().length()))
+                    : "—");
+
+        return saved;
+    }
+
     // ─── Consolidación Semántica ──────────────────────────────────────────────
 
     /**

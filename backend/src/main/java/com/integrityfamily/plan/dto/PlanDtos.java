@@ -38,7 +38,11 @@ public class PlanDtos {
             String accionConcreta,
             String indicadorCumplimiento,
             String evidenciaRequerida,
-            Integer impactoIcf
+            Integer impactoIcf,
+            String pillarName,
+            String memberType,
+            String riskType,
+            String missionGenerator
     ) {}
 
     @Builder

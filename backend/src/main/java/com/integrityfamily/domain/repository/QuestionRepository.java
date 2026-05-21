@@ -12,4 +12,5 @@ import java.util.List;
 public interface QuestionRepository extends JpaRepository<Question, Long> {
     List<Question> findByActiveTrue();
     List<Question> findByDimension(String dimension);
+    java.util.Optional<Question> findByQuestionKey(String questionKey);
 }

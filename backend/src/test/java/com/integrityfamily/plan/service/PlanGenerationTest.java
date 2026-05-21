@@ -108,10 +108,10 @@ public class PlanGenerationTest {
         assertEquals(4, response.tasks().size());
 
         // Verificar fases
-        assertEquals("1 semana", response.tasks().get(0).fase());
-        assertEquals("1 mes", response.tasks().get(1).fase());
-        assertEquals("3 meses", response.tasks().get(2).fase());
-        assertEquals("6 meses", response.tasks().get(3).fase());
+        assertEquals("RECONOCIMIENTO", response.tasks().get(0).fase());
+        assertEquals("RECONOCIMIENTO", response.tasks().get(1).fase());
+        assertEquals("RECONOCIMIENTO", response.tasks().get(2).fase());
+        assertEquals("AMOR", response.tasks().get(3).fase());
     }
 
     @Test

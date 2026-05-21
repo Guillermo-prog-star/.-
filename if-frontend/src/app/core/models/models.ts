@@ -68,6 +68,12 @@ export interface PlanTask {
   evidenciaRequerida?: string;
   impactoIcf?: number;
   steps?: PlanTaskStep[];
+  // --- Taxonomía Longitudinal v2 ---
+  pillarName?: string;
+  milestoneCode?: string;
+  memberType?: string;
+  riskType?: string;
+  missionGenerator?: string;
 }
 export interface Plan { id: number; familyId: number; evaluationId: number; title: string; description: string; aiReport: string|null; aiGeneratedAt: string|null; status: string; vision3y?: string; tasks: PlanTask[]; }
 

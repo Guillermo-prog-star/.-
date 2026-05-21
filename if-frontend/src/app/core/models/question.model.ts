@@ -19,4 +19,11 @@ export interface Question {
   category?: string;
   adaptiveTriggers?: string;
   evidenceType?: string;
+
+  // --- Taxonomía Longitudinal v2 ---
+  pillarName?: string;
+  milestoneCode?: string;
+  memberType?: string;
+  riskType?: string;
+  missionGenerator?: string;
 }

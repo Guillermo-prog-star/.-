@@ -5,7 +5,7 @@ on:
     branches: [main]
     paths:
       - 'if-frontend/**'
-  workflow_dispatch:           # permite lanzar manualmente desde GitHub
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -17,11 +17,9 @@ jobs:
         working-directory: if-frontend
 
     steps:
-      # ── 1. Checkout ───────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── 2. Node.js setup ─────────────────────────────────────────────────
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
@@ -29,23 +27,18 @@ jobs:
           cache: 'npm'
           cache-dependency-path: if-frontend/package-lock.json
 
-      # ── 3. Install dependencies ───────────────────────────────────────────
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      # ── 4. Build Angular (production) ────────────────────────────────────
       - name: Build Angular app
         run: npm run build
         env:
           NODE_OPTIONS: '--max_old_space_size=6144'
 
-      # ── 5. Deploy to Vercel ───────────────────────────────────────────────
-      - name: Deploy to Vercel (production)
+      - name: Deploy to Vercel
         run: |
           npm install -g vercel
-          vercel --prod --yes \
-            --token "${{ secrets.VERCEL_TOKEN }}" \
-            --scope "${{ secrets.VERCEL_ORG_ID }}"
+          vercel --prod --yes --token "${{ secrets.VERCEL_TOKEN }}"
         env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: team_qw3OrINJ6Lw0RiwfkdOeTWUp
+          VERCEL_PROJECT_ID: prj_yQ8vimSRCRIMdhJxG35uBQuXRce4

@@ -124,13 +124,11 @@ export class NavbarComponent {
   }
 
   /**
-   * Cierre de sesión seguro con redirección inmediata.
+   * Cierre de sesión seguro. auth.logout() ya redirige a /auth/login internamente.
    */
   logout(): void {
     if (confirm('¿Deseas cerrar tu sesión de forma segura?')) {
-      this.auth.logout(); 
-      // La redirección se maneja aquí para asegurar el flujo de la UI
-      this.router.navigate(['/login']);
+      this.auth.logout();
     }
   }
 }

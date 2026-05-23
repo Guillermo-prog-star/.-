@@ -50,7 +50,8 @@ server:
   port: 8080
   address: 0.0.0.0
   error:
-    include-message: always
+    include-message: ${SERVER_ERROR_INCLUDE_MESSAGE:always}
+    include-binding-errors: ${SERVER_ERROR_INCLUDE_BINDING_ERRORS:always}
 
 management:
   endpoints:
@@ -119,7 +120,7 @@ app:
       enabled: true
 
 ---
-# Perfil 'prod': configuracion para produccion
+# Perfil 'prod': configuración para producción
 spring:
   config:
     activate:
@@ -127,7 +128,20 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+    open-in-view: false
     show-sql: false
+
+server:
+  error:
+    include-message: never
+    include-binding-errors: never
+
+# Deshabilitar Swagger en producción
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
 
 logging:
   level:

@@ -4,9 +4,6 @@ import { adminGuard } from './core/guards/admin.guard';
 
 /**
  * SDD: Mapa de Rutas del Nodo Central.
- * Postura Técnica: Optimización de carga por chunks y segmentación por dominios de seguridad.
- * REGISTRO: Se activa el 'Admin Sentinel Guard' siguiendo el protocolo de auditoría de William.
- * HMR-TRIGGER: Forzando reconstrucción del grafo de chunks interactivos del Portal Familiar.
  */
 export const routes: Routes = [
   // ZONA PÚBLICA
@@ -58,13 +55,15 @@ export const routes: Routes = [
       {
         path: 'evaluations',
         children: [
-          { path: 'start', loadComponent: () => import('./features/evaluation/evaluation-start-page.component').then(m => m.EvaluationStartPageComponent) },
-          { path: ':id/form', loadComponent: () => import('./features/evaluation/evaluation.component').then(m => m.EvaluationComponent) },
+          { path: 'start',   title: 'Nueva Evaluación',    loadComponent: () => import('./features/evaluation/evaluation-start-page.component').then(m => m.EvaluationStartPageComponent) },
+          { path: 'history', title: 'Historial de Diagnósticos', loadComponent: () => import('./features/evaluation/evaluation-history-page.component').then(m => m.EvaluationHistoryPageComponent) },
+          { path: 'evolution', redirectTo: 'history', pathMatch: 'full' },
+          { path: ':id/form',   loadComponent: () => import('./features/evaluation/evaluation.component').then(m => m.EvaluationComponent) },
           { path: ':id/result', loadComponent: () => import('./features/evaluation/evaluation-result-page.component').then(m => m.EvaluationResultPageComponent) }
         ]
       },
 
-      // Dominio: Administración (Protocolo Sentinel Activo)
+      // Dominio: Administración
       {
         path: 'admin',
         canActivate: [adminGuard],
@@ -85,6 +84,7 @@ export const routes: Routes = [
       { path: 'gratitude', title: 'Muro de Gratitud', loadComponent: () => import('./features/family-gratitude/family-gratitude.component').then(m => m.FamilyGratitudeComponent) },
       { path: 'my-space', title: 'Mi Espacio', loadComponent: () => import('./features/my-space/my-space.component').then(m => m.MySpaceComponent) },
       { path: 'cognitive', title: 'Sistema Cognitivo', loadComponent: () => import('./features/cognitive/cognitive-page.component').then(m => m.CognitivePageComponent) },
+      { path: 'profile', title: 'Mi Perfil', loadComponent: () => import('./features/profile/profile-page.component').then(m => m.ProfilePageComponent) },
 
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]

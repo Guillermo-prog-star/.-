@@ -4,6 +4,9 @@
     <p>Tu bitácora privada de evolución consciente. Lo que escribes aquí es solo para ti.</p>
   </header>
 
+  <!-- Narrative Guidance Engine -->
+  <app-narrative-companion module="my-space"></app-narrative-companion>
+
   <div class="content-grid">
     <!-- Formulario de Nueva Entrada -->
     <div class="glass-container form-section">
@@ -67,7 +70,7 @@
             </div>
             <span class="entry-date">{{entry.createdAt | date:'mediumDate'}}</span>
           </div>
-          <div class="entry-badge" [class]="entry.category.toLowerCase()">
+          <div class="entry-badge" [class]="(entry.category || '').toLowerCase()">
             {{entry.category}}
           </div>
           <div class="entry-content">

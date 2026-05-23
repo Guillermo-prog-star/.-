@@ -1,14 +1,14 @@
-frontend/Dockerfile.prod
+# Dockerfile.prod — imagen de producción (nginx + Angular build)
 FROM node:20-alpine AS build
 
 WORKDIR /app
 
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --ignore-optional
+COPY package.json package-lock.json ./
+RUN npm ci --ignore-scripts
 
 COPY . .
 
-RUN yarn build
+RUN npm run build -- --configuration=production
 
 FROM nginx:stable-alpine
 

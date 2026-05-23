@@ -33,10 +33,12 @@ docker/data/
 Thumbs.db
 desktop.ini
 
-# === Archivos Temporales ===
+# === Archivos Temporales y de Prueba ===
 *.tmp
 *.bak
 *.swp
+tmp_*.json
+test_*.json
 
 # === Variables de Entorno y Secrets ===
 .env
@@ -77,3 +79,11 @@ backend_logs/
 maven_build_error.log
 **/target/
 .vercel
+
+# === Claude Code / AI Sessions ===
+.claude/
+
+# === Python Artifacts ===
+**/__pycache__/
+*.pyc
+*.pyo

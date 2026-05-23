@@ -51,7 +51,20 @@ public class SimulationController {
         return simulationService.runBurstSimulation(familyId);
     }
     
-    // ... otros mÃƒÂ©todos existentes (launch-beta, provision-alpha)
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PostMapping("/launch-beta")
+    public ApiResponse<String> launchBeta(@RequestParam String email) {
+        return ApiResponse.ok(betaLauncherService.launch(email));
+    }
+
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    @PostMapping("/provision-alpha")
+    public ApiResponse<String> provisionAlpha(
+            @RequestParam(defaultValue = "5") int count,
+            @RequestParam String creatorEmail) {
+        List<Family> families = alphaLaunchService.provisionAlphaFamilies(count, creatorEmail);
+        return ApiResponse.ok("Provisionadas " + families.size() + " familias alfa para " + creatorEmail);
+    }
 }
 
 

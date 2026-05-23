@@ -1,7 +1,8 @@
-import { Component, inject, computed } from '@angular/core';
-import { RouterLink, RouterLinkActive, Router } from '@angular/router';
+import { Component, inject, computed, OnInit } from '@angular/core';
+import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
+import { filter } from 'rxjs/operators';
 
 /**
  * SDD: Sidebar Sentinel Component (v4.2 Sincronizada)
@@ -31,7 +32,24 @@ import { AuthService } from '../../core/services/auth.service';
         
         <a routerLink="/families" class="nav-item" routerLinkActive="active"><span class="icon">👨‍👩‍👧‍👦</span> 1. Familias</a>
         <a routerLink="/members"  class="nav-item" routerLinkActive="active"><span class="icon">👥</span> 2. Miembros</a>
-        <a routerLink="/evaluations/start" class="nav-item" routerLinkActive="active"><span class="icon">◈</span> 3. Diagnóstico</a>
+        
+        <div class="nav-group" [class.expanded]="isDiagnosticExpanded" [class.group-active]="isDiagnosticActive()">
+          <button type="button" class="nav-item group-header" (click)="toggleDiagnostic($event)">
+            <span class="icon">◈</span> 3. Diagnóstico <span class="chevron" [class.rotated]="isDiagnosticExpanded">▶</span>
+          </button>
+          <div class="sub-menu" *ngIf="isDiagnosticExpanded">
+            <a routerLink="/evaluations/start" class="nav-item nav-sub" routerLinkActive="active">
+              <span class="bullet">{{ isRouteActive('/evaluations/start') ? '●' : '○' }}</span> Nueva evaluación
+            </a>
+            <a routerLink="/evaluations/history" class="nav-item nav-sub" routerLinkActive="active">
+              <span class="bullet">{{ isRouteActive('/evaluations/history') ? '●' : '○' }}</span> Historial
+            </a>
+            <a routerLink="/evaluations/evolution" class="nav-item nav-sub" routerLinkActive="active">
+              <span class="bullet">{{ isRouteActive('/evaluations/evolution') ? '●' : '○' }}</span> Evolución
+            </a>
+          </div>
+        </div>
+
         <a routerLink="/plans" class="nav-item" routerLinkActive="active"><span class="icon">📝</span> 4. Planes</a>
         <a routerLink="/checklist" class="nav-item" routerLinkActive="active"><span class="icon">📸</span> 5. Evidencias</a>
         <a routerLink="/logbook"   class="nav-item" routerLinkActive="active"><span class="icon">📔</span> 6. Bitácora</a>
@@ -42,6 +60,9 @@ import { AuthService } from '../../core/services/auth.service';
         <a routerLink="/cognitive" class="nav-item" routerLinkActive="active"><span class="icon">🧠</span> Sistema Cognitivo</a>
         <a routerLink="/chat"   class="nav-item" routerLinkActive="active"><span class="icon">✨</span> Consultor IA</a>
         <a routerLink="/crisis" class="nav-item crisis-btn" routerLinkActive="active"><span class="icon">🆘</span> Crisis</a>
+
+        <div class="divider"></div>
+        <a routerLink="/profile" class="nav-item" routerLinkActive="active"><span class="icon">👤</span> Mi Perfil</a>
       </nav>
 
       <div class="family-box">
@@ -68,14 +89,55 @@ import { AuthService } from '../../core/services/auth.service';
     .f-milestone { color: #6366f1; font-size: 10px; text-transform: uppercase; font-weight: bold; margin-bottom: 8px; }
     .logout-link { background: none; border: none; color: #ff4444; font-size: 10px; font-weight: bold; cursor: pointer; padding: 0; text-transform: uppercase; }
     .admin-item { border: 1px dashed rgba(99, 102, 241, 0.3); }
+    .group-header { background: none; border: none; width: 100%; text-align: left; cursor: pointer; font-family: inherit; }
+    .group-header .chevron { margin-left: auto; font-size: 10px; transition: transform 0.3s ease; color: rgba(255,255,255,0.3); }
+    .group-header .chevron.rotated { transform: rotate(90deg); color: #818cf8; }
+    .group-active .group-header { color: #818cf8 !important; font-weight: 600; }
+    .sub-menu { margin-left: 28px; padding-left: 12px; border-left: 1px dashed rgba(255,255,255,0.08); margin-top: 4px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 2px; }
+    .nav-sub { padding: 8px 12px; font-size: 13px; color: rgba(255,255,255,0.5); border-radius: 6px; display: flex; align-items: center; gap: 8px; text-decoration: none; transition: all 0.2s; }
+    .nav-sub:hover { color: #fff; background: rgba(255,255,255,0.03); }
+    .nav-sub.active { background: rgba(99, 102, 241, 0.08) !important; color: #818cf8 !important; border: 1px solid rgba(99, 102, 241, 0.15); opacity: 1; }
+    .bullet { font-size: 11px; transition: color 0.3s; width: 12px; text-align: center; color: rgba(255,255,255,0.3); }
+    .nav-sub.active .bullet { color: #818cf8; }
   `]
 })
-export class SidebarComponent {
+export class SidebarComponent implements OnInit {
+  private router = inject(Router);
+
   constructor(private authService: AuthService) {}
 
   // Estado reactivo sincronizado
   user = this.authService.user;
 
+  isDiagnosticExpanded = false;
+
+  ngOnInit() {
+    this.checkActiveRoute();
+    this.router.events.pipe(
+      filter((event): event is NavigationEnd => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.checkActiveRoute();
+    });
+  }
+
+  private checkActiveRoute() {
+    if (this.router.url.includes('/evaluations')) {
+      this.isDiagnosticExpanded = true;
+    }
+  }
+
+  isRouteActive(route: string): boolean {
+    return this.router.url === route;
+  }
+
+  isDiagnosticActive(): boolean {
+    return this.router.url.includes('/evaluations');
+  }
+
+  toggleDiagnostic(event: MouseEvent) {
+    event.preventDefault();
+    this.isDiagnosticExpanded = !this.isDiagnosticExpanded;
+  }
 
   handleLogout() {
     if (confirm('¿Finalizar sesión en el Nodo Central?')) {

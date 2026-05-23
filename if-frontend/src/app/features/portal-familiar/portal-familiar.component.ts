@@ -8,13 +8,14 @@ import { AuthService } from '../../core/services/auth.service';
 import { FamilyGratitudeService } from '../family-gratitude/family-gratitude.service';
 import { DashboardDataService } from '../dashboard/services/dashboard-data.service';
 import { FamilyGratitude } from '../family-gratitude/family-gratitude.model';
+import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-portal-familiar',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NarrativeCompanionComponent],
   templateUrl: './portal-familiar.component.html',
   styleUrl: './portal-familiar.component.css'
 })
@@ -226,7 +227,8 @@ export class PortalFamiliarComponent implements OnInit {
     this.submittingRepair = true;
     const body = {
       repairDescription: this.repairForm.description,
-      repairedAt: new Date().toISOString()
+      // FIX Bug #14: LocalDateTime cannot parse ISO 8601 'Z' suffix — strip it
+      repairedAt: new Date().toISOString().replace('Z', '')
     };
 
     this.http.put<any>(`${this.api.base}/family-behavioral-events/${this.selectedEventForRepair.id}/repair`, body)
@@ -261,7 +263,8 @@ export class PortalFamiliarComponent implements OnInit {
       familyId: this.familyId,
       description: this.frictionForm.description,
       severity: this.frictionForm.severity,
-      occurredAt: new Date().toISOString()
+      // FIX Bug #14: LocalDateTime cannot parse ISO 8601 'Z' suffix — strip it
+      occurredAt: new Date().toISOString().replace('Z', '')
     };
 
     this.http.post<any>(`${this.api.base}/family-behavioral-events`, body)

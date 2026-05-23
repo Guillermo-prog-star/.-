@@ -68,16 +68,17 @@ public class EvaluationController {
             @Valid @RequestBody EvaluationDtos.EvaluationFinalizeRequest request,
             Principal principal,
             HttpServletRequest httpServletRequest) {
-        Evaluation saved = evaluationService.finalize(id, request);
-        
+        EvaluationDtos.FinalizeResult result = evaluationService.finalize(id, request);
+        Evaluation saved = result.evaluation();
+
         String email = principal != null ? principal.getName() : "ANONYMOUS";
-        String metadata = String.format("{\"evaluationId\":%d,\"icf\":%s,\"hasCrisis\":%b}", 
-                saved.getId(), 
-                request.icf() != null ? request.icf().toString() : "null", 
-                request.hasCrisis() != null ? request.hasCrisis() : false);
-                
+        String metadata = String.format("{\"evaluationId\":%d,\"icf\":%s,\"hasCrisis\":%b}",
+                saved.getId(),
+                saved.getIcf() != null ? saved.getIcf().toString() : "null",
+                saved.getHasCrisis() != null ? saved.getHasCrisis() : false);
+
         auditService.register(email, AuditEventType.EVALUATION_SUBMITTED, httpServletRequest, metadata);
-        
+
         return ApiResponse.ok(saved.getId());
     }
 

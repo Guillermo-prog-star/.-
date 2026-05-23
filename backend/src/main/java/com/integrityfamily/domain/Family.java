@@ -57,6 +57,14 @@ public class Family {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    /** Cuándo empezó la familia su hito actual. Se actualiza con cada avance. */
+    @Column(name = "milestone_started_at")
+    private LocalDateTime milestoneStartedAt;
+
+    /** ICF promedio acumulado en el hito actual (cacheado por MilestoneService). */
+    @Column(name = "milestone_icf_avg")
+    private Double milestoneIcfAvg;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id")
     @com.fasterxml.jackson.annotation.JsonIgnore
@@ -70,6 +78,7 @@ public class Family {
     public void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (sentinelActive == null) sentinelActive = false;
-        if (currentMilestone == null) currentMilestone = "MES_00_DIAGNOSTICO";
+        if (currentMilestone == null) currentMilestone = "W1";
+        if (milestoneStartedAt == null) milestoneStartedAt = LocalDateTime.now();
     }
 }

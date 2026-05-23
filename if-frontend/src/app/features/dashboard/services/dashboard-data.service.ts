@@ -21,7 +21,10 @@ export class DashboardDataService {
     if (!id) return of(null);
     return forkJoin({
       dashboard: this.http.get<any>(`/api/analytics/dashboard/family/${id}`),
-      advanceStatus: this.http.get<boolean>(`/api/milestones/family/${id}/check-advance`),
+      advanceStatus: this.http.get<any>(`/api/milestones/family/${id}/advancement-status`).pipe(
+        map(res => res?.data?.canAdvance ?? false),
+        catchError(() => of(false))
+      ),
       progress: this.http.get<any>(`/api/analytics/family/${id}/progress`).pipe(
         map(res => res.data),
         catchError(() => of(null))
@@ -54,7 +57,8 @@ export class DashboardDataService {
   }
 
   // FIX TS2339: Implementación requerida por ai-plan-timeline.component.ts
-  completeTask(taskId: string): Observable<void> {
-    return this.http.post<void>(`/api/tasks/${taskId}/complete`, {});
+  completeTask(taskId: string, completed: boolean = true): Observable<void> {
+    // PUT /api/plans/tasks/{id}/complete  ← PlanController (requiere body { completed: boolean })
+    return this.http.put<void>(`/api/plans/tasks/${taskId}/complete`, { completed });
   }
 }

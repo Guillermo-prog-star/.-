@@ -84,13 +84,18 @@ public class PlanDtos {
     public record IaTask(
             String title,
             String dimension,
-            List<IaStep> steps
+            List<IaStep> steps,
+            @com.fasterxml.jackson.annotation.JsonProperty("pillar_name") String pillarName,
+            @com.fasterxml.jackson.annotation.JsonProperty("milestone_code") String milestoneCode,
+            @com.fasterxml.jackson.annotation.JsonProperty("member_type") String memberType,
+            @com.fasterxml.jackson.annotation.JsonProperty("risk_type") String riskType,
+            @com.fasterxml.jackson.annotation.JsonProperty("mission_generator") String missionGenerator
     ) {}
 
     public record IaMilestone(
             String code,
             String objective,
-            List<IaTask> tasks
+            @com.fasterxml.jackson.annotation.JsonProperty("micro_actions") List<IaTask> tasks
     ) {}
 
     public record IaPlanResponse(

@@ -1,5 +1,6 @@
 package com.integrityfamily.common.initializer;
 
+import com.integrityfamily.common.service.QuestionBankLoaderService;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ public class MasterDataInitializer implements CommandLineRunner {
     private final MilestoneRepository milestoneRepository;
     private final FamilyRepository familyRepository;
     private final PasswordEncoder passwordEncoder;
+    private final QuestionBankLoaderService questionBankLoaderService;
 
     @Override
     @Transactional
@@ -118,72 +120,19 @@ public class MasterDataInitializer implements CommandLineRunner {
     }
 
     private void seedQuestions() {
-        if (questionRepository.count() > 0) return;
+        long existing = questionRepository.count();
+        if (existing >= 1000) {
+            log.info(">>>> [SEEDER] Banco de preguntas ya poblado ({} reactivos). Saltando carga.", existing);
+            return;
+        }
 
-        log.info(">>>> [SEEDER] Poblando banco de preguntas adaptativo longitudinal formal...");
-        
-        // --- 1. CORE Longitudinales ---
-        saveExtendedQuestion("Q-CORE-001", "¿Consideran que en su hogar hay espacios seguros para hablar de lo que cada uno siente sin temor a ser criticado?", "comunicacion", "M00", "inconsciencia", "CORE", 0.6, false, false, false, "seguridad emocional", null, null, "reconocimiento", "M1", "familia", "desconexion_emocional", "CONCIENCIA_EMOCIONAL");
-        saveExtendedQuestion("Q-CORE-002", "¿Logran resolver las discusiones familiares antes de que escalen a gritos o silencios castigadores?", "emociones", "M00", "reactividad", "CORE", 0.8, true, false, false, "resolucion de conflictos", "gritos, silencios", "conductual", "reconocimiento", "W1", "familia", "conflicto_reactivo", "ESTABILIZACION_EMOCIONAL");
-        saveExtendedQuestion("Q-CORE-003", "¿El cansancio o mal humor de un miembro suele alterar el clima de paz de toda la casa?", "emociones", "M00", "reactividad", "CORE", 0.7, true, false, false, "regulacion emocional", "irritabilidad", null, "reconocimiento", "W1", "familia", "desregulacion_emocional", "ESTABILIZACION_EMOCIONAL");
-        saveExtendedQuestion("Q-CORE-004", "¿Los acuerdos de convivencia se respetan de manera voluntaria y fluida por todos?", "habitos", "M00", "consciencia", "CORE", 0.6, false, false, false, "acuerdos", null, "bitacora", "amor", "M3", "familia", "ausencia_rutinas", "ACUERDOS_CONVIVENCIA");
-        saveExtendedQuestion("Q-CORE-005", "¿Encuentran momentos de conexión profunda e individual con cada miembro de la familia?", "tiempos", "M00", "primeros_cambios", "CORE", 0.5, false, false, false, "presencia", null, null, "amor", "M6", "familia", "desconexion_emocional", "CONEXION_FAMILIAR");
-        saveExtendedQuestion("Q-CORE-006", "¿Se sienten escuchados y valorados en su hogar cuando proponen un cambio?", "comunicacion", "M00", "consciencia", "CORE", 0.6, false, false, false, "escucha activa", null, null, "reconocimiento", "M1", "familia", "comunicacion_defensiva", "CONCIENCIA_EMOCIONAL");
+        log.info(">>>> [SEEDER] Banco incompleto ({} reactivos). Iniciando carga del banco maestro v2...", existing);
 
-        // --- 2. ADAPTIVAS por Riesgo ---
-        saveExtendedQuestion("Q-ADAP-COM-001", "¿Al discutir, escuchas con la intención de comprender en lugar de preparar tu defensa?", "comunicacion", null, "reactividad", "ADAPTIVE", 0.7, false, false, false, "escucha activa", "defensa", null, "reconocimiento", "M1", "familia", "comunicacion_defensiva", "CONCIENCIA_EMOCIONAL");
-        saveExtendedQuestion("Q-ADAP-COM-002", "¿Utilizan palabras hirientes o reproches del pasado cuando discuten por algo sencillo?", "comunicacion", null, "reactividad", "ADAPTIVE", 0.9, true, false, false, "lenguaje asertivo", "insultos, reproches", "conductual", "reconocimiento", "W1", "familia", "conflicto_reactivo", "ESTABILIZACION_EMOCIONAL");
-        saveExtendedQuestion("Q-ADAP-EMO-001", "¿Eres capaz de notar la tensión en tu cuerpo antes de responder con impaciencia en casa?", "emociones", null, "consciencia", "ADAPTIVE", 0.7, false, false, false, "autoconsciencia", "tension", null, "reconocimiento", "M1", "familia", "desregulacion_emocional", "CONCIENCIA_EMOCIONAL");
-        saveExtendedQuestion("Q-ADAP-EMO-002", "¿Se habla de la tristeza, miedo o frustración de forma natural y comprensiva en el hogar?", "emociones", null, "consciencia", "ADAPTIVE", 0.6, false, false, false, "expresion emocional", "silencio", null, "amor", "M3", "familia", "desconexion_emocional", "CONEXION_FAMILIAR");
-        saveExtendedQuestion("Q-ADAP-HAB-001", "¿Las rutinas del hogar se coordinan con calma en lugar de prisa e irritabilidad?", "habitos", null, "primeros_cambios", "ADAPTIVE", 0.6, false, true, false, "rutinas", "prisa", "fotografica", "amor", "M3", "familia", "ausencia_rutinas", "ACUERDOS_CONVIVENCIA");
-        saveExtendedQuestion("Q-ADAP-TIE-001", "¿Dedican tiempo de calidad juntos sin distractores tecnológicos como celulares o televisión?", "tiempos", null, "primeros_cambios", "ADAPTIVE", 0.5, false, true, false, "presencia", "celular", "bitacora", "amor", "M6", "familia", "desconexion_emocional", "CONEXION_FAMILIAR");
+        // Cargar las 1000 preguntas desde questions-bank-v2.json
+        int loaded = questionBankLoaderService.loadAll();
 
-        // --- 3. FASE / PILAR Temporales ---
-        saveExtendedQuestion("Q-PIL-W1-001", "¿Han establecido una rutina básica de diálogo para calmar los momentos de tensión emocional?", "comunicacion", "W1", "reactividad", "FASE_PILLAR", 0.6, false, false, false, "contencion", "tension", null, "reconocimiento", "W1", "familia", "conflicto_reactivo", "ESTABILIZACION_EMOCIONAL");
-        saveExtendedQuestion("Q-PIL-M1-001", "¿Comienzan a identificar de manera grupal los patrones repetitivos que inician los desacuerdos?", "emociones", "M1", "consciencia", "FASE_PILLAR", 0.7, false, false, false, "patrones", "discusion", null, "reconocimiento", "M1", "familia", "desregulacion_emocional", "CONCIENCIA_EMOCIONAL");
-        saveExtendedQuestion("Q-PIL-M3-001", "¿Sienten que los vínculos de confianza se están cimentando sobre bases de respeto cotidiano?", "comunicacion", "M3", "primeros_cambios", "FASE_PILLAR", 0.6, false, false, false, "confianza", null, null, "amor", "M3", "familia", "desconexion_emocional", "CONEXION_FAMILIAR");
-        saveExtendedQuestion("Q-PIL-M6-001", "¿Han logrado sostener cambios profundos en la convivencia que antes parecían imposibles?", "habitos", "M6", "consolidacion", "FASE_PILLAR", 0.8, false, true, false, "cambio sostenible", null, "conductual", "amor", "M6", "familia", "ausencia_rutinas", "ACUERDOS_CONVIVENCIA");
-        saveExtendedQuestion("Q-PIL-M12-001", "¿La autorregulación familiar fluye de manera autónoma sin necesidad de intervención externa?", "emociones", "M12", "plenitud", "FASE_PILLAR", 0.9, false, false, false, "autorregulacion", null, null, "entrega", "M12", "familia", "desregulacion_emocional", "LEGADO_CONSCIENTE");
-
-        // --- 4. CONTRASTE / ESPEJO (Detectar simulación) ---
-        saveExtendedQuestion("Q-MIR-001", "¿En nuestro hogar nunca se presentan desacuerdos ni discusiones de ningún tipo?", "comunicacion", null, "inconsciencia", "MIRROR", 0.4, false, false, true, "sinceridad", null, null, "reconocimiento", "M1", "familia", "simulacion_respuestas", "SINCERIDAD_EVALUACION");
-        saveExtendedQuestion("Q-MIR-002", "¿Siempre reaccionamos con perfecta paz y amor, sin que nadie pierda nunca la paciencia?", "emociones", null, "inconsciencia", "MIRROR", 0.4, false, false, true, "sinceridad", null, null, "reconocimiento", "M1", "familia", "simulacion_respuestas", "SINCERIDAD_EVALUACION");
-
-        // --- 5. EXPLORATORIAS IA ---
-        saveExtendedQuestion("Q-EXP-001", "¿Sienten que existen tensiones silenciosas o temas tabú de los que nadie se atreve a hablar?", "comunicacion", null, "reactividad", "EXPLORATORY", 0.8, true, false, false, "temas tabu", "tension silenciosa", null, "reconocimiento", "M1", "familia", "comunicacion_defensiva", "CONCIENCIA_EMOCIONAL");
-        saveExtendedQuestion("Q-EXP-002", "¿El uso individual de las pantallas está reemplazando las comidas o charlas compartidas?", "tiempos", null, "reactividad", "EXPLORATORY", 0.7, false, false, false, "distraccion digital", "pantallas", null, "amor", "M6", "familia", "desconexion_emocional", "CONEXION_FAMILIAR");
-    }
-
-    private void saveExtendedQuestion(
-            String key, String text, String dimension, String pillar, 
-            String phase, String type, Double severityWeight, 
-            boolean detectsRelapse, boolean requiresEvidence, boolean reverseQuestion, 
-            String category, String triggers, String evidenceType,
-            String pillarName, String milestoneCode, String memberType,
-            String riskType, String missionGenerator) {
-            
-        Question q = Question.builder()
-                .questionKey(key)
-                .text(text)
-                .dimension(dimension)
-                .pillar(pillar)
-                .phase(phase)
-                .type(type)
-                .severityWeight(severityWeight)
-                .detectsRelapse(detectsRelapse)
-                .requiresEvidence(requiresEvidence)
-                .reverseQuestion(reverseQuestion)
-                .category(category)
-                .adaptiveTriggers(triggers)
-                .evidenceType(evidenceType)
-                .pillarName(pillarName)
-                .milestoneCode(milestoneCode)
-                .memberType(memberType)
-                .riskType(riskType)
-                .missionGenerator(missionGenerator)
-                .active(true)
-                .build();
-        questionRepository.save(q);
+        log.info(">>>> [SEEDER] Banco de preguntas listo. Nuevos reactivos cargados: {}. Total BD: {}",
+                loaded, questionRepository.count());
     }
 
     private Role ensureRole(String name) {

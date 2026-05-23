@@ -1,16 +1,9 @@
 package com.integrityfamily.assessment.service;
 
-import com.integrityfamily.ai.service.AiService;
-import com.integrityfamily.domain.*;
-import com.integrityfamily.dto.EvaluationDtos;
-import com.integrityfamily.domain.repository.EvaluationRepository;
-import com.integrityfamily.domain.repository.FamilyRepository;
-import com.integrityfamily.domain.repository.MemberRepository;
+import com.integrityfamily.domain.Question;
 import com.integrityfamily.domain.repository.QuestionRepository;
-import com.integrityfamily.evaluation.service.EvaluationService;
-import com.integrityfamily.risk.service.RiskService;
-import com.integrityfamily.milestone.service.MilestoneService;
-import org.junit.jupiter.api.BeforeEach;
+import com.integrityfamily.dto.EvaluationDtos;
+import com.integrityfamily.risk.service.RiskAlgoV1Engine;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,75 +11,46 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 
+/**
+ * Tests del motor RISK_ALGO_V1.
+ *
+ * Se testea {@link RiskAlgoV1Engine#compute} directamente, no a través de
+ * {@code EvaluationService.finalize()}, para aislar el álgebra de scoring
+ * de los efectos secundarios del servicio de evaluación.
+ */
 @ExtendWith(MockitoExtension.class)
 public class AssessmentScoringTest {
 
     @Mock
-    private EvaluationRepository evaluationRepository;
-
-    @Mock
-    private FamilyRepository familyRepository;
-
-    @Mock
-    private MemberRepository memberRepository;
-
-    @Mock
     private QuestionRepository questionRepository;
 
-    @Mock
-    private RiskService riskService;
-
-    @Mock
-    private RabbitTemplate rabbitTemplate;
-
-    @Mock
-    private MilestoneService milestoneService;
-
-    @Mock
-    private AiService aiService;
-
     @InjectMocks
-    private EvaluationService evaluationService;
+    private RiskAlgoV1Engine riskAlgoV1Engine;
 
-    private Family family;
-    private Evaluation evaluation;
+    // ─── Helpers ──────────────────────────────────────────────────────────────
 
-    @BeforeEach
-    void setUp() {
-        family = Family.builder().id(1L).name("Familia Lopez").build();
-        evaluation = Evaluation.builder()
-                .id(100L)
-                .family(family)
-                .status(EvaluationStatus.STARTED)
-                .startedAt(LocalDateTime.now())
-                .answers(new ArrayList<>())
-                .dimensionScores(new ArrayList<>())
-                .build();
-
-        Mockito.lenient().when(evaluationRepository.findById(100L)).thenReturn(Optional.of(evaluation));
-        Mockito.lenient().when(evaluationRepository.save(any(Evaluation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    /** Configura el mock del repositorio para devolver las preguntas indicadas. */
+    private void mockQuestions(Question... questions) {
+        Mockito.when(questionRepository.findAllById(any())).thenReturn(List.of(questions));
     }
 
+    // ─── Casos ────────────────────────────────────────────────────────────────
+
     @Test
-    @DisplayName("Caso 1: Todo Excelente (100) -> Riesgo BAJO")
+    @DisplayName("Caso 1: Todo Excelente (valor 5, POSITIVE) -> ICF=100, Riesgo BAJO")
     void shouldScoreAllExcellent() {
         Question q1 = Question.builder().id(1L).dimension("emociones").direction("POSITIVE").build();
         Question q2 = Question.builder().id(2L).dimension("comunicacion").direction("POSITIVE").build();
         Question q3 = Question.builder().id(3L).dimension("habitos").direction("POSITIVE").build();
         Question q4 = Question.builder().id(4L).dimension("tiempos").direction("POSITIVE").build();
-
-        Mockito.when(questionRepository.findById(1L)).thenReturn(Optional.of(q1));
-        Mockito.when(questionRepository.findById(2L)).thenReturn(Optional.of(q2));
-        Mockito.when(questionRepository.findById(3L)).thenReturn(Optional.of(q3));
-        Mockito.when(questionRepository.findById(4L)).thenReturn(Optional.of(q4));
+        mockQuestions(q1, q2, q3, q4);
 
         List<EvaluationDtos.AnswerDto> answers = Arrays.asList(
                 new EvaluationDtos.AnswerDto(1L, 5, null),
@@ -95,24 +59,20 @@ public class AssessmentScoringTest {
                 new EvaluationDtos.AnswerDto(4L, 5, null)
         );
 
-        Evaluation finalized = evaluationService.finalize(100L, new EvaluationDtos.EvaluationFinalizeRequest(answers, null, null, null));
+        RiskAlgoV1Engine.AlgoResult result = riskAlgoV1Engine.compute(answers, "W1");
 
-        assertEquals(100.0, finalized.getIcf(), 0.01);
-        assertEquals("BAJO", finalized.getRiskLevel());
+        assertEquals(100.0, result.healthyIndex(), 0.01);
+        assertEquals("BAJO", result.riskLevel());
     }
 
     @Test
-    @DisplayName("Caso 2: Todo Crítico (1, positivas) -> Riesgo CRITICO")
+    @DisplayName("Caso 2: Todo Crítico (valor 1, POSITIVE) -> ICF=0, Riesgo CRITICO")
     void shouldScoreAllCritical() {
         Question q1 = Question.builder().id(1L).dimension("emociones").direction("POSITIVE").build();
         Question q2 = Question.builder().id(2L).dimension("comunicacion").direction("POSITIVE").build();
         Question q3 = Question.builder().id(3L).dimension("habitos").direction("POSITIVE").build();
         Question q4 = Question.builder().id(4L).dimension("tiempos").direction("POSITIVE").build();
-
-        Mockito.when(questionRepository.findById(1L)).thenReturn(Optional.of(q1));
-        Mockito.when(questionRepository.findById(2L)).thenReturn(Optional.of(q2));
-        Mockito.when(questionRepository.findById(3L)).thenReturn(Optional.of(q3));
-        Mockito.when(questionRepository.findById(4L)).thenReturn(Optional.of(q4));
+        mockQuestions(q1, q2, q3, q4);
 
         List<EvaluationDtos.AnswerDto> answers = Arrays.asList(
                 new EvaluationDtos.AnswerDto(1L, 1, null),
@@ -121,29 +81,24 @@ public class AssessmentScoringTest {
                 new EvaluationDtos.AnswerDto(4L, 1, null)
         );
 
-        Evaluation finalized = evaluationService.finalize(100L, new EvaluationDtos.EvaluationFinalizeRequest(answers, null, null, null));
+        RiskAlgoV1Engine.AlgoResult result = riskAlgoV1Engine.compute(answers, "W1");
 
-        assertEquals(0.0, finalized.getIcf(), 0.01);
-        assertEquals("CRITICO", finalized.getRiskLevel());
-        assertTrue(finalized.getHasCrisis());
+        assertEquals(0.0, result.healthyIndex(), 0.01);
+        assertEquals("CRITICO", result.riskLevel());
+        assertTrue(result.hasCrisis());
     }
 
     @Test
-    @DisplayName("Caso 3: Dimensión crítica oculta (Emociones 1, el resto 5) -> Dispara Regla de Seguridad y clasifica CRITICO")
+    @DisplayName("Caso 3: Dimensión crítica oculta (Emociones=1, resto=5) -> Regla de seguridad -> CRITICO")
     void shouldTriggerCriticalSecurityRule() {
         Question q1 = Question.builder().id(1L).dimension("emociones").direction("POSITIVE").build();
         Question q2 = Question.builder().id(2L).dimension("comunicacion").direction("POSITIVE").build();
         Question q3 = Question.builder().id(3L).dimension("habitos").direction("POSITIVE").build();
         Question q4 = Question.builder().id(4L).dimension("tiempos").direction("POSITIVE").build();
+        mockQuestions(q1, q2, q3, q4);
 
-        Mockito.when(questionRepository.findById(1L)).thenReturn(Optional.of(q1));
-        Mockito.when(questionRepository.findById(2L)).thenReturn(Optional.of(q2));
-        Mockito.when(questionRepository.findById(3L)).thenReturn(Optional.of(q3));
-        Mockito.when(questionRepository.findById(4L)).thenReturn(Optional.of(q4));
-
-        // Emociones = 1 (score = 0.0), el resto = 5 (score = 100.0)
-        // healthyIndex = (0*0.3) + (100*0.3) + (100*0.2) + (100*0.2) = 70.0 (Modo normal sería MODERADO)
-        // Pero al tener una dimensión en 0 (< 25), dispara CRITICO.
+        // emociones=0%, resto=100%.  ICF = 0×0.3 + 100×0.3 + 100×0.2 + 100×0.2 = 70
+        // Pero emociones < 25 → regla de seguridad → CRITICO
         List<EvaluationDtos.AnswerDto> answers = Arrays.asList(
                 new EvaluationDtos.AnswerDto(1L, 1, null),
                 new EvaluationDtos.AnswerDto(2L, 5, null),
@@ -151,27 +106,27 @@ public class AssessmentScoringTest {
                 new EvaluationDtos.AnswerDto(4L, 5, null)
         );
 
-        Evaluation finalized = evaluationService.finalize(100L, new EvaluationDtos.EvaluationFinalizeRequest(answers, null, null, null));
+        RiskAlgoV1Engine.AlgoResult result = riskAlgoV1Engine.compute(answers, "W1");
 
-        assertEquals(70.0, finalized.getIcf(), 0.01);
-        assertEquals("CRITICO", finalized.getRiskLevel());
-        assertEquals("emociones", finalized.getCriticalDimension());
+        assertEquals(70.0, result.healthyIndex(), 0.01);
+        assertEquals("CRITICO", result.riskLevel());
+        assertEquals("emociones", result.criticalDimension());
     }
 
     @Test
-    @DisplayName("Caso 4: Riesgo Moderado con preguntas negativas normalizadas")
+    @DisplayName("Caso 4: Riesgo Moderado con preguntas de dirección NEGATIVE (escala invertida)")
     void shouldScoreModerateWithNegativeQuestions() {
-        Question q1 = Question.builder().id(1L).dimension("emociones").direction("NEGATIVE").build(); // Respuesta 2 -> (5-2)/4 = 75%
-        Question q2 = Question.builder().id(2L).dimension("comunicacion").direction("POSITIVE").build(); // Respuesta 3 -> (3-1)/4 = 50%
-        Question q3 = Question.builder().id(3L).dimension("habitos").direction("POSITIVE").build(); // Respuesta 4 -> (4-1)/4 = 75%
-        Question q4 = Question.builder().id(4L).dimension("tiempos").direction("POSITIVE").build(); // Respuesta 3 -> (3-1)/4 = 50%
+        // q1 NEGATIVE: valor 2 -> (5-2)/4 * 100 = 75.0
+        // q2 POSITIVE: valor 3 -> (3-1)/4 * 100 = 50.0
+        // q3 POSITIVE: valor 4 -> (4-1)/4 * 100 = 75.0
+        // q4 POSITIVE: valor 3 -> (3-1)/4 * 100 = 50.0
+        // ICF = 75×0.3 + 50×0.3 + 75×0.2 + 50×0.2 = 22.5 + 15 + 15 + 10 = 62.5 -> MODERADO (W1: ≥40)
+        Question q1 = Question.builder().id(1L).dimension("emociones").direction("NEGATIVE").build();
+        Question q2 = Question.builder().id(2L).dimension("comunicacion").direction("POSITIVE").build();
+        Question q3 = Question.builder().id(3L).dimension("habitos").direction("POSITIVE").build();
+        Question q4 = Question.builder().id(4L).dimension("tiempos").direction("POSITIVE").build();
+        mockQuestions(q1, q2, q3, q4);
 
-        Mockito.when(questionRepository.findById(1L)).thenReturn(Optional.of(q1));
-        Mockito.when(questionRepository.findById(2L)).thenReturn(Optional.of(q2));
-        Mockito.when(questionRepository.findById(3L)).thenReturn(Optional.of(q3));
-        Mockito.when(questionRepository.findById(4L)).thenReturn(Optional.of(q4));
-
-        // healthyIndex = (75*0.3) + (50*0.3) + (75*0.2) + (50*0.2) = 22.5 + 15 + 15 + 10 = 62.5 -> MODERADO
         List<EvaluationDtos.AnswerDto> answers = Arrays.asList(
                 new EvaluationDtos.AnswerDto(1L, 2, null),
                 new EvaluationDtos.AnswerDto(2L, 3, null),
@@ -179,10 +134,11 @@ public class AssessmentScoringTest {
                 new EvaluationDtos.AnswerDto(4L, 3, null)
         );
 
-        Evaluation finalized = evaluationService.finalize(100L, new EvaluationDtos.EvaluationFinalizeRequest(answers, null, null, null));
+        RiskAlgoV1Engine.AlgoResult result = riskAlgoV1Engine.compute(answers, "W1");
 
-        assertEquals(62.5, finalized.getIcf(), 0.01);
-        assertEquals("MODERADO", finalized.getRiskLevel());
-        assertEquals("comunicacion", finalized.getCriticalDimension()); // empate 50, toma el primero
+        assertEquals(62.5, result.healthyIndex(), 0.01);
+        assertEquals("MODERADO", result.riskLevel());
+        // empate comunicacion(50) y tiempos(50); stream itera DIMENSIONS en orden → comunicacion primero
+        assertEquals("comunicacion", result.criticalDimension());
     }
 }

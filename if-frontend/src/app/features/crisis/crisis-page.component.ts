@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CrisisService } from '../../core/services/crisis.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 
 @Component({
   selector: 'app-crisis-page',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NarrativeCompanionComponent],
   template: `
     <div class="crisis-container" style="animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);">
       
@@ -22,6 +23,9 @@ import { FamilyStateService } from '../../core/services/family-state.service';
           Un espacio de contención clínica inmediata diseñado para momentos de alta tensión familiar.
         </p>
       </div>
+
+      <!-- Narrative Guidance Engine -->
+      <app-narrative-companion module="crisis"></app-narrative-companion>
 
       <div class="grid-2">
         <!-- FORMULARIO DE REPORTE -->

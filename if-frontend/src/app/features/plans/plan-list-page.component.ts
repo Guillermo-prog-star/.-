@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -9,15 +9,16 @@ import { FamilyStateService } from '../../core/services/family-state.service';
 import { TelemetryService } from '../../core/services/telemetry.service';
 import { PlanTransformacion, Mision } from '../../core/models/plan-transformacion.model';
 import { PLANES_MOCK } from '../../data/planes-transformacion.mock';
+import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 
 @Component({
   selector: 'app-plan-list-page', 
   standalone: true, 
-  imports: [CommonModule, RouterLink, FormsModule],
+  imports: [CommonModule, RouterLink, FormsModule, NarrativeCompanionComponent],
   templateUrl: './plan-list-page.component.html',
   styleUrls: ['./plan-list-page.component.css']
 })
-export class PlanListPageComponent implements OnInit {
+export class PlanListPageComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient); 
   private api = inject(ApiService);
   private familyState = inject(FamilyStateService);
@@ -32,8 +33,17 @@ export class PlanListPageComponent implements OnInit {
   terminalLogs: string[] = [];
   selectedTaskId: number | null = null;
   isCliCollapsed = false;
+  showFullTimeline = false;
 
   proposedMissions: any[] = [];
+
+  private loadingInterval: ReturnType<typeof setInterval> | null = null;
+
+  pillarProgress = {
+    reconocimiento: { completed: 0, total: 0, percentage: 0 },
+    amor: { completed: 0, total: 0, percentage: 0 },
+    entrega: { completed: 0, total: 0, percentage: 0 }
+  };
 
   // Modal State Properties
   isEvidenceModalOpen = false;
@@ -93,10 +103,10 @@ export class PlanListPageComponent implements OnInit {
       this.isWaitingForPlan = true;
       let attempts = 0;
       
-      const interval = setInterval(() => {
+      this.loadingInterval = setInterval(() => {
         if (this.plans.length > 0 || attempts > 20) {
           this.isWaitingForPlan = false;
-          clearInterval(interval);
+          this.clearLoadingInterval();
         } else {
           // Si llegamos al intento 6 (unos 9 segundos) y sigue vacío, activamos diagnóstico de emergencia
           if (attempts === 6 && this.plans.length === 0) {
@@ -108,6 +118,17 @@ export class PlanListPageComponent implements OnInit {
           attempts++;
         }
       }, 1500);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.clearLoadingInterval();
+  }
+
+  private clearLoadingInterval(): void {
+    if (this.loadingInterval !== null) {
+      clearInterval(this.loadingInterval);
+      this.loadingInterval = null;
     }
   }
 
@@ -127,7 +148,8 @@ export class PlanListPageComponent implements OnInit {
     this.http.get<any>(`${this.api.base}/analytics/dashboard/family/${this.familyId}`)
       .subscribe({
         next: (res) => {
-          this.familyDashboard = res;
+          // FIX: AnalyticsController returns ApiResponse<DashboardSummaryResponse> — extract .data
+          this.familyDashboard = res?.data ?? res;
         },
         error: (err) => console.error('Error fetching dashboard summary:', err)
       });
@@ -244,11 +266,45 @@ export class PlanListPageComponent implements OnInit {
           this.loading = false;
           this.loadFamilyEvidences(); // Carga secundaria
 
+          // Inicializar/Reiniciar progreso
+          this.pillarProgress = {
+            reconocimiento: { completed: 0, total: 0, percentage: 0 },
+            amor: { completed: 0, total: 0, percentage: 0 },
+            entrega: { completed: 0, total: 0, percentage: 0 }
+          };
+
           // Sincronizar dinámicamente con el PLANES_MOCK
           this.planes = JSON.parse(JSON.stringify(PLANES_MOCK));
           
           if (this.plans.length > 0) {
             const planTasks = this.plans[0].tasks || [];
+            
+            // Agrupar y calcular progreso por pilar en tiempo real
+            planTasks.forEach((t: any) => {
+              const pName = (t.pillarName || t.fase || '').toLowerCase().trim();
+              if (pName.includes('reconocimiento')) {
+                this.pillarProgress.reconocimiento.total++;
+                if (t.completed) this.pillarProgress.reconocimiento.completed++;
+              } else if (pName.includes('amor')) {
+                this.pillarProgress.amor.total++;
+                if (t.completed) this.pillarProgress.amor.completed++;
+              } else if (pName.includes('entrega')) {
+                this.pillarProgress.entrega.total++;
+                if (t.completed) this.pillarProgress.entrega.completed++;
+              }
+            });
+
+            // Calcular porcentajes
+            this.pillarProgress.reconocimiento.percentage = this.pillarProgress.reconocimiento.total > 0
+              ? Math.round((this.pillarProgress.reconocimiento.completed / this.pillarProgress.reconocimiento.total) * 100)
+              : 0;
+            this.pillarProgress.amor.percentage = this.pillarProgress.amor.total > 0
+              ? Math.round((this.pillarProgress.amor.completed / this.pillarProgress.amor.total) * 100)
+              : 0;
+            this.pillarProgress.entrega.percentage = this.pillarProgress.entrega.total > 0
+              ? Math.round((this.pillarProgress.entrega.completed / this.pillarProgress.entrega.total) * 100)
+              : 0;
+
             
             // Recorrer los planes del Mock y mapear tareas del backend de manera inteligente y multidimensional
             this.planes.forEach(plan => {
@@ -675,17 +731,19 @@ export class PlanListPageComponent implements OnInit {
       this.terminalLogs.push('🚀 [SISTEMA]: Evaluando requisitos para transición de hito...');
       this.scrollToBottom();
 
-      this.http.get<boolean>(`${this.api.base}/milestones/family/${this.familyId}/check-advance`)
+      this.http.get<any>(`${this.api.base}/milestones/family/${this.familyId}/advancement-status`)
         .subscribe({
-          next: (canAdvance) => {
+          next: (res) => {
+            const canAdvance: boolean = res?.data?.canAdvance ?? false;
             if (canAdvance) {
               this.terminalLogs.push('🚀 [SISTEMA]: Validación exitosa. Todos los compromisos del hito actual han sido cumplidos.');
               this.terminalLogs.push('🚀 [SISTEMA]: Iniciando transición de fase evolutiva...');
               this.scrollToBottom();
 
-              this.http.post(`${this.api.base}/milestones/family/${this.familyId}/advance`, {}, { responseType: 'text' })
+              this.http.post<any>(`${this.api.base}/milestones/family/${this.familyId}/advance`, {})
                 .subscribe({
-                  next: (nextMilestoneCode) => {
+                  next: (res) => {
+                    const nextMilestoneCode = res?.data ?? 'siguiente hito';
                     this.terminalLogs.push(`✅ ÉXITO: ¡Felicidades! La familia ha avanzado formalmente al hito [${nextMilestoneCode}].`);
                     this.terminalLogs.push('🔄 [SISTEMA]: Sincronizando nuevo estado con el motor de IA...');
                     this.scrollToBottom();
@@ -849,7 +907,8 @@ export class PlanListPageComponent implements OnInit {
       this.scrollToBottom();
       return;
     }
-    this.http.get(`${this.api.base}/reports/export/pdf/family/${this.familyId}`, { responseType: 'blob' })
+    // FIX: ExportController is at /api/v1/reports (not /api/reports)
+    this.http.get(`/api/v1/reports/export/pdf/family/${this.familyId}`, { responseType: 'blob' })
       .subscribe({
         next: (blob: Blob) => {
           const url = window.URL.createObjectURL(blob);

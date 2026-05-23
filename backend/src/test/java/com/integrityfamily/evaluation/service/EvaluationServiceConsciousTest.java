@@ -1,12 +1,15 @@
 package com.integrityfamily.evaluation.service;
 
+import com.integrityfamily.assessment.service.AssessmentAnswerService;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
+import com.integrityfamily.dto.EvaluationDtos;
+import com.integrityfamily.plan.service.PlanGenerationService;
 import com.integrityfamily.plan.service.PlanTaskService;
+import com.integrityfamily.risk.service.RiskAlgoV1Engine;
 import com.integrityfamily.risk.service.RiskService;
 import com.integrityfamily.milestone.service.MilestoneService;
 import com.integrityfamily.ai.service.AiService;
-import com.integrityfamily.dto.EvaluationDtos;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +23,8 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,24 +35,19 @@ import static org.mockito.Mockito.times;
 @ExtendWith(MockitoExtension.class)
 public class EvaluationServiceConsciousTest {
 
-    @Mock
-    private EvaluationRepository evaluationRepository;
-    @Mock
-    private FamilyRepository familyRepository;
-    @Mock
-    private MemberRepository memberRepository;
-    @Mock
-    private QuestionRepository questionRepository;
-    @Mock
-    private RiskService riskService;
-    @Mock
-    private RabbitTemplate rabbitTemplate;
-    @Mock
-    private MilestoneService milestoneService;
-    @Mock
-    private AiService aiService;
-    @Mock
-    private PlanTaskService planTaskService;
+    @Mock private EvaluationRepository           evaluationRepository;
+    @Mock private EvaluationAnswerRepository     evaluationAnswerRepository;
+    @Mock private FamilyRepository               familyRepository;
+    @Mock private MemberRepository               memberRepository;
+    @Mock private QuestionRepository             questionRepository;
+    @Mock private AssessmentAnswerService        assessmentAnswerService;
+    @Mock private RiskAlgoV1Engine               riskAlgoV1Engine;
+    @Mock private RiskService                    riskService;
+    @Mock private RabbitTemplate                 rabbitTemplate;
+    @Mock private MilestoneService               milestoneService;
+    @Mock private AiService                      aiService;
+    @Mock private PlanTaskService                planTaskService;
+    @Mock private PlanGenerationService          planGenerationService;
 
     @InjectMocks
     private EvaluationService evaluationService;
@@ -75,9 +75,27 @@ public class EvaluationServiceConsciousTest {
     @DisplayName("Debe generar interpretación consciente y misiones automáticas al finalizar evaluación")
     void shouldGenerateInterpretationAndMissions() {
         Mockito.when(evaluationRepository.findById(100L)).thenReturn(Optional.of(evaluation));
-        Mockito.when(evaluationRepository.save(any(Evaluation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        Mockito.when(evaluationRepository.save(any(Evaluation.class)))
+               .thenAnswer(invocation -> invocation.getArgument(0));
 
-        // Corregido: Se pasan los 4 argumentos requeridos por el record
+        // AlgoResult con ICF < 60 para activar la recomendación en la síntesis del rol PADRE
+        Mockito.when(riskAlgoV1Engine.compute(any(), any())).thenReturn(
+                new RiskAlgoV1Engine.AlgoResult(
+                        Map.of("emociones", 50.0, "comunicacion", 50.0, "habitos", 50.0, "tiempos", 50.0),
+                        50.0,           // healthyIndex (ICF < 60)
+                        "MODERADO",     // riskLevel
+                        "comunicacion", // criticalDimension
+                        false,          // simulationSuspected
+                        false,          // relapseDetected
+                        "COMUNICACION_CONSCIENTE", // suggestedMissionGenerator
+                        "Reactiva",     // consciousnessLabel
+                        4,              // consciousnessLevel
+                        List.of(),      // relapseFlags
+                        List.of()       // mirrorFlags
+                )
+        );
+
+        // Flujo mobile-first: body sin respuestas; el servicio carga desde BD (lista vacía por defecto del mock)
         EvaluationDtos.EvaluationFinalizeRequest request = new EvaluationDtos.EvaluationFinalizeRequest(
                 new ArrayList<>(),
                 100.0,
@@ -85,14 +103,15 @@ public class EvaluationServiceConsciousTest {
                 new HashMap<>()
         );
 
-        Evaluation result = evaluationService.finalize(100L, request);
+        EvaluationDtos.FinalizeResult finalizeResult = evaluationService.finalize(100L, request);
+        Evaluation result = finalizeResult.evaluation();
 
         assertNotNull(result);
         assertNotNull(result.getSpiritualSynthesis());
         assertTrue(result.getSpiritualSynthesis().contains("[DIAGNÓSTICO CONSCIENTE]"));
         assertTrue(result.getSpiritualSynthesis().contains("Foco: Liderazgo emocional"));
 
-        // Verificar que se llamó a PlanTaskService
+        // Verificar que se llamó a PlanTaskService (misiones automáticas)
         verify(planTaskService, times(1)).generateTasksFromDiagnosis(any(Evaluation.class));
     }
 }

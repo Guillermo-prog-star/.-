@@ -1,0 +1,5 @@
+.badge-bajo    { background: #D1FAE5; color: #065F46; }
+.badge-moderado { background: #FEF3C7; color: #92400E; }
+.badge-alto    { background: #FEE2E2; color: #991B1B; }
+.badge-critico { background: #FEE2E2; color: #7F1D1D; }
+.badge-default { background: #F3F4F6; color: #374151; }

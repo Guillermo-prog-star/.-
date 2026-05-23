@@ -15,6 +15,9 @@
       <!-- [SDD Spec] PROTOCOLO SENTINEL: Capa de Contención Proactiva -->
       <app-sentinel-alert [active]="data.isSentinelActive"></app-sentinel-alert>
     </header>
+
+    <!-- Narrative Guidance Engine -->
+    <app-narrative-companion module="dashboard"></app-narrative-companion>
     
     <!-- [SDD Analytics v2] ABANDONMENT RISK BANNER — visible sólo si HIGH/CRITICAL -->
     <app-abandonment-risk-banner></app-abandonment-risk-banner>
@@ -144,7 +147,7 @@
     <!-- RADAR & TIMELINE -->
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
       <div class="xl:col-span-4 h-full">
-        <app-evolution-radar></app-evolution-radar>
+        <app-consciousness-orbit [scores]="data.dimensionScores" [status]="data.latestConsciousnessLabel"></app-consciousness-orbit>
       </div>
 
       <div class="xl:col-span-8 space-y-8">

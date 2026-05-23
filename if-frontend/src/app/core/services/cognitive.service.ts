@@ -7,8 +7,7 @@ import {
   GraphResponse, ReflectionResponse, IcfHistoryPoint, MemoryResponse,
   DimensionHistoryPoint
 } from '../models/cognitive.model';
-
-interface ApiResponse<T> { success: boolean; data: T; message: string; }
+import { ApiResponse } from '../models/api-response.model';
 
 @Injectable({ providedIn: 'root' })
 export class CognitiveService {

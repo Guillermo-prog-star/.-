@@ -4,7 +4,9 @@ import { RouterLink } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { CognitiveService } from '../../core/services/cognitive.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 import {
+  CognitiveSnapshot,
   NarrativeResponse, GraphResponse, ReflectionResponse, MemoryResponse, MemoryDto,
   NarrativeChapter, DyadDto, NarrativePhase,
   EffectivenessLevel, AbandonmentLevel
@@ -13,7 +15,7 @@ import {
 @Component({
   selector: 'app-cognitive-page',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, NarrativeCompanionComponent],
   template: `
     <div class="min-h-screen p-6 lg:p-12 space-y-10">
 
@@ -34,6 +36,9 @@ import {
           ← Volver al Panóptico
         </a>
       </header>
+
+      <!-- Narrative Guidance Engine -->
+      <app-narrative-companion module="cognitive"></app-narrative-companion>
 
       <!-- LOADING -->
       <div *ngIf="loading()" class="flex items-center justify-center py-24">
@@ -449,7 +454,7 @@ export class CognitivePageComponent implements OnInit {
   loading    = signal(true);
   reflecting = signal(false);
 
-  snapshot   = signal<any | null>(null);
+  snapshot   = signal<CognitiveSnapshot | null>(null);
   narrative  = signal<NarrativeResponse | null>(null);
   graph      = signal<GraphResponse | null>(null);
   memory     = signal<MemoryResponse | null>(null);

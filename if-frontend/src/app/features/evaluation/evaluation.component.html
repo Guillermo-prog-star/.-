@@ -26,6 +26,9 @@
     </div>
   </div>
 
+  <!-- Narrative Guidance Engine -->
+  <app-narrative-companion module="evaluations"></app-narrative-companion>
+
   <!-- Contenedor del Reactivo Actual (con transición de fade) -->
   <div class="question-container-wrapper" [class.transitioning]="isTransitioning">
     
@@ -77,32 +80,34 @@
         </div>
       </div>
       
-      <!-- Grilla de Respuestas (Escala Likert de Consciencia) -->
+      <!-- Grilla de Respuestas Rediseñada (Escala de Consciencia de Primera Persona Adaptativa) -->
       <div class="scale-section">
-        <div class="scale-grid">
-            <div *ngFor="let i of [1,2,3,4,5]" class="scale-item">
-                <button type="button" 
-                        (click)="selectAnswer(i)"
-                        class="scale-button"
-                        [class.active]="answers.get(questions[currentIndex].id) === i"
-                        [style.--hover-color]="getDimensionColor(questions[currentIndex].dimension)"
-                        [style.--hover-color-glow]="getDimensionColorGlow(questions[currentIndex].dimension)"
-                        [style.--active-color]="getDimensionColor(questions[currentIndex].dimension)">
-                    {{ i }}
-                </button>
-                <span class="scale-label" [class.active-label]="answers.get(questions[currentIndex].id) === i">
-                    {{ getScoreLabel(i) }}
-                </span>
+        <div class="options-stack">
+          <button *ngFor="let opt of getCustomOptions(questions[currentIndex].dimension)" 
+                  type="button" 
+                  (click)="selectAnswer(opt.score)"
+                  class="option-card"
+                  [class.active]="answers.get(questions[currentIndex].id) === opt.score"
+                  [style.--active-shadow-color]="opt.hexColor"
+                  [style.--active-border-color]="opt.hexColor">
+            <!-- Fila 1: Índice -->
+            <div class="option-indicator" [style.background-color]="opt.hexColor">
+              <span class="level-num">{{ opt.score }}</span>
             </div>
-        </div>
-
-        <!-- Caja Descriptiva Dinámica del Nivel de Consciencia Seleccionado -->
-        <div class="score-helper-box" *ngIf="answers.get(questions[currentIndex].id) as selectedScore">
-          <div class="helper-arrow"></div>
-          <p class="helper-text">
-            <strong>Nivel {{ selectedScore }} ({{ getScoreLabel(selectedScore) }}):</strong> 
-            {{ getScoreDetail(selectedScore) }}
-          </p>
+            
+            <div class="option-content">
+              <!-- Fila 2: Descripción -->
+              <p class="option-first-person">"{{ opt.text }}"</p>
+              
+              <!-- Fila 3 y 4: Estado y Código de Color -->
+              <div class="option-header-row">
+                <span class="level-title" [style.color]="opt.hexColor">{{ opt.label }}</span>
+                <span class="level-badge" [style.background-color]="opt.hexColor + '15'" [style.color]="opt.hexColor">
+                  {{ opt.colorClass }}
+                </span>
+              </div>
+            </div>
+          </button>
         </div>
       </div>
       

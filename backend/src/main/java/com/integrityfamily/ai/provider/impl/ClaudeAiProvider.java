@@ -61,22 +61,46 @@ public class ClaudeAiProvider implements AiProvider {
                 return """
                 [
                   {
-                    "title": "Misión de Reconocimiento Emocional",
-                    "description": "Dedicar 15 minutos al día para validar las emociones de los hijos sin juzgar.",
                     "dimension": "EMOCIONES",
-                    "periodicityMonths": 1
+                    "riskLevel": "LOW",
+                    "problemDetected": "Falta de validación mutua cotidiana en el núcleo familiar",
+                    "objective": "Aumentar el reconocimiento de emociones positivas",
+                    "missionType": "Validación diaria",
+                    "targetMembers": ["Todos"],
+                    "frequency": "1 vez al día",
+                    "estimatedDuration": 15,
+                    "successMetric": "Compartir una apreciación sincera en la cena",
+                    "adaptiveReason": "Fomentar la sintonía emocional",
+                    "title": "Misión de Reconocimiento Emocional",
+                    "description": "Dedicar 15 minutos al día para validar las emociones de los integrantes del hogar sin juzgar."
                   },
                   {
-                    "title": "Círculo de Comunicación Asertiva",
-                    "description": "Reunión semanal para expresar necesidades usando el lenguaje del 'Yo'.",
                     "dimension": "COMUNICACION",
-                    "periodicityMonths": 3
+                    "riskLevel": "LOW",
+                    "problemDetected": "Poco espacio de comunicación asertiva estructurado",
+                    "objective": "Asegurar que cada miembro exprese necesidades",
+                    "missionType": "Diálogo asertivo",
+                    "targetMembers": ["Todos"],
+                    "frequency": "Semanal",
+                    "estimatedDuration": 30,
+                    "successMetric": "Firma del acuerdo de convivencia semanal",
+                    "adaptiveReason": "Consolidar el círculo de palabra",
+                    "title": "Círculo de Comunicación Asertiva",
+                    "description": "Reunión semanal para expresar necesidades individuales usando el lenguaje del 'Yo'."
                   },
                   {
-                    "title": "Ritual de Hábitos de Integridad",
-                    "description": "Establecer una rutina de cena sin dispositivos electrónicos.",
                     "dimension": "HABITOS",
-                    "periodicityMonths": 6
+                    "riskLevel": "LOW",
+                    "problemDetected": "Presencia excesiva de pantallas en momentos sagrados de comida",
+                    "objective": "Eliminar elementos distractores en la mesa",
+                    "missionType": "Hábito digital",
+                    "targetMembers": ["Todos"],
+                    "frequency": "Diaria",
+                    "estimatedDuration": 45,
+                    "successMetric": "Cena compartida de forma plena y presencial",
+                    "adaptiveReason": "Fortalecer la presencia relacional",
+                    "title": "Ritual de Hábitos de Integridad",
+                    "description": "Establecer una rutina de cena sin dispositivos electrónicos para reconectar presencialmente."
                   }
                 ]
                 """;
@@ -417,6 +441,54 @@ public class ClaudeAiProvider implements AiProvider {
                        "* **Dimensión Crítica:** EMOCIONES (Reactividad latente).\n" +
                        "* **Análisis de Impacto:** Las variaciones en la sintonía del nodo provocan desconexiones silenciosas momentáneas.\n" +
                        "* **Acción de Contención:** Fomentar el uso de la 'Cámara de Descompresión' diaria y velar por el cumplimiento de cenas libres de móviles.";
+            } else if (userMessage != null && userMessage.contains("JSON")) {
+                log.info("🧠 [MITIGACIÓN AI] Solicitud de JSON estructurado en contingencia detectada. Retornando array de misiones.");
+                return """
+                [
+                  {
+                    "dimension": "EMOCIONES",
+                    "riskLevel": "LOW",
+                    "problemDetected": "Falta de validación mutua cotidiana en el núcleo familiar",
+                    "objective": "Aumentar el reconocimiento de emociones positivas",
+                    "missionType": "Validación diaria",
+                    "targetMembers": ["Todos"],
+                    "frequency": "1 vez al día",
+                    "estimatedDuration": 15,
+                    "successMetric": "Compartir una apreciación sincera en la cena",
+                    "adaptiveReason": "Fomentar la sintonía emocional",
+                    "title": "Misión de Reconocimiento Emocional",
+                    "description": "Dedicar 15 minutos al día para validar las emociones de los integrantes del hogar sin juzgar."
+                  },
+                  {
+                    "dimension": "COMUNICACION",
+                    "riskLevel": "LOW",
+                    "problemDetected": "Poco espacio de comunicación asertiva estructurado",
+                    "objective": "Asegurar que cada miembro exprese necesidades",
+                    "missionType": "Diálogo asertivo",
+                    "targetMembers": ["Todos"],
+                    "frequency": "Semanal",
+                    "estimatedDuration": 30,
+                    "successMetric": "Firma del acuerdo de convivencia semanal",
+                    "adaptiveReason": "Consolidar el círculo de palabra",
+                    "title": "Círculo de Comunicación Asertiva",
+                    "description": "Reunión semanal para expresar necesidades individuales usando el lenguaje del 'Yo'."
+                  },
+                  {
+                    "dimension": "HABITOS",
+                    "riskLevel": "LOW",
+                    "problemDetected": "Presencia excesiva de pantallas en momentos sagrados de comida",
+                    "objective": "Eliminar elementos distractores en la mesa",
+                    "missionType": "Hábito digital",
+                    "targetMembers": ["Todos"],
+                    "frequency": "Diaria",
+                    "estimatedDuration": 45,
+                    "successMetric": "Cena compartida de forma plena y presencial",
+                    "adaptiveReason": "Fortalecer la presencia relacional",
+                    "title": "Ritual de Hábitos de Integridad",
+                    "description": "Establecer una rutina de cena sin dispositivos electrónicos para reconectar presencialmente."
+                  }
+                ]
+                """;
             } else {
                 log.info("🧠 [MITIGACIÓN AI] Solicitud general detectada. Retornando simulación adaptativa.");
                 return "### 💡 SIMULACIÓN RESILIENTE (SDD)\n" +

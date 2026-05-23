@@ -24,6 +24,8 @@ public interface AiService {
 
     String generateExecutiveSynthesis(com.integrityfamily.domain.Evaluation evaluation);
 
+    String generateDiagnosticMissions(com.integrityfamily.domain.Evaluation evaluation);
+
     String generateSynthesis(Map<String, Object> context);
 
     String generateMissions(Family family);

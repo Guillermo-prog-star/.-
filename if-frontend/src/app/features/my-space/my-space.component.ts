@@ -2,11 +2,12 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MySpaceService } from './services/my-space.service';
+import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 
 @Component({
   selector: 'app-my-space',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NarrativeCompanionComponent],
   templateUrl: './my-space.component.html',
   styleUrls: ['./my-space.component.css']
 })

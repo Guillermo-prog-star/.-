@@ -46,4 +46,8 @@ export interface RegisterFamilyRequest {
   email: string;
   password: string;
   confirmPassword: string;  // Requerido por el backend para validación
+  // FIX TS/Backend contract: RegisterFamilyRequest @NotBlank fields
+  municipio: string;
+  countryCode: string;
+  departmentCode: string;
 }

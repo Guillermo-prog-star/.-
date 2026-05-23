@@ -1,3 +1,42 @@
+// ── DTOs de evaluación incremental ──────────────────────────────────────────
+
+/** Respuesta individual enviada al endpoint POST /{evalId}/answers */
+export interface SaveAnswerRequest {
+  questionId: number;
+  value?: number;         // escala 1-5
+  booleanAnswer?: boolean;
+}
+
+/** Respuesta ya persistida (devuelta por GET /{evalId}/answers) */
+export interface SavedAnswerDto {
+  questionId?: number;
+  questionKey?: string;
+  score: number;
+  booleanAnswer?: boolean;
+  dimension?: string;
+  answeredAt?: string;
+}
+
+/** Progreso del cuestionario */
+export interface AnswerProgressResponse {
+  evaluationId: number;
+  answered: number;
+  totalExpected: number;
+  canFinalize: boolean;
+  answers: SavedAnswerDto[];
+}
+
+/** Body del endpoint POST /evaluations/{id}/finalize */
+export interface FinalizeRequest {
+  /** Si se omite (mobile-first), el backend carga las respuestas guardadas desde BD. */
+  answers?: { questionId: number; value: number; booleanAnswer?: boolean }[];
+  icf?: number;
+  hasCrisis?: boolean;
+  dimensionScores?: Record<string, number>;
+}
+
+// ── Modelo de pregunta ────────────────────────────────────────────────────────
+
 export interface Question {
   id: number;
   dimension: string;

@@ -250,44 +250,101 @@ public class PromptGenerator {
         }
     }
 
-    public String buildSpiritualSynthesisPrompt(com.integrityfamily.domain.Family family, java.util.Map<String, Double> dimensions) {
+    public String buildSpiritualSynthesisPrompt(com.integrityfamily.domain.Family family, java.util.Map<String, Double> dimensions, String answersJson) {
         try {
             String dimensionsJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dimensions);
 
             return String.format("""
                 <system_identity>
-                Eres el Mentor de Conciencia de Integrity Family. Tu objetivo es transformar datos métricos en una narrativa de sabiduría familiar.
+                Eres el Mentor de Conciencia de Integrity Family. Tu objetivo es transformar datos métricos y las respuestas cotidianas de la familia en una narrativa de sabiduría familiar profunda.
                 Tu tono es místico pero aterrizado, poético pero accionable, y profundamente alentador.
+                Evita sermones, lenguaje clínico frío o juicios morales. Eres un facilitador de crecimiento consciente.
                 </system_identity>
 
                 <data_input>
                 Familia: %s
                 Hito Actual: %s
-                Métricas de Coherencia:
+                Métricas de Coherencia (ICF por Dimensión):
+                %s
+                
+                Respuestas Detalladas de la Evaluación (Nivel de Conciencia Psicológica por Reactivo):
                 %s
                 </data_input>
 
                 <task_instruction>
-                Genera una "Síntesis Espiritual de la Evaluación".
-                1. EL ALMA DEL NODO: Describe la esencia actual de la familia basada en sus puntajes más altos.
-                2. LA SOMBRA: Identifica el vacío o miedo que representan los puntajes bajos, sin juzgar.
-                3. EL CAMINO DE LUZ: Define un propósito trascendental para el próximo ciclo de crecimiento.
+                Genera una "Síntesis Espiritual y Diagnóstico Inteligente de la Evaluación".
+                1. EL ALMA DEL NODO: Describe la esencia de la familia basada en sus puntajes más altos y las respuestas que denotan un nivel "Pleno" o "Intencional".
+                2. LA SOMBRA: Identifica con compasión y sin juzgar las áreas de dolor o automatismo representadas por las respuestas en niveles "Inconsciente" o "Reactivo".
+                3. EL CAMINO DE LUZ: Define un propósito trascendental sumamente claro y alentador para el próximo ciclo de crecimiento familiar.
                 </task_instruction>
 
                 <output_constraints>
                 - Idioma: Español.
-                - Tono: Inspirador y transformacional.
+                - Tono: Inspirador, transformacional y empático.
                 - Extensión: Un párrafo potente por cada punto.
                 </output_constraints>
                 """,
                 family.getName(),
                 family.getCurrentMilestone(),
-                dimensionsJson
+                dimensionsJson,
+                answersJson
             );
         } catch (Exception e) {
             log.error("Failed to generate spiritual synthesis prompt", e);
             return "ERROR_GENERATING_SPIRITUAL_PROMPT";
         }
+    }
+
+    public String buildDiagnosticMissionsPrompt(com.integrityfamily.domain.Family family, com.integrityfamily.domain.FamilyMember member, String answersJson, Double icf, String riskLevel) {
+        String memberName = member != null ? member.getFullName() : "Miembro";
+        String memberRole = member != null ? member.getRole() : "FAMILIA";
+
+        return String.format("""
+            <system_identity>
+            Eres el Arquitecto de Transformación Familiar de Integrity Family. Tu especialidad es diseñar microacciones pedagógicas ágiles y empáticas adaptadas de forma exacta al nivel de conciencia de un miembro de la familia.
+            Tu tono es de un amigo sabio, cálido, motivador y sumamente claro.
+            </system_identity>
+
+            <context_input>
+            Familia: %s
+            Miembro Responsable: %s (Rol: %s)
+            ICF de la Evaluación: %.2f
+            Nivel de Riesgo: %s
+            Respuestas Detalladas y Niveles de Conciencia:
+            %s
+            </context_input>
+
+            <task_instruction>
+            Analiza las respuestas y el nivel de conciencia psicológica del miembro. Diseña exactamente 2 micro-acciones (misiones) de bajísima fricción y alta empatía personalizadas para su Rol Familiar (%s) y su estado actual:
+            - Si presenta reactividad en alguna dimensión (nivel "Reactivo"), enfoca una misión en calmación o respiración específica.
+            - Si presenta desconexión (nivel "Inconsciente"), enfoca la misión en darse cuenta (atención plena básica).
+            - Si presenta fortaleza (nivel "Pleno" o "Intencional"), diseña una misión donde pueda liderar con el ejemplo o compartir su luz con otros.
+
+            Reglas de la misión:
+            - Deben ser microacciones cotidianas de bajísima fricción (ej: 'mirar a los ojos al saludar', 'agradecer un pequeño detalle en silencio').
+            - No hables como terapeuta clínico ni uses jerga corporativa pesada.
+
+            Responde ÚNICAMENTE con un arreglo JSON válido siguiendo estrictamente este esquema:
+            [
+              {
+                "title": "Título corto y humano (ej: 🍽 Cena sin celulares)",
+                "description": "Instrucción muy corta, humana y motivadora (máximo 2 líneas)",
+                "dimension": "EMOCIONES | COMUNICACION | HABITOS | TIEMPOS",
+                "objective": "Objetivo sencillo cotidiano",
+                "successMetric": "Cómo sabe que lo logró (ej: Ver una sonrisa)",
+                "estimatedDuration": 10
+              }
+            ]
+            </task_instruction>
+            """,
+            family.getName(),
+            memberName,
+            memberRole,
+            icf,
+            riskLevel,
+            answersJson,
+            memberRole
+        );
     }
 
     public String buildHybridPlanPrompt(com.integrityfamily.domain.Family family, java.util.Map<String, Double> dimensions, String riskLevel, com.integrityfamily.ai.dto.LogbookCorrelationResult correlation) {
@@ -388,9 +445,14 @@ public class PromptGenerator {
                 5. BUCLE CERRADO (SIMPLIFICADO): NO uses los pasos PLANIFICAR, EJECUTAR y EVALUAR. En su lugar, describe la acción de forma directa y humana.
                 6. REGLA DE ADAPTACIÓN POR CRISIS: Si en <logbook_sentiment_context> "generalLabel" es "CRISIS" o el puntaje es menor a -0.40, los hitos iniciales (W1 y M1) deben centrarse de manera exclusiva en contención emocional de emergencia, pausando cualquier otra dimensión compleja.
                 7. REGLA DE MICROACCIONES: Cada tarea DEBE ser una microacción observable, cotidiana y de fricción casi nula (ej: 'cenar sin celulares', 'escribir una nota de agradecimiento de 1 línea', 'respirar juntos 2 minutos si hay tensión'). No sugieras misiones abstractas ni intervenciones psicológicas clínicas complejas.
-                8. CLASIFICACIÓN DE TAREAS: Cada tarea debe tener obligatoriamente su fase y dimensión asignada en el JSON:
+                8. CLASIFICACIÓN DE TAREAS (TAXONOMÍA LONGITUDINAL v2): Cada tarea debe tener obligatoriamente su clasificación taxonómica completa asignada en el JSON:
                    - fase: "RECONOCIMIENTO" | "AMOR" | "ENTREGA" (debe coincidir con la fase correspondiente al pilar del hito).
                    - dimension: "EMOCIONES" | "COMUNICACION" | "HABITOS" | "TIEMPOS".
+                   - pillar_name: "reconocimiento" | "amor" | "entrega" (siempre en minúsculas).
+                   - milestone_code: El código exacto del hito al que pertenece (ej: "W1", "M1", etc., en mayúsculas).
+                   - member_type: "familia" | "padre" | "madre" | "hijo" | "hija" (en minúsculas).
+                   - risk_type: "desconexion_emocional" | "conflicto_reactivo" | "ausencia_rutinas" | "mal_uso_tiempo" (en minúsculas, el tipo de riesgo principal mitigado).
+                   - mission_generator: "ESTABILIZACION_EMOCIONAL" | "CONCIENCIA_EMOCIONAL" | "ACUERDOS_CONVIVENCIA" | "CONEXION_FAMILIAR" | "LEGADO_CONSCIENTE" (en mayúsculas, la misión de origen).
                 9. REGLA DE SOLUCIÓN Y EVOLUCIÓN (80/20): Las misiones deben enfocarse en un 80% en acciones positivas de transformación, fortalezas y construcción proactiva del vínculo. Solo el 20% puede hacer referencia a mitigar problemas o diagnosticar conflictos identificados. Priorizar siempre la evolución y soluciones por encima de la presentación de patologías o problemas clínicos.
                 </architectural_rules>
 
@@ -430,7 +492,12 @@ public class PromptGenerator {
                              "participants": ["PADRE", "MADRE", "HIJO"],
                              "evidence_type": "PHOTO | TEXT | AUDIO",
                              "fase": "RECONOCIMIENTO | AMOR | ENTREGA",
-                             "dimension": "EMOCIONES | COMUNICACION | HABITOS | TIEMPOS"
+                             "dimension": "EMOCIONES | COMUNICACION | HABITOS | TIEMPOS",
+                             "pillar_name": "reconocimiento | amor | entrega",
+                             "milestone_code": "W1 | M1 | M2 | M3 | M4 | M5 | M6 | M9 | M12 | M15 | M18 | M21 | M24 | M36",
+                             "member_type": "familia | padre | madre | hijo | hija",
+                             "risk_type": "desconexion_emocional | conflicto_reactivo | ausencia_rutinas | mal_uso_tiempo",
+                             "mission_generator": "ESTABILIZACION_EMOCIONAL | CONCIENCIA_EMOCIONAL | ACUERDOS_CONVIVENCIA | CONEXION_FAMILIAR | LEGADO_CONSCIENTE"
                            }
                            // Agrega de 1 a 3 microacciones por hito para lograr de 6 a 12 misiones por pilar en total.
                          ]

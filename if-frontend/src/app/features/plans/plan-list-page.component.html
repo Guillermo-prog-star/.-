@@ -10,6 +10,9 @@
     </div>
   </div>
 
+  <!-- Narrative Guidance Engine -->
+  <app-narrative-companion module="plans"></app-narrative-companion>
+
   <!-- ACCIONES RÁPIDAS / CAPA PRIVADA -->
   <div class="quick-actions-bar" style="margin-bottom: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
     <div class="glass-card" style="padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid rgba(168, 85, 247, 0.2);" [routerLink]="['/my-space']">
@@ -23,43 +26,171 @@
     </div>
   </div>
 
-  <!-- SECCIÓN 1: RUTA DE EVOLUCIÓN — 3 PILARES DE CONCIENCIA -->
-  <div class="glass-card">
-    <h2 class="card-title">
-      <i>🗺️</i> Ruta de Evolución — 3 Pilares de Conciencia
-    </h2>
-    <div class="timeline-grid">
-      @for (m of milestones; track m.code) {
-        <div class="timeline-row" 
-             [class.active]="m.orderIndex === getCurrentMilestoneOrderIndex()"
-             [class.completed]="m.orderIndex < getCurrentMilestoneOrderIndex()">
-          
-          <span class="col-month">{{ getMilestoneMonthLabel(m.code) }}</span>
-          
-          <span class="col-pilar">
-            @if (m.code === 'W1' || m.code === 'M1' || m.code === 'M2' || m.code === 'M3') {
-              💛 Reconocimiento
-            } @else if (m.code === 'M4' || m.code === 'M5' || m.code === 'M6' || m.code === 'M9' || m.code === 'M12') {
-              ❤️ Amor
-            } @else {
-              👑 Entrega
-            }
-          </span>
-          
-          <span class="col-fase">{{ m.title }}</span>
-          
-          <span class="status-pill" 
-                [ngClass]="{
-                  'status-completed': m.orderIndex < getCurrentMilestoneOrderIndex(),
-                  'status-active': m.orderIndex === getCurrentMilestoneOrderIndex(),
-                  'status-pending': m.orderIndex > getCurrentMilestoneOrderIndex()
-                }">
-            {{ getMilestoneStatusText(m) }}
-          </span>
+  <!-- SECCIÓN 0: TABLERO DE PROGRESO DE PILARES EN TIEMPO REAL -->
+  <div class="pillar-progress-board">
+    <!-- Pilar Reconocimiento -->
+    <div class="pillar-card pilar-reconocimiento" [class.active-glow]="activePillar === 'RECONOCIMIENTO'">
+      <div class="pillar-card-header">
+        <span class="pillar-icon">💛</span>
+        <div>
+          <h3 class="pillar-name">Reconocimiento</h3>
+          <span class="pillar-phase-tag">Fase Inicial / Diagnóstico</span>
         </div>
+      </div>
+      <div class="pillar-progress-info">
+        <div class="percentage-display">{{ pillarProgress.reconocimiento.percentage }}%</div>
+        <div class="tasks-counter">
+          {{ pillarProgress.reconocimiento.completed }} de {{ pillarProgress.reconocimiento.total }} compromisos
+        </div>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-glow recognition-glow" [style.width]="pillarProgress.reconocimiento.percentage + '%'"></div>
+      </div>
+      @if (activePillar === 'RECONOCIMIENTO') {
+        <div class="active-pulse-indicator"><span class="pulse-dot"></span> Pilar Activo</div>
+      }
+    </div>
+
+    <!-- Pilar Amor -->
+    <div class="pillar-card pilar-amor" [class.active-glow]="activePillar === 'AMOR'">
+      <div class="pillar-card-header">
+        <span class="pillar-icon">💖</span>
+        <div>
+          <h3 class="pillar-name">Amor</h3>
+          <span class="pillar-phase-tag">Conexión / Confianza</span>
+        </div>
+      </div>
+      <div class="pillar-progress-info">
+        <div class="percentage-display">{{ pillarProgress.amor.percentage }}%</div>
+        <div class="tasks-counter">
+          {{ pillarProgress.amor.completed }} de {{ pillarProgress.amor.total }} compromisos
+        </div>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-glow amor-glow" [style.width]="pillarProgress.amor.percentage + '%'"></div>
+      </div>
+      @if (activePillar === 'AMOR') {
+        <div class="active-pulse-indicator"><span class="pulse-dot"></span> Pilar Activo</div>
+      }
+    </div>
+
+    <!-- Pilar Entrega -->
+    <div class="pillar-card pilar-entrega" [class.active-glow]="activePillar === 'ENTREGA'">
+      <div class="pillar-card-header">
+        <span class="pillar-icon">👑</span>
+        <div>
+          <h3 class="pillar-name">Entrega</h3>
+          <span class="pillar-phase-tag">Trascendencia / Legado</span>
+        </div>
+      </div>
+      <div class="pillar-progress-info">
+        <div class="percentage-display">{{ pillarProgress.entrega.percentage }}%</div>
+        <div class="tasks-counter">
+          {{ pillarProgress.entrega.completed }} de {{ pillarProgress.entrega.total }} compromisos
+        </div>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-glow entrega-glow" [style.width]="pillarProgress.entrega.percentage + '%'"></div>
+      </div>
+      @if (activePillar === 'ENTREGA') {
+        <div class="active-pulse-indicator"><span class="pulse-dot"></span> Pilar Activo</div>
       }
     </div>
   </div>
+
+  <!-- SECCIÓN 1: RUTA DE EVOLUCIÓN — 3 PILARES DE CONCIENCIA -->
+  <div class="glass-card premium-timeline-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+      <h2 class="card-title" style="margin: 0;">
+        <i>🗺️</i> Ruta de Evolución Clínica — Hitos de 36 Meses
+      </h2>
+      <div style="font-size: 13px; color: #8b949e; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 6px 14px; border-radius: 20px; display: flex; align-items: center; gap: 8px;">
+        <span class="pulse-dot"></span> Hito actual: <strong style="color: #f5b041;">{{ familyDashboard?.currentMilestone || 'W1' }}</strong>
+      </div>
+    </div>
+
+    <!-- Acordeón Desplegable Progresivo -->
+    <div style="margin-bottom: 8px;">
+      <button type="button" 
+              (click)="showFullTimeline = !showFullTimeline" 
+              class="timeline-toggle-btn">
+        <span>{{ showFullTimeline ? '▼ Ocultar ruta de hitos' : '▶ Ver ruta completa' }}</span>
+      </button>
+    </div>
+    
+    <div class="timeline-roadmap-container" *ngIf="showFullTimeline" style="animation: fadeIn 0.4s ease-out; margin-top: 24px;">
+      <div class="timeline-vertical-line"></div>
+      
+      <div class="timeline-items-wrapper">
+        @for (m of milestones; track m.code) {
+          <div class="timeline-step-row" 
+               [class.active-step]="m.orderIndex === getCurrentMilestoneOrderIndex()"
+               [class.completed-step]="m.orderIndex < getCurrentMilestoneOrderIndex()">
+            
+            <!-- Indicador de Nodo Lumínico -->
+            <div class="step-indicator-node">
+              <div class="node-dot">
+                @if (m.orderIndex < getCurrentMilestoneOrderIndex()) {
+                  <span class="check-icon">✓</span>
+                } @else if (m.orderIndex === getCurrentMilestoneOrderIndex()) {
+                  <span class="active-pulse-node"></span>
+                } @else {
+                  <span class="pending-dot"></span>
+                }
+              </div>
+            </div>
+
+            <!-- Contenido del Hito -->
+            <div class="step-content-card">
+              <div class="step-header-meta">
+                <span class="step-month">{{ getMilestoneMonthLabel(m.code) }}</span>
+                <span class="step-emoji">{{ getMilestoneEmoji(m.code) }}</span>
+                
+                <!-- Chip del Pilar Mapeado -->
+                <span class="step-pillar-badge" [ngClass]="{
+                  'pillar-badge-rec': m.code === 'W1' || m.code === 'M1' || m.code === 'M2' || m.code === 'M3',
+                  'pillar-badge-amor': m.code === 'M4' || m.code === 'M5' || m.code === 'M6' || m.code === 'M9' || m.code === 'M12',
+                  'pillar-badge-ent': m.code !== 'W1' && m.code !== 'M1' && m.code !== 'M2' && m.code !== 'M3' && m.code !== 'M4' && m.code !== 'M5' && m.code !== 'M6' && m.code !== 'M9' && m.code !== 'M12'
+                }">
+                  @if (m.code === 'W1' || m.code === 'M1' || m.code === 'M2' || m.code === 'M3') {
+                    Reconocimiento
+                  } @else if (m.code === 'M4' || m.code === 'M5' || m.code === 'M6' || m.code === 'M9' || m.code === 'M12') {
+                    Amor
+                  } @else {
+                    Entrega
+                  }
+                </span>
+
+                <!-- Estado del Hito -->
+                <span class="step-status-tag" [ngClass]="{
+                  'tag-completed': m.orderIndex < getCurrentMilestoneOrderIndex(),
+                  'tag-active': m.orderIndex === getCurrentMilestoneOrderIndex(),
+                  'tag-pending': m.orderIndex > getCurrentMilestoneOrderIndex()
+                }">
+                  {{ getMilestoneStatusText(m) }}
+                </span>
+              </div>
+              
+              <div class="step-details-body">
+                <h4 class="step-title">{{ m.title }}</h4>
+                <p class="step-description">
+                  @if (m.orderIndex < getCurrentMilestoneOrderIndex()) {
+                    Hito consolidado con éxito. Evolución completada para este período de la transformación.
+                  } @else if (m.orderIndex === getCurrentMilestoneOrderIndex()) {
+                    Fase clínica activa. Complete las misiones sugeridas y suba la evidencia requerida para desbloquear el avance.
+                  } @else {
+                    Fase futura de madurez y asimilación de hábitos familiares en la ruta longitudinal.
+                  }
+                </p>
+              </div>
+            </div>
+            
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
 
   <!-- SECCIÓN 2: MISIONES Y TAREAS ACTIVAS (IA CLINICAL PLANS) -->
   <div class="glass-card">

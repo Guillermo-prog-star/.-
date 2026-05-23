@@ -97,7 +97,7 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
-.password-label {
+.form-group label.password-label {
   display: flex;
   justify-content: space-between;
   align-items: center;

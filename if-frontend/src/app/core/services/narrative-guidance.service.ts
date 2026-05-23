@@ -368,15 +368,15 @@ export class NarrativeGuidanceService {
     // Normalize module key
     let modKey = module.toLowerCase();
     if (modKey.includes('login')) modKey = 'login';
-    if (modKey.includes('dash')) modKey = 'dashboard';
-    if (modKey.includes('portal')) modKey = 'portal-familiar';
-    if (modKey.includes('famil')) modKey = 'families';
-    if (modKey.includes('eval') || modKey.includes('start') || modKey.includes('form') || modKey.includes('result')) modKey = 'evaluations';
-    if (modKey.includes('plan')) modKey = 'plans';
-    if (modKey.includes('log') || modKey.includes('bitacora')) modKey = 'logbook';
-    if (modKey.includes('my-space') || modKey.includes('espacio')) modKey = 'my-space';
-    if (modKey.includes('cogni') || modKey.includes('chat') || modKey.includes('consultor')) modKey = 'cognitive';
-    if (modKey.includes('cris')) modKey = 'crisis';
+    else if (modKey.includes('dash')) modKey = 'dashboard';
+    else if (modKey.includes('portal')) modKey = 'portal-familiar';
+    else if (modKey.includes('famil')) modKey = 'families';
+    else if (modKey.includes('eval') || modKey.includes('start') || modKey.includes('form') || modKey.includes('result')) modKey = 'evaluations';
+    else if (modKey.includes('plan')) modKey = 'plans';
+    else if (modKey.includes('log') || modKey.includes('bitacora')) modKey = 'logbook';
+    else if (modKey.includes('my-space') || modKey.includes('espacio')) modKey = 'my-space';
+    else if (modKey.includes('cogni') || modKey.includes('chat') || modKey.includes('consultor')) modKey = 'cognitive';
+    else if (modKey.includes('cris')) modKey = 'crisis';
 
     const moduleData = this.matrix[modKey] || this.matrix['dashboard'];
     const roleData = moduleData[role] || moduleData['FAMILIA'];

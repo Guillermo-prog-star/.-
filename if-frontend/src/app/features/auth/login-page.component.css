@@ -1,3 +1,8 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
 /* --- Estilos Base Premium con Glassmorphism Responsivo --- */
 .login-page {
   min-height: 100dvh;
@@ -5,8 +10,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(16px, 4vw, 48px);
-  overflow-y: auto;
+  padding: clamp(12px, 4vw, 48px);
+  overflow: hidden;
   background: linear-gradient(135deg, #2f2b83, #3c32b4);
   font-family: 'Inter', sans-serif;
   box-sizing: border-box;
@@ -14,9 +19,9 @@
 
 .login-card {
   width: min(100%, 520px);
-  max-height: calc(100dvh - 32px);
+  max-height: calc(100dvh - 24px);
   overflow-y: auto;
-  border-radius: 28px;
+  border-radius: clamp(18px, 4vw, 28px);
   padding: clamp(20px, 4vw, 42px);
   box-sizing: border-box;
   
@@ -269,32 +274,45 @@
 @media (max-width: 768px) {
   .login-page {
     align-items: flex-start;
-    padding-top: 24px;
-    padding-left: 16px;
-    padding-right: 16px;
   }
 
   .login-card {
-    max-height: none;
-    border-radius: 22px;
+    width: 100%;
+    max-height: calc(100dvh - 24px);
   }
 }
 
-@media (max-width: 420px) {
-  .login-support-card {
-    display: none; /* opcional si ocupa demasiado */
+@media (max-width: 480px) {
+  .login-page {
+    padding: 10px;
   }
 
   .login-card {
+    max-height: calc(100dvh - 20px);
     padding: 18px;
   }
+
+  .form-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
 }
 
-@media (max-height: 720px) {
+@media (max-height: 680px) {
   .login-page {
     align-items: flex-start;
   }
+
+  .login-logo {
+    margin-bottom: 12px;
+  }
+
+  .sub {
+    margin-bottom: 16px;
+  }
+
   .login-card {
-    max-height: none;
+    max-height: calc(100dvh - 16px);
   }
 }

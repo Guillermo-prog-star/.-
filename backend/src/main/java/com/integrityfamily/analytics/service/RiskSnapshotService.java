@@ -25,7 +25,11 @@ public class RiskSnapshotService {
         if (snapshot.getHasCrisis() != null && snapshot.getHasCrisis()) {
             Long fId = snapshot.getFamily() != null ? snapshot.getFamily().getId() : 2L; 
             log.info("Ã°Å¸â€œÂ¡ Disparando evento de crisis a RabbitMQ para familia ID: {}", fId);
-            rabbitTemplate.convertAndSend("x.ai.events", "crisis.detected", fId);
+            try {
+                rabbitTemplate.convertAndSend("x.ai.events", "crisis.detected", fId);
+            } catch (Exception e) {
+                log.error("❌ [ANALYTICS] Error al publicar evento de crisis a RabbitMQ (resiliencia activada): {}", e.getMessage());
+            }
         }
     }
 }

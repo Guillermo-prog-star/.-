@@ -425,8 +425,12 @@ public class PlanService {
                     "SYSTEM"
                 );
 
-            rabbitTemplate.convertAndSend(com.integrityfamily.common.config.RabbitConfig.EXCHANGE_NAME, "task.completed", eventObj);
-            log.info("📧 [PLAN] Evento 'task.completed' enviado para familia: {}", task.getPlan().getFamily().getId());
+            try {
+                rabbitTemplate.convertAndSend(com.integrityfamily.common.config.RabbitConfig.EXCHANGE_NAME, "task.completed", eventObj);
+                log.info("📧 [PLAN] Evento 'task.completed' enviado para familia: {}", task.getPlan().getFamily().getId());
+            } catch (Exception e) {
+                log.error("❌ [PLAN] Error al publicar evento 'task.completed' a RabbitMQ (resiliencia activada): {}", e.getMessage());
+            }
         }
 
         return toTaskResponse(savedTask);

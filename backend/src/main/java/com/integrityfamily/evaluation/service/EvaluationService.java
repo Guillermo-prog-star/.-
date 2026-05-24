@@ -428,9 +428,13 @@ public class EvaluationService {
                 "SYSTEM"
             );
 
-        rabbitTemplate.convertAndSend(com.integrityfamily.common.config.RabbitConfig.EXCHANGE_NAME, "evaluation.completed", eventObj);
-        log.info("📧 [EVALUATION] Evento 'evaluation.completed' enviado para familia: {} con riesgo: {}", 
-                saved.getFamily().getId(), riskLevel);
+        try {
+            rabbitTemplate.convertAndSend(com.integrityfamily.common.config.RabbitConfig.EXCHANGE_NAME, "evaluation.completed", eventObj);
+            log.info("📧 [EVALUATION] Evento 'evaluation.completed' enviado para familia: {} con riesgo: {}", 
+                    saved.getFamily().getId(), riskLevel);
+        } catch (Exception e) {
+            log.error("❌ [EVALUATION] Error al publicar evento 'evaluation.completed' a RabbitMQ (resiliencia activada): {}", e.getMessage());
+        }
     }
 
     @Transactional

@@ -1,43 +1,45 @@
 // src/domain/constants/presenceScaleDomain.ts
 
-/**
- * Interfaz que define las tres dimensiones del eje X.
- * Facilita la inyección de estilos (colorCode) y renderizado semántico en la UI.
- */
+export type ConsciousnessState = 'INCONSCIENTE' | 'REACTIVO' | 'CONSCIENTE' | 'INTENCIONAL' | 'PLENO';
+export type ConsciousnessColorCode = 'GRIS' | 'ROJO_SUAVE' | 'AMARILLO' | 'AZUL' | 'VERDE';
+
 export interface PresenceScaleDefinition {
+  score: 1 | 2 | 3 | 4 | 5;
   description: string;
-  state: string;
-  colorCode: string;
+  state: ConsciousnessState;
+  colorCode: ConsciousnessColorCode;
 }
 
-/**
- * Diccionario de datos estricto que consolida la matriz 4x5.
- */
-export const PRESENCE_SCALE: Readonly<Record<number, PresenceScaleDefinition>> = {
+export const PRESENCE_SCALE: Readonly<Record<1 | 2 | 3 | 4 | 5, PresenceScaleDefinition>> = {
   1: {
-    description: 'casi nunca estoy presente',
+    score: 1,
+    description: 'Casi nunca estoy presente',
     state: 'INCONSCIENTE',
-    colorCode: 'GRIS'
+    colorCode: 'GRIS',
   },
   2: {
+    score: 2,
     description: 'Me distraigo constantemente',
     state: 'REACTIVO',
-    colorCode: 'ROJO SUAVE'
+    colorCode: 'ROJO_SUAVE',
   },
   3: {
-    description: 'intento equilibrarlo',
+    score: 3,
+    description: 'Intento equilibrarlo',
     state: 'CONSCIENTE',
-    colorCode: 'AMARILLO'
+    colorCode: 'AMARILLO',
   },
   4: {
-    description: 'Estoy priorizando mas',
+    score: 4,
+    description: 'Estoy priorizando más a mi familia',
     state: 'INTENCIONAL',
-    colorCode: 'AZUL'
+    colorCode: 'AZUL',
   },
   5: {
+    score: 5,
     description: 'Comparto tiempo con verdadera presencia',
     state: 'PLENO',
-    colorCode: 'VERDE'
+    colorCode: 'VERDE',
   },
 } as const;
 

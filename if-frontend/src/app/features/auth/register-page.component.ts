@@ -78,7 +78,12 @@ export class RegisterPageComponent {
         },
         error: (e: any) => {
           this.loading = false;
-          this.error = e?.error?.message ?? 'Error en el servidor. Verifica el Voucher.';
+          const status = e?.status;
+          if (status === 0 || status === 502 || status === 503 || status === 504) {
+            this.error = `El servidor de Integrity Family no responde o se encuentra en mantenimiento (HTTP ${status}). Por favor, inténtelo de nuevo en unos minutos.`;
+          } else {
+            this.error = e?.error?.message ?? 'Error en el servidor. Verifica el Voucher.';
+          }
         }
       });
     } else {
@@ -104,7 +109,12 @@ export class RegisterPageComponent {
         },
         error: (e: any) => {
           this.loading = false;
-          this.error = e?.error?.message ?? 'Error al crear familia. Verifica los datos e intenta de nuevo.';
+          const status = e?.status;
+          if (status === 0 || status === 502 || status === 503 || status === 504) {
+            this.error = `El servidor de Integrity Family no responde o se encuentra en mantenimiento (HTTP ${status}). Por favor, inténtelo de nuevo en unos minutos.`;
+          } else {
+            this.error = e?.error?.message ?? 'Error al crear familia. Verifica los datos e intenta de nuevo.';
+          }
         }
       });
 

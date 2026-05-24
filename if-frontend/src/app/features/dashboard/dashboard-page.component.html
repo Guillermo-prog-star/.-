@@ -42,7 +42,7 @@
     </div>
 
     <!-- STATS GRID -->
-    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <app-icf-stat-card 
         label="Índice de Conciencia (ICF)" 
         [value]="data.latestGlobalScore" 
@@ -62,6 +62,13 @@
         [value]="data.awarenessGrowth" 
         status="EVOLUCIÓN SEMANAL"
         theme="theme-peace">
+      </app-icf-stat-card>
+
+      <app-icf-stat-card 
+        label="Observación Consciente (IOC)" 
+        [value]="(iocScore$ | async) ?? 50" 
+        status="SINTONÍA EMOCIONAL IA"
+        theme="theme-growth">
       </app-icf-stat-card>
     </section>
 

@@ -74,7 +74,7 @@ mvn spring-boot:run
 ### Frontend
 
 ```bash
-cd frontend
+cd if-frontend
 npm install
 ng serve
 ```

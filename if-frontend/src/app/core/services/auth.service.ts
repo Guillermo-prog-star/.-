@@ -129,6 +129,13 @@ export class AuthService {
     );
   }
 
+  /**
+   * SDD: Obtener perfil autenticado
+   */
+  getAuthenticatedProfile(): Observable<any> {
+    return this.http.get<any>(`${this.authUrl}/me`);
+  }
+
 
 
   /**

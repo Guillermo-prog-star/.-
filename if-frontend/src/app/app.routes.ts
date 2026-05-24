@@ -40,6 +40,11 @@ export const routes: Routes = [
         title: 'Portal Familiar Móvil',
         loadComponent: () => import('./features/portal-familiar/portal-familiar.component').then(m => m.PortalFamiliarComponent)
       },
+      {
+        path: 'portal/invisible-stories',
+        title: 'Historias Invisibles',
+        loadComponent: () => import('./features/portal-familiar/invisible-stories/invisible-stories.component').then(m => m.InvisibleStoriesComponent)
+      },
 
       // Dominio: Gestión Familiar
       {

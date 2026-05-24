@@ -69,6 +69,11 @@ export class FamilyCreatePageComponent implements OnInit {
       },
       error: (e) => { 
         this.loading = false;
+        const status = e?.status;
+        if (status === 0 || status === 502 || status === 503 || status === 504) {
+          this.error = `El servidor de Integrity Family no responde o se encuentra en mantenimiento (HTTP ${status}). Por favor, inténtelo de nuevo en unos minutos.`;
+          return;
+        }
         const body = e?.error ?? {};
 
         // [SDD Spec] Protocolo de Colisión (409 Conflict):

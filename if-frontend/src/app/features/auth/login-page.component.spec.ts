@@ -197,6 +197,36 @@ describe('LoginPageComponent', () => {
       expect(component.error).toContain('bloqueada');
     }));
 
+    it('debe mostrar mensaje de mantenimiento o caída de servidor en error 502', fakeAsync(() => {
+      const auth = buildAuthSpy();
+      auth.login.and.returnValue(throwError(() => ({ status: 502 })));
+      const { component } = buildComponent(auth);
+
+      component.email = 'test@if.com';
+      component.password = 'pass';
+      component.submit();
+      tick();
+
+      expect(component.error).toContain('mantenimiento');
+      expect(component.error).toContain('502');
+      expect(component.loading).toBeFalse();
+    }));
+
+    it('debe mostrar mensaje de mantenimiento o caída de servidor en error de conexión de red (status 0)', fakeAsync(() => {
+      const auth = buildAuthSpy();
+      auth.login.and.returnValue(throwError(() => ({ status: 0 })));
+      const { component } = buildComponent(auth);
+
+      component.email = 'test@if.com';
+      component.password = 'pass';
+      component.submit();
+      tick();
+
+      expect(component.error).toContain('mantenimiento');
+      expect(component.error).toContain('0');
+      expect(component.loading).toBeFalse();
+    }));
+
     it('debe limpiar el error previo antes de un nuevo submit', fakeAsync(() => {
       const user: AuthUser = { token: 'tok', fullName: 'U', email: 'u@if.com', role: 'USER', familyId: 1 };
       const auth = buildAuthSpy(user);

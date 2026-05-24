@@ -34,10 +34,17 @@ export class LoginPageComponent {
       },
       error: (err) => { 
         this.loading = false; 
-        if (err.status === 423 || (err.error && err.error.message && err.error.message.includes('locked'))) {
+        const status = err?.status;
+        const errMsg = err?.error?.message ?? '';
+        
+        if (status === 0 || status === 502 || status === 503 || status === 504) {
+          this.error = `El servidor de Integrity Family no responde o se encuentra en mantenimiento (HTTP ${status}). Por favor, inténtelo de nuevo en unos minutos.`;
+        } else if (status === 423 || errMsg.includes('locked')) {
           this.error = 'Tu cuenta ha sido bloqueada temporalmente por seguridad.';
+        } else if (status === 401 || status === 400) {
+          this.error = 'Credenciales incorrectas.';
         } else {
-          this.error = 'Credenciales incorrectas.'; 
+          this.error = `Error temporal en el servicio (Código: ${status}). Por favor, intente de nuevo.`;
         }
       }
     });

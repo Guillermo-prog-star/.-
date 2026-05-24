@@ -388,7 +388,7 @@ export class ProfilePageComponent implements OnInit {
     this.loading.set(true);
     this.hasBackendError.set(false);
 
-    this.http.get<UserProfile>('/api/auth/me').pipe(
+    this.auth.getAuthenticatedProfile().pipe(
       catchError(() => of(null))
     ).subscribe(data => {
       if (data) {
@@ -430,7 +430,7 @@ export class ProfilePageComponent implements OnInit {
   readonly roleLabel = computed(() => {
     const role = this.profile()?.role || this.localUser()?.role || '';
     if (role.includes('ADMIN') || role.includes('SENTINEL')) return 'Administrador';
-    return 'Consultor Familiar';
+    return 'Miembro Familiar';
   });
 
   readonly roleColorClass = computed(() => {

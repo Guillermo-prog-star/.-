@@ -322,5 +322,28 @@ describe('FamilyCreatePageComponent', () => {
       expect(component.loading).toBeFalse();
       httpMock.verify();
     }));
+
+    it('error 502 del servidor → muestra mensaje de mantenimiento e infraestructura', fakeAsync(() => {
+      const { fixture, component, httpMock } = buildComponent();
+      fixture.detectChanges();
+      httpMock.expectOne(`${API_BASE}/families/mine`).flush({ data: null });
+      tick();
+
+      component.name = 'Familia X';
+      component.whatsapp = '3123456789';
+      component.pin = '0000';
+      component.submit();
+
+      httpMock.expectOne(`${API_BASE}/families`).flush(
+        'Server down',
+        { status: 502, statusText: 'Bad Gateway' }
+      );
+      tick();
+
+      expect(component.error).toContain('mantenimiento');
+      expect(component.error).toContain('502');
+      expect(component.loading).toBeFalse();
+      httpMock.verify();
+    }));
   });
 });

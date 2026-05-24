@@ -12,10 +12,12 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
 import { forkJoin, Observable, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
+import { RouterLink } from '@angular/router';
+
 @Component({
   selector: 'app-portal-familiar',
   standalone: true,
-  imports: [CommonModule, FormsModule, NarrativeCompanionComponent],
+  imports: [CommonModule, FormsModule, RouterLink, NarrativeCompanionComponent],
   templateUrl: './portal-familiar.component.html',
   styleUrl: './portal-familiar.component.css'
 })

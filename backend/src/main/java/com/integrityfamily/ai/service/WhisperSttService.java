@@ -43,6 +43,7 @@ public class WhisperSttService {
         this.http      = http;
     }
 
+    @org.springframework.beans.factory.annotation.Autowired
     public WhisperSttService(AiProperties props) {
         this.voiceCfg  = props.getVoice();
         this.openaiCfg = props.getOpenai();

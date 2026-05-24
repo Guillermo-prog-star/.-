@@ -36,6 +36,13 @@ public class WhisperSttService {
     private final AiProperties.Openai     openaiCfg;
     private final RestClient              http;
 
+    /** Package-private: inyecta un RestClient preconfigurado (solo para pruebas unitarias). */
+    WhisperSttService(AiProperties props, RestClient http) {
+        this.voiceCfg  = props.getVoice();
+        this.openaiCfg = props.getOpenai();
+        this.http      = http;
+    }
+
     public WhisperSttService(AiProperties props) {
         this.voiceCfg  = props.getVoice();
         this.openaiCfg = props.getOpenai();

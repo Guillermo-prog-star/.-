@@ -5,10 +5,24 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Answers;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.MediaType;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Pruebas unitarias de WhisperSttService.
@@ -23,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * un servidor mock externo (MockWebServer / WireMock). Esa cobertura corresponde a
  * una prueba de integración. Los tests aquí validan la lógica de negocio del servicio.
  */
+@ExtendWith(MockitoExtension.class)
 @DisplayName("WhisperSttService — Unit Tests")
 class WhisperSttServiceTest {
 
@@ -150,5 +165,72 @@ class WhisperSttServiceTest {
         String result = svc.transcribe(new byte[]{1}, null);
 
         assertThat(result).isNotBlank();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    //  4. Ruta HTTP real — RestClient mock con cadena explícita
+    // ═══════════════════════════════════════════════════════════════════════
+
+    // Lenient: @BeforeEach wires all stubs; individual tests only use a subset
+    @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
+    @Nested
+    @DisplayName("Ruta real — POST a Whisper API (RestClient mock)")
+    class RealApiPath {
+
+        // Spring 6.x: body() is generic — RETURNS_SELF handles it without type-inference issues
+        @Mock RestClient                                            mockHttp;
+        @Mock RestClient.RequestBodyUriSpec                        postSpec;
+        @Mock(answer = Answers.RETURNS_SELF) RestClient.RequestBodySpec bodySpec;
+        @Mock RestClient.ResponseSpec                              responseSpec;
+
+        @Captor ArgumentCaptor<MultiValueMap<String, Object>> bodyCaptor;
+
+        private WhisperSttService svc;
+
+        @BeforeEach
+        @SuppressWarnings("unchecked")
+        void setUp() {
+            AiProperties p = new AiProperties();
+            p.getVoice().setEnabled(true);
+            p.getOpenai().setApiKey("sk-real-0000000000000000000000000000");
+            svc = new WhisperSttService(p, mockHttp);
+
+            when(mockHttp.post()).thenReturn(postSpec);
+            when(postSpec.contentType(MediaType.MULTIPART_FORM_DATA)).thenReturn(bodySpec);
+            // bodySpec.body(parts) → bodySpec handled by RETURNS_SELF
+            when(bodySpec.retrieve()).thenReturn(responseSpec);
+            when(responseSpec.body(any(Class.class))).thenReturn(null); // null → ""
+        }
+
+        @Test
+        @DisplayName("POST es invocado y la respuesta null se mapea a cadena vacía")
+        void shouldCallPost_andMapNullResponseToEmptyString() {
+            String result = svc.transcribe(new byte[]{1, 2, 3}, "audio/webm");
+
+            assertThat(result).isEmpty();
+            verify(mockHttp).post();
+        }
+
+        @Test
+        @DisplayName("El cuerpo multipart contiene las partes 'file' y 'model'")
+        void shouldSendMultipartBodyWithFileAndModelParts() {
+            svc.transcribe(new byte[]{10, 20, 30}, "audio/webm");
+
+            verify(bodySpec).body(bodyCaptor.capture());
+            MultiValueMap<String, Object> parts = bodyCaptor.getValue();
+            assertThat(parts).containsKey("file");
+            assertThat(parts).containsKey("model");
+        }
+
+        @Test
+        @DisplayName("RestClientException se envuelve en RuntimeException con mensaje descriptivo")
+        void shouldWrapRestClientException_asRuntimeException() {
+            when(bodySpec.retrieve()).thenThrow(new RestClientException("network error"));
+
+            assertThatThrownBy(() -> svc.transcribe(new byte[]{1, 2, 3}, "audio/wav"))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("Whisper")
+                    .hasCauseInstanceOf(RestClientException.class);
+        }
     }
 }

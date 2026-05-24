@@ -78,6 +78,7 @@ public class AiProperties {
         private String voiceId = "";
         private String model = "eleven_multilingual_v2";
         private String baseUrl = "https://api.elevenlabs.io/v1";
+        private int timeoutMs = 30000;
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean v) { this.enabled = v; }
         public String getApiKey() { return apiKey; }
@@ -88,6 +89,8 @@ public class AiProperties {
         public void setModel(String v) { this.model = v; }
         public String getBaseUrl() { return baseUrl; }
         public void setBaseUrl(String v) { this.baseUrl = v; }
+        public int getTimeoutMs() { return timeoutMs; }
+        public void setTimeoutMs(int v) { this.timeoutMs = v; }
     }
 }
 

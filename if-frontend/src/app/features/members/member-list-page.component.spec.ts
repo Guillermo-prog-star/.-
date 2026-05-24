@@ -324,5 +324,20 @@ describe('MemberListPageComponent', () => {
       expect(router.navigate).toHaveBeenCalledWith(['/families/create']);
       httpMock.verify();
     }));
+
+    it('si es ADMIN y familyId es nulo al crear, muestra error de validación en la UI', fakeAsync(() => {
+      const { fixture, component, httpMock } = buildComponent(0, 'ADMIN');
+      fixture.detectChanges();
+
+      httpMock.expectOne(`${API_BASE}/families`).flush({ data: [] });
+      tick();
+
+      component.fullName = 'William Lopez Blanco';
+      component.create();
+
+      expect(component.error).toContain('No se ha seleccionado ninguna familia activa');
+      expect(component.saving).toBeFalse();
+      httpMock.verify();
+    }));
   });
 });

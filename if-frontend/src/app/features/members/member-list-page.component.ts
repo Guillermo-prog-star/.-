@@ -111,6 +111,12 @@ export class MemberListPageComponent implements OnInit {
 
     console.log('[SDD-MEMBER] Payload:', payload);
 
+    if (!payload.familyId && this.auth.user()?.role === 'ADMIN') {
+      this.saving = false;
+      this.error = 'Error interno: No se ha seleccionado ninguna familia activa. Por favor, selecciona una familia en la sección "Familias" o recarga la página.';
+      return;
+    }
+
     this.http.post<any>(`${this.api.base}/members/mine`, payload).subscribe({
       next: () => {
         this.fullName = ''; 

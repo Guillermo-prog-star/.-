@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(cd C:\\\\Proyectos\\\\if-full\\\\backend; $env:INTEGRITY_SECURITY_JWT_SECRET=\"aW50ZWdyaXR5RmFtaWx5U2VjcmV0S2V5Rm9yVGhlVW5pZmllZEludGVncml0eUVuZ2luZTIwMjY=\"; mvnd clean test 2>&1 | Select-Object -Last 40)",
+      "Read(//c/Proyectos/if-full/if-frontend/src/app/core/services/**)",
+      "Read(//c/Proyectos/if-full/if-frontend/src/app/core/models/**)",
+      "Bash(xargs grep -l \"component\\\\|Component\")",
+      "Bash(find C:/Proyectos/if-full/if-frontend/src/app -name \"*.routes.ts\" -o -name \"app.routes.ts\" | head -5 *)",
+      "Bash(mkdir -p \"C:/Proyectos/if-full/if-frontend/src/app/features/cognitive\")"
+    ]
+  }
+}

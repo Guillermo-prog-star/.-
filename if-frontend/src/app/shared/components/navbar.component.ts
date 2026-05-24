@@ -39,6 +39,10 @@ import { FamilyStateService } from '../../core/services/family-state.service';
       display: flex;
       align-items: center;
       gap: 8px;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      max-width: 180px;
     }
     .btn-exit {
       font-size: 13px;
@@ -51,6 +55,30 @@ import { FamilyStateService } from '../../core/services/family-state.service';
       transition: all 0.2s;
     }
     .btn-exit:hover { background: var(--error); color: #fff; transform: scale(1.05); }
+
+    @media (max-width: 768px) {
+      .topbar {
+        padding: 0 12px;
+      }
+      .title-context {
+        display: none;
+      }
+      .f-context {
+        font-size: 11px;
+      }
+      .user-area {
+        gap: 6px;
+      }
+      .chip {
+        padding: 4px 10px;
+        font-size: 11px;
+        max-width: 120px;
+      }
+      .btn-exit {
+        padding: 6px 12px;
+        font-size: 11px;
+      }
+    }
   `],
   template: `
     <div class="topbar">
@@ -96,13 +124,11 @@ export class NavbarComponent {
   }
 
   /**
-   * Cierre de sesión seguro con redirección inmediata.
+   * Cierre de sesión seguro. auth.logout() ya redirige a /auth/login internamente.
    */
   logout(): void {
     if (confirm('¿Deseas cerrar tu sesión de forma segura?')) {
-      this.auth.logout(); 
-      // La redirección se maneja aquí para asegurar el flujo de la UI
-      this.router.navigate(['/login']);
+      this.auth.logout();
     }
   }
 }

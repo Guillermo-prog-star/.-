@@ -2,8 +2,13 @@
   "name": "integrity-family-frontend",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
-    "start": "ng serve --host 0.0.0.0 --proxy-config proxy.conf.json",
+    "preinstall": "npx only-allow npm",
+    "start": "ng serve --host 0.0.0.0 --proxy-config proxy.conf.js",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"

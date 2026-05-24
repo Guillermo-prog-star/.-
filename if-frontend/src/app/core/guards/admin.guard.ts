@@ -4,7 +4,7 @@ import { AuthService } from '../services/auth.service';
 
 /**
  * SDD: Admin Sentinel Guard
- * Hecho: Blindaje del Nodo Armenia mediante validación de rango e identidad.
+ * Hecho: Blindaje del Nodo Central mediante validación de rango e identidad.
  */
 export const adminGuard: CanActivateFn = (route, state) => {
   const authService = inject(AuthService);

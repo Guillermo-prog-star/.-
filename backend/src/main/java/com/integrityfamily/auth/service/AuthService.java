@@ -60,7 +60,7 @@ public class AuthService {
 
             return new com.integrityfamily.auth.dto.LoginResponse(token, refreshToken.getToken(), 3600000L, userDto);
         } catch (Exception e) {
-            log.error("[AUTH] Error de autenticación para {}: {}", request.email(), e.getMessage());
+            log.error("[AUTH] Error de autenticación para " + request.email(), e);
             accountLockService.registerFailure(request.email());
             if (e instanceof BusinessException) {
                 throw e;

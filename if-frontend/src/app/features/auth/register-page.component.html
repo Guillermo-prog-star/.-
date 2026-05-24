@@ -63,6 +63,25 @@
                placeholder="Repite tu contraseña"/>
       </div>
 
+      <!-- [NEW_FAMILY] Ubicación -->
+      <div *ngIf="mode === 'NEW_FAMILY'" class="form-group">
+        <label>Municipio</label>
+        <input [(ngModel)]="municipio" name="mun" required
+               placeholder="Ej: Bogotá"/>
+      </div>
+
+      <div *ngIf="mode === 'NEW_FAMILY'" class="form-group">
+        <label>Código de Departamento</label>
+        <input [(ngModel)]="departmentCode" name="dpt" required
+               placeholder="Ej: 11"/>
+      </div>
+
+      <div *ngIf="mode === 'NEW_FAMILY'" class="form-group">
+        <label>Código de País</label>
+        <input [(ngModel)]="countryCode" name="cty"
+               placeholder="CO"/>
+      </div>
+
       <!-- Error -->
       <div *ngIf="error" class="err-box">
         <span>⚠️</span> {{ error }}

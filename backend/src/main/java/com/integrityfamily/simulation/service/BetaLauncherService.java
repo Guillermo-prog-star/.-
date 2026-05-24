@@ -18,6 +18,15 @@ public class BetaLauncherService {
     private final FamilyRepository familyRepository;
 
     @Transactional
+    public String launch(String email) {
+        Family family = familyRepository.findByCreatedBy_Email(email)
+                .orElseThrow(() -> new RuntimeException("No se encontró familia asociada al email: " + email));
+        launchSimulation(family.getId());
+        return "Beta launch completado para la familia: " + family.getName()
+                + " (código: " + family.getFamilyCode() + ")";
+    }
+
+    @Transactional
     public void launchSimulation(Long familyId) {
         Family family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new RuntimeException("Familia no encontrada"));

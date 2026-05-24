@@ -38,7 +38,11 @@ public class PlanDtos {
             String accionConcreta,
             String indicadorCumplimiento,
             String evidenciaRequerida,
-            Integer impactoIcf
+            Integer impactoIcf,
+            String pillarName,
+            String memberType,
+            String riskType,
+            String missionGenerator
     ) {}
 
     @Builder
@@ -52,6 +56,8 @@ public class PlanDtos {
             String aiReport,
             LocalDateTime aiGeneratedAt,
             List<PlanTaskResponse> tasks
+    ) {}
+
     @Builder
     public record AiMissionProposal(
             String dimension,
@@ -66,6 +72,35 @@ public class PlanDtos {
             String adaptiveReason,
             String title,
             String description
+    ) {}
+
+    // --- Contrato IA (Rediseño 6.4) ---
+    
+    public record IaStep(
+            String type,
+            String detail
+    ) {}
+
+    public record IaTask(
+            String title,
+            String dimension,
+            List<IaStep> steps,
+            @com.fasterxml.jackson.annotation.JsonProperty("pillar_name") String pillarName,
+            @com.fasterxml.jackson.annotation.JsonProperty("milestone_code") String milestoneCode,
+            @com.fasterxml.jackson.annotation.JsonProperty("member_type") String memberType,
+            @com.fasterxml.jackson.annotation.JsonProperty("risk_type") String riskType,
+            @com.fasterxml.jackson.annotation.JsonProperty("mission_generator") String missionGenerator
+    ) {}
+
+    public record IaMilestone(
+            String code,
+            String objective,
+            @com.fasterxml.jackson.annotation.JsonProperty("micro_actions") List<IaTask> tasks
+    ) {}
+
+    public record IaPlanResponse(
+            String vision_3y,
+            List<IaMilestone> milestones
     ) {}
 
     public record TaskCompleteRequest(Boolean completed) {}

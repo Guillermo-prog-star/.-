@@ -3,6 +3,7 @@ package com.integrityfamily.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Filter;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "critical_days")

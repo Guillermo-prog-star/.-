@@ -24,12 +24,14 @@ public class MemberController {
     private final com.integrityfamily.domain.repository.FamilyRepository familyRepository;
     private final com.integrityfamily.member.service.InvitationService invitationService;
 
+    @PreAuthorize("@familySecurity.checkMember(#id)")
     @PostMapping("/{id}/invite")
     public ApiResponse<Void> inviteMember(@PathVariable Long id) {
         invitationService.sendInvitation(id);
         return ApiResponse.ok(null);
     }
 
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     @GetMapping
     public ApiResponse<List<FamilyMember>> getAll() {
         return ApiResponse.ok(memberService.findAll());

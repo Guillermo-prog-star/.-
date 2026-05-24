@@ -45,6 +45,12 @@
   padding: 0;
 }
 
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   font-family: 'Outfit', sans-serif;
   background:
@@ -54,7 +60,31 @@ body {
     var(--bg-deep);
   color: var(--text-bright);
   line-height: 1.6;
-  min-height: 100vh;
+}
+
+/* 4.1. ESTILO DE SCROLLBAR PREMIUM GLOBAL */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.3); /* Indigo premium shadow scroll */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.6);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
 }
 
 /* 5. COMPONENTES Y UTILIDADES PERSONALIZADAS (Glassmorphism) */

@@ -22,8 +22,12 @@ export class RegisterPageComponent {
   email = '';
   password = '';
   confirmPassword = '';
-  voucher = ''; 
+  voucher = '';
   familyName = '';
+  // FIX Bug #13: Backend RegisterFamilyRequest requires these @NotBlank fields
+  municipio = '';
+  countryCode = 'CO';
+  departmentCode = '';
   
   loading = false;
   error = '';
@@ -41,6 +45,11 @@ export class RegisterPageComponent {
 
     if (this.mode === 'NEW_FAMILY' && !this.familyName) {
       this.error = 'Debes asignar un nombre a tu familia.';
+      return;
+    }
+
+    if (this.mode === 'NEW_FAMILY' && (!this.municipio || !this.departmentCode)) {
+      this.error = 'Debes completar el municipio y el departamento.';
       return;
     }
 
@@ -78,7 +87,11 @@ export class RegisterPageComponent {
         fullName: this.fullName,
         email: this.email.trim().toLowerCase(),
         password: this.password,
-        confirmPassword: this.confirmPassword
+        confirmPassword: this.confirmPassword,
+        // FIX Bug #13: Include @NotBlank location fields required by backend
+        municipio: this.municipio.trim(),
+        countryCode: this.countryCode.trim() || 'CO',
+        departmentCode: this.departmentCode.trim()
       };
 
 

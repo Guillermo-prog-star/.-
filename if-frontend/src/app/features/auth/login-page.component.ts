@@ -2,10 +2,11 @@ import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 @Component({
   selector: 'app-login-page', 
   standalone: true, 
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule, RouterLink, NarrativeCompanionComponent],
   templateUrl: './login-page.component.html',
   styleUrls: ['./login-page.component.css']
 })

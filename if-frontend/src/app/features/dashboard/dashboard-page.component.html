@@ -15,7 +15,13 @@
       <!-- [SDD Spec] PROTOCOLO SENTINEL: Capa de Contención Proactiva -->
       <app-sentinel-alert [active]="data.isSentinelActive"></app-sentinel-alert>
     </header>
+
+    <!-- Narrative Guidance Engine -->
+    <app-narrative-companion module="dashboard"></app-narrative-companion>
     
+    <!-- [SDD Analytics v2] ABANDONMENT RISK BANNER — visible sólo si HIGH/CRITICAL -->
+    <app-abandonment-risk-banner></app-abandonment-risk-banner>
+
     <!-- [SDD Spec] MILESTONE ADVANCE REINFORCEMENT -->
     <!-- Activación determinista: Solo visible si el motor de validación aprueba el avance -->
     <div *ngIf="readyToAdvance$ | async" 
@@ -59,6 +65,55 @@
       </app-icf-stat-card>
     </section>
 
+    <!-- [SDD Spec] PROGRESS SNAPSHOT -->
+    <section *ngIf="data.progress" class="glass-premium p-8 rounded-[2rem] border border-white/5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+      <div class="flex flex-col md:flex-row justify-between gap-8">
+        <div class="flex-1">
+          <h4 class="text-white/30 uppercase tracking-widest text-[10px] font-black mb-3 flex items-center gap-2">
+            <span class="w-2 h-2 bg-teal-500 rounded-full shadow-lg shadow-teal-500/50"></span>
+            Evolución de Conciencia (ΔICF)
+          </h4>
+          <div class="flex items-baseline gap-2">
+            <span class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
+              {{ data.progress.deltaIcf >= 0 ? '+' : '' }}{{ data.progress.deltaIcf | number:'1.0-0' }}
+            </span>
+            <span class="text-sm font-bold text-teal-500 uppercase tracking-wide">puntos</span>
+          </div>
+          <span class="inline-block mt-3 px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full" 
+                [ngClass]="{
+                  'bg-emerald-500/10 text-emerald-500': data.progress.classification === 'MEJORA_FUERTE',
+                  'bg-teal-500/10 text-teal-500': data.progress.classification === 'MEJORA_LEVE',
+                  'bg-amber-500/10 text-amber-500': data.progress.classification === 'ESTANCAMIENTO',
+                  'bg-red-500/10 text-red-500': data.progress.classification === 'DETERIORO',
+                  'bg-indigo-500/10 text-indigo-500': data.progress.classification === 'INICIAL'
+                }">
+            {{ data.progress.classification }}
+          </span>
+          <p class="text-white/60 text-sm mt-5 leading-relaxed font-medium">
+            {{ data.progress.interpretation }}
+          </p>
+        </div>
+        
+        <div class="flex-1 md:border-l md:border-white/5 md:pl-8">
+          <h4 class="text-white/30 uppercase tracking-widest text-[10px] font-black mb-4">Evolución por Dimensiones</h4>
+          <div class="space-y-2.5">
+            <div *ngFor="let dim of data.progress.dimensionEvolution | keyvalue" class="flex justify-between items-center bg-white/[0.02] p-3 rounded-xl border border-white/5 hover:bg-white/[0.05] transition-colors">
+              <span class="text-white/80 text-sm capitalize font-medium">{{ dim.key }}</span>
+              <span class="px-3 py-1 text-xs font-bold rounded-full" 
+                    [ngClass]="dim.value >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'">
+                {{ dim.value >= 0 ? '+' : '' }}{{ dim.value | number:'1.0-0' }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="mt-4 p-4 bg-white/[0.02] rounded-xl border-l-2 border-teal-500 text-xs text-white/70">
+            <strong class="text-white/40 uppercase tracking-widest text-[9px] block mb-1">Acción sugerida</strong>
+            {{ data.progress.recommendedAction }}
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- [SDD Spec] LOGBOOK HIGHLIGHTS -->
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
       <div class="glass-premium p-8 rounded-[2rem] border-white/5 flex flex-col justify-center relative overflow-hidden group hover:border-indigo-500/30 transition-all">
@@ -92,7 +147,7 @@
     <!-- RADAR & TIMELINE -->
     <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
       <div class="xl:col-span-4 h-full">
-        <app-evolution-radar></app-evolution-radar>
+        <app-consciousness-orbit [scores]="data.dimensionScores" [status]="data.latestConsciousnessLabel"></app-consciousness-orbit>
       </div>
 
       <div class="xl:col-span-8 space-y-8">
@@ -102,11 +157,43 @@
           [trend]="data.riskTrend">
         </app-ai-insight-panel>
 
+        <!-- [SDD Spec] IA CRITICAL ANALYSIS (COLLAPSIBLE) -->
+        <div *ngIf="data.planAiReport" class="glass-premium p-6 rounded-3xl border border-white/10 shadow-[0_8px_32px_0_rgba(99,102,241,0.05)] bg-gradient-to-br from-indigo-500/5 to-purple-500/5 hover:from-indigo-500/10 hover:to-purple-500/10 transition-all duration-500">
+          <details class="group">
+            <summary class="flex justify-between items-center cursor-pointer list-none">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-indigo-500/20">
+                  🧠
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-white tracking-wide">Auditoría y Análisis Crítico IA</h4>
+                  <p class="text-white/50 text-xs mt-0.5 font-medium">Haz clic para ver el razonamiento estratégico</p>
+                </div>
+              </div>
+              <div class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center group-open:bg-white/10 transition-colors">
+                <span class="text-white/60 text-xs group-open:rotate-180 transition-transform duration-300">▼</span>
+              </div>
+            </summary>
+            <div class="mt-6 text-white/80 text-sm leading-relaxed whitespace-pre-line border-t border-white/5 pt-5">
+              <div class="bg-white/[0.02] p-5 rounded-2xl border border-white/5 backdrop-blur-sm">
+                {{ data.planAiReport }}
+              </div>
+            </div>
+          </details>
+        </div>
+
         <app-ai-plan-timeline [actions]="data.suggestedActions"></app-ai-plan-timeline>
 
         <app-scenarios-grid></app-scenarios-grid>
       </div>
     </div>
+
+    <!-- [SDD Fases 1–5 + Analytics v2] COGNITIVE PREVIEW + ICF TREND + DIMENSION HISTORY -->
+    <section class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-500">
+      <app-cognitive-preview></app-cognitive-preview>
+      <app-icf-trend-chart></app-icf-trend-chart>
+      <app-dimension-history-chart></app-dimension-history-chart>
+    </section>
 
     <!-- FOOTER -->
     <footer class="mt-20 py-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">

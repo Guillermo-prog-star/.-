@@ -14,6 +14,20 @@ export interface SuggestedAction {
   completed: boolean;
 }
 
+export interface FamilyProgressResponse {
+  familyId: number;
+  currentEvaluationId: number;
+  previousEvaluationId: number | null;
+  milestoneCode: string;
+  previousIcf: number;
+  currentIcf: number;
+  deltaIcf: number;
+  classification: string;
+  interpretation: string;
+  dimensionEvolution: { [key: string]: number };
+  recommendedAction: string;
+}
+
 export interface DashboardDTO {
   id: number;
   familyCode: string;
@@ -34,4 +48,6 @@ export interface DashboardDTO {
   totalEvaluations: number;
   openLogbookEntriesCount?: number;
   latestFamilyAgreement?: string;
+  progress?: FamilyProgressResponse;
+  planAiReport?: string;
 }

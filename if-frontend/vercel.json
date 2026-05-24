@@ -5,7 +5,14 @@
   "outputDirectory": "dist/integrity-family-frontend/browser",
   "installCommand": "npm ci",
   "framework": "angular",
+  "env": {
+    "BACKEND_URL": "https://if-backend-v1-0-0.onrender.com"
+  },
   "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://if-backend-v1-0-0.onrender.com/api/:path*"
+    },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [

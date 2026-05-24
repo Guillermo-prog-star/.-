@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ElementRef, ViewChild, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -11,7 +11,7 @@ import * as echarts from 'echarts';
   templateUrl: './territorial-report.component.html',
   styleUrl: './territorial-report.component.css'
 })
-export class TerritorialReportComponent implements OnInit, AfterViewInit {
+export class TerritorialReportComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('chartContainer') chartContainer!: ElementRef;
   
   familyId: string | null = null;
@@ -33,6 +33,13 @@ export class TerritorialReportComponent implements OnInit, AfterViewInit {
 
   ngAfterViewInit(): void {
     // El chart se inicializará después de que carguen los datos
+  }
+
+  ngOnDestroy(): void {
+    if (this.chart) {
+      this.chart.dispose();
+      this.chart = null;
+    }
   }
 
   loadReport(): void {

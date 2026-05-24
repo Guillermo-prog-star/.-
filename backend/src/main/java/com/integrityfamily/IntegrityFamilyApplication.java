@@ -5,6 +5,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import org.springframework.context.annotation.Bean;
+import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
+
 /**
  * Punto de entrada de Integrity Family.
  *
@@ -33,5 +36,15 @@ public class IntegrityFamilyApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(IntegrityFamilyApplication.class, args);
+    }
+
+    @Bean
+    public FlywayMigrationStrategy flywayMigrationStrategy() {
+        return flyway -> {
+            System.out.println("====== AUTO-REPARANDO FLYWAY ANTES DE MIGRAR ======");
+            flyway.repair();
+            System.out.println("====== AUTO-REPARACION DE FLYWAY COMPLETADA ======");
+            flyway.migrate();
+        };
     }
 }

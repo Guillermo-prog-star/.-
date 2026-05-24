@@ -72,8 +72,24 @@ public class Question {
     private String category; // escucha, regulacion emocional, orden, etc.
 
     @Column(name = "adaptive_triggers", length = 255)
-    private String adaptiveTriggers; // disparadores adaptativos, ej: "gritos, evasión"
+    private String adaptiveTriggers;
 
     @Column(length = 50)
-    private String evidenceType; // conductual, fotografica, bitacora, etc.
+    private String evidenceType; // conductual, fotografica, bitacora
+
+    // --- Taxonomía Longitudinal v2 ---
+    @Column(name = "pillar_name", length = 50)
+    private String pillarName; // reconocimiento / amor / entrega
+
+    @Column(name = "milestone_code", length = 20)
+    private String milestoneCode; // W1 / M1 / M3 / M6 / M9 / M12 / M18 / M24 / M30 / M36
+
+    @Column(name = "member_type", length = 50)
+    private String memberType; // familia / padre / madre / hijo / hija
+
+    @Column(name = "risk_type", length = 100)
+    private String riskType; // desconexion_emocional, conflicto_reactivo, etc.
+
+    @Column(name = "mission_generator", length = 100)
+    private String missionGenerator; // ESTABILIZACION_EMOCIONAL, LEGADO_CONSCIENTE, etc.
 }

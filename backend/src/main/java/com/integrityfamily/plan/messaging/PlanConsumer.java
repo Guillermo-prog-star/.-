@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -54,15 +55,6 @@ public class PlanConsumer {
 
             log.info("✅ [PLAN-CONSUMER] Sincronización exitosa: {} nuevas misiones estructuradas para la familia.",
                     proposals.size());
-
-        } catch (Exception e) {
-            log.error("❌ [PLAN-CONSUMER] Fallo crítico en el procesamiento de mensajes: {}", e.getMessage());
-            throw new RuntimeException("Fallo en PlanConsumer al procesar recomendaciones de la IA", e);
-        }
-    }
-
-            log.info("✅ [PLAN-CONSUMER] Sincronización exitosa: {} nuevas tareas para la familia.",
-                    suggestedTasks.size());
 
         } catch (Exception e) {
             log.error("❌ [PLAN-CONSUMER] Fallo crítico en el procesamiento de mensajes: {}", e.getMessage());

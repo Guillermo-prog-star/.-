@@ -36,7 +36,7 @@ public class AiServiceImpl implements AiService {
         chatMessageRepository.save(ChatMessage.builder()
                 .content(message)
                 .family(family)
-                .isAi(false)
+                .ai(false)
                 .build());
 
         // 2. Análisis de Sentimiento para adaptar la respuesta
@@ -53,7 +53,7 @@ public class AiServiceImpl implements AiService {
         return chatMessageRepository.save(ChatMessage.builder()
                 .content(response)
                 .family(family)
-                .isAi(true)
+                .ai(true)
                 .build());
     }
 
@@ -83,12 +83,42 @@ public class AiServiceImpl implements AiService {
 
     @Override
     public String generateExecutiveSynthesis(Evaluation evaluation) {
-        log.info("[AI_ANALYTICS] Generando síntesis ejecutiva (UIE) para Evaluación ID: {}", evaluation.getId());
+        log.info("[AI_ANALYTICS] Generando síntesis ejecutiva (UIE) enriquecida para Evaluación ID: {}", evaluation.getId());
         
         Map<String, Double> dimensions = evaluation.getDimensionScores().stream()
                 .collect(Collectors.toMap(ds -> ds.getDimensionName(), ds -> ds.getScore()));
 
-        String prompt = promptGenerator.buildSpiritualSynthesisPrompt(evaluation.getFamily(), dimensions);
+        String answersJson = evaluation.getAnswers().stream()
+                .map(a -> String.format("{\"questionKey\":\"%s\", \"dimension\":\"%s\", \"score\":%d, \"consciousnessLevel\":\"%s\"}", 
+                        a.getQuestionKey(), 
+                        a.getDiagnosticDimension() != null ? a.getDiagnosticDimension() : "comunicacion", 
+                        a.getScore(), 
+                        a.getConsciousnessLevel() != null ? a.getConsciousnessLevel() : "Consciente"))
+                .collect(Collectors.joining(",\n  ", "[\n  ", "\n]"));
+
+        String prompt = promptGenerator.buildSpiritualSynthesisPrompt(evaluation.getFamily(), dimensions, answersJson);
+        return aiProvider.generateRawResponse(prompt);
+    }
+
+    @Override
+    public String generateDiagnosticMissions(Evaluation evaluation) {
+        log.info("[AI_MISSIONS] Generando misiones diagnósticas adaptativas para Evaluación ID: {}", evaluation.getId());
+        
+        String answersJson = evaluation.getAnswers().stream()
+                .map(a -> String.format("{\"questionKey\":\"%s\", \"dimension\":\"%s\", \"score\":%d, \"consciousnessLevel\":\"%s\"}", 
+                        a.getQuestionKey(), 
+                        a.getDiagnosticDimension() != null ? a.getDiagnosticDimension() : "comunicacion", 
+                        a.getScore(), 
+                        a.getConsciousnessLevel() != null ? a.getConsciousnessLevel() : "Consciente"))
+                .collect(Collectors.joining(",\n  ", "[\n  ", "\n]"));
+
+        String prompt = promptGenerator.buildDiagnosticMissionsPrompt(
+                evaluation.getFamily(), 
+                evaluation.getMember(), 
+                answersJson, 
+                evaluation.getIcf(), 
+                evaluation.getRiskLevel()
+        );
         return aiProvider.generateRawResponse(prompt);
     }
 

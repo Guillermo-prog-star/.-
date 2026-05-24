@@ -39,6 +39,9 @@ public class AdaptiveControllerTest {
     @MockitoBean
     private AdaptivePlanService adaptivePlanService;
 
+    @MockitoBean
+    private jakarta.persistence.EntityManager entityManager;
+
     private AdaptivePlanContext validContext;
     private AdaptiveAdjustment sampleAdjustment;
 

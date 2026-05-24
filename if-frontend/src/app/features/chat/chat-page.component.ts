@@ -33,7 +33,9 @@ export class ChatPageComponent implements OnInit {
   loadHistory() {
     this.http.get<any>(`/api/chat/family/${this.familyId}`).subscribe({
       next: (res) => {
-        this.messages = res.data;
+        // FIX Bug #16: ChatMessage/ChatMessageSummary serialize boolean field as "ai" (not "isAi")
+        // Jackson strips 'is' prefix from boolean getters: isAi() → "ai" in JSON
+        this.messages = (res.data || []).map((m: any) => ({ ...m, isAi: m.ai ?? m.isAi ?? false }));
         if (this.messages.length === 0) {
           this.messages.push({
             content: `Hola familia ${this.familyName}. Soy su Mentor de Integridad Proactiva. Estoy analizando su hito actual para guiarlos. ¿Tienen alguna duda sobre sus misiones o el diagnóstico?`,
@@ -59,7 +61,9 @@ export class ChatPageComponent implements OnInit {
     this.http.post<any>(`/api/chat/send`, { familyId: this.familyId, message: text })
       .subscribe({
         next: (res: any) => {
-          this.messages.push(res.data);
+          // FIX Bug #16: ChatMessage entity serializes boolean 'ai' field, not 'isAi'
+          const msg = res.data;
+          this.messages.push({ ...msg, isAi: msg?.ai ?? msg?.isAi ?? false });
           this.loading = false;
           this.scroll();
         },
@@ -110,9 +114,9 @@ export class ChatPageComponent implements OnInit {
 
     this.http.post<any>(`/api/chat/voice/${this.familyId}`, formData).subscribe({
       next: (res) => {
-        // Añadir transcripción a la UI
+        // FIX Bug #15: VoiceController returns SonicResponse (transcript/assistantReply),
+        // NOT VoiceChatResponse (transcription/aiResponseText). Use the correct field names.
         this.messages.push({ content: res.transcript, isAi: false, createdAt: new Date() });
-        // Añadir respuesta de la IA
         this.messages.push({ content: res.assistantReply, isAi: true, createdAt: new Date() });
 
         this.loading = false;

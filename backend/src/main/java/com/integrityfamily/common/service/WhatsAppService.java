@@ -51,7 +51,11 @@ public class WhatsAppService {
     public void sendPersonalizedMessage(FamilyMember FamilyMember, String type, String context) {
         String role = FamilyMember.getRole();
         String name = FamilyMember.getFullName();
-        String phoneNumber = FamilyMember.getFamily().getWhatsapp();
+        // Fallback Multi-Tenant: Usar teléfono del miembro si existe, sino el general de la familia
+        String phoneNumber = FamilyMember.getPhone();
+        if (phoneNumber == null || phoneNumber.trim().isEmpty()) {
+            phoneNumber = FamilyMember.getFamily().getWhatsapp();
+        }
 
         String copy = generateRoleBasedCopy(name, role, type, context);
         log.info("📱 [WHATSAPP-MENTOR] Para: {} ({}) >> {}", name, role, copy);

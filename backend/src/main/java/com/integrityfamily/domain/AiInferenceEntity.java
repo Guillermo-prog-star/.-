@@ -3,6 +3,7 @@ package com.integrityfamily.domain;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.Filter;
+import java.time.LocalDateTime;
 
 /**
  * SDD Sprint 6: Entidad de Persistencia de Inferencia Estructurada y Gobernanza IA.

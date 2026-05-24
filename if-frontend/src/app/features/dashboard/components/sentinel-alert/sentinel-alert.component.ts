@@ -25,7 +25,7 @@ import { CommonModule } from '@angular/common';
 
       <div class="flex-1 bg-black/20 p-4 rounded-2xl border border-white/5">
         <p class="text-xs text-white/80 leading-relaxed">
-          Atención: El Nodo Armenia ha detectado una deriva crítica en el ICF. Se han suspendido los objetivos de largo plazo. El foco actual es la <strong>estabilización del núcleo</strong>.
+          Atención: El Nodo Central ha detectado una deriva crítica en el ICF. Se han suspendido los objetivos de largo plazo. El foco actual es la <strong>estabilización del núcleo</strong>.
         </p>
       </div>
 

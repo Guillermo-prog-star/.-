@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * SDD: Servicio de Planificación Harmonizado.
@@ -28,6 +29,8 @@ public class PlanService {
     private final EvaluationRepository evaluationRepository;
     private final PlanTemplateRepository planTemplateRepository;
     private final PlanTemplateActivityRepository planTemplateActivityRepository;
+    private final MilestoneRepository milestoneRepository;
+    private final QuestionRepository questionRepository;
     private final org.springframework.amqp.rabbit.core.RabbitTemplate rabbitTemplate;
 
     @Transactional(readOnly = true)
@@ -74,6 +77,14 @@ public class PlanService {
         Evaluation evaluation = evaluationRepository.findById(evaluationId)
                 .orElseThrow(() -> new RuntimeException("Evaluación no encontrada: " + evaluationId));
 
+        List<Question> evaluationQuestions = new ArrayList<>();
+        if (evaluation.getAnswers() != null) {
+            for (EvaluationAnswer answer : evaluation.getAnswers()) {
+                questionRepository.findByQuestionKey(answer.getQuestionKey())
+                        .ifPresent(evaluationQuestions::add);
+            }
+        }
+
         Family family = evaluation.getFamily();
         if (family == null) {
             throw new RuntimeException("La evaluación no tiene una familia asociada.");
@@ -111,6 +122,14 @@ public class PlanService {
         } else {
             template = templates.get(0);
             log.info("📦 Plantilla maestra seleccionada: {} - {}", template.getCode(), template.getName());
+        }
+
+        // De-duplication: ensure only one active plan exists per family
+        List<ImprovementPlan> existingPlans = planRepository.findByFamilyId(family.getId());
+        if (existingPlans != null && !existingPlans.isEmpty()) {
+            log.info("🧹 [PLAN-SERVICE] Eliminando {} planes existentes para la familia ID: {}", existingPlans.size(), family.getId());
+            planRepository.deleteAll(existingPlans);
+            planRepository.flush();
         }
 
         // Crear el ImprovementPlan
@@ -194,13 +213,19 @@ public class PlanService {
                 default -> "Reflexión compartida de la evolución familiar en el sistema.";
             };
 
+            String pilarFase = switch (activity.getPhase()) {
+                 case "1 semana", "1 mes", "3 meses" -> "RECONOCIMIENTO";
+                 case "6 meses" -> "AMOR";
+                 default -> "ENTREGA";
+            };
+
             PlanTask task = PlanTask.builder()
                     .plan(plan)
                     .title(activity.getTitle())
-                    .description("Misión clínica asignada para la fase: " + activity.getPhase())
+                    .description("Misión clínica asignada para la fase: " + pilarFase)
                     .dimension(template.getDimension())
                     .dueDate(LocalDateTime.now().plusDays(activity.getDurationDays()))
-                    .fase(activity.getPhase())
+                    .fase(pilarFase)
                     .riesgoAsociado(riskLevel)
                     .objetivo(objetivo)
                     .accionConcreta(accion)
@@ -210,11 +235,96 @@ public class PlanService {
                     .completed(false)
                     .steps(new ArrayList<>())
                     .build();
+            populateTaxonomyV2(task, activity.getPhase(), null, evaluation, evaluationQuestions, null, null, null, null, null);
             task = planTaskRepository.save(task);
             plan.getTasks().add(task);
         }
 
         log.info("✅ Plan ensamblado con éxito con {} misiones/tareas clínicas.", plan.getTasks().size());
+        return toPlanResponse(plan);
+    }
+
+    /**
+     * [PLAN ADAPTATIVO] Creando plan desde respuesta IA (Rediseño 6.4)
+     */
+    @Transactional
+    public PlanResponse createPlanFromAiResponse(Long evaluationId, IaPlanResponse aiResponse) {
+        log.info("🎯 [PLAN ADAPTATIVO] Creando plan desde respuesta IA para Evaluation ID: {}", evaluationId);
+        Evaluation evaluation = evaluationRepository.findById(evaluationId)
+                .orElseThrow(() -> new RuntimeException("Evaluación no encontrada: " + evaluationId));
+
+        List<Question> evaluationQuestions = new ArrayList<>();
+        if (evaluation.getAnswers() != null) {
+            for (EvaluationAnswer answer : evaluation.getAnswers()) {
+                questionRepository.findByQuestionKey(answer.getQuestionKey())
+                        .ifPresent(evaluationQuestions::add);
+            }
+        }
+
+        Family family = evaluation.getFamily();
+        if (family == null) {
+            throw new RuntimeException("La evaluación no tiene una familia asociada.");
+        }
+
+        // De-duplication: ensure only one active plan exists per family
+        List<ImprovementPlan> existingPlans = planRepository.findByFamilyId(family.getId());
+        if (existingPlans != null && !existingPlans.isEmpty()) {
+            log.info("🧹 [PLAN-SERVICE] Eliminando {} planes existentes para la familia ID: {}", existingPlans.size(), family.getId());
+            planRepository.deleteAll(existingPlans);
+            planRepository.flush();
+        }
+
+        ImprovementPlan plan = ImprovementPlan.builder()
+                .family(family)
+                .evaluation(evaluation)
+                .title("Plan de Transformación Adaptativo")
+                .description("Intervención clínica generada por IA y validada por el sistema.")
+                .vision3y(aiResponse.vision_3y())
+                .aiReport("Generado por IA (Contrato Estructurado).")
+                .aiGeneratedAt(LocalDateTime.now())
+                .tasks(new ArrayList<>())
+                .build();
+        plan = planRepository.save(plan);
+
+        for (IaMilestone iaMilestone : aiResponse.milestones()) {
+            Milestone milestone = milestoneRepository.findByCode(iaMilestone.code())
+                    .orElseThrow(() -> new RuntimeException("Hito no encontrado: " + iaMilestone.code()));
+
+            for (IaTask iaTask : iaMilestone.tasks()) {
+                PlanTask task = PlanTask.builder()
+                        .plan(plan)
+                        .title(iaTask.title())
+                        .description(iaMilestone.objective())
+                        .dimension(iaTask.dimension())
+                        .dueDate(LocalDateTime.now().plusDays(milestone.getDurationDays() != null ? milestone.getDurationDays() : 30))
+                        .milestone(milestone)
+                        .completed(false)
+                        .build();
+                
+                populateTaxonomyV2(task, null, milestone, evaluation, evaluationQuestions, iaTask.pillarName(), iaTask.milestoneCode(), iaTask.memberType(), iaTask.riskType(), iaTask.missionGenerator());
+                task = planTaskRepository.save(task);
+
+                List<PlanTaskStep> steps = new ArrayList<>();
+                if (iaTask.steps() != null) {
+                    for (IaStep iaStep : iaTask.steps()) {
+                        PlanTaskStep step = PlanTaskStep.builder()
+                                .task(task)
+                                .type(StepType.valueOf(iaStep.type().toUpperCase()))
+                                .detail(iaStep.detail())
+                                .completed(false)
+                                .build();
+                        steps.add(step);
+                    }
+                }
+                
+                task.setSteps(steps);
+                planTaskRepository.save(task);
+                
+                plan.getTasks().add(task);
+            }
+        }
+
+        log.info("✅ Plan adaptativo creado con éxito con {} tareas.", plan.getTasks().size());
         return toPlanResponse(plan);
     }
 
@@ -362,7 +472,7 @@ public class PlanService {
                 .dueDate(task.getDueDate())
                 .periodicityMonths(task.getPeriodicityMonths())
                 .milestoneId(task.getMilestone() != null ? task.getMilestone().getId() : null)
-                .milestoneCode(task.getMilestone() != null ? task.getMilestone().getCode() : null)
+                .milestoneCode(task.getMilestoneCode() != null ? task.getMilestoneCode() : (task.getMilestone() != null ? task.getMilestone().getCode() : null))
                 .assignedMemberId(task.getResponsible() != null ? task.getResponsible().getId() : null)
                 .assignedMemberName(task.getResponsible() != null ? task.getResponsible().getFullName() : null)
                 .completed(task.isCompleted())
@@ -374,6 +484,10 @@ public class PlanService {
                 .indicadorCumplimiento(task.getIndicadorCumplimiento())
                 .evidenciaRequerida(task.getEvidenciaRequerida())
                 .impactoIcf(task.getImpactoIcf())
+                .pillarName(task.getPillarName())
+                .memberType(task.getMemberType())
+                .riskType(task.getRiskType())
+                .missionGenerator(task.getMissionGenerator())
                 .build();
     }
 
@@ -385,5 +499,139 @@ public class PlanService {
                 .detail(step.getDetail())
                 .completed(step.isCompleted())
                 .build();
+    }
+
+    @Transactional
+    public void enrichTaskTaxonomy(PlanTask task, Evaluation evaluation, String aiPillar, String aiMilestone, String aiMember, String aiRisk, String aiGenerator) {
+        List<Question> evaluationQuestions = new ArrayList<>();
+        if (evaluation != null && evaluation.getAnswers() != null) {
+            for (com.integrityfamily.domain.EvaluationAnswer answer : evaluation.getAnswers()) {
+                questionRepository.findByQuestionKey(answer.getQuestionKey())
+                        .ifPresent(evaluationQuestions::add);
+            }
+        }
+        populateTaxonomyV2(task, null, task.getMilestone(), evaluation, evaluationQuestions, aiPillar, aiMilestone, aiMember, aiRisk, aiGenerator);
+    }
+
+    private void populateTaxonomyV2(PlanTask task, String phase, Milestone milestone, Evaluation evaluation, List<Question> evaluationQuestions, String aiPillar, String aiMilestone, String aiMember, String aiRisk, String aiGenerator) {
+        // 0. Prioritize taxonomy values passed directly from AI
+        boolean hasAiPillar = aiPillar != null && !aiPillar.isBlank();
+        boolean hasAiMilestone = aiMilestone != null && !aiMilestone.isBlank();
+        boolean hasAiMember = aiMember != null && !aiMember.isBlank();
+        boolean hasAiRisk = aiRisk != null && !aiRisk.isBlank();
+        boolean hasAiGenerator = aiGenerator != null && !aiGenerator.isBlank();
+
+        if (hasAiPillar) task.setPillarName(aiPillar.trim().toLowerCase());
+        if (hasAiMilestone) task.setMilestoneCode(aiMilestone.trim().toUpperCase());
+        if (hasAiMember) task.setMemberType(aiMember.trim().toLowerCase());
+        if (hasAiRisk) task.setRiskType(aiRisk.trim().toLowerCase());
+        if (hasAiGenerator) task.setMissionGenerator(aiGenerator.trim().toUpperCase());
+
+        // If any value was not provided by AI, look for a matching question or use the fallback
+        if (!hasAiPillar || !hasAiMilestone || !hasAiMember || !hasAiRisk || !hasAiGenerator) {
+            Question matchingQuestion = null;
+            
+            // 1. Try to find a question in the same dimension (case-insensitive)
+            if (task.getDimension() != null) {
+                String taskDim = task.getDimension().trim().toLowerCase();
+                for (Question q : evaluationQuestions) {
+                    if (q.getDimension() != null && q.getDimension().trim().toLowerCase().equals(taskDim)) {
+                        matchingQuestion = q;
+                        break;
+                    }
+                }
+            }
+            
+            // 2. Fallback to any question from the evaluation answers
+            if (matchingQuestion == null && !evaluationQuestions.isEmpty()) {
+                matchingQuestion = evaluationQuestions.get(0);
+            }
+            
+            if (matchingQuestion != null) {
+                // Copy from matching question ONLY if not already populated by AI
+                if (!hasAiPillar) task.setPillarName(matchingQuestion.getPillarName());
+                if (!hasAiMilestone) task.setMilestoneCode(matchingQuestion.getMilestoneCode());
+                if (!hasAiMember) task.setMemberType(matchingQuestion.getMemberType());
+                if (!hasAiRisk) task.setRiskType(matchingQuestion.getRiskType());
+                if (!hasAiGenerator) task.setMissionGenerator(matchingQuestion.getMissionGenerator());
+            } else {
+                // Default Fallback values derived from activity / evaluation context
+                if (!hasAiPillar) {
+                    String derivedPillar = "reconocimiento";
+                    if (task.getFase() != null) {
+                        derivedPillar = task.getFase().toLowerCase();
+                    } else if (milestone != null && milestone.getCode() != null) {
+                        String code = milestone.getCode().toUpperCase();
+                        if (code.equals("W1") || code.equals("M1")) {
+                            derivedPillar = "reconocimiento";
+                        } else if (code.equals("M3") || code.equals("M6") || code.equals("M9")) {
+                            derivedPillar = "amor";
+                        } else {
+                            derivedPillar = "entrega";
+                        }
+                    }
+                    task.setPillarName(derivedPillar);
+                }
+                
+                if (!hasAiMilestone) {
+                    String derivedMilestone = "W1";
+                    if (milestone != null && milestone.getCode() != null) {
+                        derivedMilestone = milestone.getCode();
+                    } else if (phase != null) {
+                        derivedMilestone = switch (phase) {
+                            case "1 semana" -> "W1";
+                            case "1 mes" -> "M1";
+                            case "3 meses" -> "M3";
+                            case "6 meses" -> "M6";
+                            case "9 meses" -> "M9";
+                            case "12 meses" -> "M12";
+                            default -> "W1";
+                        };
+                    }
+                    task.setMilestoneCode(derivedMilestone);
+                }
+
+                if (!hasAiMember) {
+                    task.setMemberType("familia");
+                }
+                
+                if (!hasAiRisk) {
+                    String derivedRisk = "desconexion_emocional";
+                    if (evaluation != null && evaluation.getCriticalDimension() != null) {
+                        String dim = evaluation.getCriticalDimension().toLowerCase();
+                        if (dim.contains("comunicacion")) {
+                            derivedRisk = "comunicacion_defensiva";
+                        } else if (dim.contains("emociones")) {
+                            derivedRisk = "desregulacion_emocional";
+                        } else if (dim.contains("habitos")) {
+                            derivedRisk = "ausencia_rutinas";
+                        }
+                    }
+                    task.setRiskType(derivedRisk);
+                }
+                
+                if (!hasAiGenerator) {
+                    String derivedGenerator = "CONEXION_FAMILIAR";
+                    if (phase != null) {
+                        derivedGenerator = switch (phase) {
+                            case "1 semana" -> "ESTABILIZACION_EMOCIONAL";
+                            case "1 mes" -> "CONCIENCIA_EMOCIONAL";
+                            case "3 meses" -> "ACUERDOS_CONVIVENCIA";
+                            default -> "CONEXION_FAMILIAR";
+                        };
+                    } else if (milestone != null && milestone.getCode() != null) {
+                        String code = milestone.getCode().toUpperCase();
+                        derivedGenerator = switch (code) {
+                            case "W1" -> "ESTABILIZACION_EMOCIONAL";
+                            case "M1" -> "CONCIENCIA_EMOCIONAL";
+                            case "M3" -> "ACUERDOS_CONVIVENCIA";
+                            case "M6" -> "CONEXION_FAMILIAR";
+                            default -> "LEGADO_CONSCIENTE";
+                        };
+                    }
+                    task.setMissionGenerator(derivedGenerator);
+                }
+            }
+        }
     }
 }

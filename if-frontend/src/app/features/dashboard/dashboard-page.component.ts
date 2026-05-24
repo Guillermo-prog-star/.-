@@ -14,11 +14,16 @@ import { DashboardDTO, DimensionScore } from '../../core/models/dashboard.model'
 
 // Componentes de Presentación
 import { IcfStatCardComponent } from './components/icf-stat-card/icf-stat-card.component';
-import { EvolutionRadarComponent } from './components/evolution-radar/evolution-radar.component';
+import { ConsciousnessOrbitComponent } from './components/consciousness-orbit/consciousness-orbit.component';
 import { AiPlanTimelineComponent } from './components/ai-plan-timeline/ai-plan-timeline.component';
 import { ScenariosGridComponent } from './components/scenarios-grid/scenarios-grid.component';
 import { AiInsightPanelComponent } from './components/ai-insight-panel/ai-insight-panel.component';
 import { SentinelAlertComponent } from './components/sentinel-alert/sentinel-alert.component';
+import { CognitivePreviewComponent } from './components/cognitive-preview/cognitive-preview.component';
+import { IcfTrendChartComponent } from './components/icf-trend-chart/icf-trend-chart.component';
+import { AbandonmentRiskBannerComponent } from './components/abandonment-risk-banner/abandonment-risk-banner.component';
+import { DimensionHistoryChartComponent } from './components/dimension-history-chart/dimension-history-chart.component';
+import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 
 /**
  * SDD: Dashboard Page Component
@@ -32,11 +37,16 @@ import { SentinelAlertComponent } from './components/sentinel-alert/sentinel-ale
     CommonModule,
     RouterLink,
     IcfStatCardComponent,
-    EvolutionRadarComponent,
+    ConsciousnessOrbitComponent,
     AiPlanTimelineComponent,
     ScenariosGridComponent,
     AiInsightPanelComponent,
-    SentinelAlertComponent
+    SentinelAlertComponent,
+    CognitivePreviewComponent,
+    IcfTrendChartComponent,
+    AbandonmentRiskBannerComponent,
+    DimensionHistoryChartComponent,
+    NarrativeCompanionComponent
   ],
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.css'],

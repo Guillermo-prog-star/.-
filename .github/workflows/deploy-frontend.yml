@@ -1,0 +1,44 @@
+name: Deploy if-frontend → Vercel
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'if-frontend/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build & Deploy to Vercel
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: if-frontend
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: if-frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Build Angular app
+        run: npm run build
+        env:
+          NODE_OPTIONS: '--max_old_space_size=6144'
+
+      - name: Deploy to Vercel
+        run: |
+          npm install -g vercel
+          vercel --prod --yes --token "${{ secrets.VERCEL_TOKEN }}"
+        env:
+          VERCEL_ORG_ID: team_qw3OrINJ6Lw0RiwfkdOeTWUp
+          VERCEL_PROJECT_ID: prj_yQ8vimSRCRIMdhJxG35uBQuXRce4

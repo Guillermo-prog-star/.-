@@ -24,6 +24,7 @@ public class AnalyticsController {
     private final AnalyticsService analyticsService;
     private final com.integrityfamily.domain.repository.UserRepository userRepository;
     private final EvaluationService evaluationService;
+    private final com.integrityfamily.analytics.service.FamilyProgressAnalyticsService familyProgressAnalyticsService;
 
     /**
      * Obtiene el resumen ejecutivo del dashboard familiar.
@@ -52,6 +53,20 @@ public class AnalyticsController {
     }
 
     /**
+     * SDD: Obtiene el último análisis de progreso longitudinal (ΔICF).
+     */
+    @GetMapping("/family/{familyId}/progress")
+    @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
+    public ApiResponse<com.integrityfamily.analytics.dto.FamilyProgressResponse> getFamilyProgress(@PathVariable Long familyId) {
+        log.info("📊 [ANALYTICS] Solicitando análisis de progreso para familia: {}", familyId);
+        
+        com.integrityfamily.analytics.dto.FamilyProgressResponse response = familyProgressAnalyticsService.getLatestProgress(familyId)
+                .orElseThrow(() -> new RuntimeException("No se encontró análisis de progreso para esta familia."));
+                
+        return ApiResponse.ok(response);
+    }
+
+    /**
      * SDD: Obtiene los datos para el radar de evolución de la familia.
      */
     @GetMapping("/radar")
@@ -75,6 +90,73 @@ public class AnalyticsController {
         var radarData = analyticsService.getEvolutionRadarData(familyId);
 
         return ApiResponse.ok(radarData);
+    }
+
+    /**
+     * SDD Analytics v2: Historial de ICF para gráfico de tendencia.
+     * Devuelve todos los puntos (id, icf, riskLevel, fecha) de evaluaciones finalizadas.
+     */
+    @GetMapping("/family/{familyId}/icf-history")
+    @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
+    public ApiResponse<java.util.List<java.util.Map<String, Object>>> getIcfHistory(@PathVariable Long familyId) {
+        log.info("📈 [ANALYTICS] Solicitando historial ICF para familia: {}", familyId);
+
+        java.util.List<java.util.Map<String, Object>> history =
+            evaluationService.findByFamilyId(familyId).stream()
+                .filter(e -> com.integrityfamily.domain.EvaluationStatus.FINALIZED == e.getStatus())
+                .filter(e -> e.getIcf() != null)
+                .map(e -> {
+                    java.util.Map<String, Object> pt = new java.util.LinkedHashMap<>();
+                    pt.put("evaluationId", e.getId());
+                    pt.put("icf",          Math.round(e.getIcf() * 10.0) / 10.0);
+                    pt.put("riskLevel",    e.getRiskLevel());
+                    pt.put("hasCrisis",    Boolean.TRUE.equals(e.getHasCrisis()));
+                    pt.put("finalizedAt",  e.getFinalizedAt() != null ? e.getFinalizedAt().toString() : null);
+                    return pt;
+                })
+                .toList();
+
+        return ApiResponse.ok(history);
+    }
+
+    /**
+     * SDD Analytics v2: Historial de puntuaciones por dimensión.
+     * Devuelve un punto por evaluación finalizada con las 4 dimensiones normalizadas.
+     * Usado por el gráfico de evolución multidimensional del dashboard.
+     */
+    @GetMapping("/family/{familyId}/dimension-history")
+    @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
+    public ApiResponse<java.util.List<java.util.Map<String, Object>>> getDimensionHistory(
+            @PathVariable Long familyId) {
+        log.info("📊 [ANALYTICS] Solicitando historial de dimensiones para familia: {}", familyId);
+
+        java.util.List<java.util.Map<String, Object>> history =
+            evaluationService.findByFamilyId(familyId).stream()
+                .filter(e -> com.integrityfamily.domain.EvaluationStatus.FINALIZED == e.getStatus())
+                .filter(e -> e.getDimensionScores() != null && !e.getDimensionScores().isEmpty())
+                .map(e -> {
+                    java.util.Map<String, Object> pt = new java.util.LinkedHashMap<>();
+                    pt.put("evaluationId", e.getId());
+                    pt.put("finalizedAt",  e.getFinalizedAt() != null ? e.getFinalizedAt().toString() : null);
+
+                    // Normalize dimension names to canonical Spanish keys
+                    java.util.Map<String, Double> dims = new java.util.LinkedHashMap<>();
+                    for (com.integrityfamily.domain.EvaluationDimensionScore ds : e.getDimensionScores()) {
+                        String key = switch (ds.getDimensionName().toUpperCase()) {
+                            case "EMOCIONES", "EMOTIONS"         -> "emociones";
+                            case "COMUNICACION", "COMMUNICATION" -> "comunicacion";
+                            case "HABITOS", "HABITS"             -> "habitos";
+                            case "TIEMPOS", "TIMES"              -> "tiempos";
+                            default -> ds.getDimensionName().toLowerCase();
+                        };
+                        dims.put(key, Math.round(ds.getScore() * 10.0) / 10.0);
+                    }
+                    pt.put("dimensions", dims);
+                    return pt;
+                })
+                .toList();
+
+        return ApiResponse.ok(history);
     }
 
     /**

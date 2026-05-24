@@ -21,7 +21,7 @@ mvnw.cmd
 **/dist/
 **/.angular/
 .npm/
-package-lock.json
+# package-lock.json is committed for the frontend (needed for CI/CD cache)
 
 # === Docker & Bases de Datos ===
 docker/data/
@@ -33,10 +33,12 @@ docker/data/
 Thumbs.db
 desktop.ini
 
-# === Archivos Temporales ===
+# === Archivos Temporales y de Prueba ===
 *.tmp
 *.bak
 *.swp
+tmp_*.json
+test_*.json
 
 # === Variables de Entorno y Secrets ===
 .env
@@ -70,3 +72,18 @@ if-frontend/dist/
 # OS files
 Thumbs.db
 .DS_Store
+
+# --- Custom Backend Log Exclusions ---
+*.log
+backend_logs/
+maven_build_error.log
+**/target/
+.vercel
+
+# === Claude Code / AI Sessions ===
+.claude/
+
+# === Python Artifacts ===
+**/__pycache__/
+*.pyc
+*.pyo

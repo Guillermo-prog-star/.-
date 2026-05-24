@@ -16,7 +16,9 @@ import com.integrityfamily.domain.RiskSnapshot;
 import com.integrityfamily.domain.LogbookStatus;
 import com.integrityfamily.domain.FamilyLogbookEntry;
 import com.integrityfamily.domain.repository.FamilyLogbookRepository;
+import com.integrityfamily.domain.repository.PlanTaskRepository;
 import com.integrityfamily.domain.repository.RiskSnapshotRepository;
+import com.integrityfamily.domain.repository.ImprovementPlanRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -45,10 +47,31 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final RiskSnapshotRepository riskSnapshotRepository;
     private final ChecklistItemRepository checklistRepository;
     private final FamilyLogbookRepository logbookRepository;
+    private final ImprovementPlanRepository planRepository;
+    private final PlanTaskRepository planTaskRepository;
     private final RabbitTemplate rabbitTemplate;
 
+    // ── Nivel de consciencia (misma escala que RiskService: 1=mín → 5=máx) ──
+    private static int deriveConsciousnessLevel(double icf) {
+        if (icf < 20) return 1;
+        if (icf < 40) return 2;
+        if (icf < 60) return 3;
+        if (icf < 80) return 4;
+        return 5;
+    }
+
+    private static String deriveConsciousnessLabel(int level) {
+        return switch (level) {
+            case 1  -> "Inconsciente";
+            case 2  -> "Reactiva";
+            case 3  -> "Consciente";
+            case 4  -> "Madurando";
+            default -> "Plena";
+        };
+    }
+
     @Override
-    @Transactional
+    @Transactional(readOnly = true)
     public DashboardSummaryResponse calculateLatestResults(Long familyId) {
         log.info("📊 [ANALYTICS] Iniciando calculo integral para familia ID: {}", familyId);
 
@@ -98,10 +121,10 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             insight = "Sincronizando reflexiones profundas... El motor de IA esta procesando el contexto familiar.";
         }
 
-        // 8. Recuperacion de Tareas del Plan de Accion
+        // 8. Checklist — solo para «Suggested Actions» (no confundir con PlanTask)
         List<ChecklistItem> allChecklist = checklistRepository.findByFamilyIdOrderByCreatedAtDesc(familyId);
-        long totalItems = allChecklist.size();
-        long completedItems = allChecklist.stream().filter(ChecklistItem::isCompleted).count();
+        long totalChecklistItems    = allChecklist.size();
+        long completedChecklistItems = allChecklist.stream().filter(ChecklistItem::isCompleted).count();
 
         List<SuggestedActionDto> suggestedActions = allChecklist.stream()
                 .limit(5)
@@ -113,6 +136,10 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                         .build())
                 .collect(Collectors.toList());
 
+        // 8b. Tareas del Plan (PlanTask) — fuente correcta para el progreso de la ruta
+        long totalPlanTasks     = planTaskRepository.countByFamilyId(familyId);
+        long completedPlanTasks = planTaskRepository.countCompletedByFamilyId(familyId);
+
         // 9. Recuperacion de Bitacora
         long openLogbookItems = logbookRepository.findByFamilyIdAndStatusOrderByCreatedAtDesc(familyId, LogbookStatus.OPEN).size();
         String latestAgreement = logbookRepository.findByFamilyIdOrderByCreatedAtDesc(familyId).stream()
@@ -120,6 +147,12 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .map(FamilyLogbookEntry::getFamilyAgreement)
                 .findFirst()
                 .orElse("No hay acuerdos recientes registrados.");
+
+        // 9.5 Recuperación de Reporte de Plan IA
+        List<com.integrityfamily.domain.ImprovementPlan> familyPlans = planRepository.findByFamilyId(familyId);
+        String planAiReport = (familyPlans != null && !familyPlans.isEmpty()) ?
+                familyPlans.get(familyPlans.size() - 1).getAiReport() :
+                "No hay reporte de plan disponible.";
 
         // 10. Motor de Activacion Proactiva Sentinel (Capa de Contencion)
         boolean sentinelTriggered = Boolean.TRUE.equals(family.getSentinelActive())
@@ -134,17 +167,22 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             finalInsight += " Hay " + openLogbookItems + " situaciones pendientes en la bitacora.";
         }
 
-        // 12. Persistencia del Snapshot (Memoria Historica)
-        RiskSnapshot snapshot = RiskSnapshot.builder()
-                .family(family)
-                .icf(lastEval != null && lastEval.getIcf() != null ? lastEval.getIcf() : 0.0)
-                .riskLevel(mappedLevel.name())
-                .hasCrisis(sentinelTriggered)
-                .consciousnessLevel(lastRisk != null ? lastRisk.getConsciousnessLevel() : 1)
-                .consciousnessLabel(lastRisk != null ? lastRisk.getConsciousnessLabel() : "Inconsciente")
-                .createdAt(LocalDateTime.now())
-                .build();
-        riskSnapshotRepository.save(snapshot);
+        // 12. Nivel de consciencia
+        // RiskService.calculateAndCreate() ya persiste un RiskSnapshot correcto tras cada
+        // evaluación.  Aquí solo leemos ese valor — no escribimos un snapshot nuevo en cada
+        // GET del dashboard (evita write-on-read y el bucle de valores estancados).
+        int consciousnessLevel;
+        String consciousnessLabel;
+        if (lastRisk != null && lastRisk.getConsciousnessLevel() != null) {
+            consciousnessLevel = lastRisk.getConsciousnessLevel();
+            consciousnessLabel = lastRisk.getConsciousnessLabel() != null
+                    ? lastRisk.getConsciousnessLabel()
+                    : deriveConsciousnessLabel(lastRisk.getConsciousnessLevel());
+        } else {
+            double icfForLevel = (lastEval != null && lastEval.getIcf() != null) ? lastEval.getIcf() : 0.0;
+            consciousnessLevel = deriveConsciousnessLevel(icfForLevel);
+            consciousnessLabel = deriveConsciousnessLabel(consciousnessLevel);
+        }
 
         // 13. Construccion del DTO de Respuesta
         DashboardSummaryResponse response = DashboardSummaryResponse.builder()
@@ -156,19 +194,22 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .totalEvaluations((long) allEvals.size())
                 .latestRiskLevel(mappedLevel)
                 .latestGlobalScore(BigDecimal.valueOf(lastEval != null && lastEval.getIcf() != null ? lastEval.getIcf() : 0.0))
-                .latestConsciousnessLevel(snapshot.getConsciousnessLevel())
-                .latestConsciousnessLabel(snapshot.getConsciousnessLabel())
-                .hasCrisis(snapshot.getHasCrisis())
+                .latestConsciousnessLevel(consciousnessLevel)
+                .latestConsciousnessLabel(consciousnessLabel)
+                .hasCrisis(sentinelTriggered)
                 .isSentinelActive(sentinelTriggered)
-                .totalChecklistItems(totalItems)
-                .completedChecklistItems(completedItems)
-                .totalPlanTasks(totalItems)
-                .completedPlanTasks(completedItems)
-                .pillarProgress((double) (totalItems > 0 ? (completedItems * 100 / totalItems) : 0))
+                .totalChecklistItems(totalChecklistItems)
+                .completedChecklistItems(completedChecklistItems)
+                .totalPlanTasks(totalPlanTasks)
+                .completedPlanTasks(completedPlanTasks)
+                .pillarProgress(totalPlanTasks > 0
+                        ? (double) completedPlanTasks * 100.0 / totalPlanTasks
+                        : 0.0)
                 .awarenessGrowth(growth)
                 .dimensionScores(dims)
                 .suggestedActions(suggestedActions)
                 .aiRecommendation(finalInsight)
+                .planAiReport(planAiReport)
                 .openLogbookEntriesCount(openLogbookItems)
                 .latestFamilyAgreement(latestAgreement)
                 .build();

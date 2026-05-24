@@ -6,11 +6,12 @@ import { ApiService } from '../../core/services/api.service';
 import { ApiResponse } from '../../core/models/api-response.model';
 import { Family } from '../../core/models/models';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 
 @Component({
   selector: 'app-family-list-page', 
   standalone: true, 
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, NarrativeCompanionComponent],
   templateUrl: './family-list-page.component.html',
   styleUrls: ['./family-list-page.component.css']
 })

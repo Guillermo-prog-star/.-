@@ -75,7 +75,18 @@ class EvolutionaryMissionsTest {
         
         System.out.println("TEST EXITOSO: Se crearon " + latestPlan.tasks().size() + " misiones automáticas.");
         latestPlan.tasks().forEach(t -> {
-            System.out.println("- Misión: " + t.title());
+            System.out.println("- Misión: " + t.title() + " (Pilar: " + t.pillarName() + ", Hito: " + t.milestoneCode() + ", Miembro: " + t.memberType() + ", Riesgo: " + t.riskType() + ", Generador: " + t.missionGenerator() + ")");
+            assertNotNull(t.pillarName(), "pillarName no debe ser nulo");
+            assertNotNull(t.milestoneCode(), "milestoneCode no debe ser nulo");
+            assertNotNull(t.memberType(), "memberType no debe ser nulo");
+            assertNotNull(t.riskType(), "riskType no debe ser nulo");
+            assertNotNull(t.missionGenerator(), "missionGenerator no debe ser nulo");
+            
+            assertFalse(t.pillarName().isBlank(), "pillarName no debe estar vacío");
+            assertFalse(t.milestoneCode().isBlank(), "milestoneCode no debe estar vacío");
+            assertFalse(t.memberType().isBlank(), "memberType no debe estar vacío");
+            assertFalse(t.riskType().isBlank(), "riskType no debe estar vacío");
+            assertFalse(t.missionGenerator().isBlank(), "missionGenerator no debe estar vacío");
         });
     }
 }

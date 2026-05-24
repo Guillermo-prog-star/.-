@@ -12,7 +12,7 @@ import { EChartsOption } from 'echarts';
   templateUrl: './voice-monitor.component.html',
   styleUrls: ['./voice-monitor.component.css']
 })
-export class VoiceMonitorComponent implements OnInit {
+export class VoiceMonitorComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient);
 
   stats = { totalMessages: 0, successRate: 0, activeFamilies: 0, totalDuration: 0 };

@@ -3,33 +3,82 @@
     <h1>Nueva Evaluación Premium</h1>
     <p>Hito: {{ milestone }}</p>
   </div>
+  <a routerLink="/evaluations/history" class="btn" style="align-self:center;">
+    📋 Ver Historial
+  </a>
 </div>
 
-<div class="start-card" style="max-width:600px;">
-  <h3>¿Quién inicia este proceso de conciencia?</h3>
-  
-  <div style="margin-bottom:32px;">
-    
-    <label class="selector-label" [class.selector-active]="!selectedMember">
-      <input type="radio" [value]="null" [(ngModel)]="selectedMember" name="member" class="custom-radio"/>
-      <div>
-        <div class="member-name">Evaluación Familiar Global</div>
-        <div class="member-info">Diagnóstico sistémico de todo el núcleo familiar</div>
+<!-- Narrative Guidance Engine -->
+<app-narrative-companion module="evaluations"></app-narrative-companion>
+
+@if (familyId > 0) {
+
+  <!-- ── Banner: evaluación en curso ──────────────────────────────────── -->
+  @if (pendingEvalId) {
+    <div style="max-width:600px;margin-bottom:20px;padding:20px 24px;
+                background:linear-gradient(135deg,#FFFBEB 0%,#FEF3C7 100%);
+                border:2px solid #F59E0B;border-radius:12px;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <span style="font-size:22px;">⏸️</span>
+        <h3 style="margin:0;color:#92400E;font-size:16px;">Tienes una evaluación en curso</h3>
       </div>
-    </label>
+      <p style="margin:0 0 16px;color:#B45309;font-size:14px;">
+        El diagnóstico <strong>#{{ pendingEvalId }}</strong> fue iniciado y aún no ha sido finalizado.
+        Puedes retomarlo desde donde lo dejaste o descartarlo e iniciar uno nuevo.
+      </p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn-start" style="flex:1;min-width:160px;" (click)="resume()">
+          ▶ CONTINUAR EVALUACIÓN
+        </button>
+        <button style="flex:1;min-width:160px;padding:12px 20px;border-radius:8px;
+                       border:2px solid #F59E0B;background:transparent;
+                       color:#92400E;font-weight:700;cursor:pointer;font-size:14px;"
+                (click)="discardAndStart()">
+          🗑 Descartar e iniciar nueva
+        </button>
+      </div>
+    </div>
+  }
 
-    @for (m of members; track m.id) {
-      <label class="selector-label" [class.selector-active]="selectedMember===m.id">
-        <input type="radio" [value]="m.id" [(ngModel)]="selectedMember" name="member" class="custom-radio"/>
-        <div>
-          <div class="member-name">{{ m.fullName }}</div>
-          <div class="member-info">{{ m.roleType | titlecase }} · {{ m.age }} años</div>
-        </div>
-      </label>
-    }
+  <!-- ── Formulario nueva evaluación ──────────────────────────────────── -->
+  @if (!pendingEvalId) {
+    <div class="start-card" style="max-width:600px;">
+      <h3>¿Quién inicia este proceso de conciencia?</h3>
+
+      <div style="margin-bottom:32px;">
+
+        <label class="selector-label" [class.selector-active]="!selectedMember">
+          <input type="radio" [value]="null" [(ngModel)]="selectedMember" name="member" class="custom-radio"/>
+          <div>
+            <div class="member-name">Evaluación Familiar Global</div>
+            <div class="member-info">Diagnóstico sistémico de todo el núcleo familiar</div>
+          </div>
+        </label>
+
+        @for (m of members; track m.id) {
+          <label class="selector-label" [class.selector-active]="selectedMember===m.id">
+            <input type="radio" [value]="m.id" [(ngModel)]="selectedMember" name="member" class="custom-radio"/>
+            <div>
+              <div class="member-name">{{ m.fullName }}</div>
+              <div class="member-info">{{ m.roleType | titlecase }} · {{ m.age }} años</div>
+            </div>
+          </label>
+        }
+      </div>
+
+      <button class="btn-start" style="width:100%;" (click)="start()" [disabled]="loading">
+        {{ loading ? 'SINCRONIZANDO...' : 'INICIAR TEST DE CONCIENCIA →' }}
+      </button>
+    </div>
+  }
+
+} @else {
+  <div class="warning-container" style="max-width:600px;">
+    <div class="warning-icon">🚨</div>
+    <h3>No se ha seleccionado ninguna familia</h3>
+    <p>Para iniciar una nueva sesión de evaluación diagnóstica, primero debes elegir una familia del listado de familias activas.</p>
+    <button class="btn-select" style="width:100%;" (click)="goToFamilies()">
+      IR A SELECCIONAR FAMILIA →
+    </button>
   </div>
-
-  <button class="btn-start" style="width:100%;" (click)="start()" [disabled]="loading">
-    {{ loading ? 'SINCRONIZANDO...' : 'INICIAR TEST DE CONCIENCIA →' }}
-  </button>
-</div>
+}

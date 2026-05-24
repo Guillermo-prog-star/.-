@@ -9,6 +9,8 @@ import com.integrityfamily.domain.Evaluation;
 import com.integrityfamily.domain.EvaluationDimensionScore;
 import com.integrityfamily.domain.repository.EvaluationRepository;
 import com.integrityfamily.domain.repository.MilestoneRepository;
+import com.integrityfamily.domain.repository.ImprovementPlanRepository;
+import com.integrityfamily.risk.service.RiskAlgoV1Engine;
 import com.integrityfamily.ai.service.AiService;
 import com.integrityfamily.common.service.WhatsAppService;
 import com.integrityfamily.checklist.service.ChecklistService;
@@ -43,6 +45,9 @@ public class PlanGenerationService {
     private final MilestoneRepository milestoneRepository;
     private final ContinuityEngine continuityEngine;
     private final PlanValidator planValidator;
+    private final ImprovementPlanRepository planRepository;
+    private final MilestoneAwarePlanEngine milestoneAwarePlanEngine;
+    private final RiskAlgoV1Engine riskAlgoV1Engine;
 
     public PlanGenerationService(PlanService planService,
                                 EvaluationRepository evaluationRepository,
@@ -52,7 +57,10 @@ public class PlanGenerationService {
                                 ChecklistService checklistService,
                                 MilestoneRepository milestoneRepository,
                                 ContinuityEngine continuityEngine,
-                                PlanValidator planValidator) {
+                                PlanValidator planValidator,
+                                ImprovementPlanRepository planRepository,
+                                MilestoneAwarePlanEngine milestoneAwarePlanEngine,
+                                RiskAlgoV1Engine riskAlgoV1Engine) {
         this.planService = planService;
         this.evaluationRepository = evaluationRepository;
         this.aiService = aiService;
@@ -62,6 +70,9 @@ public class PlanGenerationService {
         this.milestoneRepository = milestoneRepository;
         this.continuityEngine = continuityEngine;
         this.planValidator = planValidator;
+        this.planRepository = planRepository;
+        this.milestoneAwarePlanEngine = milestoneAwarePlanEngine;
+        this.riskAlgoV1Engine = riskAlgoV1Engine;
     }
 
     @RabbitListener(queues = com.integrityfamily.common.config.RabbitConfig.PLAN_QUEUE)
@@ -125,69 +136,75 @@ public class PlanGenerationService {
         String jsonResponse = aiService.generateHybridPlan(evaluation.getFamily(), dimensions, riskLevel, continuityAnalysis);
         
         try {
-            // Parsear respuesta inicial
-            HybridPlanDto rawPlanDto = objectMapper.readValue(jsonResponse, HybridPlanDto.class);
+            // Parsear respuesta inicial (Extrayendo el bloque JSON si hay texto libre)
+            String jsonContent = extractJson(jsonResponse);
+            HybridPlanDto planDto = objectMapper.readValue(jsonContent, HybridPlanDto.class);
 
-            // 3. Pasar por PlanValidator para validar y sanear
-            HybridPlanDto planDto = planValidator.validateAndSanitize(rawPlanDto);
+            // De-duplicación estricta (SDD SPEC): Solo 1 plan activo por familia
+            List<ImprovementPlan> existingPlans = planRepository.findByFamilyId(evaluation.getFamily().getId());
+            if (existingPlans != null && !existingPlans.isEmpty()) {
+                log.info("🧹 [PLAN-ENGINE] Eliminando {} planes duplicados existentes para la familia ID: {}", 
+                        existingPlans.size(), evaluation.getFamily().getId());
+                planRepository.deleteAll(existingPlans);
+                planRepository.flush();
+            }
 
             ImprovementPlan p = ImprovementPlan.builder()
                     .family(evaluation.getFamily())
                     .evaluation(evaluation)
                     .title("PLAN DE TRANSFORMACIÓN: " + evaluation.getFamily().getName())
-                    .vision3y(planDto.vision3y())
+                    .vision3y(planDto.vision() != null ? planDto.vision().vision3y() : "Construir una convivencia más tranquila y conectada.")
                     .aiReport(jsonResponse)
                     .aiGeneratedAt(LocalDateTime.now())
                     .tasks(new java.util.ArrayList<>())
                     .build();
 
             List<Milestone> allMilestones = milestoneRepository.findAll();
-            for (MilestoneDto mDto : planDto.milestones()) {
-                Milestone milestone = milestoneRepository.findByCode(mDto.code())
-                        .orElseGet(() -> allMilestones.isEmpty() ? null : allMilestones.get(0));
+            
+            if (planDto.milestones() != null) {
+                for (MilestoneDto mDto : planDto.milestones()) {
+                    Milestone milestone = milestoneRepository.findByCode(mDto.code())
+                            .orElseGet(() -> allMilestones.isEmpty() ? null : allMilestones.get(0));
 
-                for (TaskDto tDto : mDto.tasks()) {
-                    int daysForMilestone = resolveMilestoneDays(mDto.code());
-                    int periodicityMonths = resolveMilestonePeriodicityMonths(mDto.code());
+                    if (mDto.microActions() != null) {
+                        for (MicroActionDto tDto : mDto.microActions()) {
+                            int daysForMilestone = resolveMilestoneDays(mDto.code());
+                            int periodicityMonths = resolveMilestonePeriodicityMonths(mDto.code());
 
-                    PlanTask task = PlanTask.builder()
-                            .plan(p)
-                            .title(tDto.title())
-                            .dimension(tDto.dimension())
-                            .milestone(milestone)
-                            .fase(tDto.fase())
-                            .riesgoAsociado(tDto.riesgoAsociado())
-                            .objetivo(tDto.objetivo())
-                            .accionConcreta(tDto.accionConcreta())
-                            .indicadorCumplimiento(tDto.indicadorCumplimiento())
-                            .evidenciaRequerida(tDto.evidenciaRequerida())
-                            .impactoIcf(tDto.impactoIcf())
-                            .dueDate(LocalDateTime.now().plusDays(daysForMilestone))
-                            .periodicityMonths(periodicityMonths)
-                            .completed(false)
-                            .steps(new java.util.ArrayList<>())
-                            .build();
+                            String resolvedFase = tDto.fase() != null ? tDto.fase().toUpperCase().trim() : resolveFase(mDto.code());
+                            String resolvedDimension = tDto.dimension() != null ? tDto.dimension().toUpperCase().trim() : resolveDimension(mDto.code());
 
-                    log.info("📅 [PLAN-ENGINE] Microacción '{}' → Hito {} → Vence: {} ({} meses)",
-                            tDto.title(), mDto.code(), task.getDueDate().toLocalDate(), periodicityMonths);
+                            PlanTask task = PlanTask.builder()
+                                    .plan(p)
+                                    .title(tDto.title())
+                                    .dimension(resolvedDimension)
+                                    .milestone(milestone)
+                                    .fase(resolvedFase)
+                                    .objetivo(mDto.goal()) // Usamos la meta del hito como objetivo
+                                    .accionConcreta(tDto.description())
+                                    .indicadorCumplimiento("Completar la acción")
+                                    .evidenciaRequerida(tDto.evidenceType())
+                                    .impactoIcf(5) // Default impact
+                                    .dueDate(LocalDateTime.now().plusDays(daysForMilestone))
+                                    .periodicityMonths(periodicityMonths)
+                                    .completed(false)
+                                    .steps(new java.util.ArrayList<>())
+                                    .build();
 
-                    for (StepDto sDto : tDto.steps()) {
-                        try {
-                            PlanTaskStep step = new PlanTaskStep();
-                            step.setTask(task);
-                            // Robustez ante variaciones de la IA (case-insensitive)
-                            String typeStr = sDto.type() != null ? sDto.type().toUpperCase().trim() : "PLANIFICAR";
-                            step.setType(StepType.valueOf(typeStr));
-                            step.setDetail(sDto.detail());
-                            task.getSteps().add(step);
-                        } catch (Exception e) {
-                            log.warn("⚠️ [AI-PARSER] Tipo de paso inválido: {}. Ignorando.", sDto.type());
+                            planService.enrichTaskTaxonomy(task, evaluation, tDto.pillarName(), tDto.milestoneCode(), tDto.memberType(), tDto.riskType(), tDto.missionGenerator());
+
+                            log.info("📅 [PLAN-ENGINE] Microacción '{}' (fase: {}, dim: {}) → Hito {} → Vence: {} ({} meses)",
+                                    tDto.title(), resolvedFase, resolvedDimension, mDto.code(), task.getDueDate().toLocalDate(), periodicityMonths);
+
+                            p.getTasks().add(task);
                         }
                     }
-                    p.getTasks().add(task);
                 }
             }
 
+            if (p.getTasks().isEmpty()) {
+                throw new RuntimeException("AI generó un plan vacío — activando motor determinístico de contingencia.");
+            }
             planService.createPlan(p);
             log.info("✅ [PLAN-ENGINE] Plan Híbrido persistido con éxito.");
 
@@ -210,25 +227,56 @@ public class PlanGenerationService {
             }
 
         } catch (Exception e) {
-            log.error("⚠️ [AI-PARSER] Error en formato JSON Híbrido o procesamiento: {}", e.getMessage(), e);
+            log.error("[AI-PARSER] Error en formato JSON o procesamiento: {}. Activando MilestoneAwarePlanEngine.", e.getMessage());
             try {
-                log.info("🛡️ [PLAN-FALLBACK] Activando motor determinístico de contingencia para Evaluación ID: {}", evaluation.getId());
-                planService.generateDeterministicPlan(evaluation.getId());
+                generateMilestoneAwareFallback(evaluation);
             } catch (Exception ex) {
-                log.error("❌ [PLAN-FALLBACK-ERROR] Fallo en motor determinístico: {}", ex.getMessage());
+                log.error("[PLAN-FALLBACK-ERROR] Fallo en MilestoneAwarePlanEngine: {}", ex.getMessage());
+                // Último recurso: motor determinístico legacy
+                try {
+                    planService.generateDeterministicPlan(evaluation.getId());
+                } catch (Exception leg) {
+                    log.error("[PLAN-LEGACY-ERROR] Fallo total en generación de plan: {}", leg.getMessage());
+                }
             }
         }
     }
 
     public record HybridPlanDto(
-        @JsonProperty("vision_3y") String vision3y,
+        @JsonProperty("family_state") FamilyStateDto familyState,
+        VisionDto vision,
         List<MilestoneDto> milestones
+    ) {}
+
+    public record FamilyStateDto(
+        String risk,
+        Integer icf,
+        @JsonProperty("main_problem") String mainProblem
+    ) {}
+
+    public record VisionDto(
+        @JsonProperty("3y") String vision3y
     ) {}
 
     public record MilestoneDto(
         String code,
-        String objective,
-        List<TaskDto> tasks
+        String goal,
+        @JsonProperty("micro_actions") List<MicroActionDto> microActions
+    ) {}
+
+    public record MicroActionDto(
+        String title,
+        String description,
+        @JsonProperty("duration_minutes") Integer durationMinutes,
+        List<String> participants,
+        @JsonProperty("evidence_type") String evidenceType,
+        String fase,
+        String dimension,
+        @JsonProperty("pillar_name") String pillarName,
+        @JsonProperty("milestone_code") String milestoneCode,
+        @JsonProperty("member_type") String memberType,
+        @JsonProperty("risk_type") String riskType,
+        @JsonProperty("mission_generator") String missionGenerator
     ) {}
 
     public record TaskDto(
@@ -299,5 +347,122 @@ public class PlanGenerationService {
             case "M36" -> 36;
             default    -> 1;
         };
+    }
+
+    private String resolveFase(String code) {
+        if (code == null) return "RECONOCIMIENTO";
+        return switch (code.toUpperCase().trim()) {
+            case "W1", "M1", "M2", "M3" -> "RECONOCIMIENTO";
+            case "M4", "M5", "M6", "M9", "M12" -> "AMOR";
+            case "M15", "M18", "M21", "M24", "M36" -> "ENTREGA";
+            default -> "RECONOCIMIENTO";
+        };
+    }
+
+    private String resolveDimension(String code) {
+        if (code == null) return "EMOCIONES";
+        return switch (code.toUpperCase().trim()) {
+            case "W1", "M1" -> "EMOCIONES";
+            case "M2", "M3", "M4" -> "COMUNICACION";
+            case "M5", "M6", "M9" -> "HABITOS";
+            case "M12", "M15", "M18", "M21", "M24", "M36" -> "TIEMPOS";
+            default -> "EMOCIONES";
+        };
+    }
+
+    /**
+     * Fallback determinístico de primer nivel — usa MilestoneAwarePlanEngine.
+     * Se invoca cuando la IA no está disponible o devuelve JSON inválido.
+     * Recalcula el AlgoResult a partir de los answers persistidos en la evaluación.
+     */
+    @Transactional
+    public void generateMilestoneAwareFallback(Evaluation evaluation) {
+        log.info("[PLAN-MILESTONE-ENGINE] Generando plan determinístico congruente con hito {} para familia ID={}",
+                evaluation.getFamily().getCurrentMilestone(), evaluation.getFamily().getId());
+
+        // Reconstruir AlgoResult desde los scores ya persistidos
+        Map<String, Double> persistedScores = evaluation.getDimensionScores().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        com.integrityfamily.domain.EvaluationDimensionScore::getDimensionName,
+                        com.integrityfamily.domain.EvaluationDimensionScore::getScore,
+                        (a, b) -> a));
+
+        // Derivar valores del AlgoResult desde los datos persistidos
+        double icf = evaluation.getIcf() != null ? evaluation.getIcf() : 60.0;
+        String riskLevel = evaluation.getRiskLevel() != null ? evaluation.getRiskLevel() : "MODERADO";
+        String criticalDim = evaluation.getCriticalDimension() != null
+                ? evaluation.getCriticalDimension() : "comunicacion";
+
+        // Construir un AlgoResult sintético con los datos disponibles
+        RiskAlgoV1Engine.AlgoResult syntheticAlgo = new RiskAlgoV1Engine.AlgoResult(
+                persistedScores.isEmpty()
+                    ? Map.of("emociones", 60.0, "comunicacion", 55.0, "habitos", 65.0, "tiempos", 70.0)
+                    : persistedScores,
+                icf,
+                riskLevel,
+                criticalDim,
+                false,  // simulationSuspected — no disponible en fallback
+                false,  // relapseDetected — no disponible en fallback
+                "ESTABILIZACION_EMOCIONAL",
+                "Reactiva",
+                4,
+                List.of(),
+                List.of()
+        );
+
+        // De-duplicación
+        List<com.integrityfamily.domain.ImprovementPlan> existing =
+                planRepository.findByFamilyId(evaluation.getFamily().getId());
+        if (!existing.isEmpty()) {
+            planRepository.deleteAll(existing);
+            planRepository.flush();
+        }
+
+        // Crear el plan contenedor
+        com.integrityfamily.domain.ImprovementPlan plan = com.integrityfamily.domain.ImprovementPlan.builder()
+                .family(evaluation.getFamily())
+                .evaluation(evaluation)
+                .title("Plan de Transformación — " + evaluation.getFamily().getName())
+                .vision3y("Construir un hogar íntegro y consciente en un horizonte de 36 meses.")
+                .aiReport("Generado por MilestoneAwarePlanEngine v2 (determinístico, sin IA).")
+                .aiGeneratedAt(java.time.LocalDateTime.now())
+                .tasks(new java.util.ArrayList<>())
+                .build();
+        plan = planRepository.save(plan);
+
+        // Generar tareas congruentes con el hito
+        List<com.integrityfamily.domain.PlanTask> tasks =
+                milestoneAwarePlanEngine.generate(plan, evaluation, syntheticAlgo);
+
+        // Sincronizar colección en memoria con las tareas persistidas.
+        // Sin esta línea, la primera lectura en la misma transacción (Hibernate
+        // L1 cache) devolvería el plan con tasks=[] porque generate() persiste
+        // via planTaskRepository.saveAll() sin actualizar plan.getTasks().
+        plan.getTasks().addAll(tasks);
+
+        log.info("[PLAN-MILESTONE-ENGINE] Plan generado con {} tareas congruentes con hito {}",
+                tasks.size(), evaluation.getFamily().getCurrentMilestone());
+    }
+
+    private String extractJson(String response) {
+        if (response == null) return "{}";
+        
+        // Intentar buscar el bloque delimitado por ```json y ```
+        int startIndex = response.indexOf("```json");
+        if (startIndex != -1) {
+            int endIndex = response.indexOf("```", startIndex + 7);
+            if (endIndex != -1) {
+                return response.substring(startIndex + 7, endIndex).trim();
+            }
+        }
+        
+        // Fallback: buscar el primer '{' y el último '}'
+        int firstBrace = response.indexOf("{");
+        int lastBrace = response.lastIndexOf("}");
+        if (firstBrace != -1 && lastBrace != -1 && firstBrace < lastBrace) {
+            return response.substring(firstBrace, lastBrace + 1).trim();
+        }
+        
+        return response.trim();
     }
 }

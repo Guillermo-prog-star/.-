@@ -21,8 +21,8 @@ export class ShellComponent {
   public sentinel: SentinelCoreService = inject(SentinelCoreService);
 
   onLogout(): void {
-    // Referencia al contexto local "Nodo Armenia" según tus principios
-    if (confirm('¿Deseas cerrar la sesión en el Nodo Armenia?')) {
+    // Referencia al contexto local "Nodo Central" según tus principios
+    if (confirm('¿Deseas cerrar la sesión en el Nodo Central?')) {
       this.auth.logout();
     }
   }

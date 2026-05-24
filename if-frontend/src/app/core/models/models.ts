@@ -26,22 +26,66 @@ export interface MemberRequest {
 export interface Milestone { milestoneKey: string; label: string; months: number; phase: string; bloque: string; sortOrder: number; }
 
 // Evaluation
-export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+/** Niveles de riesgo que devuelve RISK_ALGO_V1 */
+export type RiskLevel = 'BAJO' | 'MODERADO' | 'ALTO' | 'CRITICO';
+
 export interface EvaluationStartRequest { familyId: number; memberId?: number | null; }
-export interface EvaluationResponse { id: number; familyId: number; memberId: number | null; status: string; startedAt: string; finalizedAt: string | null; }
-export interface AnswerItem { questionId: number; answerValue: number; }
-export interface EvaluationFinalizeRequest { answers: AnswerItem[]; }
+export interface EvaluationResponse {
+  id: number; familyId: number; memberId: number | null;
+  status: string; startedAt: string; finalizedAt: string | null;
+  icf?: number; riskLevel?: string; criticalDimension?: string;
+}
+
+/** Score por dimensión devuelto por RISK_ALGO_V1 */
+export interface DimensionScoreDto {
+  dimension: string;
+  score: number;
+  normalizedScore: number;
+}
+
+/** Resultado enriquecido de RISK_ALGO_V1 (POST /api/assessments/{id}/finalize) */
 export interface EvaluationResultResponse {
-  evaluationId: number; familyId: number; riskLevel: RiskLevel;
-  scoreEmotions: number; scoreCommunication: number; scoreHabits: number; scoreTimes: number;
-  globalScore: number; riskSnapshotId: number; aiReport: string | null;
+  evaluationId: number;
+  familyId: number;
+  riskLevel: string;                // BAJO | MODERADO | ALTO | CRITICO
+  dimensionScores: DimensionScoreDto[];
+  healthyIndex: number;             // ICF 0-100
+  riskSnapshotId?: number;
+  spiritualSynthesis?: string;      // Interpretación cualitativa por rol
   hasCrisis: boolean;
+  simulationSuspected?: boolean;
+  relapseDetected?: boolean;
+  suggestedMissionGenerator?: string;
+  consciousnessLabel?: string;      // Plena | Madura | Consciente | Reactiva | Inconsciente
+  consciousnessLevel?: number;      // 1-5
+  relapseFlags?: string[];
+  mirrorFlags?: string[];
 }
 export interface QuestionResponse { id: number; questionText: string; dimension: string; bloque: string; }
-export interface EvaluationHistory { id: number; familyId: number; memberId: number|null; memberName: string|null; status: string; startedAt: string; finalizedAt: string|null; }
 
-// Risk
-export interface RiskHistory { id: number; evaluationId: number; riskLevel: RiskLevel; scoreEmotions: number; scoreCommunication: number; scoreHabits: number; scoreTimes: number; globalScore: number; createdAt: string; }
+/** Resumen de una evaluación del historial familiar (GET /assessments/family/{id}/history) */
+export interface EvaluationHistory {
+  id: number;
+  familyId: number;
+  memberId: number | null;
+  memberName?: string | null;
+  status: string;              // STARTED | FINALIZED | CANCELLED
+  startedAt: string;
+  finalizedAt: string | null;
+  icf?: number | null;
+  riskLevel?: string | null;
+  criticalDimension?: string | null;
+}
+
+/** Punto del timeline evolutivo (GET /assessments/family/{id}/timeline) */
+export interface TimelineEntryDto {
+  evaluationId: number;
+  finalizedAt: string | null;
+  healthyIndex: number;
+  riskLevel: string;
+  criticalDimension?: string | null;
+  algorithmVersion?: string;
+}
 
 // Plan
 export interface PlanTaskStep {
@@ -68,6 +112,12 @@ export interface PlanTask {
   evidenciaRequerida?: string;
   impactoIcf?: number;
   steps?: PlanTaskStep[];
+  // --- Taxonomía Longitudinal v2 ---
+  pillarName?: string;
+  milestoneCode?: string;
+  memberType?: string;
+  riskType?: string;
+  missionGenerator?: string;
 }
 export interface Plan { id: number; familyId: number; evaluationId: number; title: string; description: string; aiReport: string|null; aiGeneratedAt: string|null; status: string; vision3y?: string; tasks: PlanTask[]; }
 

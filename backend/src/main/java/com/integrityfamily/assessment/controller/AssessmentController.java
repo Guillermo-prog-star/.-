@@ -275,6 +275,11 @@ public class AssessmentController {
         return ResponseEntity.ok(ApiResponse.ok(result.algoResult()));
     }
 
+    @GetMapping("/resilience-check")
+    public ResponseEntity<String> getResilienceCheck() {
+        return ResponseEntity.ok("RESILIENCE_PATCH_ACTIVE_2026_05_24_V1");
+    }
+
     private EvaluationDtos.EvaluationResponse mapToResponse(Evaluation evaluation) {
         return new EvaluationDtos.EvaluationResponse(
             evaluation.getId(),

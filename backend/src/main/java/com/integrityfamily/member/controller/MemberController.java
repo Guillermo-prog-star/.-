@@ -65,7 +65,14 @@ public class MemberController {
         com.integrityfamily.domain.User user = userRepository.findByEmail(auth.getName())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        com.integrityfamily.domain.Family family = user.getFamily();
+        com.integrityfamily.domain.Family family = null;
+        if (request.familyId() != null) {
+            family = familyRepository.findById(request.familyId()).orElse(null);
+        }
+        
+        if (family == null) {
+            family = user.getFamily();
+        }
         
         if (family == null) {
             log.warn("[MEMBER-AUTH] Usuario {} sin vínculo. Intentando recuperación por dueño...", auth.getName());

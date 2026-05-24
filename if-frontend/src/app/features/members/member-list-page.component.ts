@@ -36,7 +36,12 @@ export class MemberListPageComponent implements OnInit {
   }
 
   load() {
-    this.http.get<any>(`${this.api.base}/members/mine`)
+    const id = this.familyId;
+    const url = id 
+      ? `${this.api.base}/members/family/${id}`
+      : `${this.api.base}/members/mine`;
+
+    this.http.get<any>(url)
       .subscribe({
         next: ({ data }) => {
           const list: Member[] = data ?? [];
@@ -69,7 +74,8 @@ export class MemberListPageComponent implements OnInit {
       roleType: this.role, 
       age: this.age,
       autonomyLevel: this.aut, 
-      responsibilityLevel: this.resp 
+      responsibilityLevel: this.resp,
+      familyId: this.familyId
     };
 
     console.log('[SDD-MEMBER] Payload:', payload);

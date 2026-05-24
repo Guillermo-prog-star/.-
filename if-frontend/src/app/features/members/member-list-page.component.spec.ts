@@ -12,7 +12,7 @@ import { FamilyStateService } from '../../core/services/family-state.service';
 
 const API_BASE = '/api';
 
-function buildComponent(signalFamilyId = 42) {
+function buildComponent(signalFamilyId = 0) {
   // currentFamilyId es un Signal<number>; usamos signal() real para satisfacer el tipo Angular.
   const familyStateSpy = jasmine.createSpyObj<FamilyStateService>(
     'FamilyStateService',

@@ -7,17 +7,24 @@ import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
 import { MemberListPageComponent } from './member-list-page.component';
 import { ApiService } from '../../core/services/api.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { AuthService } from '../../core/services/auth.service';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 const API_BASE = '/api';
 
-function buildComponent(signalFamilyId = 0) {
+function buildComponent(signalFamilyId = 0, role: 'ADMIN' | 'USER' = 'USER') {
   // currentFamilyId es un Signal<number>; usamos signal() real para satisfacer el tipo Angular.
   const familyStateSpy = jasmine.createSpyObj<FamilyStateService>(
     'FamilyStateService',
     ['setFamily', 'clearFamily'],
     { currentFamilyId: signal(signalFamilyId) }
+  );
+
+  const authServiceSpy = jasmine.createSpyObj<AuthService>(
+    'AuthService',
+    ['logout'],
+    { user: signal({ role } as any) }
   );
 
   TestBed.configureTestingModule({
@@ -27,7 +34,8 @@ function buildComponent(signalFamilyId = 0) {
       provideHttpClient(),
       provideHttpClientTesting(),
       { provide: ApiService, useValue: { base: API_BASE } as ApiService },
-      { provide: FamilyStateService, useValue: familyStateSpy }
+      { provide: FamilyStateService, useValue: familyStateSpy },
+      { provide: AuthService, useValue: authServiceSpy }
     ],
     schemas: [NO_ERRORS_SCHEMA]
   });
@@ -38,7 +46,7 @@ function buildComponent(signalFamilyId = 0) {
   const router    = TestBed.inject(Router);
   spyOn(router, 'navigate').and.returnValue(Promise.resolve(true));
 
-  return { fixture, component, httpMock, router, familyStateSpy };
+  return { fixture, component, httpMock, router, familyStateSpy, authServiceSpy };
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -278,6 +286,42 @@ describe('MemberListPageComponent', () => {
       component.goToEvaluation();
 
       expect(router.navigate).toHaveBeenCalledWith(['/evaluations/start']);
+      httpMock.verify();
+    }));
+  });
+
+  // ═══════════════════════════════════════════════════════════════════════
+  //  Admin Auto-Connect Protocol
+  // ═══════════════════════════════════════════════════════════════════════
+
+  describe('Admin Auto-Connect Protocol', () => {
+    it('si es ADMIN y no tiene familia activa, consulta familias y carga miembros', fakeAsync(() => {
+      const { fixture, component, httpMock, familyStateSpy } = buildComponent(0, 'ADMIN');
+      fixture.detectChanges();
+
+      const req = httpMock.expectOne(`${API_BASE}/families`);
+      expect(req.request.method).toBe('GET');
+      req.flush({
+        data: [{ id: 12, name: 'Rozo Henao', familyCode: 'ROZO-12' }]
+      });
+      tick();
+
+      expect(familyStateSpy.setFamily).toHaveBeenCalledWith({ id: 12, name: 'Rozo Henao', familyCode: 'ROZO-12' });
+      
+      httpMock.expectOne(`${API_BASE}/members/mine`).flush({ data: [] });
+      tick();
+
+      httpMock.verify();
+    }));
+
+    it('si es ADMIN y no hay familias, redirige a /families/create', fakeAsync(() => {
+      const { fixture, component, httpMock, router } = buildComponent(0, 'ADMIN');
+      fixture.detectChanges();
+
+      httpMock.expectOne(`${API_BASE}/families`).flush({ data: [] });
+      tick();
+
+      expect(router.navigate).toHaveBeenCalledWith(['/families/create']);
       httpMock.verify();
     }));
   });

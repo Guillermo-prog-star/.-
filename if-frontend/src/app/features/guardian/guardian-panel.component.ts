@@ -243,7 +243,7 @@ export class GuardianPanelComponent implements OnInit, OnChanges {
   ngOnChanges() { if (this.familyId) this.load(); }
 
   load() {
-    if (!this.familyId) return;
+    if (!this.familyId || this.familyId === 0) return;
     this.guardianSvc.getStatus(this.familyId, this.currentMemberId).subscribe({
       next: s => this.status = s,
       error: () => {}

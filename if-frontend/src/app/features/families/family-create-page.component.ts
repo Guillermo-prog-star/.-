@@ -60,9 +60,9 @@ export class FamilyCreatePageComponent implements OnInit {
         this.familyState.setFamily(family);
         console.log('✅ Familia creada y seleccionada:', family.name);
         
-        // Redirigir a la elección del Guardián Familiar (onboarding emocional)
-        this.router.navigate(['/guardian', family.id, 'election']).then(() => {
-          console.log('🌱 Redirigiendo a elección del Guardián Familiar');
+        // Navegar a Miembros primero — el Guardián se elige DESPUÉS de añadir integrantes
+        this.router.navigateByUrl('/members').then(() => {
+          console.log('🚀 Familia creada → redirigiendo a Miembros para completar el núcleo familiar');
         });
       },
       error: (e) => { 

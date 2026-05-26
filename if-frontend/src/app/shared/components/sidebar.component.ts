@@ -64,7 +64,10 @@ import { filter } from 'rxjs/operators';
         <a routerLink="/logbook"   class="nav-item" routerLinkActive="active"><span class="icon">📔</span> 6. Bitácora</a>
         <a routerLink="/gratitude" class="nav-item" routerLinkActive="active"><span class="icon">💖</span> 7. Gratitud</a>
         <a routerLink="/my-space"  class="nav-item" routerLinkActive="active"><span class="icon">🔒</span> 8. Mi Espacio</a>
-        
+        <a [routerLink]="guardianRoute" class="nav-item guardian-nav" routerLinkActive="active">
+          <span class="icon">🌱</span> 9. Guardián Familiar
+        </a>
+
         <div class="divider"></div>
         <a routerLink="/cognitive" class="nav-item" routerLinkActive="active"><span class="icon">🧠</span> Sistema Cognitivo</a>
         <a routerLink="/chat"   class="nav-item" routerLinkActive="active"><span class="icon">✨</span> Consultor IA</a>
@@ -108,6 +111,11 @@ import { filter } from 'rxjs/operators';
     .nav-sub.active { background: rgba(99, 102, 241, 0.08) !important; color: #818cf8 !important; border: 1px solid rgba(99, 102, 241, 0.15); opacity: 1; }
     .bullet { font-size: 11px; transition: color 0.3s; width: 12px; text-align: center; color: rgba(255,255,255,0.3); }
     .nav-sub.active .bullet { color: #818cf8; }
+    .guardian-nav { border: 1px solid rgba(129,140,248,0.15); }
+    .guardian-nav:hover { border-color: rgba(129,140,248,0.4); }
+    .guardian-nav.active { border-color: rgba(129,140,248,0.4) !important; }
+    .crisis-btn { color: rgba(255,68,68,0.7); }
+    .crisis-btn:hover { color: #ff4444; background: rgba(255,68,68,0.08); }
   `]
 })
 export class SidebarComponent implements OnInit {
@@ -119,6 +127,12 @@ export class SidebarComponent implements OnInit {
   user = this.authService.user;
 
   isDiagnosticExpanded = false;
+
+  /** Ruta dinámica a la pantalla de elección del Guardián Familiar */
+  get guardianRoute(): string[] {
+    const familyId = localStorage.getItem('selectedFamilyId') || '0';
+    return ['/guardian', familyId, 'election'];
+  }
 
   ngOnInit() {
     this.checkActiveRoute();

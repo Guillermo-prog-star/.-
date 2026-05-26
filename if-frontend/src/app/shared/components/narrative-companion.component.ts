@@ -14,13 +14,13 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
     }
 
     .companion-card {
-      background: rgba(255, 255, 255, 0.03);
+      background: rgba(15, 23, 42, 0.95); /* Deep slate dark glass for perfect legibility */
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       border-radius: 24px;
       padding: 20px;
-      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.25);
+      box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.3);
       position: relative;
       overflow: hidden;
       transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -28,8 +28,8 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
 
     .companion-card:hover {
       transform: translateY(-4px);
-      border-color: rgba(255, 255, 255, 0.15);
-      box-shadow: 0 20px 48px 0 rgba(99, 102, 241, 0.1);
+      border-color: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 20px 48px 0 rgba(99, 102, 241, 0.15);
     }
 
     .companion-body {
@@ -135,7 +135,7 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
 
     .context-label {
       font-size: 11px;
-      color: rgba(255, 255, 255, 0.4);
+      color: rgba(255, 255, 255, 0.65); /* Increased for perfect contrast */
       font-weight: 600;
       letter-spacing: 0.05em;
       text-transform: uppercase;
@@ -144,7 +144,7 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
     .warm-paragraph {
       font-size: 14px;
       line-height: 1.5;
-      color: rgba(255, 255, 255, 0.85);
+      color: rgba(255, 255, 255, 0.98); /* Crystal clear legibility */
       font-weight: 500;
       letter-spacing: -0.01em;
       animation: text-slide-up 0.4s ease-out;
@@ -193,16 +193,16 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
     .group-title {
       font-size: 10px;
       font-weight: 700;
-      color: rgba(255, 255, 255, 0.3);
+      color: rgba(255, 255, 255, 0.55); /* Increased contrast */
       text-transform: uppercase;
       letter-spacing: 0.05em;
       min-width: 80px;
     }
 
     .pill-btn {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      color: rgba(255, 255, 255, 0.6);
+      background: rgba(255, 255, 255, 0.05); /* Premium glass background */
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.85); /* Premium contrast ratio */
       padding: 4px 12px;
       border-radius: 99px;
       font-size: 11px;
@@ -281,9 +281,87 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
         max-height: 200px;
       }
     }
+
+    /* Light Theme Adaptive Overrides */
+    .companion-card.light-theme {
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+    }
+
+    .companion-card.light-theme:hover {
+      border-color: rgba(0, 0, 0, 0.15);
+      box-shadow: 0 16px 40px 0 rgba(99, 102, 241, 0.08);
+    }
+
+    .companion-card.light-theme .context-label {
+      color: #000000 !important; /* Solid Black letters for title label as requested */
+      opacity: 0.9;
+    }
+
+    .companion-card.light-theme .warm-paragraph {
+      color: #000000 !important; /* Solid Black letters for message as requested */
+      font-weight: 600;
+    }
+
+    .companion-card.light-theme .controls-toggle {
+      background: rgba(0, 0, 0, 0.04);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      color: #1e293b;
+    }
+
+    .companion-card.light-theme .controls-toggle:hover {
+      background: rgba(0, 0, 0, 0.08);
+      color: #000;
+    }
+
+    .companion-card.light-theme .group-title {
+      color: #475569;
+    }
+
+    .companion-card.light-theme .pill-btn {
+      background: rgba(0, 0, 0, 0.03);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      color: #1e293b;
+    }
+
+    .companion-card.light-theme .pill-btn:hover {
+      background: rgba(0, 0, 0, 0.08);
+      color: #000;
+    }
+
+    .companion-card.light-theme .pill-btn.active {
+      background: rgba(99, 102, 241, 0.12);
+      border-color: rgba(99, 102, 241, 0.4);
+      color: #4f46e5;
+    }
+
+    .companion-card.light-theme .pill-btn.active.color-calma {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #059669;
+    }
+
+    .companion-card.light-theme .pill-btn.active.color-estres {
+      background: rgba(239, 68, 68, 0.12);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #dc2626;
+    }
+
+    .companion-card.light-theme .pill-btn.active.color-agotamiento {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #d97706;
+    }
+
+    .companion-card.light-theme .pill-btn.active.color-cercania {
+      background: rgba(168, 85, 247, 0.12);
+      border-color: rgba(168, 85, 247, 0.4);
+      color: #7c3aed;
+    }
   `],
   template: `
-    <div class="companion-card">
+    <div class="companion-card" [class.light-theme]="isLightTheme">
       <div class="companion-body">
         <!-- Floating Convi Orb -->
         <div class="convi-avatar" [ngClass]="avatarClass"></div>
@@ -380,6 +458,10 @@ export class NarrativeCompanionComponent {
 
   get narrative(): NarrativeContent {
     return this.ngeService.getContent(this.module);
+  }
+
+  get isLightTheme(): boolean {
+    return this.module === 'my-space';
   }
 
   // Visual classes computations

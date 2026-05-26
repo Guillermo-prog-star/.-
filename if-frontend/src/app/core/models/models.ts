@@ -7,7 +7,8 @@ export interface RegisterRequest { fullName: string; email: string; password: st
 export interface Family {
   id: number; name: string; description: string; familyCode: string;
   currentMilestone: string; municipio: string; whatsapp: string;
-  createdByUserId: number; createdByName: string;
+  pin?: string; sentinelActive?: boolean;
+  members?: any[];
 }
 export interface FamilyCreateRequest { name: string; description: string; municipio?: string; whatsapp?: string; pin?: string; }
 
@@ -85,6 +86,10 @@ export interface TimelineEntryDto {
   riskLevel: string;
   criticalDimension?: string | null;
   algorithmVersion?: string;
+  /** IF-TOS: EMERGING | STABLE | ESCALATING | CRITICAL | RECOVERING | RESOLVED */
+  operationalState?: string | null;
+  /** IF-SUM: incertidumbre estructural total 0.0–1.0 */
+  uncertaintyTotal?: number | null;
 }
 
 // Plan
@@ -153,6 +158,74 @@ export interface RiskHistory {
   consciousnessLevel?: number;
   hasCrisis?: boolean;
   createdAt: string; 
+}
+
+// IF-Scanner
+/** Registro de inferencia formal (GET /api/scanner/family/{id}/inferences) */
+export interface InferenceRecordDto {
+  id: number;
+  evaluationId: number;
+  inferenceKey: string;
+  epistemicState: string;          // INFERRED | STABILIZED | REVISED | DEPRECATED
+  operationalState: string | null; // IF-TOS
+  icfValue: number;
+  riskLevel: string;
+  criticalDimension: string | null;
+  uncertaintyTotal: number | null; // IF-SUM 0.0–1.0
+  simulationSuspected: boolean | null;
+  evidenceHash: string | null;     // IF-CIS: SHA-256 determinístico
+  createdAt: string;
+}
+
+/** Regla emocional EEDSL (GET /api/admin/eedsl) */
+export interface EmotionalRuleDto {
+  id: number;
+  ruleKey: string;
+  version: number;
+  active: boolean;
+  milestoneScope: string;
+  memberRole: string;
+  requiredSignals: string[];
+  temporalWindowDays: number;
+  projectionLabel: string | null;
+  confidenceBase: number;
+  riskOutput: string | null;
+  createdBy: string;
+  createdAt: string;
+}
+
+export interface EmotionalRuleRequest {
+  ruleKey: string;
+  milestoneScope?: string;
+  memberRole?: string;
+  requiredSignals?: string[];
+  temporalWindowDays?: number;
+  projectionLabel?: string;
+  confidenceBase?: number;
+  riskOutput?: string;
+}
+
+/** Estado operacional actual (GET /api/scanner/family/{id}/state) */
+export interface OperationalStateDto {
+  familyId: number;
+  operationalState: string;
+  label: string;
+  description: string;
+}
+
+/** Alerta clínica generada por IF-ALT */
+export interface FamilyAlertDto {
+  id: number;
+  familyId: number;
+  alertType: string;  // CONSECUTIVE_HIGH_RISK | CRITICAL_STATE_SUSTAINED | SIMULATION_REPEAT | RELAPSE_CONFIRMED | MULTI_RULE_ACTIVATION
+  severity: string;   // LOW | MEDIUM | HIGH | CRITICAL
+  title: string;
+  detail: string | null;
+  inferenceKey: string | null;
+  evaluationId: number | null;
+  resolved: boolean;
+  resolvedAt: string | null;
+  createdAt: string;
 }
 
 // Chat

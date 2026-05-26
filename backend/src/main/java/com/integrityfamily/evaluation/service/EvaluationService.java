@@ -21,6 +21,13 @@ import com.integrityfamily.cognitive.service.FamilySkillEngine;
 import com.integrityfamily.cognitive.service.FamilyReflectionService;
 import com.integrityfamily.cognitive.service.NarrativeEvolutionEngine;
 import com.integrityfamily.cognitive.service.FamilyIdentityGraphService;
+import com.integrityfamily.scanner.domain.InferenceRecord;
+import com.integrityfamily.scanner.domain.RuleActivation;
+import com.integrityfamily.scanner.repository.InferenceRecordRepository;
+import com.integrityfamily.scanner.service.AlertEngine;
+import com.integrityfamily.scanner.service.DeterministicExplanationPipeline;
+import com.integrityfamily.scanner.service.InferenceRecordService;
+import com.integrityfamily.scanner.service.RuleExecutionEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -59,6 +66,11 @@ public class EvaluationService {
     private final FamilyReflectionService familyReflectionService;
     private final NarrativeEvolutionEngine narrativeEvolutionEngine;
     private final FamilyIdentityGraphService familyIdentityGraphService;
+    private final DeterministicExplanationPipeline explanationPipeline;
+    private final InferenceRecordService inferenceRecordService;
+    private final InferenceRecordRepository inferenceRecordRepository;
+    private final RuleExecutionEngine ruleExecutionEngine;
+    private final AlertEngine alertEngine;
 
     public List<Evaluation> findAll() {
         return evaluationRepository.findAll();
@@ -197,13 +209,45 @@ public class EvaluationService {
                     existing.getFamily().getId(), algo.relapseFlags());
         }
 
-        // Adaptación al Nuevo Modelo: Diagnóstico Consciente
-        generateConsciousInterpretation(existing);
+        // IF-DEP: Síntesis determinística (reemplaza interpretación generativa)
+        String memberRole = existing.getMember() != null ? existing.getMember().getRole() : null;
+        existing.setSpiritualSynthesis(explanationPipeline.buildFamiliarNarrative(algo, memberRole));
 
         Evaluation saved = evaluationRepository.save(existing);
-        log.info("[EVALUATION-ALGO] Evaluacion persistida. {}", algo.summary());
+        log.info("[EVALUATION-ALGO] Evaluacion persistida. {} | {}", algo.summary(),
+                explanationPipeline.buildTechnicalSummary(algo));
 
-        processPostFinalization(saved);
+        // IF-CIS: Registro de inferencia epistemológicamente estable (ICF_CALC base)
+        try {
+            inferenceRecordService.createFromEvaluation(saved, algo);
+        } catch (Exception e) {
+            log.error("⚠️ [IF-CIS] Error al crear InferenceRecord (no bloqueante): {}", e.getMessage());
+        }
+
+        // IF-REE: Ejecutar reglas EEDSL y registrar activaciones como InferenceRecords adicionales
+        List<RuleActivation> activations = List.of();
+        try {
+            activations = ruleExecutionEngine.evaluateRules(algo, saved, memberRole);
+            for (RuleActivation activation : activations) {
+                try {
+                    inferenceRecordService.createFromRule(saved, algo, activation);
+                } catch (Exception ex) {
+                    log.warn("⚠️ [IF-REE] Error persistiendo activación de regla {} (no bloqueante): {}",
+                            activation.ruleKey(), ex.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("⚠️ [IF-REE] Error en motor de reglas EEDSL (no bloqueante): {}", e.getMessage());
+        }
+
+        // IF-ALT: Detectar patrones clínicos críticos y generar alertas
+        try {
+            alertEngine.evaluate(saved, algo, activations);
+        } catch (Exception e) {
+            log.error("⚠️ [IF-ALT] Error en motor de alertas (no bloqueante): {}", e.getMessage());
+        }
+
+        processPostFinalization(saved, algo);
 
         // Construir respuesta enriquecida con todos los campos del engine
         EvaluationDtos.EvaluationResultResponse richResult = new EvaluationDtos.EvaluationResultResponse(
@@ -229,64 +273,34 @@ public class EvaluationService {
         return new EvaluationDtos.FinalizeResult(saved, richResult);
     }
 
-    /**
-     * Genera una interpretación cualitativa basada en el rol del miembro y el resultado,
-     * alineada con el modelo de "Sistema de Evolución Consciente".
-     */
-    private void generateConsciousInterpretation(Evaluation evaluation) {
-        if (evaluation.getMember() == null) return;
-        
-        String role = evaluation.getMember().getRole();
-        if (role == null) return;
-        
-        log.info("🧠 [DIAGNOSTICO-CONSCIENTE] Interpretando resultado para rol: {}", role);
-        StringBuilder synthesis = new StringBuilder();
-        synthesis.append("[DIAGNÓSTICO CONSCIENTE]\n");
-        
-        switch (role.toUpperCase()) {
-            case "PADRE":
-                synthesis.append("Foco: Liderazgo emocional y presencia física consciente.\n");
-                if (evaluation.getIcf() < 60) {
-                    synthesis.append("Recomendación: Espacios de escucha activa para reducir el estrés y la desconexión.");
-                }
-                break;
-            case "MADRE":
-                synthesis.append("Foco: Distribución de la carga mental y autocuidado.\n");
-                if (evaluation.getIcf() < 60) {
-                    synthesis.append("Recomendación: Delegar tareas y buscar apoyo emocional en la familia.");
-                }
-                break;
-            case "ADOLESCENTE":
-                synthesis.append("Foco: Expresión emocional segura y pertenencia.\n");
-                synthesis.append("Recomendación: Evitar la imposición; fomentar la participación voluntaria.");
-                break;
-            case "NINO":
-            case "NIÑO":
-                synthesis.append("Foco: Hábitos positivos y juego consciente.\n");
-                synthesis.append("Recomendación: Rutinas divertidas y seguridad emocional.");
-                break;
-            default:
-                synthesis.append("Foco: Seguimiento adaptativo general.");
-                break;
-        }
-        
-        evaluation.setSpiritualSynthesis(synthesis.toString());
-        log.info("💡 Síntesis generada: {}", synthesis.toString().replace("\n", " | "));
-    }
-
     @Transactional(readOnly = true)
     public List<EvaluationDtos.TimelineEntryDto> getTimeline(Long familyId) {
+        // Cargar InferenceRecords en un Map para lookup O(1) por evaluationId
+        Map<Long, InferenceRecord> inferenceByEvalId =
+                inferenceRecordRepository.findByFamilyIdOrderByCreatedAtDesc(familyId)
+                        .stream()
+                        .collect(Collectors.toMap(
+                                InferenceRecord::getEvaluationId,
+                                ir -> ir,
+                                (a, b) -> a   // conservar el más reciente en caso de duplicados
+                        ));
+
         return evaluationRepository.findByFamilyId(familyId).stream()
                 .filter(e -> e.getStatus() == EvaluationStatus.FINALIZED)
                 .sorted(Comparator.comparing(Evaluation::getFinalizedAt).reversed())
-                .map(e -> new EvaluationDtos.TimelineEntryDto(
-                        e.getId(),
-                        e.getFinalizedAt(),
-                        e.getIcf(),
-                        e.getRiskLevel() != null ? e.getRiskLevel() : "MODERADO",
-                        e.getCriticalDimension() != null ? e.getCriticalDimension() : "comunicacion",
-                        e.getAlgorithmVersion() != null ? e.getAlgorithmVersion() : "RISK_ALGO_V1"
-                ))
+                .map(e -> {
+                    InferenceRecord ir = inferenceByEvalId.get(e.getId());
+                    return new EvaluationDtos.TimelineEntryDto(
+                            e.getId(),
+                            e.getFinalizedAt(),
+                            e.getIcf(),
+                            e.getRiskLevel() != null ? e.getRiskLevel() : "MODERADO",
+                            e.getCriticalDimension() != null ? e.getCriticalDimension() : "comunicacion",
+                            e.getAlgorithmVersion() != null ? e.getAlgorithmVersion() : "RISK_ALGO_V1",
+                            ir != null ? ir.getOperationalState() : null,
+                            ir != null ? ir.getUncertaintyTotal() : null
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
@@ -314,10 +328,10 @@ public class EvaluationService {
         eval.getDimensionScores().add(ds);
 
         Evaluation saved = evaluationRepository.save(eval);
-        processPostFinalization(saved);
+        processPostFinalization(saved, null);
     }
 
-    private void processPostFinalization(Evaluation saved) {
+    private void processPostFinalization(Evaluation saved, RiskAlgoV1Engine.AlgoResult algo) {
         String riskLevel = saved.getRiskLevel() != null ? saved.getRiskLevel() : "MODERADO";
         try {
             com.integrityfamily.domain.RiskSnapshot snapshot = riskService.calculateAndCreate(saved.getFamily(), saved.getIcf(), saved.getHasCrisis());

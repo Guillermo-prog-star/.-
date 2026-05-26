@@ -206,6 +206,48 @@ public class RiskAlgoV1Engine {
         // ── Misión sugerida ───────────────────────────────────────────────────
         String missionGen = MISSION_BY_DIM.getOrDefault(criticalDim, "ESTABILIZACION_EMOCIONAL");
 
+        // ── IF-SUM: Vector de incertidumbre estructural ───────────────────────
+        int nonMirrorProcessed = answers.size() - mirrorAnsweredCount;
+
+        // U_o: cuestionario incompleto (esperado: 18 preguntas no-MIRROR)
+        double uObservational = nonMirrorProcessed >= 18 ? 0.05
+                : Math.max(0.0, 1.0 - (nonMirrorProcessed / 18.0));
+
+        // U_s: sospecha de simulación (escala: ratio perfecto → 0.0-0.80)
+        double uSemantic = mirrorAnsweredCount > 0
+                ? Math.min(0.80, (double) mirrorPerfectCount / mirrorAnsweredCount * 0.80)
+                : 0.05;
+
+        // U_c: ambigüedad de contexto (decrece conforme la familia avanza)
+        double uContextual = switch (phase) {
+            case "inconsciente" -> 0.30;
+            case "reactivo"     -> 0.20;
+            case "consciente"   -> 0.10;
+            case "pleno"        -> 0.05;
+            default             -> 0.25;
+        };
+
+        // U_i: contradicción interna — ICF aparentemente saludable pero señales de recaída
+        double uInferential = (!relapseFlags.isEmpty() && icf >= 65.0)
+                ? Math.min(0.60, relapseFlags.size() * 0.12)
+                : 0.05;
+
+        // U_t: variabilidad temporal base (enriquecible post-hoc con días desde última eval)
+        double uTemporal = 0.10;
+
+        double uTotal = Math.min(1.0, Math.round(
+                (uSemantic * 0.25 + uContextual * 0.15 + uTemporal * 0.15
+                 + uObservational * 0.25 + uInferential * 0.20) * 100.0) / 100.0);
+
+        UncertaintyVector uncertainty = new UncertaintyVector(
+                Math.round(uSemantic      * 100.0) / 100.0,
+                Math.round(uContextual    * 100.0) / 100.0,
+                uTemporal,
+                Math.round(uObservational * 100.0) / 100.0,
+                Math.round(uInferential   * 100.0) / 100.0,
+                uTotal
+        );
+
         AlgoResult result = new AlgoResult(
                 dimensionScores,
                 icf,
@@ -217,13 +259,15 @@ public class RiskAlgoV1Engine {
                 consciousnessLbl,
                 consciousnessInt,
                 relapseFlags,
-                mirrorFlags
+                mirrorFlags,
+                uncertainty
         );
 
         log.info("[RISK_ALGO_V1] Resultado: ICF={} | Riesgo={} | CritDim={} | Fase={} | " +
-                "Simulacion={} | Recaida={} | Mision={}",
+                "Simulacion={} | Recaida={} | Mision={} | Incertidumbre={}({})",
                 icf, riskLevel, criticalDim, phase,
-                simulationSuspected, !relapseFlags.isEmpty(), missionGen);
+                simulationSuspected, !relapseFlags.isEmpty(), missionGen,
+                uncertainty.total(), uncertainty.level());
 
         return result;
     }
@@ -262,9 +306,11 @@ public class RiskAlgoV1Engine {
     private AlgoResult buildEmptyResult(String phase) {
         Map<String, Double> empty = new LinkedHashMap<>();
         DIMENSIONS.forEach(d -> empty.put(d, 50.0)); // Score neutro, no perfecto
+        // Alta incertidumbre observacional: cuestionario vacío
+        UncertaintyVector neutralU = new UncertaintyVector(0.05, 0.25, 0.10, 1.00, 0.05, 0.40);
         return new AlgoResult(empty, 50.0, "MODERADO", "emociones",
                 false, false, "ESTABILIZACION_EMOCIONAL", "Reactiva", 4,
-                List.of(), List.of());
+                List.of(), List.of(), neutralU);
     }
 
     private String normalizeDimension(String raw) {
@@ -276,19 +322,52 @@ public class RiskAlgoV1Engine {
     // ─── Resultado ─────────────────────────────────────────────────────────────
 
     /**
+     * IF-SUM: Vector de incertidumbre estructural (0.0 – 1.0 por componente).
+     *
+     * La incertidumbre es una propiedad ontológica del dominio emocional, no ruido.
+     * total > 0.40 → alta; total > 0.50 → reduce la proyección de riesgo.
+     *
+     * Componentes:
+     *   semantic      — múltiples interpretaciones posibles (simulación detectada)
+     *   contextual    — ambigüedad de fase/hito (inconsciente tiene más)
+     *   temporal      — variabilidad emocional (base 0.10; enriquecible post-hoc)
+     *   observational — señales incompletas (cuestionario parcialmente respondido)
+     *   inferential   — contradicción interna (ICF alto con señales de recaída)
+     */
+    public record UncertaintyVector(
+            double semantic,
+            double contextual,
+            double temporal,
+            double observational,
+            double inferential,
+            double total
+    ) {
+        /** true si la incertidumbre total es tan alta que reduce la proyección de riesgo. */
+        public boolean reducesRisk() { return total > 0.50; }
+        /** true si la incertidumbre merece advertencia narrativa al usuario. */
+        public boolean isHigh()      { return total > 0.40; }
+        public String level() {
+            if (total < 0.15) return "LOW";
+            if (total < 0.35) return "MEDIUM";
+            return "HIGH";
+        }
+    }
+
+    /**
      * Resultado inmutable del algoritmo RISK_ALGO_V1.
      *
-     * @param dimensionScores       score 0-100 por dimensión (ponderado por severityWeight)
-     * @param healthyIndex          ICF global 0-100
-     * @param riskLevel             BAJO | MODERADO | ALTO | CRITICO
-     * @param criticalDimension     dimensión con menor puntuación
-     * @param simulationSuspected   >60% de preguntas MIRROR con valor 5 (perfección irreal)
-     * @param relapseDetected       al menos una pregunta detectsRelapse con valor ≤ 2
+     * @param dimensionScores           score 0-100 por dimensión (ponderado por severityWeight)
+     * @param healthyIndex              ICF global 0-100
+     * @param riskLevel                 BAJO | MODERADO | ALTO | CRITICO
+     * @param criticalDimension         dimensión con menor puntuación
+     * @param simulationSuspected       >60% de preguntas MIRROR con valor 5 (perfección irreal)
+     * @param relapseDetected           al menos una pregunta detectsRelapse con valor ≤ 2
      * @param suggestedMissionGenerator misión automática recomendada para el plan
-     * @param consciousnessLabel    etiqueta del nivel de consciencia familiar
-     * @param consciousnessLevel    nivel 1 (Plena) – 5 (Inconsciente)
-     * @param relapseFlags          claves de preguntas que dispararon alerta de recaída
-     * @param mirrorFlags           claves de preguntas MIRROR con respuesta perfecta sospechosa
+     * @param consciousnessLabel        etiqueta del nivel de consciencia familiar
+     * @param consciousnessLevel        nivel 1 (Plena) – 5 (Inconsciente)
+     * @param relapseFlags              claves de preguntas que dispararon alerta de recaída
+     * @param mirrorFlags               claves de preguntas MIRROR con respuesta perfecta sospechosa
+     * @param uncertainty               IF-SUM: vector estructural de incertidumbre del diagnóstico
      */
     public record AlgoResult(
             Map<String, Double> dimensionScores,
@@ -301,7 +380,8 @@ public class RiskAlgoV1Engine {
             String consciousnessLabel,
             int consciousnessLevel,
             List<String> relapseFlags,
-            List<String> mirrorFlags
+            List<String> mirrorFlags,
+            UncertaintyVector uncertainty
     ) {
         public boolean hasCrisis() {
             return "CRITICO".equals(riskLevel) || "ALTO".equals(riskLevel);

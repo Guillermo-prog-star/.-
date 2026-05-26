@@ -2,6 +2,30 @@
 -- V16 — Taxonomía Longitudinal v2 en Preguntas y Tareas Clínicas
 -- =====================================================================
 
+CREATE TABLE IF NOT EXISTS questions (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    question_key VARCHAR(255) UNIQUE,
+    text VARCHAR(500) NOT NULL,
+    dimension VARCHAR(50),
+    area VARCHAR(50),
+    direction VARCHAR(20) DEFAULT 'POSITIVE',
+    version VARCHAR(20) DEFAULT '1.0',
+    active BOOLEAN DEFAULT TRUE,
+    vertice INT,
+    weight INT DEFAULT 1,
+    sort_order INT,
+    pillar VARCHAR(50),
+    phase VARCHAR(50),
+    type VARCHAR(50),
+    severity_weight DOUBLE,
+    detects_relapse BOOLEAN,
+    requires_evidence BOOLEAN,
+    reverse_question BOOLEAN,
+    category VARCHAR(100),
+    adaptive_triggers VARCHAR(255),
+    evidence_type VARCHAR(50)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 DROP PROCEDURE IF EXISTS EvolveQuestionsAndTasksV16;
 
 DELIMITER //

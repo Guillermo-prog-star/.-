@@ -1,3 +1,6 @@
+# === Scratch / Diagnósticos (contienen credenciales) ===
+scratch/
+
 # === IDEs (Limpieza de IntelliJ y Windsurf) ===
 .idea/
 *.iml

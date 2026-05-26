@@ -49,3 +49,313 @@
   border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
 }
+
+/* ── IF-TOS Banner ── */
+.tos-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 28px;
+  border-radius: 20px;
+  gap: 16px;
+}
+
+.tos-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.tos-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  border: 1px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.tos-info { display: flex; flex-direction: column; gap: 3px; }
+
+.tos-tag {
+  font-size: 9px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.tos-label {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.tos-desc {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.tos-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.tos-badge {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  display: inline-block;
+}
+
+.tos-link {
+  font-size: 12px;
+  font-weight: 700;
+  color: #818cf8;
+  text-decoration: none;
+  transition: color 0.2s;
+  white-space: nowrap;
+}
+.tos-link:hover { color: #a5b4fc; }
+
+/* Variantes de color del badge */
+.tos-emerging   { background: rgba(148,163,184,0.12); color: #94a3b8; border: 1px solid rgba(148,163,184,0.25); }
+.tos-stable     { background: rgba(96,165,250,0.12);  color: #60a5fa; border: 1px solid rgba(96,165,250,0.25); }
+.tos-escalating { background: rgba(249,115,22,0.15);  color: #f97316; border: 1px solid rgba(249,115,22,0.3); animation: tosPulse 2s infinite; }
+.tos-critical   { background: rgba(239,68,68,0.18);   color: #ef4444; border: 1px solid rgba(239,68,68,0.4);  animation: tosPulse 1.5s infinite; }
+.tos-recovering { background: rgba(34,211,238,0.12);  color: #22d3ee; border: 1px solid rgba(34,211,238,0.25); }
+.tos-resolved   { background: rgba(52,211,153,0.12);  color: #34d399; border: 1px solid rgba(52,211,153,0.25); }
+
+@keyframes tosPulse {
+  0%, 100% { box-shadow: 0 0 0 0 currentColor; }
+  50%       { box-shadow: 0 0 0 4px transparent; }
+}
+
+@media (max-width: 640px) {
+  .tos-banner { flex-direction: column; align-items: flex-start; }
+  .tos-right  { width: 100%; justify-content: space-between; }
+}
+
+/* ── [WHATSAPP-ACTIVATION-MODAL] ── */
+.whatsapp-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(8, 12, 24, 0.7);
+  backdrop-filter: blur(12px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.whatsapp-modal-card {
+  max-width: 480px;
+  width: 100%;
+  border-radius: 2rem;
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(25px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
+}
+
+.modal-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.lock-icon {
+  font-size: 28px;
+  filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.4));
+}
+
+.whatsapp-modal-card h3 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.modal-intro {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.5;
+  margin-bottom: 28px;
+}
+
+.benefits-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 32px 0;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.benefits-list li {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.check-icon {
+  font-size: 16px;
+  color: #10b981;
+  font-weight: 800;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.benefits-list li div {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.4;
+}
+
+.benefits-list li strong {
+  color: rgba(255, 255, 255, 0.85);
+  display: block;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.input-section {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 28px;
+}
+
+.input-section label {
+  font-size: 10px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.phone-input-wrapper {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  padding: 0 16px;
+  transition: all 0.3s ease;
+}
+
+.phone-input-wrapper:focus-within {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.country-prefix {
+  font-size: 14px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  margin-right: 12px;
+  user-select: none;
+}
+
+.phone-input-wrapper input {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  width: 100%;
+  padding: 14px 0;
+  outline: none;
+  letter-spacing: 0.5px;
+}
+
+.phone-input-wrapper input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.error-msg {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ef4444;
+  margin-top: 6px;
+  padding-left: 4px;
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.btn-activate {
+  width: 100%;
+  padding: 16px;
+  border-radius: 1rem;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-activate:hover:not(:disabled) {
+  background: #4f46e5;
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(99, 102, 241, 0.25);
+}
+
+.btn-activate:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-dismiss {
+  width: 100%;
+  padding: 14px;
+  border-radius: 1rem;
+  font-size: 13px;
+  font-weight: 700;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-dismiss:hover {
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.8);
+}

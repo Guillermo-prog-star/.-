@@ -81,7 +81,7 @@ public class Question {
     @Column(name = "pillar_name", length = 50)
     private String pillarName; // reconocimiento / amor / entrega
 
-    @Column(name = "milestone_code", length = 20)
+    @Column(name = "milestone_code", length = 50)
     private String milestoneCode; // W1 / M1 / M3 / M6 / M9 / M12 / M18 / M24 / M30 / M36
 
     @Column(name = "member_type", length = 50)

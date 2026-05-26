@@ -1,0 +1,285 @@
+<div class="vis-container">
+
+  <!-- ── Encabezado ── -->
+  <header class="vis-header">
+    <div class="header-left">
+      <div class="vis-tag">IF-VIS · ANALÍTICA CLÍNICA</div>
+      <h1>Panel Clínico</h1>
+      <p class="subtitle">Patrones longitudinales · <strong>Familia {{ familyName }}</strong></p>
+    </div>
+    <div class="header-right">
+      <button class="btn-export" (click)="exportCsv()" [disabled]="loading() || totalEvaluations() === 0" title="Exportar panel clínico como CSV">⬇ CSV</button>
+      <a routerLink="/evaluations/inferences" class="btn-nav">🔬 Inferencias</a>
+      <a routerLink="/evaluations/evolution"  class="btn-nav">← Evolución</a>
+    </div>
+  </header>
+
+  <!-- ── Carga ── -->
+  <div class="loading-state" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Cargando datos clínicos...</p>
+  </div>
+
+  <ng-container *ngIf="!loading()">
+
+    <!-- ── KPI Strip ── -->
+    <div class="kpi-strip glass">
+      <div class="kpi-item">
+        <span class="kpi-val" [style.color]="icfColor(latestIcf())">
+          {{ latestIcf() | number:'1.0-1' }}
+        </span>
+        <span class="kpi-label">ICF Actual</span>
+      </div>
+      <div class="kpi-sep"></div>
+      <div class="kpi-item">
+        <span class="kpi-val" [style.color]="icfDeltaColor()">
+          {{ icfDeltaIcon() }} {{ icfDeltaStr() }}
+        </span>
+        <span class="kpi-label">Δ vs anterior</span>
+      </div>
+      <div class="kpi-sep"></div>
+      <div class="kpi-item">
+        <span class="kpi-val">{{ totalEvaluations() }}</span>
+        <span class="kpi-label">Evaluaciones</span>
+      </div>
+      <div class="kpi-sep"></div>
+      <div class="kpi-item">
+        <span class="kpi-val" [style.color]="stateColor(latestTosState())">
+          {{ stateLabel(latestTosState()) }}
+        </span>
+        <span class="kpi-label">Estado IF-TOS</span>
+      </div>
+      <div class="kpi-sep"></div>
+      <div class="kpi-item">
+        <span class="kpi-val" [style.color]="uncertaintyColor(avgUncertainty())">
+          {{ (avgUncertainty() * 100).toFixed(0) }}%
+        </span>
+        <span class="kpi-label">Incertidumbre media</span>
+      </div>
+    </div>
+
+    <!-- ── Gráfico de Tendencia ICF ── -->
+    <div class="chart-card glass">
+      <div class="chart-header">
+        <div class="chart-title">Tendencia del Índice de Confianza Familiar</div>
+        <div class="chart-subtitle">
+          Evolución longitudinal · bandas de riesgo · franja de incertidumbre IF-SUM · puntos coloreados por estado IF-TOS
+        </div>
+      </div>
+
+      <ng-container *ngIf="icfChart() as chart; else noChart">
+        <svg [attr.viewBox]="'0 0 ' + chart.W + ' ' + chart.H" class="icf-svg">
+
+          <!-- Bandas de riesgo -->
+          <rect *ngFor="let b of chart.bands"
+                [attr.x]="chart.PL" [attr.y]="b.from"
+                [attr.width]="chart.UW" [attr.height]="b.to - b.from"
+                [attr.fill]="b.color"/>
+
+          <!-- Líneas de cuadrícula -->
+          <path [attr.d]="chart.gridPath"
+                stroke="rgba(255,255,255,0.06)" stroke-width="1" fill="none"/>
+
+          <!-- Franja de incertidumbre IF-SUM -->
+          <path [attr.d]="chart.uncertaintyPath"
+                fill="rgba(99,102,241,0.10)" stroke="none"/>
+
+          <!-- Área bajo la línea -->
+          <defs>
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#6366f1" stop-opacity="0.28"/>
+              <stop offset="100%" stop-color="#6366f1" stop-opacity="0.02"/>
+            </linearGradient>
+          </defs>
+          <path [attr.d]="chart.areaPath" fill="url(#areaGrad)" stroke="none"/>
+
+          <!-- Línea principal -->
+          <path [attr.d]="chart.linePath"
+                stroke="#818cf8" stroke-width="2.5" fill="none"
+                stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- Puntos por evaluación (color = estado IF-TOS) -->
+          <g *ngFor="let c of chart.coords; trackBy: trackByEvalId">
+            <circle [attr.cx]="c.x" [attr.cy]="c.y" r="4.5"
+                    [attr.fill]="stateColor(c.tos)"
+                    stroke="#0f172a" stroke-width="1.5"/>
+            <text [attr.x]="c.x" [attr.y]="c.y - 9"
+                  text-anchor="middle" font-size="9"
+                  fill="rgba(255,255,255,0.55)">
+              {{ c.icf | number:'1.0-0' }}
+            </text>
+          </g>
+
+          <!-- Etiquetas eje Y -->
+          <g *ngFor="let yl of chart.yLabels">
+            <text [attr.x]="chart.PL - 5" [attr.y]="yl.y + 4"
+                  text-anchor="end" font-size="9" fill="rgba(255,255,255,0.3)">
+              {{ yl.label }}
+            </text>
+            <line [attr.x1]="chart.PL - 3" [attr.y1]="yl.y"
+                  [attr.x2]="chart.PL"     [attr.y2]="yl.y"
+                  stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+          </g>
+
+          <!-- Eje X base -->
+          <line [attr.x1]="chart.PL"            [attr.y1]="chart.PT + chart.UH"
+                [attr.x2]="chart.PL + chart.UW" [attr.y2]="chart.PT + chart.UH"
+                stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+
+          <!-- IDs de evaluación en eje X -->
+          <g *ngFor="let c of chart.coords; trackBy: trackByEvalId; let idx = index">
+            <text *ngIf="chart.coords.length <= 10 || idx % 2 === 0"
+                  [attr.x]="c.x" [attr.y]="chart.PT + chart.UH + 16"
+                  text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.25)">
+              #{{ c.evalId }}
+            </text>
+          </g>
+
+        </svg>
+
+        <!-- Leyenda -->
+        <div class="chart-legend">
+          <span class="legend-item">
+            <span class="legend-dot" style="background:#22c55e"></span>Bajo &gt;70
+          </span>
+          <span class="legend-item">
+            <span class="legend-dot" style="background:#fbbf24"></span>Moderado 40–70
+          </span>
+          <span class="legend-item">
+            <span class="legend-dot" style="background:#f97316"></span>Alto 20–40
+          </span>
+          <span class="legend-item">
+            <span class="legend-dot" style="background:#ef4444"></span>Crítico &lt;20
+          </span>
+          <span class="legend-item">
+            <span class="legend-band" style="background:rgba(99,102,241,0.35)"></span>
+            Incertidumbre IF-SUM
+          </span>
+        </div>
+      </ng-container>
+
+      <ng-template #noChart>
+        <p class="empty-chart">Sin evaluaciones finalizadas para visualizar.</p>
+      </ng-template>
+    </div>
+
+    <!-- ── Fila central: Radar + Trayectoria IF-TOS ── -->
+    <div class="mid-row">
+
+      <!-- Radar de Dimensiones -->
+      <div class="chart-card glass radar-card">
+        <div class="chart-title">Radar de Dimensiones</div>
+        <div class="chart-subtitle">Última evaluación (azul) · anterior (gris punteado)</div>
+
+        <ng-container *ngIf="radarChart() as radar; else noRadar">
+          <svg viewBox="0 0 220 220" class="radar-svg">
+
+            <!-- Anillos de cuadrícula -->
+            <polygon *ngFor="let ring of radar.rings; let ri = index"
+                     [attr.points]="ring" fill="none"
+                     [attr.stroke]="ri === 3 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)'"
+                     [attr.stroke-width]="ri === 3 ? 1.5 : 1"/>
+
+            <!-- Ejes -->
+            <line *ngFor="let ax of radar.axes"
+                  [attr.x1]="radar.cx" [attr.y1]="radar.cy"
+                  [attr.x2]="ax.x2"   [attr.y2]="ax.y2"
+                  stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+
+            <!-- Evaluación anterior (fantasma) -->
+            <polygon *ngIf="radar.prevPoints"
+                     [attr.points]="radar.prevPoints"
+                     fill="none" stroke="rgba(255,255,255,0.18)"
+                     stroke-width="1.5" stroke-dasharray="4,3"/>
+
+            <!-- Evaluación actual -->
+            <polygon [attr.points]="radar.dataPoints"
+                     fill="rgba(99,102,241,0.22)" stroke="#818cf8" stroke-width="2.5"/>
+
+            <!-- Centro -->
+            <circle [attr.cx]="radar.cx" [attr.cy]="radar.cy" r="3" fill="#6366f1"/>
+
+          </svg>
+
+          <!-- Puntuaciones por dimensión -->
+          <div class="dim-list">
+            <div class="dim-row" *ngFor="let d of radar.dims; trackBy: trackByKey">
+              <span class="dim-label">{{ d.label }}</span>
+              <div class="dim-bar-track">
+                <div class="dim-bar-fill"
+                     [style.width]="(+d.value / 5 * 100).toFixed(0) + '%'"
+                     [style.background]="d.color"></div>
+              </div>
+              <span class="dim-val" [style.color]="d.color">{{ d.value }}</span>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-template #noRadar>
+          <p class="empty-chart">Sin datos de dimensiones disponibles.</p>
+        </ng-template>
+      </div>
+
+      <!-- Trayectoria IF-TOS -->
+      <div class="chart-card glass tos-card">
+        <div class="chart-title">Trayectoria IF-TOS</div>
+        <div class="chart-subtitle">
+          Últimas {{ tosHistory().length }} transiciones de estado operacional familiar
+        </div>
+
+        <div class="tos-timeline" *ngIf="tosHistory().length > 0; else noTos">
+          <div class="tos-entry" *ngFor="let t of tosHistory(); let last = last">
+            <div class="tos-dot-col">
+              <div class="tos-dot"
+                   [style.background]="stateColor(t.state)"
+                   [style.box-shadow]="'0 0 8px ' + stateColor(t.state) + '55'"></div>
+              <div class="tos-connector" *ngIf="!last"></div>
+            </div>
+            <div class="tos-info">
+              <span class="tos-state-name" [ngClass]="stateClass(t.state)">
+                {{ stateGlyph(t.state) }} {{ stateLabel(t.state) }}
+              </span>
+              <div class="tos-meta">
+                <span>Eval #{{ t.evalId }}</span>
+                <span>ICF {{ t.icf | number:'1.0-1' }}</span>
+                <span>{{ formatDateShort(t.date) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <ng-template #noTos>
+          <p class="empty-chart">Sin historial de estados IF-TOS aún.</p>
+        </ng-template>
+      </div>
+
+    </div>
+
+    <!-- ── Reglas EEDSL activadas (IF-REE) ── -->
+    <div class="chart-card glass" *ngIf="ruleActivations().length > 0">
+      <div class="chart-title">Activaciones de Reglas EEDSL (IF-REE)</div>
+      <div class="chart-subtitle">
+        Reglas emocionales activadas con mayor frecuencia en el historial de inferencias
+      </div>
+      <div class="rule-bars">
+        <div class="rule-bar-row" *ngFor="let r of ruleActivations(); trackBy: trackByKey">
+          <span class="rule-bar-label">{{ r.label }}</span>
+          <div class="rule-bar-track">
+            <div class="rule-bar-fill" [style.width]="r.pct + '%'"></div>
+          </div>
+          <span class="rule-bar-count">{{ r.count }}×</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Sin datos ── -->
+    <div class="empty-state glass"
+         *ngIf="!loading() && totalEvaluations() === 0">
+      <div class="empty-icon">📊</div>
+      <h3>Sin datos de evaluación</h3>
+      <p>Completa al menos una evaluación para visualizar el panel clínico.</p>
+      <a routerLink="/evaluations/start" class="btn-primary">+ Iniciar Evaluación</a>
+    </div>
+
+  </ng-container>
+</div>

@@ -44,6 +44,7 @@ public class AssessmentController {
      * Familias que aún tienen el valor "MES_00_DIAGNOSTICO" arrancan en W1.
      */
     private static final Map<String, String> MILESTONE_ALIAS = Map.of(
+        "MES_00_DIAGNOSTICO_BASE", "W1",
         "MES_00_DIAGNOSTICO", "W1",
         "M00", "W1",
         "MES_01", "M1",

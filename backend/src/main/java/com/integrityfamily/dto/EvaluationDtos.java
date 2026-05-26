@@ -83,7 +83,11 @@ public class EvaluationDtos {
                         Double healthyIndex,
                         String riskLevel,
                         String criticalDimension,
-                        String algorithmVersion) {
+                        String algorithmVersion,
+                        /** IF-TOS: EMERGING|STABLE|ESCALATING|CRITICAL|RECOVERING|RESOLVED */
+                        String operationalState,
+                        /** IF-SUM: incertidumbre total 0.0–1.0 */
+                        Double uncertaintyTotal) {
         }
 
         // ── Flujo incremental (mobile-first) ──────────────────────────────────

@@ -99,4 +99,14 @@ export class AssessmentService {
       `${this.api.base}/assessments/family/${familyId}/timeline`
     ).pipe(map(r => r.data ?? []));
   }
+
+  /**
+   * 8. Historial de puntuaciones por dimensión (normalizadas).
+   *    GET /api/analytics/family/${familyId}/dimension-history
+   */
+  getDimensionHistory(familyId: number): Observable<any[]> {
+    return this.http.get<ApiResponse<any[]>>(
+      `${this.api.base}/analytics/family/${familyId}/dimension-history`
+    ).pipe(map(r => r.data ?? []));
+  }
 }

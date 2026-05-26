@@ -1,4 +1,11 @@
 <div class="my-space-container">
+  <!-- Back navigation button -->
+  <div style="margin-bottom: 1.5rem; display: flex; justify-content: flex-start;">
+    <a routerLink="/plans" class="btn-back" style="display: inline-flex; align-items: center; gap: 8px; color: #1a2a6c; font-weight: 700; text-decoration: none; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
+      ← Volver a Planes de Trabajo
+    </a>
+  </div>
+
   <header class="section-header">
     <h1>Mi Espacio</h1>
     <p>Tu bitácora privada de evolución consciente. Lo que escribes aquí es solo para ti.</p>
@@ -75,6 +82,13 @@
           </div>
           <div class="entry-content">
             <p>{{entry.content}}</p>
+          </div>
+          <div class="entry-footer" style="margin-top: 1.25rem; display: flex; justify-content: flex-end; border-top: 1px dashed rgba(26, 42, 108, 0.08); padding-top: 0.75rem;">
+            <button type="button" (click)="deleteEntry(entry.id)"
+                    style="background: none; border: 1px solid rgba(220,53,69,0.3); color: #dc3545; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;"
+                    title="Eliminar esta entrada">
+              🗑 Eliminar
+            </button>
           </div>
         </div>
       </div>

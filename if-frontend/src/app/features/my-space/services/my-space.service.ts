@@ -17,4 +17,8 @@ export class MySpaceService {
   createEntry(entry: any): Observable<any> {
     return this.http.post<any>(`${this.api.base}/private/journals`, entry);
   }
+
+  deleteEntry(id: number): Observable<any> {
+    return this.http.delete<any>(`${this.api.base}/private/journals/${id}`);
+  }
 }

@@ -303,7 +303,7 @@ public class MilestoneService {
 
     /** Normaliza hitos legado al formato v2 */
     private String normalizedMilestone(String raw) {
-        if (raw == null || raw.isBlank() || "MES_00_DIAGNOSTICO".equals(raw) || "M00".equals(raw))
+        if (raw == null || raw.isBlank() || "MES_00_DIAGNOSTICO_BASE".equals(raw) || "MES_00_DIAGNOSTICO".equals(raw) || "M00".equals(raw))
             return "W1";
         return raw;
     }

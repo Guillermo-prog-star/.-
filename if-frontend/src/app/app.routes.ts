@@ -62,7 +62,9 @@ export const routes: Routes = [
         children: [
           { path: 'start',   title: 'Nueva Evaluación',    loadComponent: () => import('./features/evaluation/evaluation-start-page.component').then(m => m.EvaluationStartPageComponent) },
           { path: 'history', title: 'Historial de Diagnósticos', loadComponent: () => import('./features/evaluation/evaluation-history-page.component').then(m => m.EvaluationHistoryPageComponent) },
-          { path: 'evolution', redirectTo: 'history', pathMatch: 'full' },
+          { path: 'evolution', title: 'Evolución Clínica', loadComponent: () => import('./features/evaluation/evaluation-evolution-page.component').then(m => m.EvaluationEvolutionPageComponent) },
+          { path: 'inferences', title: 'Trazabilidad Epistémica', loadComponent: () => import('./features/scanner/inference-history-page.component').then(m => m.InferenceHistoryPageComponent) },
+          { path: 'analytics',  title: 'Panel Clínico IF-VIS',  loadComponent: () => import('./features/scanner/scanner-analytics-page.component').then(m => m.ScannerAnalyticsPageComponent) },
           { path: ':id/form',   loadComponent: () => import('./features/evaluation/evaluation.component').then(m => m.EvaluationComponent) },
           { path: ':id/result', loadComponent: () => import('./features/evaluation/evaluation-result-page.component').then(m => m.EvaluationResultPageComponent) }
         ]
@@ -75,7 +77,8 @@ export const routes: Routes = [
         children: [
           { path: 'stats', loadComponent: () => import('./features/admin/stats/stats.component').then(m => m.StatsComponent) },
           { path: 'voice-monitor', loadComponent: () => import('./features/admin/voice-monitor/voice-monitor.component').then(m => m.VoiceMonitorComponent) },
-          { path: 'sandbox', loadComponent: () => import('./features/admin/sandbox/sandbox.component').then(m => m.SandboxComponent) }
+          { path: 'sandbox', loadComponent: () => import('./features/admin/sandbox/sandbox.component').then(m => m.SandboxComponent) },
+          { path: 'eedsl', title: 'Reglas EEDSL', loadComponent: () => import('./features/admin/emotional-rules/emotional-rules-page.component').then(m => m.EmotionalRulesPageComponent) }
         ]
       },
 

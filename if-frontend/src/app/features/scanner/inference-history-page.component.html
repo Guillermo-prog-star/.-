@@ -1,0 +1,214 @@
+<div class="scanner-container">
+
+  <!-- ── Encabezado ── -->
+  <header class="scan-header">
+    <div class="header-left">
+      <div class="scan-tag">IF-SCANNER · TRAZABILIDAD EPISTÉMICA</div>
+      <h1>Historial de Inferencias</h1>
+      <p class="subtitle">Registros formales del motor diagnóstico para <strong>Familia {{ familyName }}</strong></p>
+    </div>
+    <div class="header-right">
+      <button class="btn-export" (click)="exportCsv()" [disabled]="loading() || inferences().length === 0" title="Exportar historial como CSV">⬇ CSV</button>
+      <a routerLink="/evaluations/analytics" class="btn-back">📊 Panel Clínico</a>
+      <a routerLink="/evaluations/evolution" class="btn-back">← Evolución</a>
+      <a routerLink="/evaluations/history"   class="btn-back">📋 Historial</a>
+    </div>
+  </header>
+
+  <!-- ── Carga ── -->
+  <div class="loading-state" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Cargando registros epistémicos del nodo central...</p>
+  </div>
+
+  <ng-container *ngIf="!loading()">
+
+    <!-- ── Estado operacional actual ── -->
+    <div class="state-hero glass" *ngIf="currentState()">
+      <div class="state-hero-icon" [style.background]="stateColor(currentState()!.operationalState) + '22'"
+           [style.border-color]="stateColor(currentState()!.operationalState) + '44'">
+        <span class="state-icon-glyph">{{ stateGlyph(currentState()!.operationalState) }}</span>
+      </div>
+      <div class="state-hero-info">
+        <div class="state-hero-label">Estado Operacional Actual (IF-TOS)</div>
+        <div class="state-hero-name" [style.color]="stateColor(currentState()!.operationalState)">
+          {{ currentState()!.label }}
+        </div>
+        <div class="state-hero-desc">{{ currentState()!.description }}</div>
+      </div>
+      <div class="state-hero-badge">
+        <span class="state-badge" [ngClass]="stateClass(currentState()!.operationalState)">
+          {{ currentState()!.operationalState }}
+        </span>
+      </div>
+    </div>
+
+    <!-- ── Alertas IF-ALT ── -->
+    <div class="alerts-section" *ngIf="alerts().length > 0">
+      <div class="alerts-header">
+        <h3 class="alerts-title">Alertas Clínicas Activas (IF-ALT)</h3>
+        <span class="alerts-count">{{ alerts().length }}</span>
+      </div>
+      <div class="alert-item glass" *ngFor="let alert of alerts()"
+           [ngClass]="alertSeverityClass(alert.severity)">
+        <div class="alert-left">
+          <span class="alert-icon">{{ alertSeverityIcon(alert.severity) }}</span>
+          <div class="alert-body">
+            <div class="alert-type-label">{{ alertTypeLabel(alert.alertType) }}</div>
+            <div class="alert-title">{{ alert.title }}</div>
+            <div class="alert-detail" *ngIf="alert.detail">{{ alert.detail }}</div>
+          </div>
+        </div>
+        <button class="btn-resolve" (click)="resolveAlert(alert.id)" title="Marcar como resuelta">
+          ✓ Resolver
+        </button>
+      </div>
+    </div>
+
+    <!-- ── KPIs ── -->
+    <div class="kpi-row">
+      <div class="kpi-chip glass">
+        <span class="kpi-chip-label">Inferencias totales</span>
+        <span class="kpi-chip-value">{{ totalInferences() }}</span>
+      </div>
+      <div class="kpi-chip glass">
+        <span class="kpi-chip-label">Último ICF</span>
+        <span class="kpi-chip-value" [style.color]="icfColor(latestIcf())">{{ latestIcf() | number:'1.0-1' }}<span class="kpi-chip-unit">/100</span></span>
+      </div>
+      <div class="kpi-chip glass">
+        <span class="kpi-chip-label">Incertidumbre actual</span>
+        <span class="kpi-chip-value" [style.color]="uncertaintyColor(latestUncert())">
+          {{ uncertaintyPct(latestUncert()) }}
+          <span class="kpi-chip-unit">{{ uncertaintyLabel(latestUncert()) }}</span>
+        </span>
+      </div>
+      <div class="kpi-chip glass">
+        <span class="kpi-chip-label">Estabilizadas</span>
+        <span class="kpi-chip-value text-purple">{{ stabilizedCount() }}</span>
+      </div>
+      <div class="kpi-chip glass">
+        <span class="kpi-chip-label">Reglas EEDSL</span>
+        <span class="kpi-chip-value text-ree">{{ ruleCount() }}</span>
+      </div>
+    </div>
+
+    <!-- ── Sin datos ── -->
+    <div class="empty-state glass" *ngIf="inferences().length === 0">
+      <div class="empty-icon">🔬</div>
+      <h3>Sin inferencias registradas</h3>
+      <p>El motor diagnóstico genera un registro al finalizar cada evaluación.</p>
+      <a routerLink="/evaluations/start" class="btn-primary">+ Iniciar Evaluación</a>
+    </div>
+
+    <!-- ── Timeline de Inferencias ── -->
+    <section class="timeline-section" *ngIf="inferences().length > 0">
+      <div class="timeline-header">
+        <h2>Registro Cronológico</h2>
+        <p class="timeline-sub">{{ totalInferences() }} inferencias · más reciente primero</p>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-line"></div>
+
+        <div class="timeline-item" *ngFor="let rec of inferences(); let i = index">
+          <!-- Nodo de la línea de tiempo -->
+          <div class="timeline-node" [style.background]="accentColor(rec)" [style.box-shadow]="'0 0 12px ' + accentColor(rec) + '66'"></div>
+
+          <!-- Tarjeta de inferencia -->
+          <div class="inf-card glass" [class.expanded]="expandedId() === rec.id"
+               [style.border-left-color]="accentColor(rec)">
+
+            <!-- Cabecera de la tarjeta -->
+            <div class="inf-card-header" (click)="toggleExpand(rec.id)" style="cursor: pointer;">
+              <div class="inf-card-meta">
+                <span class="inf-index">#{{ totalInferences() - i }}</span>
+                <span class="inf-date">{{ formatDateShort(rec.createdAt) }}</span>
+                <span class="ep-badge" [ngClass]="epistemicClass(rec.epistemicState)">
+                  {{ epistemicLabel(rec.epistemicState) }}
+                </span>
+                <span class="ree-badge" *ngIf="isRuleActivation(rec)" title="Activación por regla EEDSL">
+                  ⚡ {{ ruleLabel(rec.inferenceKey) }}
+                </span>
+              </div>
+              <div class="inf-card-kpis">
+                <span class="inf-icf" [style.color]="icfColor(rec.icfValue)">
+                  ICF {{ rec.icfValue | number:'1.0-1' }}
+                </span>
+                <span class="badge" [ngClass]="riskClass(rec.riskLevel)">{{ riskLabel(rec.riskLevel) }}</span>
+                <span class="state-badge sm" [ngClass]="stateClass(rec.operationalState)">
+                  {{ stateLabel(rec.operationalState) }}
+                </span>
+                <span class="expand-icon">{{ expandedId() === rec.id ? '▲' : '▼' }}</span>
+              </div>
+            </div>
+
+            <!-- Barra de incertidumbre (siempre visible) -->
+            <div class="uncert-bar-wrapper">
+              <div class="uncert-bar-track">
+                <div class="uncert-bar-fill"
+                     [style.width]="uncertaintyBarWidth(rec.uncertaintyTotal)"
+                     [style.background]="uncertaintyColor(rec.uncertaintyTotal)">
+                </div>
+              </div>
+              <span class="uncert-label" [style.color]="uncertaintyColor(rec.uncertaintyTotal)">
+                IF-SUM {{ uncertaintyPct(rec.uncertaintyTotal) }} · {{ uncertaintyLabel(rec.uncertaintyTotal) }}
+              </span>
+            </div>
+
+            <!-- Detalle expandible -->
+            <div class="inf-card-detail" *ngIf="expandedId() === rec.id">
+              <div class="detail-grid">
+                <div class="detail-item">
+                  <span class="detail-label">Evaluación ID</span>
+                  <span class="detail-value">#{{ rec.evaluationId }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Dimensión crítica</span>
+                  <span class="detail-value">{{ rec.criticalDimension ?? '—' }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Fecha registro</span>
+                  <span class="detail-value">{{ formatDate(rec.createdAt) }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Simulación detectada</span>
+                  <span class="detail-value" [style.color]="rec.simulationSuspected ? '#f87171' : '#34d399'">
+                    {{ rec.simulationSuspected ? '⚠ Sí' : '✓ No' }}
+                  </span>
+                </div>
+                <div class="detail-item full-width">
+                  <span class="detail-label">IF-CIS — Hash de evidencia (SHA-256)</span>
+                  <code class="hash-code">{{ rec.evidenceHash ?? '—' }}</code>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Leyenda epistémica ── -->
+    <div class="legend-box glass">
+      <h4>Guía de estados epistémicos (IF-CIS)</h4>
+      <div class="legend-items">
+        <div class="legend-item">
+          <span class="ep-badge ep-inferred">Inferido</span>
+          <span>Diagnóstico recién calculado. Sujeto a revisión con más evaluaciones.</span>
+        </div>
+        <div class="legend-item">
+          <span class="ep-badge ep-stabilized">Estabilizado</span>
+          <span>Confirmado por múltiples evaluaciones consistentes.</span>
+        </div>
+        <div class="legend-item">
+          <span class="ep-badge ep-revised">Revisado</span>
+          <span>Actualizado por nueva evidencia que modifica el diagnóstico anterior.</span>
+        </div>
+        <div class="legend-item">
+          <span class="ep-badge ep-deprecated">Obsoleto</span>
+          <span>Reemplazado por una inferencia más reciente con misma evidencia.</span>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+</div>

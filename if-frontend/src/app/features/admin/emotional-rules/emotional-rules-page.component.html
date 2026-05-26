@@ -1,0 +1,232 @@
+<div class="eedsl-container">
+
+  <!-- ── Encabezado ── -->
+  <header class="eedsl-header">
+    <div class="header-left">
+      <div class="eedsl-tag">IF-EEDSL · MOTOR DE REGLAS EMOCIONALES</div>
+      <h1>Reglas EEDSL</h1>
+      <p class="subtitle">Lenguaje emocional ejecutable — activa, desactiva o crea reglas sin tocar código</p>
+    </div>
+    <div class="header-right">
+      <a routerLink="/admin/stats" class="btn-back">← Admin</a>
+      <button class="btn-primary" (click)="openCreate()">+ Nueva Regla</button>
+    </div>
+  </header>
+
+  <!-- ── KPIs rápidos ── -->
+  <div class="kpi-row">
+    <div class="kpi-chip glass">
+      <span class="kpi-label">Total de reglas</span>
+      <span class="kpi-value">{{ rules().length }}</span>
+    </div>
+    <div class="kpi-chip glass">
+      <span class="kpi-label">Activas</span>
+      <span class="kpi-value text-green">{{ activeCount() }}</span>
+    </div>
+    <div class="kpi-chip glass">
+      <span class="kpi-label">Inactivas</span>
+      <span class="kpi-value text-muted">{{ inactiveCount() }}</span>
+    </div>
+  </div>
+
+  <!-- ── Formulario: Nueva Regla ── -->
+  <div class="rule-form glass" *ngIf="showForm()">
+    <div class="form-header">
+      <h3>Nueva Regla EEDSL</h3>
+      <button class="btn-ghost" (click)="cancelCreate()">✕ Cancelar</button>
+    </div>
+    <ng-container *ngTemplateOutlet="ruleFormTpl"></ng-container>
+  </div>
+
+  <!-- ── Carga ── -->
+  <div class="loading-state" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Cargando reglas del motor emocional...</p>
+  </div>
+
+  <ng-container *ngIf="!loading()">
+
+    <!-- ── Filtros ── -->
+    <div class="filter-bar glass">
+      <div class="filter-group">
+        <span class="filter-label">Estado</span>
+        <div class="filter-pills">
+          <button class="pill" [class.active]="filterStatus() === 'all'"      (click)="filterStatus.set('all')">Todas</button>
+          <button class="pill" [class.active]="filterStatus() === 'active'"   (click)="filterStatus.set('active')">Activas</button>
+          <button class="pill" [class.active]="filterStatus() === 'inactive'" (click)="filterStatus.set('inactive')">Inactivas</button>
+        </div>
+      </div>
+      <div class="filter-group">
+        <span class="filter-label">Rol</span>
+        <div class="filter-pills">
+          <button class="pill" *ngFor="let r of roles"
+                  [class.active]="filterRole() === r"
+                  (click)="filterRole.set(r)">{{ roleLabel(r) }}</button>
+        </div>
+      </div>
+      <span class="filter-count">{{ filtered().length }} resultado{{ filtered().length !== 1 ? 's' : '' }}</span>
+    </div>
+
+    <!-- ── Lista de reglas ── -->
+    <div class="rules-list" *ngIf="filtered().length > 0">
+      <div class="rule-card glass" *ngFor="let rule of filtered()"
+           [class.inactive]="!rule.active"
+           [class.editing]="editingId() === rule.id">
+
+        <!-- Cabecera de la tarjeta -->
+        <div class="rule-card-header">
+          <div class="rule-meta" (click)="toggleExpand(rule.id)" style="cursor:pointer; flex:1">
+            <div class="rule-key-row">
+              <code class="rule-key">{{ rule.ruleKey }}</code>
+              <span class="version-badge">v{{ rule.version }}</span>
+              <span class="by-badge" [ngClass]="createdByClass(rule.createdBy)">{{ rule.createdBy }}</span>
+            </div>
+            <div class="rule-tags">
+              <span class="badge" [ngClass]="riskClass(rule.riskOutput)">{{ rule.riskOutput ?? '—' }}</span>
+              <span class="role-badge">{{ roleLabel(rule.memberRole) }}</span>
+              <span class="scope-badge">{{ rule.milestoneScope }}</span>
+              <span class="window-badge">⏱ {{ rule.temporalWindowDays }}d</span>
+              <span class="conf-value" [style.color]="confidenceColor(rule.confidenceBase)">
+                🎯 {{ confidencePct(rule.confidenceBase) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Acciones -->
+          <div class="rule-actions">
+            <button class="btn-edit" *ngIf="editingId() !== rule.id" (click)="openEdit(rule)">✏️</button>
+            <div class="toggle-wrapper" (click)="toggle(rule)" [title]="rule.active ? 'Desactivar' : 'Activar'">
+              <div class="toggle-track" [class.on]="rule.active">
+                <div class="toggle-thumb"></div>
+              </div>
+              <span class="toggle-label">{{ rule.active ? 'Activa' : 'Inactiva' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Señales requeridas (siempre visibles) -->
+        <div class="signals-row" *ngIf="rule.requiredSignals.length > 0">
+          <span class="signals-label">Señales:</span>
+          <span class="signal-chip" *ngFor="let s of rule.requiredSignals">{{ s }}</span>
+        </div>
+
+        <!-- Proyección (siempre visible si existe) -->
+        <div class="projection-row" *ngIf="rule.projectionLabel">
+          <span class="projection-label">Proyección:</span>
+          <span class="projection-value">{{ rule.projectionLabel }}</span>
+        </div>
+
+        <!-- Formulario de edición inline -->
+        <div class="rule-edit-form" *ngIf="editingId() === rule.id">
+          <div class="form-divider"></div>
+          <ng-container *ngTemplateOutlet="ruleFormTpl"></ng-container>
+          <div class="form-actions">
+            <button class="btn-save" (click)="save()" [disabled]="saving()">
+              {{ saving() ? 'Guardando...' : '✓ Guardar cambios' }}
+            </button>
+            <button class="btn-ghost" (click)="cancelEdit()">Cancelar</button>
+          </div>
+        </div>
+
+        <!-- Detalle expandido -->
+        <div class="rule-detail" *ngIf="expandedId() === rule.id && editingId() !== rule.id">
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Hito scope</span>
+              <span class="detail-value">{{ rule.milestoneScope }}</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Ventana temporal</span>
+              <span class="detail-value">{{ rule.temporalWindowDays }} días</span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Confianza base</span>
+              <div class="conf-bar-wrapper">
+                <div class="conf-bar-track">
+                  <div class="conf-bar-fill" [style.width]="confidencePct(rule.confidenceBase)"
+                       [style.background]="confidenceColor(rule.confidenceBase)"></div>
+                </div>
+                <span [style.color]="confidenceColor(rule.confidenceBase)">{{ confidencePct(rule.confidenceBase) }}</span>
+              </div>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Creado</span>
+              <span class="detail-value">{{ formatDate(rule.createdAt) }}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Sin resultados ── -->
+    <div class="empty-state glass" *ngIf="filtered().length === 0">
+      <div class="empty-icon">🔬</div>
+      <h3>Sin reglas para este filtro</h3>
+      <p>Cambia el filtro o crea una nueva regla EEDSL.</p>
+    </div>
+
+  </ng-container>
+
+</div>
+
+<!-- ── Plantilla del formulario (reutilizable) ── -->
+<ng-template #ruleFormTpl>
+  <div class="form-grid">
+    <div class="form-field">
+      <label>Clave de regla <span class="req">*</span></label>
+      <input [(ngModel)]="form.ruleKey" placeholder="ej: relational_stress"
+             [readonly]="editingId() !== null" class="inp" />
+    </div>
+    <div class="form-field">
+      <label>Proyección emocional</label>
+      <input [(ngModel)]="form.projectionLabel" placeholder="ej: ESTRES_RELACIONAL" class="inp" />
+    </div>
+    <div class="form-field">
+      <label>Rol del miembro</label>
+      <select [(ngModel)]="form.memberRole" class="inp">
+        <option *ngFor="let r of roles" [value]="r">{{ roleLabel(r) }}</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Riesgo inferido</label>
+      <select [(ngModel)]="form.riskOutput" class="inp">
+        <option *ngFor="let r of riskOptions" [value]="r">{{ r }}</option>
+      </select>
+    </div>
+    <div class="form-field">
+      <label>Hito scope</label>
+      <input [(ngModel)]="form.milestoneScope" placeholder="* / W1-M6 / M9-M36" class="inp" />
+    </div>
+    <div class="form-field">
+      <label>Ventana temporal (días)</label>
+      <input [(ngModel)]="form.temporalWindowDays" type="number" min="1" max="365" class="inp" />
+    </div>
+    <div class="form-field">
+      <label>Confianza base (0.0 – 1.0)</label>
+      <input [(ngModel)]="form.confidenceBase" type="number" min="0" max="1" step="0.05" class="inp" />
+    </div>
+    <div class="form-field form-field--full">
+      <label>Señales requeridas</label>
+      <div class="signals-input-row">
+        <input [ngModel]="signalInput()" (ngModelChange)="signalInput.set($event)"
+               (keydown)="onSignalKeydown($event)"
+               placeholder="Escribe y presiona Enter o coma..."
+               class="inp signals-inp" />
+        <button class="btn-add-signal" (click)="addSignal()">+ Añadir</button>
+      </div>
+      <div class="signal-chips" *ngIf="form.requiredSignals && form.requiredSignals.length > 0">
+        <div class="signal-chip removable" *ngFor="let s of form.requiredSignals">
+          {{ s }}
+          <button class="chip-remove" (click)="removeSignal(s)">✕</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="form-actions" *ngIf="showForm()">
+    <button class="btn-save" (click)="save()" [disabled]="saving() || !form.ruleKey.trim()">
+      {{ saving() ? 'Guardando...' : '✓ Crear Regla' }}
+    </button>
+    <button class="btn-ghost" (click)="cancelCreate()">Cancelar</button>
+  </div>
+</ng-template>

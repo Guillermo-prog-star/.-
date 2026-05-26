@@ -3,6 +3,10 @@ package com.integrityfamily.reports.service;
 import com.integrityfamily.analytics.service.SentimentAnalyticsService;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
+import com.integrityfamily.scanner.domain.FamilyAlert;
+import com.integrityfamily.scanner.domain.InferenceRecord;
+import com.integrityfamily.scanner.repository.FamilyAlertRepository;
+import com.integrityfamily.scanner.repository.InferenceRecordRepository;
 import com.itextpdf.kernel.colors.Color;
 import com.itextpdf.kernel.colors.DeviceRgb;
 import com.itextpdf.kernel.colors.ColorConstants;
@@ -44,6 +48,8 @@ public class PdfExportService {
     private final EvaluationRepository evaluationRepository;
     private final UserRepository userRepository;
     private final AuditEventRepository auditEventRepository;
+    private final InferenceRecordRepository inferenceRecordRepository;
+    private final FamilyAlertRepository familyAlertRepository;
 
     // Paleta de Colores Corporativos y Clínicos
     private static final Color PRIMARY_BLUE = new DeviceRgb(28, 40, 65);
@@ -88,7 +94,7 @@ public class PdfExportService {
             // 2. SUMMARY CARDS (Macro-Métricas)
             Table summaryTable = new Table(UnitValue.createPercentArray(new float[]{33, 33, 34})).setWidth(UnitValue.createPercentValue(100));
             summaryTable.addCell(createSummaryCard("FAMILIAS", String.valueOf(report.getMetadata().get("total_familias")), "Nodos Activos"));
-            summaryTable.addCell(createSummaryCard("SCORE GLOBAL", "74.2%", "Índice de Bienestar")); 
+            summaryTable.addCell(createSummaryCard("SCORE GLOBAL", "74%", "Índice de Bienestar")); 
             summaryTable.addCell(createSummaryCard("DISRUPCIONES", String.valueOf(alerts.size()), "Protocolos Sentinel"));
             document.add(summaryTable.setMarginBottom(30));
 
@@ -101,7 +107,7 @@ public class PdfExportService {
 
             for (Map.Entry<String, ReportService.DimensionSummary> entry : report.getConsolidadoDimensiones().entrySet()) {
                 dimTable.addCell(entry.getKey().toUpperCase());
-                dimTable.addCell(entry.getValue().getPromedioScore() + "%");
+                dimTable.addCell((int) entry.getValue().getPromedioScore() + "%");
                 String alertTxt = entry.getValue().getNivelAlerta();
                 Cell alertCell = new Cell().add(new Paragraph(alertTxt));
                 if ("Alto".equalsIgnoreCase(alertTxt)) alertCell.setFontColor(RISK_RED).setBold();
@@ -145,7 +151,7 @@ public class PdfExportService {
 
             for (ReportService.CaseRegistry reg : report.getCasosAltoRiesgo()) {
                 riskTable.addCell(reg.getFamiliaId());
-                riskTable.addCell(new Cell().add(new Paragraph(reg.getPuntuacionTotal() + "%").setFontColor(RISK_RED)));
+                riskTable.addCell(new Cell().add(new Paragraph((int) reg.getPuntuacionTotal() + "%").setFontColor(RISK_RED)));
                 riskTable.addCell(reg.getDimensionCritica());
                 riskTable.addCell(reg.getImpactoDelta());
             }
@@ -246,7 +252,7 @@ public class PdfExportService {
                 Table icfTable = new Table(UnitValue.createPercentArray(new float[]{30, 70})).setWidth(UnitValue.createPercentValue(100));
                 
                 Cell icfMetricCell = new Cell().add(new Paragraph("ICF ACTUAL").setFontSize(8).setBold().setFontColor(ColorConstants.GRAY))
-                        .add(new Paragraph(String.format("%.1f%%", icfValue)).setFontSize(28).setBold().setFontColor(getIcfColor(icfValue)))
+                        .add(new Paragraph(String.format("%.0f%%", icfValue)).setFontSize(28).setBold().setFontColor(getIcfColor(icfValue)))
                         .add(new Paragraph("Sincronizado: " + finalizedStr).setFontSize(6).setFontColor(ColorConstants.GRAY))
                         .setBorder(new SolidBorder(BORDER_GRAY, 1)).setBackgroundColor(LIGHT_GRAY).setPadding(10).setTextAlignment(TextAlignment.CENTER);
                 
@@ -282,7 +288,7 @@ public class PdfExportService {
                 for (String d : coreDims) {
                     double score = scoreMap.getOrDefault(d, 0.0);
                     dimScoresTable.addCell(new Cell().add(new Paragraph(getDimensionFriendlyName(d)).setFontSize(8).setBold()));
-                    dimScoresTable.addCell(new Cell().add(new Paragraph(String.format("%.1f%%", score)).setFontSize(8).setBold().setFontColor(getIcfColor(score))));
+                    dimScoresTable.addCell(new Cell().add(new Paragraph(String.format("%.0f%%", score)).setFontSize(8).setBold().setFontColor(getIcfColor(score))));
                     
                     Cell adaptiveCell = new Cell();
                     if (d.equalsIgnoreCase(criticalDim)) {
@@ -307,8 +313,82 @@ public class PdfExportService {
             modelDescBox.addCell(descCell);
             document.add(modelDescBox.setMarginBottom(25));
 
-            // 6. SECCIÓN IV: AUDITORÍA DE TELEMETRÍA DE LA CONSOLA CLI
-            document.add(new Paragraph("IV. REGISTRO DE TELEMETRÍA DE LA TERMINAL CLI DE LA FAMILIA").setBold().setFontSize(11).setFontColor(PRIMARY_BLUE).setMarginBottom(10));
+            // 6. SECCIÓN IV: DIAGNÓSTICO SCANNER IF-TOS / IF-CIS
+            document.add(new Paragraph("IV. ESTADO OPERACIONAL DEL SCANNER (IF-TOS / IF-CIS)").setBold().setFontSize(11).setFontColor(PRIMARY_BLUE).setMarginBottom(10));
+
+            List<InferenceRecord> inferenceRecords = inferenceRecordRepository.findByFamilyIdOrderByCreatedAtDesc(familyId);
+            List<FamilyAlert> activeAlerts = familyAlertRepository.findByFamilyIdAndResolvedFalseOrderByCreatedAtDesc(familyId);
+
+            if (inferenceRecords.isEmpty()) {
+                Table noScanBox = new Table(1).setWidth(UnitValue.createPercentValue(100));
+                noScanBox.addCell(new Cell().add(new Paragraph("El motor scanner IF-TOS aún no ha procesado ninguna evaluación para este núcleo familiar.")
+                        .setFontSize(8).setItalic().setFontColor(ColorConstants.GRAY).setPadding(10))
+                        .setBackgroundColor(LIGHT_GRAY).setBorder(new SolidBorder(BORDER_GRAY, 1)));
+                document.add(noScanBox.setMarginBottom(20));
+            } else {
+                InferenceRecord latest = inferenceRecords.get(0);
+                String tosState = latest.getOperationalState() != null ? latest.getOperationalState() : "DESCONOCIDO";
+                double uncertainty = latest.getUncertaintyTotal() != null ? latest.getUncertaintyTotal() : 0.0;
+                boolean simSuspected = Boolean.TRUE.equals(latest.getSimulationSuspected());
+
+                Table tosTable = new Table(UnitValue.createPercentArray(new float[]{33, 33, 34})).setWidth(UnitValue.createPercentValue(100));
+
+                Cell tosCell = new Cell().add(new Paragraph("ESTADO IF-TOS").setFontSize(8).setBold().setFontColor(ColorConstants.GRAY))
+                        .add(new Paragraph(tosState).setFontSize(14).setBold().setFontColor(getTosColor(tosState)))
+                        .setBorder(new SolidBorder(BORDER_GRAY, 1)).setBackgroundColor(LIGHT_GRAY).setPadding(10).setTextAlignment(TextAlignment.CENTER);
+
+                Cell uncCell = new Cell().add(new Paragraph("IF-SUM INCERTIDUMBRE").setFontSize(8).setBold().setFontColor(ColorConstants.GRAY))
+                        .add(new Paragraph(String.format("%.0f%%", uncertainty * 100)).setFontSize(14).setBold().setFontColor(uncertainty > 0.30 ? RISK_RED : SUCCESS_GREEN))
+                        .add(new Paragraph(uncertainty > 0.30 ? "Alta variabilidad" : "Señal estable").setFontSize(7).setFontColor(ColorConstants.GRAY))
+                        .setBorder(new SolidBorder(BORDER_GRAY, 1)).setBackgroundColor(LIGHT_GRAY).setPadding(10).setTextAlignment(TextAlignment.CENTER);
+
+                Cell simCell = new Cell().add(new Paragraph("SIMULACIÓN DETECTADA").setFontSize(8).setBold().setFontColor(ColorConstants.GRAY))
+                        .add(new Paragraph(simSuspected ? "SOSPECHA ACTIVA" : "Sin indicios").setFontSize(14).setBold().setFontColor(simSuspected ? RISK_RED : SUCCESS_GREEN))
+                        .setBorder(new SolidBorder(BORDER_GRAY, 1)).setBackgroundColor(LIGHT_GRAY).setPadding(10).setTextAlignment(TextAlignment.CENTER);
+
+                tosTable.addCell(tosCell);
+                tosTable.addCell(uncCell);
+                tosTable.addCell(simCell);
+                document.add(tosTable.setMarginBottom(15));
+
+                // Últimos registros de inferencia IF-CIS
+                document.add(new Paragraph("Historial IF-CIS (últimas inferencias)").setFontSize(9).setBold().setFontColor(PRIMARY_BLUE).setMarginBottom(6));
+                Table cisTable = new Table(UnitValue.createPercentArray(new float[]{20, 20, 20, 20, 20})).setWidth(UnitValue.createPercentValue(100));
+                cisTable.addHeaderCell(new Cell().add(new Paragraph("Clave")).setBackgroundColor(ACCENT_INDIGO).setFontColor(ColorConstants.WHITE).setBold().setFontSize(7));
+                cisTable.addHeaderCell(new Cell().add(new Paragraph("ICF")).setBackgroundColor(ACCENT_INDIGO).setFontColor(ColorConstants.WHITE).setBold().setFontSize(7));
+                cisTable.addHeaderCell(new Cell().add(new Paragraph("Riesgo")).setBackgroundColor(ACCENT_INDIGO).setFontColor(ColorConstants.WHITE).setBold().setFontSize(7));
+                cisTable.addHeaderCell(new Cell().add(new Paragraph("Estado")).setBackgroundColor(ACCENT_INDIGO).setFontColor(ColorConstants.WHITE).setBold().setFontSize(7));
+                cisTable.addHeaderCell(new Cell().add(new Paragraph("Ep. State")).setBackgroundColor(ACCENT_INDIGO).setFontColor(ColorConstants.WHITE).setBold().setFontSize(7));
+                for (InferenceRecord r : inferenceRecords.stream().limit(5).collect(Collectors.toList())) {
+                    cisTable.addCell(new Cell().add(new Paragraph(r.getInferenceKey() != null ? r.getInferenceKey() : "—").setFontSize(7)));
+                    cisTable.addCell(new Cell().add(new Paragraph(r.getIcfValue() != null ? String.format("%.0f%%", r.getIcfValue()) : "—").setFontSize(7)));
+                    cisTable.addCell(new Cell().add(new Paragraph(r.getRiskLevel() != null ? r.getRiskLevel() : "—").setFontSize(7)));
+                    cisTable.addCell(new Cell().add(new Paragraph(r.getOperationalState() != null ? r.getOperationalState() : "—").setFontSize(7)));
+                    cisTable.addCell(new Cell().add(new Paragraph(r.getEpistemicState() != null ? r.getEpistemicState() : "—").setFontSize(7)));
+                }
+                document.add(cisTable.setMarginBottom(15));
+
+                // Alertas activas IF-ALT
+                if (!activeAlerts.isEmpty()) {
+                    document.add(new Paragraph("Alertas IF-ALT activas no resueltas: " + activeAlerts.size()).setFontSize(9).setBold().setFontColor(RISK_RED).setMarginBottom(6));
+                    Table altTable = new Table(UnitValue.createPercentArray(new float[]{30, 50, 20})).setWidth(UnitValue.createPercentValue(100));
+                    altTable.addHeaderCell(new Cell().add(new Paragraph("Tipo")).setBackgroundColor(RISK_RED).setFontColor(ColorConstants.WHITE).setBold().setFontSize(7));
+                    altTable.addHeaderCell(new Cell().add(new Paragraph("Título / Detalle")).setBackgroundColor(RISK_RED).setFontColor(ColorConstants.WHITE).setBold().setFontSize(7));
+                    altTable.addHeaderCell(new Cell().add(new Paragraph("Severidad")).setBackgroundColor(RISK_RED).setFontColor(ColorConstants.WHITE).setBold().setFontSize(7));
+                    for (FamilyAlert alert : activeAlerts.stream().limit(5).collect(Collectors.toList())) {
+                        altTable.addCell(new Cell().add(new Paragraph(alert.getAlertType() != null ? alert.getAlertType() : "—").setFontSize(7)));
+                        String alertText = (alert.getTitle() != null ? alert.getTitle() : "")
+                                + (alert.getDetail() != null ? "\n" + alert.getDetail() : "");
+                        altTable.addCell(new Cell().add(new Paragraph(alertText.isBlank() ? "—" : alertText.trim()).setFontSize(7)));
+                        altTable.addCell(new Cell().add(new Paragraph(alert.getSeverity() != null ? alert.getSeverity() : "—").setFontSize(7).setBold()
+                                .setFontColor("HIGH".equalsIgnoreCase(alert.getSeverity()) || "CRITICAL".equalsIgnoreCase(alert.getSeverity()) ? RISK_RED : ColorConstants.DARK_GRAY)));
+                    }
+                    document.add(altTable.setMarginBottom(20));
+                }
+            }
+
+            // 7. SECCIÓN V: AUDITORÍA DE TELEMETRÍA DE LA CONSOLA CLI
+            document.add(new Paragraph("V. REGISTRO DE TELEMETRÍA DE LA TERMINAL CLI DE LA FAMILIA").setBold().setFontSize(11).setFontColor(PRIMARY_BLUE).setMarginBottom(10));
             
             if (cliEvents.isEmpty()) {
                 Table noCliBox = new Table(1).setWidth(UnitValue.createPercentValue(100));
@@ -403,6 +483,18 @@ public class PdfExportService {
             case "habitos": return "Hábitos & Convivencia Colectiva";
             case "tiempos": return "Tiempos de Conexión Activa";
             default: return dimension.toUpperCase();
+        }
+    }
+
+    private Color getTosColor(String tosState) {
+        if (tosState == null) return ColorConstants.GRAY;
+        switch (tosState.toUpperCase()) {
+            case "CRITICAL":    return RISK_RED;
+            case "ESCALATING":  return new DeviceRgb(245, 158, 11);
+            case "RECOVERING":  return ACCENT_BLUE;
+            case "STABLE":
+            case "RESOLVED":    return SUCCESS_GREEN;
+            default:            return ColorConstants.DARK_GRAY;
         }
     }
 

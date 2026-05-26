@@ -1,1 +1,30 @@
+# Node / Angular
+node_modules/
+dist/
+.angular/
+.npm/
+
+# Vercel
+.vercel/
 .vercel
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# Ambiente
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Claude Code local
+.claude/
+
+# Archivos de prueba
+test-william.txt

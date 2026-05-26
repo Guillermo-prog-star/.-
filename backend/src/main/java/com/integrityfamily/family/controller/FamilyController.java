@@ -35,6 +35,7 @@ public class FamilyController {
 
     /**
      * GET /api/families/mine — Retorna la familia del usuario autenticado.
+     * Devuelve 404 si no tiene familia, para que el cliente muestre el formulario de creación.
      */
     @GetMapping("/mine")
     @Transactional(readOnly = true)
@@ -42,8 +43,9 @@ public class FamilyController {
         if (principal == null) {
             throw new BusinessException("No autenticado", "UNAUTHORIZED", HttpStatus.UNAUTHORIZED);
         }
-        java.util.Optional<FamilyResponse> family = familyService.findByCreatorEmail(principal.getName());
-        return ApiResponse.ok(family.orElse(null), family.isPresent() ? "Familia recuperada" : "Sin familia vinculada");
+        return familyService.findByCreatorEmail(principal.getName())
+                .map(f -> ApiResponse.ok(f, "Familia recuperada"))
+                .orElseThrow(() -> new BusinessException("Sin familia vinculada", "NO_FAMILY", HttpStatus.NOT_FOUND));
     }
 
     @GetMapping("/{id}")

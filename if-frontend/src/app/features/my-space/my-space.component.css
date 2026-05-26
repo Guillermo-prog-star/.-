@@ -234,3 +234,14 @@
   padding: 2rem;
   color: #555;
 }
+
+/* Premium Back Button & Clickable Card Animations */
+.btn-back:hover {
+  color: #b21f1f !important;
+  transform: translateX(-4px);
+}
+
+.entry-card:hover .return-text {
+  color: #b21f1f !important;
+  transform: translateX(4px);
+}

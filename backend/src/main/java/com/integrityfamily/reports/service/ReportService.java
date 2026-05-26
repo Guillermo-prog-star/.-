@@ -69,15 +69,15 @@ public class ReportService {
 
             // Calcular Delta de Mejora General
             double delta = calculateDelta(preTest.getIcf(), postTest.getIcf());
-            double currentScorePercent = postTest.getIcf() * 20; // Convertir escala 1-5 a 0-100%
+            double currentScorePercent = postTest.getIcf(); // Ya está en escala 0-100%
 
-            // Acumular puntuaciones por dimensiÃƒÂ³n (Mapeo a categorÃƒÂ­as institucionales)
+            // Acumular puntuaciones por dimensión (Mapeo a categorías institucionales)
             postTest.getDimensionScores().forEach(ds -> {
                 String mappedDim = mapToInstitutionalDimension(ds.getDimensionName());
-                dimensionScoresMap.computeIfAbsent(mappedDim, k -> new ArrayList<>()).add(ds.getScore() * 20);
+                dimensionScoresMap.computeIfAbsent(mappedDim, k -> new ArrayList<>()).add(ds.getScore()); // Ya está en escala 0-100%
             });
 
-            // Detectar Casos CrÃƒÂ­ticos (Algoritmo de SemÃƒÂ¡foro)
+            // Detectar Casos Críticos (Algoritmo de Semáforo)
             if (currentScorePercent < 50) {
                 String criticalDim = postTest.getDimensionScores().stream()
                         .min(Comparator.comparing(ds -> ds.getScore()))
@@ -88,7 +88,7 @@ public class ReportService {
                         .familiaId(family.getFamilyCode())
                         .puntuacionTotal(currentScorePercent)
                         .dimensionCritica(criticalDim)
-                        .impactoDelta(String.format("%+.1f%%", delta))
+                        .impactoDelta(String.format("%+.0f%%", delta))
                         .build());
                 
                 log.warn("Ã°Å¸Å¡Â¨ [REPORT-CRITICAL] Caso de alto riesgo detectado: {}", family.getFamilyCode());

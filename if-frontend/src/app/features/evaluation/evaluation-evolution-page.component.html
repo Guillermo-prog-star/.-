@@ -1,0 +1,273 @@
+<div class="evolution-container">
+  <!-- Encabezado Clínico -->
+  <header class="evo-header">
+    <div class="header-left">
+      <div class="evo-tag">MODO ANALÍTICA LONGITUDINAL</div>
+      <h1>Evolución Clínica Longitudinal</h1>
+      <p class="subtitle">Evolución de sintonía e integridad familiar para <strong>Familia {{ familyName }}</strong></p>
+    </div>
+    <div class="header-right">
+      <button class="btn-export" (click)="exportCsv()" [disabled]="loading() || chronologicalTimeline().length === 0" title="Exportar evolución como CSV">⬇ CSV</button>
+      <a routerLink="/evaluations/analytics"  class="btn-back">📊 Panel Clínico</a>
+      <a routerLink="/evaluations/inferences" class="btn-back">🔬 Inferencias</a>
+      <a routerLink="/evaluations/history"    class="btn-back">📋 Historial</a>
+      <a routerLink="/evaluations/start"      class="btn-primary">+ Nueva Evaluación</a>
+    </div>
+  </header>
+
+  <!-- Estado de Carga -->
+  <div class="loading-state" *ngIf="loading()">
+    <div class="spinner"></div>
+    <p>Sincronizando registros históricos del Nodo Central...</p>
+  </div>
+
+  <!-- Contenido Principal -->
+  <ng-container *ngIf="!loading()">
+    <!-- Grid de Métricas Clave (KPIs) -->
+    <div class="kpi-grid">
+      <div class="kpi-card glass">
+        <span class="kpi-icon">📈</span>
+        <div class="kpi-info">
+          <h3>Índice Actual (ICF)</h3>
+          <p class="kpi-value" [style.color]="icfColor(latestIcf())">{{ latestIcf() }}<span class="pct">/100</span></p>
+          <span class="kpi-delta" [class.positive]="deltaIcf() >= 0" [class.negative]="deltaIcf() < 0">
+            {{ deltaIcf() >= 0 ? '▲ +' : '▼ ' }}{{ deltaIcf() }} pts vs inicio
+          </span>
+        </div>
+      </div>
+
+      <div class="kpi-card glass">
+        <span class="kpi-icon">🏆</span>
+        <div class="kpi-info">
+          <h3>Pico de Sintonía</h3>
+          <p class="kpi-value text-purple">{{ highestIcf() }}<span class="pct">/100</span></p>
+          <span class="kpi-sub">Máximo bienestar registrado</span>
+        </div>
+      </div>
+
+      <div class="kpi-card glass">
+        <span class="kpi-icon">🛡️</span>
+        <div class="kpi-info">
+          <h3>Riesgo de Abandono</h3>
+          <div class="risk-badge-wrapper">
+            <span class="badge" [ngClass]="riskBadgeClass(latestRisk())">{{ riskLabel(latestRisk()) }}</span>
+          </div>
+          <span class="kpi-sub">Algoritmo Sentinel v4.2</span>
+        </div>
+      </div>
+
+      <div class="kpi-card glass">
+        <span class="kpi-icon">🎯</span>
+        <div class="kpi-info">
+          <h3>Foco de Atención</h3>
+          <p class="kpi-value text-amber text-truncate">{{ latestCriticalDimension() }}</p>
+          <span class="kpi-sub">Dimensión con menor puntaje</span>
+        </div>
+      </div>
+
+      <!-- KPI: Estado Operacional IF-TOS -->
+      <div class="kpi-card glass">
+        <span class="kpi-icon">🔬</span>
+        <div class="kpi-info">
+          <h3>Estado Operacional</h3>
+          <div class="state-badge-wrapper">
+            <span class="state-badge" [ngClass]="operationalStateBadgeClass(latestOperationalState())">
+              {{ operationalStateLabel(latestOperationalState()) }}
+            </span>
+          </div>
+          <span class="kpi-sub">
+            Incert. {{ uncertaintyLabel(latestUncertaintyTotal()) }}
+            ({{ (latestUncertaintyTotal() * 100) | number:'1.0-0' }}%)
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel de Gráfico Principal de Evolución -->
+    <div class="chart-card glass">
+      <div class="chart-header">
+        <div>
+          <h2>Trayectoria de Conciencia Familiar (ICF)</h2>
+          <p class="chart-sub text-purple">Sintonía global calculada en las últimas {{ chronologicalTimeline().length }} evaluaciones finalizadas</p>
+        </div>
+        <!-- Tooltip Flotante Integrado -->
+        <div class="chart-tooltip" *ngIf="hoveredPoint()">
+          <span class="tt-eval">Evaluación #{{ hoveredPoint()!.data.evaluationId }}</span>
+          <span class="tt-date">{{ formatDate(hoveredPoint()!.data.finalizedAt) }}</span>
+          <span class="tt-score" [style.color]="icfColor(hoveredPoint()!.data.healthyIndex)">ICF: {{ hoveredPoint()!.data.healthyIndex }}%</span>
+          <span class="tt-risk" [ngClass]="riskBadgeClass(hoveredPoint()!.data.riskLevel)">{{ riskLabel(hoveredPoint()!.data.riskLevel) }}</span>
+          <span class="tt-state" [style.color]="operationalStateColor(hoveredPoint()!.data.operationalState)">
+            ◆ {{ operationalStateLabel(hoveredPoint()!.data.operationalState) }}
+          </span>
+          <span class="tt-uncertainty" *ngIf="hoveredPoint()!.data.uncertaintyTotal != null">
+            ⬦ Incert. {{ ((hoveredPoint()!.data.uncertaintyTotal ?? 0) * 100) | number:'1.0-0' }}%
+          </span>
+        </div>
+      </div>
+
+      <!-- Lienzo SVG Interactivo -->
+      <div class="svg-wrapper" (mouseleave)="hoveredPointIndex.set(null)">
+        <svg [attr.viewBox]="'0 0 ' + svgWidth + ' ' + svgHeight" class="evolution-svg">
+          <defs>
+            <!-- Gradiente para el área debajo del gráfico -->
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#818cf8" stop-opacity="0.22" />
+              <stop offset="100%" stop-color="#818cf8" stop-opacity="0.0" />
+            </linearGradient>
+            <!-- Gradiente para la línea del trazo -->
+            <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#6366f1" />
+              <stop offset="50%" stop-color="#818cf8" />
+              <stop offset="100%" stop-color="#a5b4fc" />
+            </linearGradient>
+          </defs>
+
+          <!-- Líneas de Grilla de Fondo (25%, 50%, 75%, 100%) -->
+          <line [attr.x1]="padX" [attr.y1]="svgHeight - padY - (0.25 * (svgHeight - padY * 2))" [attr.x2]="svgWidth - padX" [attr.y2]="svgHeight - padY - (0.25 * (svgHeight - padY * 2))" class="grid-line" />
+          <line [attr.x1]="padX" [attr.y1]="svgHeight - padY - (0.50 * (svgHeight - padY * 2))" [attr.x2]="svgWidth - padX" [attr.y2]="svgHeight - padY - (0.50 * (svgHeight - padY * 2))" class="grid-line" />
+          <line [attr.x1]="padX" [attr.y1]="svgHeight - padY - (0.75 * (svgHeight - padY * 2))" [attr.x2]="svgWidth - padX" [attr.y2]="svgHeight - padY - (0.75 * (svgHeight - padY * 2))" class="grid-line" />
+          <line [attr.x1]="padX" [attr.y1]="svgHeight - padY - (1.00 * (svgHeight - padY * 2))" [attr.x2]="svgWidth - padX" [attr.y2]="svgHeight - padY - (1.00 * (svgHeight - padY * 2))" class="grid-line" />
+
+          <!-- Trazado de Gradiente de Área -->
+          <path *ngIf="trendAreaPath()" [attr.d]="trendAreaPath()" fill="url(#areaGrad)" />
+
+          <!-- Trazado de Línea Principal -->
+          <path *ngIf="trendLinePath()" [attr.d]="trendLinePath()" fill="none" stroke="url(#lineGrad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+
+          <!-- Puntos Nodales del Historial -->
+          <g *ngFor="let p of chartPoints(); let i = index">
+            <!-- Aura brillante en Hover -->
+            <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="hoveredPointIndex() === i ? 12 : 0" fill="#818cf8" fill-opacity="0.3" class="node-aura" />
+            <!-- Punto sólido central — stroke colorea el estado operacional IF-TOS -->
+            <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="hoveredPointIndex() === i ? 7 : 5"
+                    [attr.fill]="icfColor(p.data.healthyIndex)"
+                    [attr.stroke]="operationalStateColor(p.data.operationalState)"
+                    stroke-width="3" class="node-dot" />
+            <!-- Capturador de Evento de Mouse Más Grande e Invisible (Mobile-friendly) -->
+            <circle [attr.cx]="p.x" [attr.cy]="p.y" r="22" fill="transparent" style="cursor: pointer;" (mouseenter)="hoveredPointIndex.set(i)" (mouseleave)="hoveredPointIndex.set(null)" />
+          </g>
+
+          <!-- Textos de Fecha y Evaluación en el eje X -->
+          <g *ngFor="let p of chartPoints(); let i = index">
+            <!-- Dibujar texto en puntos clave para evitar encimamiento -->
+            <text *ngIf="chartPoints().length < 8 || i === 0 || i === chartPoints().length - 1 || i % 2 === 1" [attr.x]="p.x" [attr.y]="svgHeight - 8" class="axis-label" text-anchor="middle">
+              {{ formatDate(p.data.finalizedAt) }}
+            </text>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Evolución Multidimensional por Dimensiones -->
+    <section class="dimensions-evolution-section">
+      <div class="section-title-wrapper">
+        <h2>Evolución Multidimensional de Convivencia</h2>
+        <p class="section-sub">Desglose de tendencia y progreso autónomo para cada área del Diagnóstico</p>
+      </div>
+
+      <div class="dim-grid">
+        <!-- 1. Emociones -->
+        <div class="dim-card glass">
+          <div class="dim-card-header">
+            <div>
+              <h3>Bienestar Emocional</h3>
+              <p class="dim-desc">Autocontrol, empatía y clima afectivo interno.</p>
+            </div>
+            <span class="dim-badge badge-bajo">EM</span>
+          </div>
+          <div class="dim-visual">
+            <svg [attr.width]="sparkWidth" [attr.height]="sparkHeight" class="sparkline-svg">
+              <path [attr.d]="getSparklinePath('emociones')" fill="none" stroke="#818cf8" stroke-width="3" stroke-linecap="round" />
+            </svg>
+            <div class="dim-stat">
+              <span class="dim-score">{{ getLatestDimensionScore('emociones') | number:'1.1-1' }}<span class="dim-max">/5.0</span></span>
+              <span class="dim-growth" [class.positive]="getLatestDimensionScore('emociones') >= getBaselineDimensionScore('emociones')">
+                {{ getDimensionDelta('emociones') }} delta
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Comunicación -->
+        <div class="dim-card glass">
+          <div class="dim-card-header">
+            <div>
+              <h3>Comunicación Conectiva</h3>
+              <p class="dim-desc">Escucha empática, acuerdos y sintonía familiar.</p>
+            </div>
+            <span class="dim-badge badge-moderado">CM</span>
+          </div>
+          <div class="dim-visual">
+            <svg [attr.width]="sparkWidth" [attr.height]="sparkHeight" class="sparkline-svg">
+              <path [attr.d]="getSparklinePath('comunicacion')" fill="none" stroke="#6366f1" stroke-width="3" stroke-linecap="round" />
+            </svg>
+            <div class="dim-stat">
+              <span class="dim-score">{{ getLatestDimensionScore('comunicacion') | number:'1.1-1' }}<span class="dim-max">/5.0</span></span>
+              <span class="dim-growth" [class.positive]="getLatestDimensionScore('comunicacion') >= getBaselineDimensionScore('comunicacion')">
+                {{ getDimensionDelta('comunicacion') }} delta
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Hábitos -->
+        <div class="dim-card glass">
+          <div class="dim-card-header">
+            <div>
+              <h3>Hábitos Saludables</h3>
+              <p class="dim-desc">Alimentación, descanso, pantallas y autocuidado familiar.</p>
+            </div>
+            <span class="dim-badge badge-alto">HB</span>
+          </div>
+          <div class="dim-visual">
+            <svg [attr.width]="sparkWidth" [attr.height]="sparkHeight" class="sparkline-svg">
+              <path [attr.d]="getSparklinePath('habitos')" fill="none" stroke="#34d399" stroke-width="3" stroke-linecap="round" />
+            </svg>
+            <div class="dim-stat">
+              <span class="dim-score">{{ getLatestDimensionScore('habitos') | number:'1.1-1' }}<span class="dim-max">/5.0</span></span>
+              <span class="dim-growth" [class.positive]="getLatestDimensionScore('habitos') >= getBaselineDimensionScore('habitos')">
+                {{ getDimensionDelta('habitos') }} delta
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Gestión del Tiempo -->
+        <div class="dim-card glass">
+          <div class="dim-card-header">
+            <div>
+              <h3>Gestión del Tiempo</h3>
+              <p class="dim-desc">Tiempo de calidad, estructura del hogar y rutinas.</p>
+            </div>
+            <span class="dim-badge badge-critico">TM</span>
+          </div>
+          <div class="dim-visual">
+            <svg [attr.width]="sparkWidth" [attr.height]="sparkHeight" class="sparkline-svg">
+              <path [attr.d]="getSparklinePath('tiempos')" fill="none" stroke="#fbbf24" stroke-width="3" stroke-linecap="round" />
+            </svg>
+            <div class="dim-stat">
+              <span class="dim-score">{{ getLatestDimensionScore('tiempos') | number:'1.1-1' }}<span class="dim-max">/5.0</span></span>
+              <span class="dim-growth" [class.positive]="getLatestDimensionScore('tiempos') >= getBaselineDimensionScore('tiempos')">
+                {{ getDimensionDelta('tiempos') }} delta
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección Especial: Acompañante Narrativo Convi -->
+    <div class="companion-box glass">
+      <div class="companion-avatar">✨</div>
+      <div class="companion-content">
+        <h4>Guía de Convi para la Evolución Consciente</h4>
+        <p>
+          "El camino del crecimiento es orgánico y ascendente. Veo que han finalizado {{ chronologicalTimeline().length }} evaluaciones, mostrando un delta general de 
+          <strong [style.color]="deltaIcf() >= 0 ? '#34d399' : '#f87171'">{{ deltaIcf() >= 0 ? '+' : '' }}{{ deltaIcf() }} puntos ICF</strong>. 
+          Tu foco de atención actual para acelerar la sintonía reside en fortalecer la dimensión de <strong>{{ latestCriticalDimension() }}</strong>. 
+          Revisa las misiones diarias propuestas en tu Panóptico para continuar profundizando la cohesión."
+        </p>
+      </div>
+    </div>
+  </ng-container>
+</div>

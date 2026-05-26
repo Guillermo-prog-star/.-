@@ -10,6 +10,8 @@ import com.integrityfamily.risk.service.RiskAlgoV1Engine;
 import com.integrityfamily.risk.service.RiskService;
 import com.integrityfamily.milestone.service.MilestoneService;
 import com.integrityfamily.ai.service.AiService;
+import com.integrityfamily.scanner.service.DeterministicExplanationPipeline;
+import com.integrityfamily.scanner.service.InferenceRecordService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
@@ -48,6 +51,8 @@ public class EvaluationServiceConsciousTest {
     @Mock private AiService                      aiService;
     @Mock private PlanTaskService                planTaskService;
     @Mock private PlanGenerationService          planGenerationService;
+    @Spy  private DeterministicExplanationPipeline explanationPipeline = new DeterministicExplanationPipeline();
+    @Mock private InferenceRecordService         inferenceRecordService;
 
     @InjectMocks
     private EvaluationService evaluationService;
@@ -79,6 +84,8 @@ public class EvaluationServiceConsciousTest {
                .thenAnswer(invocation -> invocation.getArgument(0));
 
         // AlgoResult con ICF < 60 para activar la recomendación en la síntesis del rol PADRE
+        RiskAlgoV1Engine.UncertaintyVector testUncert =
+                new RiskAlgoV1Engine.UncertaintyVector(0.05, 0.20, 0.10, 0.05, 0.05, 0.09);
         Mockito.when(riskAlgoV1Engine.compute(any(), any())).thenReturn(
                 new RiskAlgoV1Engine.AlgoResult(
                         Map.of("emociones", 50.0, "comunicacion", 50.0, "habitos", 50.0, "tiempos", 50.0),
@@ -91,7 +98,8 @@ public class EvaluationServiceConsciousTest {
                         "Reactiva",     // consciousnessLabel
                         4,              // consciousnessLevel
                         List.of(),      // relapseFlags
-                        List.of()       // mirrorFlags
+                        List.of(),      // mirrorFlags
+                        testUncert      // uncertainty (IF-SUM)
                 )
         );
 
@@ -108,8 +116,12 @@ public class EvaluationServiceConsciousTest {
 
         assertNotNull(result);
         assertNotNull(result.getSpiritualSynthesis());
+        // IF-DEP: verificar estructura determinística del pipeline
         assertTrue(result.getSpiritualSynthesis().contains("[DIAGNÓSTICO CONSCIENTE]"));
-        assertTrue(result.getSpiritualSynthesis().contains("Foco: Liderazgo emocional"));
+        assertTrue(result.getSpiritualSynthesis().contains("Observación:"));
+        assertTrue(result.getSpiritualSynthesis().contains("Misión activada:"));
+        // PADRE + MODERADO → plantilla específica con "tensiones intermitentes"
+        assertTrue(result.getSpiritualSynthesis().contains("tensiones intermitentes"));
 
         // Verificar que se llamó a PlanTaskService (misiones automáticas)
         verify(planTaskService, times(1)).generateTasksFromDiagnosis(any(Evaluation.class));

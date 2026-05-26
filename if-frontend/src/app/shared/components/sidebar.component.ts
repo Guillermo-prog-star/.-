@@ -47,6 +47,15 @@ import { filter } from 'rxjs/operators';
             <a routerLink="/evaluations/evolution" class="nav-item nav-sub" routerLinkActive="active">
               <span class="bullet">{{ isRouteActive('/evaluations/evolution') ? '●' : '○' }}</span> Evolución
             </a>
+            <a routerLink="/evaluations/inferences" class="nav-item nav-sub" routerLinkActive="active">
+              <span class="bullet">{{ isRouteActive('/evaluations/inferences') ? '●' : '○' }}</span> Inferencias
+            </a>
+            <a routerLink="/evaluations/analytics" class="nav-item nav-sub" routerLinkActive="active">
+              <span class="bullet">{{ isRouteActive('/evaluations/analytics') ? '●' : '○' }}</span> Panel Clínico
+            </a>
+            <a *ngIf="user()?.role === 'ADMIN'" routerLink="/admin/eedsl" class="nav-item nav-sub admin-item" routerLinkActive="active">
+              <span class="bullet">{{ isRouteActive('/admin/eedsl') ? '●' : '○' }}</span> Reglas EEDSL
+            </a>
           </div>
         </div>
 

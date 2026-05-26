@@ -30,7 +30,9 @@ import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
         "com.integrityfamily.analytics.domain",
         "com.integrityfamily.common.domain",
         "com.integrityfamily.report.domain",
-        "com.integrityfamily.adaptive"
+        "com.integrityfamily.adaptive",
+        "com.integrityfamily.scanner.domain",
+        "com.integrityfamily.myspace.domain"
 })
 public class IntegrityFamilyApplication {
 

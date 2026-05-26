@@ -394,6 +394,8 @@ public class PlanGenerationService {
                 ? evaluation.getCriticalDimension() : "comunicacion";
 
         // Construir un AlgoResult sintético con los datos disponibles
+        RiskAlgoV1Engine.UncertaintyVector syntheticUncert =
+                new RiskAlgoV1Engine.UncertaintyVector(0.05, 0.15, 0.10, 0.10, 0.05, 0.10);
         RiskAlgoV1Engine.AlgoResult syntheticAlgo = new RiskAlgoV1Engine.AlgoResult(
                 persistedScores.isEmpty()
                     ? Map.of("emociones", 60.0, "comunicacion", 55.0, "habitos", 65.0, "tiempos", 70.0)
@@ -407,7 +409,8 @@ public class PlanGenerationService {
                 "Reactiva",
                 4,
                 List.of(),
-                List.of()
+                List.of(),
+                syntheticUncert
         );
 
         // De-duplicación

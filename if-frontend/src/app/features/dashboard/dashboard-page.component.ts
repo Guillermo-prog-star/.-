@@ -1,17 +1,20 @@
-import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
-import { Observable, of } from 'rxjs';
-import { map, shareReplay, catchError } from 'rxjs/operators';
+import { FormsModule } from '@angular/forms';
+import { Observable, of, BehaviorSubject, Subject } from 'rxjs';
+import { map, shareReplay, catchError, switchMap, filter, takeUntil } from 'rxjs/operators';
 
 // Capa de Servicios
 import { DashboardDataService } from './services/dashboard-data.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { EmotionalEngineService } from '../../core/services/emotional-engine.service';
+import { ScannerService } from '../../core/services/scanner.service';
 
 // Capa de Modelos (SDD: Single Source of Truth)
 import { DashboardDTO, DimensionScore } from '../../core/models/dashboard.model';
+import { OperationalStateDto, FamilyAlertDto } from '../../core/models/models';
 
 // Componentes de Presentación
 import { IcfStatCardComponent } from './components/icf-stat-card/icf-stat-card.component';
@@ -37,6 +40,7 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
   imports: [
     CommonModule,
     RouterLink,
+    FormsModule,
     IcfStatCardComponent,
     ConsciousnessOrbitComponent,
     AiPlanTimelineComponent,
@@ -53,9 +57,16 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
   styleUrls: ['./dashboard-page.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DashboardPageComponent implements OnInit {
+export class DashboardPageComponent implements OnInit, OnDestroy {
   private readonly emotionalService = inject(EmotionalEngineService);
+  private readonly scannerService   = inject(ScannerService);
   private readonly router           = inject(Router);
+
+  // Estado para modal de WhatsApp
+  readonly showWhatsappModal = signal(false);
+  whatsappNumber             = '';
+  readonly savingWhatsapp    = signal(false);
+  readonly whatsappError     = signal('');
 
   // [SDD] Inyección de Dependencias
   constructor(
@@ -86,24 +97,107 @@ export class DashboardPageComponent implements OnInit {
 
   iocScore$: Observable<number> = of(50.0);
 
+  /** IF-TOS: Estado operacional actual, se alimenta una vez que ngOnInit resuelve el familyId */
+  private readonly resolvedFamilyId$ = new BehaviorSubject<number>(0);
+  private readonly destroy$ = new Subject<void>();
+
+  readonly operationalState$: Observable<OperationalStateDto | null> =
+    this.resolvedFamilyId$.pipe(
+      filter(id => id > 0),
+      switchMap(id => this.scannerService.getOperationalState(id).pipe(catchError(() => of(null)))),
+      shareReplay(1)
+    );
+
+  /** IF-ALT: Alertas clínicas activas sin resolver — BehaviorSubject para actualizaciones optimistas */
+  private readonly _alerts = new BehaviorSubject<FamilyAlertDto[]>([]);
+  readonly alerts$ = this._alerts.asObservable();
+
   get familyName(): string {
     return localStorage.getItem('selectedFamilyName') || 'Familia';
   }
 
+  private checkWhatsappConfiguration(familyId: number): void {
+    if (localStorage.getItem('whatsapp_dismissed') === 'true') {
+      return;
+    }
+    this.http.get<any>('/api/families/mine').subscribe({
+      next: (res) => {
+        const family = res?.data ?? res;
+        if (family && (!family.whatsapp || family.whatsapp.trim() === '')) {
+          this.showWhatsappModal.set(true);
+        }
+      },
+      error: (err) => console.warn('⚠️ [WHATSAPP-CHECK] Error consultando datos de familia:', err)
+    });
+  }
+
+  activateWhatsapp(): void {
+    const num = this.whatsappNumber.trim();
+    if (num.length < 10) {
+      this.whatsappError.set('Ingresa un número de celular válido de 10 dígitos.');
+      return;
+    }
+    const familyId = this.familyState.getSelectedFamilyId();
+    if (!familyId) return;
+
+    this.savingWhatsapp.set(true);
+    this.whatsappError.set('');
+
+    this.http.get<any>(`/api/families/${familyId}`).subscribe({
+      next: (res) => {
+        const familyData = res?.data ?? res;
+        familyData.whatsapp = num;
+
+        this.http.put<any>(`/api/families/${familyId}`, familyData).subscribe({
+          next: (updateRes) => {
+            const updatedFamily = updateRes?.data ?? updateRes;
+            this.familyState.setFamily(updatedFamily);
+            this.savingWhatsapp.set(false);
+            this.showWhatsappModal.set(false);
+            console.log('✅ [WHATSAPP-ACTIVATED] WhatsApp activado con éxito.');
+          },
+          error: (err) => {
+            console.error('❌ [WHATSAPP-ACTIVATION-FAILED] Error guardando WhatsApp:', err);
+            this.savingWhatsapp.set(false);
+            this.whatsappError.set('Error guardando la información. Intenta de nuevo.');
+          }
+        });
+      },
+      error: (err) => {
+        console.error('❌ [WHATSAPP-CHECK-FAILED] Error recuperando datos de familia:', err);
+        this.savingWhatsapp.set(false);
+        this.whatsappError.set('Error al recuperar datos. Intenta de nuevo.');
+      }
+    });
+  }
+
+  dismissWhatsappModal(): void {
+    localStorage.setItem('whatsapp_dismissed', 'true');
+    this.showWhatsappModal.set(false);
+    console.log('💤 [WHATSAPP-DISMISSED] El modal de WhatsApp ha sido pospuesto.');
+  }
+
   ngOnInit(): void {
+    // Suscripción reactiva: cuando se resuelve el familyId, carga las alertas IF-ALT.
+    this.resolvedFamilyId$.pipe(
+      filter(id => id > 0),
+      switchMap(id => this.scannerService.getAlerts(id).pipe(catchError(() => of([])))),
+      takeUntil(this.destroy$)
+    ).subscribe(alerts => this._alerts.next(alerts));
+
     let familyId = this.familyState.getSelectedFamilyId();
 
     if (familyId === 0) {
       // [SDD Spec] Protocolo de Auto-Conexión:
-      // Si el usuario no tiene familia seleccionada en localStorage, buscamos sus familias disponibles.
-      this.http.get<any>('/api/families').subscribe({
+      // Recupera la familia del usuario autenticado desde el backend (única fuente de verdad).
+      this.http.get<any>('/api/families/mine').subscribe({
         next: (res) => {
-          const families = res?.data ?? res ?? [];
-          if (Array.isArray(families) && families.length > 0) {
-            const firstFamily = families[0];
-            this.familyState.setFamily(firstFamily);
-            familyId = firstFamily.id;
+          const family = res?.data ?? res;
+          if (family && family.id) {
+            this.familyState.setFamily(family);
+            familyId = family.id;
 
+            this.resolvedFamilyId$.next(familyId);
             this.dashboardService.fetchData(familyId).subscribe();
 
             this.iocScore$ = this.emotionalService.getFamilyStats(familyId).pipe(
@@ -111,17 +205,19 @@ export class DashboardPageComponent implements OnInit {
               catchError(() => of(50.0)),
               shareReplay(1)
             );
+            this.checkWhatsappConfiguration(familyId);
           } else {
-            // Si realmente no posee familias, redirigir a creación para desbloquear el onboarding
             this.router.navigate(['/families/create']);
           }
         },
         error: () => {
+          // 404 = sin familia; cualquier otro error: redirigir igualmente a creación.
           this.router.navigate(['/families/create']);
         }
       });
     } else {
       // [SDD] Carga inicial del ecosistema cuando hay una familia activa
+      this.resolvedFamilyId$.next(familyId);
       this.dashboardService.fetchData(familyId).subscribe();
 
       this.iocScore$ = this.emotionalService.getFamilyStats(familyId).pipe(
@@ -129,13 +225,67 @@ export class DashboardPageComponent implements OnInit {
         catchError(() => of(50.0)),
         shareReplay(1)
       );
+      this.checkWhatsappConfiguration(familyId);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   /**
    * [SDD Spec] Comando de Evolución: Avanza oficialmente el hito del núcleo familiar.
    * Tras el éxito, re-sincroniza el estado global.
    */
+  // ── IF-TOS helpers ───────────────────────────────────────────────────────
+  tosStateColor(s: string | null | undefined): string {
+    const map: Record<string, string> = {
+      EMERGING: '#94a3b8', STABLE: '#60a5fa', ESCALATING: '#f97316',
+      CRITICAL: '#ef4444', RECOVERING: '#22d3ee', RESOLVED: '#34d399'
+    };
+    return map[s ?? ''] ?? '#64748b';
+  }
+
+  tosStateGlyph(s: string | null | undefined): string {
+    const map: Record<string, string> = {
+      EMERGING: '🌱', STABLE: '🔵', ESCALATING: '🔶',
+      CRITICAL: '🔴', RECOVERING: '🔷', RESOLVED: '✅'
+    };
+    return map[s ?? ''] ?? '⬡';
+  }
+
+  tosStateClass(s: string | null | undefined): string {
+    const map: Record<string, string> = {
+      EMERGING: 'tos-emerging', STABLE: 'tos-stable', ESCALATING: 'tos-escalating',
+      CRITICAL: 'tos-critical', RECOVERING: 'tos-recovering', RESOLVED: 'tos-resolved'
+    };
+    return map[s ?? ''] ?? 'tos-emerging';
+  }
+
+  alertSeverityColor(severity: string): string {
+    const m: Record<string, string> = {
+      LOW: '#60a5fa', MEDIUM: '#fbbf24', HIGH: '#f97316', CRITICAL: '#ef4444'
+    };
+    return m[severity] ?? '#94a3b8';
+  }
+
+  alertSeverityIcon(severity: string): string {
+    const m: Record<string, string> = {
+      LOW: '🔵', MEDIUM: '🟡', HIGH: '🟠', CRITICAL: '🔴'
+    };
+    return m[severity] ?? '⚪';
+  }
+
+  resolveAlert(alert: FamilyAlertDto): void {
+    const familyId = this.familyState.getSelectedFamilyId();
+    // Actualización optimista: eliminar de la lista inmediatamente.
+    this._alerts.next(this._alerts.value.filter(a => a.id !== alert.id));
+    this.scannerService.resolveAlert(familyId, alert.id).pipe(
+      catchError(() => of(void 0))
+    ).subscribe();
+  }
+
   advanceMilestone(): void {
     const familyId = this.familyState.getSelectedFamilyId();
     if (!familyId) return;

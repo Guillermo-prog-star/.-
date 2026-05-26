@@ -72,6 +72,70 @@
       </app-icf-stat-card>
     </section>
 
+    <!-- [IF-TOS] ESTADO OPERACIONAL DEL SCANNER -->
+    <ng-container *ngIf="operationalState$ | async as tosState">
+      <div class="tos-banner glass-premium animate-in fade-in slide-in-from-bottom-4 duration-700"
+           [attr.data-state]="tosState.operationalState">
+        <div class="tos-left">
+          <div class="tos-icon" [ngStyle]="{'background': tosStateColor(tosState.operationalState) + '22', 'border-color': tosStateColor(tosState.operationalState) + '44'}">
+            {{ tosStateGlyph(tosState.operationalState) }}
+          </div>
+          <div class="tos-info">
+            <div class="tos-tag">IF-TOS · ESTADO OPERACIONAL</div>
+            <div class="tos-label" [ngStyle]="{'color': tosStateColor(tosState.operationalState)}">
+              {{ tosState.label }}
+            </div>
+            <div class="tos-desc">{{ tosState.description }}</div>
+          </div>
+        </div>
+        <div class="tos-right">
+          <span class="tos-badge" [ngClass]="tosStateClass(tosState.operationalState)">
+            {{ tosState.operationalState }}
+          </span>
+          <a routerLink="/evaluations/inferences" class="tos-link">
+            Ver inferencias →
+          </a>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- [IF-ALT] ALERTAS CLÍNICAS ACTIVAS -->
+    <ng-container *ngIf="alerts$ | async as alerts">
+      <div *ngIf="alerts.length > 0"
+           class="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <h4 class="text-white/30 uppercase tracking-widest text-[10px] font-black flex items-center gap-2">
+          <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.7)]"></span>
+          IF-ALT · {{ alerts.length }} Alerta{{ alerts.length === 1 ? '' : 's' }} Clínica{{ alerts.length === 1 ? '' : 's' }} Activa{{ alerts.length === 1 ? '' : 's' }}
+        </h4>
+        <div *ngFor="let alert of alerts"
+             class="flex items-start gap-4 p-4 rounded-2xl border animate-in fade-in duration-500"
+             [ngStyle]="{
+               'background': alertSeverityColor(alert.severity) + '0d',
+               'border-color': alertSeverityColor(alert.severity) + '30'
+             }">
+          <span class="text-lg flex-shrink-0 mt-0.5">{{ alertSeverityIcon(alert.severity) }}</span>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
+                    [ngStyle]="{'color': alertSeverityColor(alert.severity), 'background': alertSeverityColor(alert.severity) + '18'}">
+                {{ alert.severity }}
+              </span>
+              <span class="text-white/70 text-xs font-semibold">{{ alert.title }}</span>
+            </div>
+            <p *ngIf="alert.detail" class="text-white/40 text-[11px] leading-snug">{{ alert.detail }}</p>
+          </div>
+          <button (click)="resolveAlert(alert)"
+                  class="flex-shrink-0 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg border transition-all hover:opacity-80"
+                  [ngStyle]="{
+                    'color': alertSeverityColor(alert.severity),
+                    'border-color': alertSeverityColor(alert.severity) + '40'
+                  }">
+            Resolver
+          </button>
+        </div>
+      </div>
+    </ng-container>
+
     <!-- [SDD Spec] PROGRESS SNAPSHOT -->
     <section *ngIf="data.progress" class="glass-premium p-8 rounded-[2rem] border border-white/5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
       <div class="flex flex-col md:flex-row justify-between gap-8">
@@ -218,6 +282,81 @@
         </div>
       </div>
     </footer>
+
+    <!-- [WHATSAPP-ACTIVATION-MODAL] -->
+    <div class="whatsapp-modal-overlay" *ngIf="showWhatsappModal()">
+      <div class="whatsapp-modal-card glass-premium animate-in fade-in zoom-in duration-500">
+        <div class="modal-icon-wrapper">
+          <span class="lock-icon">🔒</span>
+        </div>
+        
+        <h3>Mantén protegida tu familia</h3>
+        
+        <p class="modal-intro">
+          Activa las alertas automáticas y mantén sincronizada la seguridad emocional de tu hogar.
+        </p>
+
+        <ul class="benefits-list">
+          <li>
+            <span class="check-icon">✓</span>
+            <div>
+              <strong>Alertas de seguridad:</strong>
+              Notificaciones al instante sobre riesgos críticos detectados en el núcleo familiar.
+            </div>
+          </li>
+          <li>
+            <span class="check-icon">✓</span>
+            <div>
+              <strong>Acompañamiento emocional:</strong>
+              Sugerencias y dinámicas recomendadas por Claude según el clima de convivencia.
+            </div>
+          </li>
+          <li>
+            <span class="check-icon">✓</span>
+            <div>
+              <strong>Recuperación de acceso:</strong>
+              Restablecimiento del PIN familiar de forma segura y directa por chat.
+            </div>
+          </li>
+        </ul>
+
+        <div class="input-section">
+          <label>Número de WhatsApp</label>
+          <div class="phone-input-wrapper">
+            <span class="country-prefix">+57</span>
+            <input 
+              type="tel" 
+              [(ngModel)]="whatsappNumber" 
+              name="waNum" 
+              placeholder="300 123 4567" 
+              maxlength="10"
+              (input)="whatsappError.set('')"
+              class="inp"
+            />
+          </div>
+          <div class="error-msg" *ngIf="whatsappError()">
+            {{ whatsappError() }}
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button 
+            (click)="activateWhatsapp()" 
+            class="btn-activate btn-primary"
+            [disabled]="savingWhatsapp() || whatsappNumber.trim().length < 10"
+          >
+            {{ savingWhatsapp() ? 'Activando...' : '✓ Activar WhatsApp' }}
+          </button>
+          <button 
+            (click)="dismissWhatsappModal()" 
+            class="btn-dismiss btn-ghost"
+            [disabled]="savingWhatsapp()"
+          >
+            Ahora no
+          </button>
+        </div>
+      </div>
+    </div>
 
   </div>
 </ng-container>

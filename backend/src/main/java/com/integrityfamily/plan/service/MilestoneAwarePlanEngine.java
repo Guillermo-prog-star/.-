@@ -328,7 +328,7 @@ public class MilestoneAwarePlanEngine {
     private String resolveCurrentMilestone(Evaluation eval) {
         String m = eval.getMilestoneKey();
         if (m == null && eval.getFamily() != null) m = eval.getFamily().getCurrentMilestone();
-        if (m == null || m.isBlank() || "MES_00_DIAGNOSTICO".equals(m)) return "W1";
+        if (m == null || m.isBlank() || "MES_00_DIAGNOSTICO_BASE".equals(m) || "MES_00_DIAGNOSTICO".equals(m)) return "W1";
         return m;
     }
 

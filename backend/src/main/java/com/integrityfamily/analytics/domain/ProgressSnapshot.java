@@ -34,7 +34,7 @@ public class ProgressSnapshot {
     @JoinColumn(name = "previous_evaluation_id")
     private Evaluation previousEvaluation;
 
-    @Column(name = "milestone_code", length = 10)
+    @Column(name = "milestone_code", length = 50)
     private String milestoneCode;
 
     @Column(name = "previous_icf")

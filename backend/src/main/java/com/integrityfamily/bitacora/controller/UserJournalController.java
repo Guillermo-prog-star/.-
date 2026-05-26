@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/private/journals")
+@RequestMapping("/api/private/journals-legacy")
 @RequiredArgsConstructor
 @Tag(name = "Bitácora Privada", description = "Endpoints para la gestión de la bitácora personal (Capa Privada).")
 public class UserJournalController {

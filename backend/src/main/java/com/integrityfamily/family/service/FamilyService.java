@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -57,34 +58,37 @@ public class FamilyService {
     }
 
     /**
-     * Crea un nuevo nÃƒÂºcleo familiar vinculÃƒÂ¡ndolo al usuario y generando el cÃƒÂ³digo de nodo.
-     * Formato requerido: IF-{YEAR}-{SEQUENCE}
+     * Crea un nuevo núcleo familiar de forma idempotente.
+     * Si el usuario ya tiene familia, la devuelve directamente.
+     * El código IF-{YEAR}-{ID} se deriva del ID asignado por la BD, garantizando unicidad bajo concurrencia.
      */
     @Transactional
     public FamilyResponse create(Family family, String creatorEmail) {
         User creator = userRepository.findByEmail(creatorEmail)
-                .orElseThrow(() -> new BusinessException("Usuario creador no encontrado", "USER_NOT_FOUND", org.springframework.http.HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException("Usuario creador no encontrado", "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
 
-        if (familyRepository.findByCreatedBy_Email(creatorEmail).isPresent()) {
-            throw new BusinessException("El usuario ya posee un nÃƒÂºcleo familiar registrado.", "ALREADY_HAS_FAMILY", org.springframework.http.HttpStatus.CONFLICT);
+        // Idempotencia: si ya existe familia para este usuario, devolverla sin crear otra.
+        Optional<Family> existing = familyRepository.findByCreatedByEmailWithMembers(creatorEmail);
+        if (existing.isPresent()) {
+            return toResponse(existing.get());
         }
 
-        // GeneraciÃƒÂ³n de cÃƒÂ³digo regional estratÃƒÂ©gico
-        int currentYear = java.time.Year.now().getValue();
-        long count = familyRepository.count() + 1;
-        String sequence = String.format("%04d", count);
-        String familyCode = "IF-" + currentYear + "-" + sequence;
-        
-        family.setFamilyCode(familyCode);
         family.setCreatedBy(creator);
         family.setCurrentMilestone("MES_00_DIAGNOSTICO_BASE");
-        
+        // Placeholder temporal; se reemplaza tras obtener el ID generado por la BD.
+        family.setFamilyCode("IF-TEMP-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+
         Family saved = familyRepository.save(family);
-        
-        // SDD: Sincronización de Identidad. Vinculamos al creador con su nuevo nodo.
+
+        // Código definitivo basado en el ID autoincremental — siempre único, sin race condition.
+        int currentYear = java.time.Year.now().getValue();
+        saved.setFamilyCode("IF-" + currentYear + "-" + String.format("%04d", saved.getId()));
+        saved = familyRepository.save(saved);
+
+        // Vincular al creador con su nodo familiar.
         creator.setFamily(saved);
         userRepository.saveAndFlush(creator);
-        
+
         return toResponse(saved);
     }
 

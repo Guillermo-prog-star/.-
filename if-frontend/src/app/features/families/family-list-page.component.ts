@@ -33,10 +33,7 @@ export class FamilyListPageComponent implements OnInit {
   }
   
   select(f: Family) {
-    // Usamos el estado centralizado
-    this.familyState.setFamilyId(f.id, f.name);
-    // Campos extra específicos de este módulo pueden ir a localstorage o ampliarse en el Service (mantendremos localstorage por ahora para extra params)
-    localStorage.setItem('selectedFamilyCode', f.familyCode ?? '');
+    this.familyState.setFamily(f);
     localStorage.setItem('currentMilestone', f.currentMilestone ?? 'inicio');
     this.router.navigate(['/members']);
   }

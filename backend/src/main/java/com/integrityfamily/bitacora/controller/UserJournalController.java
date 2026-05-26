@@ -1,5 +1,6 @@
 package com.integrityfamily.bitacora.controller;
 
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.UserJournal;
 import com.integrityfamily.bitacora.service.UserJournalService;
 import com.integrityfamily.common.dto.ApiResponse;
@@ -8,6 +9,7 @@ import com.integrityfamily.domain.repository.UserRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,7 +47,7 @@ public class UserJournalController {
     private Long getCurrentUserId() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
-            throw new RuntimeException("Usuario no autenticado");
+            throw new BusinessException("No autorizado — sesión no encontrada.", "UNAUTHENTICATED", HttpStatus.UNAUTHORIZED);
         }
         String email = auth.getName();
         User user = userRepository.findByEmailIgnoreCase(email)

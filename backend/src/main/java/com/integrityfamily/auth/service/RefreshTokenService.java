@@ -1,11 +1,13 @@
 package com.integrityfamily.auth.service;
 
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.RefreshToken;
 import com.integrityfamily.domain.User;
 import com.integrityfamily.domain.repository.RefreshTokenRepository;
 import com.integrityfamily.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,7 +46,7 @@ public class RefreshTokenService {
     public RefreshToken verifyExpiration(RefreshToken token) {
         if (token.getExpiryDate().compareTo(Instant.now()) < 0 || token.isRevoked()) {
             refreshTokenRepository.delete(token);
-            throw new RuntimeException("El token de refresco ha expirado o ha sido revocado. Inicia sesión nuevamente.");
+            throw new BusinessException("La sesión ha expirado. Por favor inicia sesión nuevamente.", "REFRESH_TOKEN_EXPIRED", HttpStatus.UNAUTHORIZED);
         }
         return token;
     }

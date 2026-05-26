@@ -165,7 +165,7 @@ public class AuthService {
     @Transactional(readOnly = true)
     public UserResponse me(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado", "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
         return UserResponse.from(user);
     }
 

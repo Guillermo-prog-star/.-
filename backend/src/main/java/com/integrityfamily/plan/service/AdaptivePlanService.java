@@ -2,11 +2,13 @@ package com.integrityfamily.plan.service;
 
 import com.integrityfamily.analytics.dto.ConvivenceAnalyticsDto.OperativeDashboardResponse;
 import com.integrityfamily.analytics.service.ConvivenceAnalyticsService;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import com.integrityfamily.plan.dto.AdaptivePlanDtos.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,7 +41,7 @@ public class AdaptivePlanService {
         // 1. Obtener plan activo de la familia
         List<ImprovementPlan> plans = planRepository.findByFamilyId(familyId);
         if (plans.isEmpty()) {
-            throw new RuntimeException("No se encontró un plan de mejora activo para la familia ID: " + familyId);
+            throw new BusinessException("No se encontró un plan de mejora activo para la familia ID: " + familyId, "PLAN_NOT_FOUND", HttpStatus.NOT_FOUND);
         }
         ImprovementPlan activePlan = plans.get(plans.size() - 1);
 
@@ -176,10 +178,10 @@ public class AdaptivePlanService {
     public PlanAdjustmentResponse approveAdjustment(Long adjustmentId, AdjustmentApprovalRequest req) {
         log.info("👍 [ADAPTIVE ENGINE] Aprobando ajuste adaptativo ID: {}", adjustmentId);
         PlanAdjustment adjustment = planAdjustmentRepository.findById(adjustmentId)
-                .orElseThrow(() -> new RuntimeException("Ajuste adaptativo no encontrado: " + adjustmentId));
+                .orElseThrow(() -> new BusinessException("Ajuste adaptativo no encontrado: " + adjustmentId, "ADJUSTMENT_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         if (adjustment.getStatus() != AdjustmentStatus.PROPOSED) {
-            throw new RuntimeException("El ajuste ID " + adjustmentId + " no se encuentra en estado PROPOSED. Estado actual: " + adjustment.getStatus());
+            throw new BusinessException("El ajuste ID " + adjustmentId + " no puede aprobarse porque su estado es: " + adjustment.getStatus(), "INVALID_ADJUSTMENT_STATE", HttpStatus.CONFLICT);
         }
 
         adjustment.setStatus(AdjustmentStatus.APPROVED);
@@ -200,10 +202,10 @@ public class AdaptivePlanService {
     public PlanAdjustmentResponse applyAdjustment(Long adjustmentId) {
         log.info("⚡ [ADAPTIVE ENGINE] Aplicando mutaciones de ajuste adaptativo ID: {}", adjustmentId);
         PlanAdjustment adjustment = planAdjustmentRepository.findById(adjustmentId)
-                .orElseThrow(() -> new RuntimeException("Ajuste adaptativo no encontrado: " + adjustmentId));
+                .orElseThrow(() -> new BusinessException("Ajuste adaptativo no encontrado: " + adjustmentId, "ADJUSTMENT_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         if (adjustment.getStatus() != AdjustmentStatus.APPROVED && adjustment.getStatus() != AdjustmentStatus.PROPOSED) {
-            throw new RuntimeException("El ajuste ID " + adjustmentId + " no puede ser aplicado desde el estado: " + adjustment.getStatus());
+            throw new BusinessException("El ajuste ID " + adjustmentId + " no puede aplicarse desde el estado: " + adjustment.getStatus(), "INVALID_ADJUSTMENT_STATE", HttpStatus.CONFLICT);
         }
 
         adjustment.setStatus(AdjustmentStatus.APPLIED);

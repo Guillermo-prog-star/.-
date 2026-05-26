@@ -1,8 +1,10 @@
 package com.integrityfamily.plan.service;
 
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.plan.dto.PlanDtos.*;
 import com.integrityfamily.domain.repository.*;
+import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -87,7 +89,7 @@ public class PlanService {
 
         Family family = evaluation.getFamily();
         if (family == null) {
-            throw new RuntimeException("La evaluación no tiene una familia asociada.");
+            throw new BusinessException("La evaluación no tiene una familia asociada.", "EVALUATION_NO_FAMILY", HttpStatus.BAD_REQUEST);
         }
 
         String criticalDimension = evaluation.getCriticalDimension();
@@ -263,7 +265,7 @@ public class PlanService {
 
         Family family = evaluation.getFamily();
         if (family == null) {
-            throw new RuntimeException("La evaluación no tiene una familia asociada.");
+            throw new BusinessException("La evaluación no tiene una familia asociada.", "EVALUATION_NO_FAMILY", HttpStatus.BAD_REQUEST);
         }
 
         // De-duplication: ensure only one active plan exists per family

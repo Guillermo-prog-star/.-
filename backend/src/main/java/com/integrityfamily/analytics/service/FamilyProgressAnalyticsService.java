@@ -3,12 +3,14 @@ package com.integrityfamily.analytics.service;
 import com.integrityfamily.analytics.domain.ProgressSnapshot;
 import com.integrityfamily.analytics.dto.FamilyProgressResponse;
 import com.integrityfamily.analytics.repository.ProgressSnapshotRepository;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.Evaluation;
 import com.integrityfamily.domain.EvaluationDimensionScore;
 import com.integrityfamily.domain.EvaluationStatus;
 import com.integrityfamily.domain.repository.EvaluationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,10 +33,10 @@ public class FamilyProgressAnalyticsService {
         log.info("📊 [ANALYTICS] Analizando progreso para la evaluación ID: {}", currentEvaluationId);
         
         Evaluation current = evaluationRepository.findById(currentEvaluationId)
-                .orElseThrow(() -> new RuntimeException("Evaluación no encontrada: " + currentEvaluationId));
+                .orElseThrow(() -> new BusinessException("Evaluación no encontrada: " + currentEvaluationId, "EVALUATION_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         if (current.getStatus() != EvaluationStatus.FINALIZED) {
-            throw new RuntimeException("La evaluación actual no está finalizada.");
+            throw new BusinessException("La evaluación aún no ha sido finalizada.", "EVALUATION_NOT_FINALIZED", HttpStatus.BAD_REQUEST);
         }
 
         Long familyId = current.getFamily().getId();
@@ -88,7 +90,7 @@ public class FamilyProgressAnalyticsService {
         }
 
         if (previous == null) {
-            throw new RuntimeException("No se pudo determinar la evaluación anterior.");
+            throw new BusinessException("No existe una evaluación anterior para comparar el progreso.", "EVALUATION_NO_PREVIOUS", HttpStatus.NOT_FOUND);
         }
 
         Double currentIcf = current.getIcf() != null ? current.getIcf() : 0.0;

@@ -1,10 +1,12 @@
 package com.integrityfamily.bitacora.service;
 
 import com.integrityfamily.bitacora.dto.JournalDtos.*;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,10 +33,10 @@ public class JournalService {
     public TaskEvidence uploadEvidence(Long taskId, EvidenceUploadRequest req) {
         log.info("📸 [EVIDENCE] Subiendo evidencia para Tarea ID: {}", taskId);
         PlanTask task = planTaskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Tarea no encontrada: " + taskId));
+                .orElseThrow(() -> new BusinessException("Tarea no encontrada: " + taskId, "TASK_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         if (task.getPlan() == null || task.getPlan().getFamily() == null) {
-            throw new RuntimeException("La tarea no tiene un plan o familia asociada.");
+            throw new BusinessException("La tarea no tiene un plan o familia asociada.", "TASK_NO_FAMILY", HttpStatus.BAD_REQUEST);
         }
         Family family = task.getPlan().getFamily();
 

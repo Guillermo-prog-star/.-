@@ -119,7 +119,7 @@ public class FamilyService {
     @Transactional
     public void delete(Long id) {
         if (!familyRepository.existsById(id)) {
-            throw new RuntimeException("La familia no existe.");
+            throw new BusinessException("La familia no existe.", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND);
         }
         familyRepository.deleteById(id);
     }

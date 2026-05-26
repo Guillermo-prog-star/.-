@@ -1,8 +1,17 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { GuardianService } from '../../core/services/guardian.service';
 import { GuardianStatusResponse, VoteCount } from '../../core/models/models';
+
+interface MemberCandidate {
+  memberId: number;
+  fullName: string;
+  email: string;
+  role: string;
+  votes: number;
+}
 
 @Component({
   selector: 'app-guardian-election',
@@ -263,7 +272,7 @@ export class GuardianElectionComponent implements OnInit {
   familyId!: number;
   currentMemberId?: number;
   status?: GuardianStatusResponse;
-  members: VoteCount[] = [];
+  members: MemberCandidate[] = [];   // Todos los miembros de la familia
   selectedMemberId?: number;
   voting = false;
   loading = true;
@@ -271,24 +280,59 @@ export class GuardianElectionComponent implements OnInit {
   constructor(
     private guardianSvc: GuardianService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private http: HttpClient
   ) {}
 
   ngOnInit() {
     this.familyId = Number(this.route.snapshot.paramMap.get('familyId'));
-    // memberId puede venir como queryParam si el usuario está logueado
     const memberParam = this.route.snapshot.queryParamMap.get('memberId');
     if (memberParam) this.currentMemberId = Number(memberParam);
-    this.loadStatus();
+    this.loadFamilyMembers();
+  }
+
+  /** Carga los miembros reales de la familia y luego el estado del guardián */
+  loadFamilyMembers() {
+    this.loading = true;
+    this.http.get<any>(`/api/families/${this.familyId}`).subscribe({
+      next: res => {
+        const family = res?.data ?? res;
+        const rawMembers: any[] = family?.members ?? [];
+
+        // Resolver el currentMemberId desde el email del usuario autenticado
+        if (!this.currentMemberId) {
+          try {
+            const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+            const matched = rawMembers.find((m: any) => m.email === authUser.email);
+            if (matched) this.currentMemberId = matched.id;
+          } catch { /* ignorar */ }
+        }
+
+        // Construir candidatos con votos en 0 por defecto
+        this.members = rawMembers.map((m: any) => ({
+          memberId: m.id,
+          fullName: m.fullName,
+          email: m.email ?? '',
+          role: m.role ?? '',
+          votes: 0
+        }));
+
+        this.loadStatus();
+      },
+      error: () => this.loadStatus()   // Si falla, intenta solo con el estado
+    });
   }
 
   loadStatus() {
-    this.loading = true;
     this.guardianSvc.getStatus(this.familyId, this.currentMemberId).subscribe({
       next: s => {
         this.status = s;
-        // Construir lista de candidatos: todos los miembros con sus votos
-        this.members = s.voteCounts.length > 0 ? s.voteCounts : [];
+        // Combinar: actualizar votos en la lista de miembros existente
+        s.voteCounts.forEach(vc => {
+          const m = this.members.find(x => x.memberId === vc.memberId);
+          if (m) m.votes = vc.votes;
+          else this.members.push({ memberId: vc.memberId, fullName: vc.fullName, email: '', role: '', votes: vc.votes });
+        });
         this.loading = false;
       },
       error: () => { this.loading = false; }
@@ -303,7 +347,7 @@ export class GuardianElectionComponent implements OnInit {
     this.selectedMemberId = id;
   }
 
-  isLeading(m: VoteCount): boolean {
+  isLeading(m: MemberCandidate): boolean {
     if (this.members.length === 0) return false;
     const max = Math.max(...this.members.map(x => x.votes));
     return m.votes === max && max > 0;
@@ -320,7 +364,14 @@ export class GuardianElectionComponent implements OnInit {
       voterMemberId: this.currentMemberId,
       nominatedMemberId: this.selectedMemberId
     }).subscribe({
-      next: s => { this.status = s; this.members = s.voteCounts; this.voting = false; },
+      next: s => {
+        this.status = s;
+        s.voteCounts.forEach(vc => {
+          const m = this.members.find(x => x.memberId === vc.memberId);
+          if (m) m.votes = vc.votes;
+        });
+        this.voting = false;
+      },
       error: () => { this.voting = false; }
     });
   }

@@ -158,6 +158,7 @@ export class AuthService {
   logout(): void {
     console.warn('SENTINEL: Limpiando estado de sesión y redirigiendo al acceso.');
     localStorage.removeItem('auth_user');
+    localStorage.removeItem('currentMemberId');
     this._user.set(null);
     this.familyState.clearFamily();
     this.router.navigate(['/auth/login']);

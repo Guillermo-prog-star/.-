@@ -122,9 +122,23 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
     return this.familyState.getSelectedFamilyId() ?? 0;
   }
 
+  /**
+   * Resuelve el memberId del usuario actual desde el cache local.
+   * Se persiste en 'currentMemberId' cuando la familia se carga en ngOnInit.
+   */
   get guardianMemberId(): number | undefined {
     const id = localStorage.getItem('currentMemberId');
     return id ? Number(id) : undefined;
+  }
+
+  /** Persiste el memberId del usuario autenticado dado un array de miembros. */
+  private resolveCurrentMemberId(members: any[]): void {
+    if (localStorage.getItem('currentMemberId')) return; // ya resuelto
+    try {
+      const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+      const matched = members.find((m: any) => m.email === authUser.email);
+      if (matched?.id) localStorage.setItem('currentMemberId', matched.id.toString());
+    } catch { /* ignorar */ }
   }
 
   private checkWhatsappConfiguration(familyId: number): void {
@@ -208,6 +222,9 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
             this.familyState.setFamily(family);
             familyId = family.id;
 
+            // Resolver memberId del usuario autenticado
+            if (family.members?.length) this.resolveCurrentMemberId(family.members);
+
             this.resolvedFamilyId$.next(familyId);
             this.dashboardService.fetchData(familyId).subscribe();
 
@@ -228,6 +245,15 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
       });
     } else {
       // [SDD] Carga inicial del ecosistema cuando hay una familia activa
+      // Resolver memberId si aún no está en cache
+      if (!localStorage.getItem('currentMemberId')) {
+        this.http.get<any>('/api/families/mine').subscribe({
+          next: (res) => {
+            const family = res?.data ?? res;
+            if (family?.members?.length) this.resolveCurrentMemberId(family.members);
+          }
+        });
+      }
       this.resolvedFamilyId$.next(familyId);
       this.dashboardService.fetchData(familyId).subscribe();
 

@@ -20,8 +20,14 @@ import org.springframework.transaction.annotation.Transactional;
 import com.integrityfamily.common.exception.BusinessException;
 import org.springframework.http.HttpStatus;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.UUID;
+import com.integrityfamily.domain.PasswordResetToken;
 
 @Slf4j
 @Service
@@ -38,6 +44,7 @@ public class AuthService {
     private final AccountLockService accountLockService;
     private final AuditService auditService;
     private final RefreshTokenService refreshTokenService;
+    private final EmailService emailService;
 
     @Transactional
     public LoginResponse login(LoginRequest request, String ip, String ua) {
@@ -168,15 +175,67 @@ public class AuthService {
         userRepository.findByEmail(email).ifPresent(user -> refreshTokenService.deleteByUserId(user.getId()));
     }
 
+    @Transactional
     public void requestPasswordReset(String email, String ip, String ua) {
         log.info("[AUTH] Solicitud de recuperación de contraseña para: {}", email);
-        // Implementar generación de token y envío de email
+
+        // Seguridad: no revelar si el email existe o no en el sistema
+        userRepository.findByEmail(email).ifPresent(user -> {
+            // Invalidar tokens previos del usuario para evitar acumulación
+            passwordResetTokenRepository.deleteByUser(user);
+
+            // Generar token UUID y su hash SHA-256 para almacenamiento seguro
+            String rawToken = UUID.randomUUID().toString();
+            String tokenHash = hashToken(rawToken);
+
+            PasswordResetToken prt = PasswordResetToken.builder()
+                    .user(user)
+                    .tokenHash(tokenHash)
+                    .expiresAt(LocalDateTime.now().plusMinutes(30))
+                    .build();
+            passwordResetTokenRepository.save(prt);
+
+            emailService.sendPasswordResetEmail(email, rawToken);
+            log.info("[AUTH] Token de recuperación generado y enviado para: {}", email);
+        });
     }
 
     @Transactional
     public void resetPassword(ResetPasswordRequest request, String ip, String ua) {
-        log.info("[AUTH] Ejecutando recuperación de contraseña para el token: {}", request.token());
-        // Implementar validación de token y cambio de password
+        log.info("[AUTH] Ejecutando cambio de contraseña via token de recuperación...");
+
+        String tokenHash = hashToken(request.token());
+
+        PasswordResetToken prt = passwordResetTokenRepository.findByTokenHash(tokenHash)
+                .orElseThrow(() -> new BusinessException("Token inválido o expirado", "INVALID_RESET_TOKEN", HttpStatus.BAD_REQUEST));
+
+        if (!prt.isValid()) {
+            throw new BusinessException("El enlace de recuperación ha expirado o ya fue utilizado", "EXPIRED_RESET_TOKEN", HttpStatus.BAD_REQUEST);
+        }
+
+        User user = prt.getUser();
+        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        userRepository.save(user);
+
+        prt.setUsedAt(LocalDateTime.now());
+        passwordResetTokenRepository.save(prt);
+
+        log.info("[AUTH] Contraseña actualizada exitosamente para: {}", user.getEmail());
+    }
+
+    /** Genera el hash SHA-256 de un token raw para almacenamiento seguro. */
+    private String hashToken(String rawToken) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(rawToken.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 no disponible en este entorno", e);
+        }
     }
 
     @Transactional

@@ -65,8 +65,10 @@ management:
     rabbit:
       enabled: false
 
-# ---------- Configuración de IA Refinada ----------
+# ---------- Configuración de la Aplicación ----------
 app:
+  frontend:
+    url: ${APP_FRONTEND_URL:http://localhost:4200}
   ai:
     voice:
       enabled: ${APP_AI_VOICE_ENABLED:false}

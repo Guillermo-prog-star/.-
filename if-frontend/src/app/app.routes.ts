@@ -20,6 +20,16 @@ export const routes: Routes = [
         title: 'Integrity - Registro',
         loadComponent: () => import('./features/auth/register-page.component').then(m => m.RegisterPageComponent)
       },
+      {
+        path: 'forgot-password',
+        title: 'Recuperar contraseña',
+        loadComponent: () => import('./features/auth/forgot-password.component').then(m => m.ForgotPasswordComponent)
+      },
+      {
+        path: 'reset-password',
+        title: 'Nueva contraseña',
+        loadComponent: () => import('./features/auth/reset-password.component').then(m => m.ResetPasswordComponent)
+      },
       { path: '', redirectTo: 'login', pathMatch: 'full' }
     ]
   },

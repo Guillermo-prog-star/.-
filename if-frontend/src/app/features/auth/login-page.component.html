@@ -39,7 +39,7 @@
           <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" />
           <span>Recordar mis datos</span>
         </label>
-        <a href="#" class="forgot-link" (click)="$event.preventDefault()">¿Olvidaste tu contraseña?</a>
+        <a routerLink="/auth/forgot-password" class="forgot-link">¿Olvidaste tu contraseña?</a>
       </div>
 
       @if (error) {

@@ -1,7 +1,8 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Router, RouterLink } from '@angular/router';
 import { ApiService } from '../../core/services/api.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -9,72 +10,108 @@ import { FamilyGratitudeService } from '../family-gratitude/family-gratitude.ser
 import { DashboardDataService } from '../dashboard/services/dashboard-data.service';
 import { FamilyGratitude } from '../family-gratitude/family-gratitude.model';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
-import { forkJoin, Observable, of } from 'rxjs';
+import { GuardianPanelComponent } from '../guardian/guardian-panel.component';
+import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
-
-import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-portal-familiar',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, NarrativeCompanionComponent],
+  imports: [CommonModule, FormsModule, RouterLink, NarrativeCompanionComponent, GuardianPanelComponent],
   templateUrl: './portal-familiar.component.html',
   styleUrl: './portal-familiar.component.css'
 })
-export class PortalFamiliarComponent implements OnInit {
-  private readonly http = inject(HttpClient);
-  private readonly api = inject(ApiService);
-  private readonly familyState = inject(FamilyStateService);
-  private readonly authService = inject(AuthService);
+export class PortalFamiliarComponent implements OnInit, OnDestroy {
+  private readonly http           = inject(HttpClient);
+  private readonly api            = inject(ApiService);
+  private readonly familyState    = inject(FamilyStateService);
+  private readonly authService    = inject(AuthService);
   private readonly gratitudeService = inject(FamilyGratitudeService);
   private readonly dashboardService = inject(DashboardDataService);
+  private readonly router         = inject(Router);
 
-  // Estados locales
-  familyId = 0;
+  // ── Identidad ─────────────────────────────────────────────────────────────
+  familyId     = 0;
   userFullName = '';
-  roleLabel = '';
-  familyName = '';
+  roleLabel    = '';
+  familyName   = '';
 
-  checklistItems: any[] = [];
+  // ── Reloj en vivo ─────────────────────────────────────────────────────────
+  currentTime  = '';
+  private clockInterval: any;
+
+  // ── Datos de la familia ───────────────────────────────────────────────────
+  members:          any[]           = [];
+  checklistItems:   any[]           = [];
   gratitudeEntries: FamilyGratitude[] = [];
-  behavioralEvents: any[] = [];
-  ivrSummary: any = null;
-  stats: any = null;
+  behavioralEvents: any[]           = [];
+  ivrSummary:       any             = null;
+  stats:            any             = null;
 
-  // Formulario rápido de gratitud
-  gratitudeForm = {
-    toMember: '',
-    description: ''
-  };
+  // ── Formulario rápido de gratitud ─────────────────────────────────────────
+  gratitudeForm = { toMember: '', description: '' };
 
-  // Modal y formulario de reparación conductual
-  selectedEventForRepair: any = null;
-  showRepairModal = false;
-  submittingRepair = false;
-  repairForm = {
-    description: ''
-  };
+  // ── Modal de reparación conductual ───────────────────────────────────────
+  selectedEventForRepair: any  = null;
+  showRepairModal              = false;
+  submittingRepair             = false;
+  repairForm                   = { description: '' };
 
-  // Modal y formulario de nueva fricción conductual
-  showFrictionModal = false;
-  submittingFriction = false;
-  frictionForm = {
-    description: '',
-    severity: 3
-  };
+  // ── Modal de nueva fricción ───────────────────────────────────────────────
+  showFrictionModal    = false;
+  submittingFriction   = false;
+  frictionForm         = { description: '', severity: 3 };
 
-  loading = false;
+  // ── Estados de UI ─────────────────────────────────────────────────────────
+  loading             = false;
   submittingGratitude = false;
-  gratitudeSuccess = false;
-  errorMessage = '';
+  gratitudeSuccess    = false;
+  errorMessage        = '';
 
+  // ── Getters para el panel del Guardián ───────────────────────────────────
+  get guardianFamilyId(): number {
+    return this.familyId ?? 0;
+  }
+
+  get guardianMemberId(): number | undefined {
+    const id = localStorage.getItem('currentMemberId');
+    return id ? Number(id) : undefined;
+  }
+
+  // ── Etiqueta de rol legible ───────────────────────────────────────────────
+  get roleBadge(): string {
+    if (this.roleLabel === 'ADMIN') return 'Gestor';
+    if (this.roleLabel === 'SENTINEL') return 'Sentinel';
+    return 'Miembro';
+  }
+
+  // ── Progreso del checklist ────────────────────────────────────────────────
+  get completedCount(): number {
+    return this.checklistItems.filter(i => i.completed).length;
+  }
+
+  get completionPercentage(): number {
+    if (!this.checklistItems.length) return 0;
+    return Math.round((this.completedCount / this.checklistItems.length) * 100);
+  }
+
+  // ── Horas con 1 decimal ───────────────────────────────────────────────────
+  get ivrRepairHours(): string {
+    const h = this.ivrSummary?.averageRepairTimeHours ?? 0;
+    return Number(h).toFixed(1);
+  }
+
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
+    this.updateClock();
+    this.clockInterval = setInterval(() => this.updateClock(), 60_000);
+
     const currentUser = this.authService.user();
     if (currentUser) {
       this.userFullName = currentUser.fullName;
-      this.roleLabel = currentUser.role;
+      this.roleLabel    = currentUser.role;
     }
-    this.familyId = this.familyState.getSelectedFamilyId();
+    this.familyId  = this.familyState.getSelectedFamilyId();
     this.familyName = localStorage.getItem('selectedFamilyName') || 'Familia';
 
     if (this.familyId) {
@@ -84,124 +121,113 @@ export class PortalFamiliarComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    clearInterval(this.clockInterval);
+  }
+
+  private updateClock(): void {
+    const now = new Date();
+    this.currentTime = now.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
+  // ── Carga de datos ────────────────────────────────────────────────────────
   loadAllData(): void {
-    this.loading = true;
+    this.loading      = true;
     this.errorMessage = '';
 
     forkJoin({
-      checklist: this.http.get<any>(`${this.api.base}/checklist/family/${this.familyId}`).pipe(
-        catchError(() => of({ data: [] }))
-      ),
-      gratitudes: this.gratitudeService.findByFamily(this.familyId).pipe(
-        catchError(() => of([]))
-      ),
-      events: this.http.get<any>(`${this.api.base}/family-behavioral-events/family/${this.familyId}`).pipe(
-        catchError(() => of({ data: [] }))
-      ),
-      ivr: this.http.get<any>(`${this.api.base}/family-behavioral-events/family/${this.familyId}/ivr`).pipe(
-        catchError(() => of({ data: null }))
-      ),
-      dashboard: this.dashboardService.fetchData(this.familyId).pipe(
-        catchError(() => of(null))
-      )
+      family: this.http.get<any>(`${this.api.base}/families/${this.familyId}`).pipe(catchError(() => of(null))),
+      checklist: this.http.get<any>(`${this.api.base}/checklist/family/${this.familyId}`).pipe(catchError(() => of({ data: [] }))),
+      gratitudes: this.gratitudeService.findByFamily(this.familyId).pipe(catchError(() => of([]))),
+      events: this.http.get<any>(`${this.api.base}/family-behavioral-events/family/${this.familyId}`).pipe(catchError(() => of({ data: [] }))),
+      ivr: this.http.get<any>(`${this.api.base}/family-behavioral-events/family/${this.familyId}/ivr`).pipe(catchError(() => of({ data: null }))),
+      dashboard: this.dashboardService.fetchData(this.familyId).pipe(catchError(() => of(null)))
     }).subscribe({
-      next: ({ checklist, gratitudes, events, ivr, dashboard }) => {
-        this.checklistItems = checklist?.data || [];
+      next: ({ family, checklist, gratitudes, events, ivr, dashboard }) => {
+        // Miembros del núcleo familiar para selector
+        const familyData = family?.data ?? family;
+        this.members = familyData?.members ?? [];
+
+        // Pre-seleccionar currentMemberId en gratitud si ya se conoce
+        if (!this.gratitudeForm.toMember && this.members.length > 0) {
+          const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
+          const matched  = this.members.find((m: any) => m.email === authUser.email);
+          // resolver currentMemberId si aún no está
+          if (matched?.id && !localStorage.getItem('currentMemberId')) {
+            localStorage.setItem('currentMemberId', matched.id.toString());
+          }
+        }
+
+        this.checklistItems   = checklist?.data || [];
         this.gratitudeEntries = gratitudes.slice(0, 3);
         this.behavioralEvents = events?.data || [];
-        this.ivrSummary = ivr?.data || { familyId: this.familyId, totalConflicts: 0, repairedConflicts: 0, averageRepairTimeHours: 0.0, ivrScore: 100.0 };
-        this.stats = dashboard;
+        this.ivrSummary       = ivr?.data ?? {
+          familyId: this.familyId, totalConflicts: 0, repairedConflicts: 0,
+          averageRepairTimeHours: 0.0, ivrScore: 100.0
+        };
+        this.stats   = dashboard;
         this.loading = false;
       },
       error: () => {
         this.errorMessage = 'Ocurrió un error sincronizando el portal familiar.';
-        this.loading = false;
+        this.loading      = false;
       }
     });
   }
 
+  // ── Checklist ─────────────────────────────────────────────────────────────
   toggleChecklistItem(item: any): void {
     if (item.completed) return;
 
     this.http.put<any>(`${this.api.base}/checklist/${item.id}/complete`, { completedBy: this.userFullName })
       .subscribe({
         next: () => {
-          item.completed = true;
+          item.completed   = true;
           item.completedBy = this.userFullName;
-          // Volver a cargar el dashboard silenciosamente para refrescar progreso
-          this.dashboardService.fetchData(this.familyId).subscribe(data => {
-            this.stats = data;
-          });
+          this.dashboardService.fetchData(this.familyId).subscribe(data => { this.stats = data; });
         },
-        error: () => {
-          this.errorMessage = 'Fallo al completar la tarea diaria.';
-        }
+        error: () => { this.errorMessage = 'Fallo al completar la tarea diaria.'; }
       });
   }
 
   injectSentinelMission(): void {
     const demoMissions = [
-      {
-        description: 'Cena sin celulares: Cenar juntos durante 15 minutos sin ningún dispositivo móvil.',
-        dimension: 'Comunicación',
-        source: 'SENTINEL'
-      },
-      {
-        description: 'Reconocimiento sincero: Dedicar 5 minutos al final del día para agradecerse mutuamente.',
-        dimension: 'Amor',
-        source: 'SENTINEL'
-      },
-      {
-        description: 'Cartel de responsabilidades: Diseñar juntos un cartel visual de roles y tareas domésticas.',
-        dimension: 'Entrega',
-        source: 'SENTINEL'
-      }
+      { description: 'Cena sin celulares: Cenar juntos durante 15 minutos sin ningún dispositivo móvil.', dimension: 'Comunicación', source: 'SENTINEL' },
+      { description: 'Reconocimiento sincero: Dedicar 5 minutos al final del día para agradecerse mutuamente.', dimension: 'Amor', source: 'SENTINEL' },
+      { description: 'Cartel de responsabilidades: Diseñar juntos un cartel visual de roles y tareas domésticas.', dimension: 'Entrega', source: 'SENTINEL' }
     ];
-
-    const randomIndex = Math.floor(Math.random() * demoMissions.length);
-    const body = demoMissions[randomIndex];
-
+    const body = demoMissions[Math.floor(Math.random() * demoMissions.length)];
     this.http.post<any>(`${this.api.base}/checklist/family/${this.familyId}`, body)
       .subscribe({
-        next: () => {
-          this.loadAllData();
-        },
-        error: () => {
-          this.errorMessage = 'No se pudo inyectar la micro-misión interactiva.';
-        }
+        next: () => this.loadAllData(),
+        error: () => { this.errorMessage = 'No se pudo inyectar la micro-misión interactiva.'; }
       });
   }
 
+  // ── Gratitud ──────────────────────────────────────────────────────────────
+  selectGratitudeMember(name: string): void {
+    this.gratitudeForm.toMember = this.gratitudeForm.toMember === name ? '' : name;
+  }
+
   submitQuickGratitude(): void {
-    if (!this.gratitudeForm.toMember.trim() || !this.gratitudeForm.description.trim()) {
-      return;
-    }
+    if (!this.gratitudeForm.toMember.trim() || !this.gratitudeForm.description.trim()) return;
 
     this.submittingGratitude = true;
 
-    const request = {
-      familyId: this.familyId,
-      fromMember: this.userFullName,
-      toMember: this.gratitudeForm.toMember,
+    this.gratitudeService.create({
+      familyId:    this.familyId,
+      fromMember:  this.userFullName,
+      toMember:    this.gratitudeForm.toMember,
       description: this.gratitudeForm.description
-    };
-
-    this.gratitudeService.create(request).subscribe({
+    }).subscribe({
       next: (newEntry) => {
-        this.submittingGratitude = false;
-        this.gratitudeSuccess = true;
-        this.gratitudeForm.toMember = '';
-        this.gratitudeForm.description = '';
-        
-        // Agregar al inicio del feed localmente
+        this.submittingGratitude        = false;
+        this.gratitudeSuccess           = true;
+        this.gratitudeForm.toMember     = '';
+        this.gratitudeForm.description  = '';
         this.gratitudeEntries.unshift(newEntry);
-        if (this.gratitudeEntries.length > 3) {
-          this.gratitudeEntries.pop();
-        }
-
-        setTimeout(() => {
-          this.gratitudeSuccess = false;
-        }, 3000);
+        if (this.gratitudeEntries.length > 3) this.gratitudeEntries.pop();
+        setTimeout(() => { this.gratitudeSuccess = false; }, 3000);
       },
       error: () => {
         this.submittingGratitude = false;
@@ -210,85 +236,60 @@ export class PortalFamiliarComponent implements OnInit {
     });
   }
 
-  // Métodos del Módulo de Eventos Conductuales (IVR)
+  // ── IVR — reparación ─────────────────────────────────────────────────────
   openRepairModal(event: any): void {
     if (event.repairedAt) return;
     this.selectedEventForRepair = event;
     this.repairForm.description = '';
-    this.showRepairModal = true;
+    this.showRepairModal        = true;
   }
 
   closeRepairModal(): void {
-    this.showRepairModal = false;
+    this.showRepairModal        = false;
     this.selectedEventForRepair = null;
   }
 
   submitRepair(): void {
     if (!this.repairForm.description.trim()) return;
-
     this.submittingRepair = true;
     const body = {
       repairDescription: this.repairForm.description,
-      // FIX Bug #14: LocalDateTime cannot parse ISO 8601 'Z' suffix — strip it
       repairedAt: new Date().toISOString().replace('Z', '')
     };
-
     this.http.put<any>(`${this.api.base}/family-behavioral-events/${this.selectedEventForRepair.id}/repair`, body)
       .subscribe({
-        next: () => {
-          this.submittingRepair = false;
-          this.closeRepairModal();
-          this.loadAllData();
-        },
-        error: () => {
-          this.submittingRepair = false;
-          this.errorMessage = 'Fallo al reportar la reparación conductual.';
-        }
+        next: () => { this.submittingRepair = false; this.closeRepairModal(); this.loadAllData(); },
+        error: () => { this.submittingRepair = false; this.errorMessage = 'Fallo al reportar la reparación.'; }
       });
   }
 
+  // ── IVR — fricción ────────────────────────────────────────────────────────
   openFrictionModal(): void {
     this.frictionForm.description = '';
-    this.frictionForm.severity = 3;
-    this.showFrictionModal = true;
+    this.frictionForm.severity    = 3;
+    this.showFrictionModal        = true;
   }
 
-  closeFrictionModal(): void {
-    this.showFrictionModal = false;
-  }
+  closeFrictionModal(): void { this.showFrictionModal = false; }
 
   submitFriction(): void {
     if (!this.frictionForm.description.trim()) return;
-
     this.submittingFriction = true;
     const body = {
-      familyId: this.familyId,
+      familyId:    this.familyId,
       description: this.frictionForm.description,
-      severity: this.frictionForm.severity,
-      // FIX Bug #14: LocalDateTime cannot parse ISO 8601 'Z' suffix — strip it
-      occurredAt: new Date().toISOString().replace('Z', '')
+      severity:    this.frictionForm.severity,
+      occurredAt:  new Date().toISOString().replace('Z', '')
     };
-
     this.http.post<any>(`${this.api.base}/family-behavioral-events`, body)
       .subscribe({
-        next: () => {
-          this.submittingFriction = false;
-          this.closeFrictionModal();
-          this.loadAllData();
-        },
-        error: () => {
-          this.submittingFriction = false;
-          this.errorMessage = 'No fue posible registrar el incidente de fricción.';
-        }
+        next: () => { this.submittingFriction = false; this.closeFrictionModal(); this.loadAllData(); },
+        error: () => { this.submittingFriction = false; this.errorMessage = 'No fue posible registrar la fricción.'; }
       });
   }
 
-  get completedCount(): number {
-    return this.checklistItems.filter(i => i.completed).length;
-  }
-
-  get completionPercentage(): number {
-    if (!this.checklistItems.length) return 0;
-    return Math.round((this.completedCount / this.checklistItems.length) * 100);
+  // ── Navegación del nav bar ────────────────────────────────────────────────
+  navTo(route: string): void {
+    this.router.navigate([route]);
   }
 }

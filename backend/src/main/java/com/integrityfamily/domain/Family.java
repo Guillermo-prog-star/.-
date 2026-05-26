@@ -65,6 +65,26 @@ public class Family {
     @Column(name = "milestone_icf_avg")
     private Double milestoneIcfAvg;
 
+    // ---- Guardián Familiar ----
+
+    /** ID del miembro elegido como Guardián Familiar. */
+    @Column(name = "guardian_member_id")
+    private Long guardianMemberId;
+
+    /** Cuándo fue elegido el Guardián actual. */
+    @Column(name = "guardian_since")
+    private java.time.LocalDateTime guardianSince;
+
+    /** Si el guardianato rota automáticamente cada mes. */
+    @Builder.Default
+    @Column(name = "rotation_enabled")
+    private Boolean rotationEnabled = false;
+
+    /** Puntuación de participación colectiva de la familia (misiones completadas). */
+    @Builder.Default
+    @Column(name = "participation_score")
+    private Integer participationScore = 0;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by_id")
     @com.fasterxml.jackson.annotation.JsonIgnore

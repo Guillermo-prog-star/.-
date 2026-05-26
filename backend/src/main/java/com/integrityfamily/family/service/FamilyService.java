@@ -7,6 +7,7 @@ import com.integrityfamily.family.dto.FamilyMemberResponse;
 import com.integrityfamily.family.dto.FamilyResponse;
 import com.integrityfamily.domain.repository.UserRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
+import com.integrityfamily.domain.repository.MemberRepository;
 import com.integrityfamily.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -26,10 +27,12 @@ public class FamilyService {
 
     private final FamilyRepository familyRepository;
     private final UserRepository userRepository;
+    private final MemberRepository memberRepository;
 
-    public FamilyService(FamilyRepository familyRepository, UserRepository userRepository) {
+    public FamilyService(FamilyRepository familyRepository, UserRepository userRepository, MemberRepository memberRepository) {
         this.familyRepository = familyRepository;
         this.userRepository = userRepository;
+        this.memberRepository = memberRepository;
     }
 
     @Transactional(readOnly = true)
@@ -139,6 +142,13 @@ public class FamilyService {
                         .map(this::toMemberResponse)
                         .toList();
 
+        // Nombre del guardián (lookup puntual, sin lazy)
+        String guardianName = null;
+        if (family.getGuardianMemberId() != null) {
+            guardianName = memberRepository.findById(family.getGuardianMemberId())
+                .map(FamilyMember::getFullName).orElse(null);
+        }
+
         return FamilyResponse.builder()
                 .id(family.getId())
                 .name(family.getName())
@@ -149,6 +159,10 @@ public class FamilyService {
                 .whatsapp(family.getWhatsapp())
                 .sentinelActive(family.getSentinelActive())
                 .members(members)
+                .guardianMemberId(family.getGuardianMemberId())
+                .guardianFullName(guardianName)
+                .guardianSince(family.getGuardianSince())
+                .participationScore(family.getParticipationScore())
                 .build();
     }
 

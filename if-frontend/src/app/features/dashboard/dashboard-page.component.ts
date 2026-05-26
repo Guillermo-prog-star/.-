@@ -28,6 +28,7 @@ import { IcfTrendChartComponent } from './components/icf-trend-chart/icf-trend-c
 import { AbandonmentRiskBannerComponent } from './components/abandonment-risk-banner/abandonment-risk-banner.component';
 import { DimensionHistoryChartComponent } from './components/dimension-history-chart/dimension-history-chart.component';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
+import { GuardianPanelComponent } from '../guardian/guardian-panel.component';
 
 /**
  * SDD: Dashboard Page Component
@@ -51,7 +52,8 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
     IcfTrendChartComponent,
     AbandonmentRiskBannerComponent,
     DimensionHistoryChartComponent,
-    NarrativeCompanionComponent
+    NarrativeCompanionComponent,
+    GuardianPanelComponent
   ],
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.css'],
@@ -114,6 +116,15 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
 
   get familyName(): string {
     return localStorage.getItem('selectedFamilyName') || 'Familia';
+  }
+
+  get guardianFamilyId(): number {
+    return this.familyState.getSelectedFamilyId() ?? 0;
+  }
+
+  get guardianMemberId(): number | undefined {
+    const id = localStorage.getItem('currentMemberId');
+    return id ? Number(id) : undefined;
   }
 
   private checkWhatsappConfiguration(familyId: number): void {

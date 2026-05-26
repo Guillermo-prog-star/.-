@@ -9,6 +9,54 @@ export interface Family {
   currentMilestone: string; municipio: string; whatsapp: string;
   pin?: string; sentinelActive?: boolean;
   members?: any[];
+  // Guardián Familiar
+  guardianMemberId?: number | null;
+  guardianFullName?: string | null;
+  guardianSince?: string | null;
+  participationScore?: number;
+}
+
+// ── Guardián Familiar ──────────────────────────────────────────────────────
+
+export type MissionStatus   = 'PENDING' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+export type MissionCategory = 'CONEXION' | 'COMUNICACION' | 'GRATITUD' | 'HABITOS' | 'MEMORIA' | 'REFLEXION' | 'BIENESTAR';
+
+export interface MissionTemplate {
+  title: string; description: string;
+  category: MissionCategory; durationMinutes: number;
+  difficulty: string; emoji: string;
+}
+
+export interface MissionDto {
+  id: number; title: string; description: string;
+  category: MissionCategory; durationMinutes: number;
+  status: MissionStatus;
+  createdByMemberId?: number; createdByFullName?: string;
+  activatedAt?: string; completedAt?: string; createdAt?: string;
+}
+
+export interface VoteCount { memberId: number; fullName: string; votes: number; }
+
+export interface GuardianStatusResponse {
+  familyId: number;
+  hasGuardian: boolean;
+  guardianMemberId?: number;
+  guardianFullName?: string;
+  guardianSince?: string;
+  totalVotes: number;
+  voteCounts: VoteCount[];
+  currentUserHasVoted: boolean;
+  activeMission?: MissionDto;
+  participationScore: number;
+  completedMissions: number;
+}
+
+export interface VoteRequest { voterMemberId: number; nominatedMemberId: number; }
+
+export interface ActivateMissionRequest {
+  title: string; description: string;
+  category: MissionCategory; durationMinutes: number;
+  guardianMemberId: number;
 }
 export interface FamilyCreateRequest { name: string; description: string; municipio?: string; whatsapp?: string; pin?: string; }
 

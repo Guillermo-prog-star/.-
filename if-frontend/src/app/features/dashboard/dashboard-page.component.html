@@ -18,7 +18,14 @@
 
     <!-- Narrative Guidance Engine -->
     <app-narrative-companion module="dashboard"></app-narrative-companion>
-    
+
+    <!-- GUARDIÁN FAMILIAR — Dinamizador del núcleo familiar -->
+    <app-guardian-panel
+      *ngIf="guardianFamilyId > 0"
+      [familyId]="guardianFamilyId"
+      [currentMemberId]="guardianMemberId">
+    </app-guardian-panel>
+
     <!-- [SDD Analytics v2] ABANDONMENT RISK BANNER — visible sólo si HIGH/CRITICAL -->
     <app-abandonment-risk-banner></app-abandonment-risk-banner>
 

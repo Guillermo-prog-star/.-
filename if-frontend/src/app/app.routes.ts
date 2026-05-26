@@ -94,6 +94,13 @@ export const routes: Routes = [
       { path: 'cognitive', title: 'Sistema Cognitivo', loadComponent: () => import('./features/cognitive/cognitive-page.component').then(m => m.CognitivePageComponent) },
       { path: 'profile', title: 'Mi Perfil', loadComponent: () => import('./features/profile/profile-page.component').then(m => m.ProfilePageComponent) },
 
+      // Guardián Familiar
+      {
+        path: 'guardian/:familyId/election',
+        title: 'Elegir Guardián Familiar',
+        loadComponent: () => import('./features/guardian/guardian-election.component').then(m => m.GuardianElectionComponent)
+      },
+
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

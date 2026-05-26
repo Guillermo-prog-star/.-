@@ -1,5 +1,6 @@
 package com.integrityfamily.family.dto;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Builder;
 
@@ -13,5 +14,10 @@ public record FamilyResponse(
     String municipio,
     String whatsapp,
     Boolean sentinelActive,
-    List<FamilyMemberResponse> members
+    List<FamilyMemberResponse> members,
+    // Guardián Familiar
+    Long guardianMemberId,
+    String guardianFullName,
+    LocalDateTime guardianSince,
+    Integer participationScore
 ) {}

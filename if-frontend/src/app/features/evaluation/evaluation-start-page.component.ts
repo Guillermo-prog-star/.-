@@ -25,6 +25,7 @@ export class EvaluationStartPageComponent implements OnInit {
   members: Member[] = [];
   selectedMember: number | null = null;
   loading = false;
+  errorMessage = '';
 
   /** ID de la evaluación en estado STARTED (si existe). Permite reanudar. */
   pendingEvalId: number | null = null;
@@ -79,8 +80,8 @@ export class EvaluationStartPageComponent implements OnInit {
   }
 
   start() {
+    this.errorMessage = '';
     if (this.familyId <= 0) {
-      alert('Por favor, selecciona una familia primero.');
       this.goToFamilies();
       return;
     }
@@ -104,8 +105,7 @@ export class EvaluationStartPageComponent implements OnInit {
         },
         error: (err: any) => {
           this.loading = false;
-          console.error('Error en POST /assessments/start:', err);
-          alert('No se pudo iniciar la evaluación. Revisa la consola.');
+          this.errorMessage = err?.error?.message ?? 'No se pudo iniciar la evaluación. Intenta de nuevo.';
         }
       });
   }

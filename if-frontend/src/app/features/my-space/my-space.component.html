@@ -1,97 +1,144 @@
-<div class="my-space-container">
-  <!-- Back navigation button -->
-  <div style="margin-bottom: 1.5rem; display: flex; justify-content: flex-start;">
-    <a routerLink="/plans" class="btn-back" style="display: inline-flex; align-items: center; gap: 8px; color: #1a2a6c; font-weight: 700; text-decoration: none; font-size: 0.95rem; cursor: pointer; transition: all 0.2s;">
-      ← Volver a Planes de Trabajo
-    </a>
-  </div>
+<div class="ms-container">
 
-  <header class="section-header">
-    <h1>Mi Espacio</h1>
-    <p>Tu bitácora privada de evolución consciente. Lo que escribes aquí es solo para ti.</p>
+  <!-- ── Cabecera ── -->
+  <header class="ms-header">
+    <div class="ms-header-left">
+      <div class="ms-lock-icon">🔒</div>
+      <div>
+        <h1>Mi Espacio</h1>
+        <p>Tu bitácora privada de evolución consciente. Solo tú puedes ver esto.</p>
+      </div>
+    </div>
+    <a routerLink="/dashboard" class="ms-back-btn">← Dashboard</a>
   </header>
 
   <!-- Narrative Guidance Engine -->
   <app-narrative-companion module="my-space"></app-narrative-companion>
 
-  <div class="content-grid">
-    <!-- Formulario de Nueva Entrada -->
-    <div class="glass-container form-section">
-      <h2>Nueva Reflexión</h2>
-      <form (ngSubmit)="saveEntry()">
-        <div class="form-group">
-          <label for="title">Título</label>
-          <input type="text" id="title" [(ngModel)]="newEntry.title" name="title" placeholder="¿Sobre qué quieres reflexionar?" required>
+  <!-- ── Toasts ── -->
+  <div class="ms-toast ms-toast-error" *ngIf="errorMessage">
+    <span>⚠️ {{ errorMessage }}</span>
+    <button (click)="errorMessage = ''">✕</button>
+  </div>
+  <div class="ms-toast ms-toast-success" *ngIf="successMessage">
+    <span>{{ successMessage }}</span>
+  </div>
+
+  <!-- ── Layout dos columnas ── -->
+  <div class="ms-grid">
+
+    <!-- ── Columna izquierda: formulario ── -->
+    <div class="ms-card ms-form-card">
+      <div class="ms-card-header">
+        <span class="ms-card-icon">✍️</span>
+        <h2>Nueva Reflexión</h2>
+      </div>
+
+      <form (ngSubmit)="saveEntry()" class="ms-form">
+
+        <!-- Título -->
+        <div class="ms-field">
+          <label for="ms-title">Título</label>
+          <input
+            id="ms-title"
+            type="text"
+            [(ngModel)]="newEntry.title"
+            name="title"
+            placeholder="¿Sobre qué quieres reflexionar?"
+          />
         </div>
 
-        <div class="form-group">
-          <label for="category">Categoría</label>
-          <select id="category" [(ngModel)]="newEntry.category" name="category">
-            <option *ngFor="let cat of categories" [value]="cat.value">{{cat.label}}</option>
+        <!-- Categoría -->
+        <div class="ms-field">
+          <label for="ms-category">Categoría</label>
+          <select id="ms-category" [(ngModel)]="newEntry.category" name="category">
+            <option *ngFor="let cat of categories" [value]="cat.value">{{ cat.label }}</option>
           </select>
         </div>
 
-        <div class="form-group">
+        <!-- Estado emocional -->
+        <div class="ms-field">
           <label>¿Cómo te sientes hoy?</label>
-          <div class="emotion-selector">
-            <button type="button" *ngFor="let state of emotionalStates" 
-                    [class.selected]="newEntry.emotionalState === state.value"
-                    (click)="newEntry.emotionalState = state.value"
-                    [title]="state.label">
-              <span class="emotion-icon">{{state.icon}}</span>
-              <span class="emotion-label">{{state.label}}</span>
+          <div class="emotion-grid">
+            <button
+              type="button"
+              *ngFor="let state of emotionalStates"
+              class="emotion-btn"
+              [class.emotion-selected]="newEntry.emotionalState === state.value"
+              (click)="newEntry.emotionalState = state.value"
+              [title]="state.label">
+              <span class="emotion-icon">{{ state.icon }}</span>
+              <span class="emotion-label">{{ state.label }}</span>
             </button>
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="content">Contenido</label>
-          <textarea id="content" [(ngModel)]="newEntry.content" name="content" rows="6" placeholder="Escribe aquí tus pensamientos, emociones o desahogos..." required></textarea>
+        <!-- Contenido -->
+        <div class="ms-field">
+          <label for="ms-content">Contenido</label>
+          <textarea
+            id="ms-content"
+            [(ngModel)]="newEntry.content"
+            name="content"
+            rows="6"
+            placeholder="Escribe aquí tus pensamientos, emociones o reflexiones...">
+          </textarea>
         </div>
 
-        <button type="submit" class="btn-submit" [disabled]="loading">
-          {{ loading ? 'Guardando...' : 'Guardar en mi Bitácora' }}
+        <button type="submit" class="ms-btn-submit" [disabled]="saving">
+          {{ saving ? 'Guardando...' : '🔒 Guardar en mi Espacio' }}
         </button>
+
       </form>
     </div>
 
-    <!-- Listado de Entradas -->
-    <div class="entries-section">
-      <h2>Mis Reflexiones Pasadas</h2>
-      
-      <div *ngIf="loading && entries.length === 0" class="loading-state">
-        <p>Cargando tus recuerdos...</p>
+    <!-- ── Columna derecha: entradas ── -->
+    <div class="ms-entries-col">
+      <div class="ms-entries-header">
+        <h2>Mis Reflexiones</h2>
+        <span class="ms-count" *ngIf="entries.length">{{ entries.length }}</span>
       </div>
 
-      <div *ngIf="!loading && entries.length === 0" class="empty-state glass-container">
-        <span class="empty-icon">🍃</span>
-        <p>Aún no has escrito nada. Este es un espacio seguro para ti.</p>
+      <!-- Loading skeleton -->
+      <ng-container *ngIf="loading">
+        <div class="ms-skeleton" *ngFor="let i of [1,2,3]"></div>
+      </ng-container>
+
+      <!-- Empty state -->
+      <div class="ms-empty" *ngIf="!loading && entries.length === 0">
+        <span class="ms-empty-icon">🍃</span>
+        <p>Aún no has escrito nada.</p>
+        <p class="ms-empty-sub">Este es un espacio seguro solo para ti.</p>
       </div>
 
-      <div class="entries-list">
-        <div *ngFor="let entry of entries" class="glass-container entry-card">
-          <div class="entry-header">
-            <div class="entry-title-area">
-              <span class="entry-emotion">{{getEmotionIcon(entry.emotionalState)}}</span>
-              <h3>{{entry.title}}</h3>
+      <!-- Lista de entradas -->
+      <div class="ms-entry-list" *ngIf="!loading && entries.length > 0">
+        <div class="ms-entry-card" *ngFor="let entry of entries">
+
+          <div class="ms-entry-top">
+            <div class="ms-entry-title-row">
+              <span class="ms-entry-emotion">{{ getEmotionIcon(entry.emotionalState) }}</span>
+              <h3 class="ms-entry-title">{{ entry.title }}</h3>
             </div>
-            <span class="entry-date">{{entry.createdAt | date:'mediumDate'}}</span>
+            <span class="ms-entry-date">{{ entry.createdAt | date:'d MMM · HH:mm' }}</span>
           </div>
-          <div class="entry-badge" [class]="(entry.category || '').toLowerCase()">
-            {{entry.category}}
-          </div>
-          <div class="entry-content">
-            <p>{{entry.content}}</p>
-          </div>
-          <div class="entry-footer" style="margin-top: 1.25rem; display: flex; justify-content: flex-end; border-top: 1px dashed rgba(26, 42, 108, 0.08); padding-top: 0.75rem;">
-            <button type="button" (click)="deleteEntry(entry.id)"
-                    style="background: none; border: 1px solid rgba(220,53,69,0.3); color: #dc3545; padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s;"
-                    title="Eliminar esta entrada">
+
+          <span class="ms-cat-badge" [ngClass]="'cat-' + (entry.category || 'reflexion').toLowerCase()">
+            {{ getCategoryLabel(entry.category) }}
+          </span>
+
+          <p class="ms-entry-body">{{ entry.content }}</p>
+
+          <div class="ms-entry-footer">
+            <button type="button" class="ms-btn-delete" (click)="deleteEntry(entry.id)">
               🗑 Eliminar
             </button>
           </div>
+
         </div>
       </div>
+
     </div>
+
   </div>
 </div>

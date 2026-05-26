@@ -15,8 +15,11 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
 export class MySpaceComponent implements OnInit {
   private mySpaceService = inject(MySpaceService);
 
-  entries: any[] = [];
-  loading = false;
+  entries:  any[] = [];
+  loading       = false;
+  saving        = false;
+  errorMessage  = '';
+  successMessage = '';
 
   newEntry = {
     title: '',
@@ -26,19 +29,19 @@ export class MySpaceComponent implements OnInit {
   };
 
   emotionalStates = [
-    { value: 'CALM', label: 'Calmado', icon: '😊' },
-    { value: 'HAPPY', label: 'Feliz', icon: '😃' },
-    { value: 'SAD', label: 'Triste', icon: '😢' },
-    { value: 'ANGRY', label: 'Enojado', icon: '😠' },
-    { value: 'ANXIOUS', label: 'Ansioso', icon: '😰' },
-    { value: 'NEUTRAL', label: 'Neutral', icon: '😐' }
+    { value: 'CALM',    label: 'Calmado',  icon: '😊' },
+    { value: 'HAPPY',   label: 'Feliz',    icon: '😃' },
+    { value: 'SAD',     label: 'Triste',   icon: '😢' },
+    { value: 'ANGRY',   label: 'Enojado',  icon: '😠' },
+    { value: 'ANXIOUS', label: 'Ansioso',  icon: '😰' },
+    { value: 'NEUTRAL', label: 'Neutral',  icon: '😐' }
   ];
 
   categories = [
     { value: 'REFLEXION', label: 'Reflexión' },
-    { value: 'EMOCION', label: 'Desahogo Emocional' },
-    { value: 'LOGRO', label: 'Logro Personal' },
-    { value: 'DUDA', label: 'Duda o Inquietud' }
+    { value: 'EMOCION',   label: 'Desahogo emocional' },
+    { value: 'LOGRO',     label: 'Logro personal' },
+    { value: 'DUDA',      label: 'Duda o inquietud' }
   ];
 
   ngOnInit() {
@@ -49,56 +52,56 @@ export class MySpaceComponent implements OnInit {
     this.loading = true;
     this.mySpaceService.getEntries().subscribe({
       next: (response: any) => {
-        this.entries = response.data || response;
+        this.entries = response.data ?? response ?? [];
         this.loading = false;
       },
-      error: (err: any) => {
-        console.error('Error cargando entradas:', err);
+      error: () => {
+        this.errorMessage = 'No se pudieron cargar tus reflexiones. Intenta de nuevo.';
         this.loading = false;
       }
     });
   }
 
   saveEntry() {
-    if (!this.newEntry.title || !this.newEntry.content) {
-      alert('Por favor completa el título y el contenido.');
+    this.errorMessage = '';
+    if (!this.newEntry.title.trim() || !this.newEntry.content.trim()) {
+      this.errorMessage = 'El título y el contenido son obligatorios.';
       return;
     }
 
-    this.loading = true;
+    this.saving = true;
     this.mySpaceService.createEntry(this.newEntry).subscribe({
-      next: (response: any) => {
-        this.loadEntries();
+      next: () => {
+        this.saving         = false;
+        this.successMessage = '✓ Reflexión guardada en tu espacio privado.';
         this.resetForm();
-        this.loading = false;
+        this.loadEntries();
+        setTimeout(() => { this.successMessage = ''; }, 3500);
       },
-      error: (err: any) => {
-        console.error('Error guardando entrada:', err);
-        this.loading = false;
-        alert('No se pudo guardar la entrada.');
+      error: () => {
+        this.saving       = false;
+        this.errorMessage = 'No se pudo guardar la reflexión. Intenta de nuevo.';
       }
     });
   }
 
   resetForm() {
-    this.newEntry = {
-      title: '',
-      content: '',
-      emotionalState: 'NEUTRAL',
-      category: 'REFLEXION'
-    };
+    this.newEntry = { title: '', content: '', emotionalState: 'NEUTRAL', category: 'REFLEXION' };
   }
 
   deleteEntry(id: number): void {
-    if (!confirm('¿Eliminar esta entrada? Esta acción no se puede deshacer.')) return;
+    if (!confirm('¿Eliminar esta reflexión? No se puede deshacer.')) return;
     this.mySpaceService.deleteEntry(id).subscribe({
       next: () => { this.entries = this.entries.filter((e: any) => e.id !== id); },
-      error: () => { /* entrada ya eliminada o error de red — ignorar */ }
+      error: () => { this.errorMessage = 'No se pudo eliminar la entrada.'; }
     });
   }
 
   getEmotionIcon(state: string): string {
-    const found = this.emotionalStates.find(e => e.value === state);
-    return found ? found.icon : '📝';
+    return this.emotionalStates.find(e => e.value === state)?.icon ?? '📝';
+  }
+
+  getCategoryLabel(cat: string): string {
+    return this.categories.find(c => c.value === cat)?.label ?? cat;
   }
 }

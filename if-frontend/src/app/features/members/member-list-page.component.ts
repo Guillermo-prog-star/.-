@@ -25,6 +25,7 @@ export class MemberListPageComponent implements OnInit {
   members: Member[] = [];
   fullName = ''; role = 'PADRE'; age = 30; aut = 70; resp = 70;
   error = ''; saving = false;
+  inviteMessage = ''; inviteSuccess = false;
 
   get familyId(): number | null {
     const fromSignal = this.familyState.currentFamilyId();
@@ -132,10 +133,18 @@ export class MemberListPageComponent implements OnInit {
   }
 
   invite(id: number) {
+    this.inviteMessage = '';
     this.http.post<any>(`${this.api.base}/members/${id}/invite`, {})
       .subscribe({
-        next: () => alert('¡Invitación enviada con éxito!'),
-        error: (e) => alert(e?.error?.message ?? 'Error al enviar invitación.')
+        next: () => {
+          this.inviteSuccess = true;
+          this.inviteMessage = '¡Invitación enviada con éxito!';
+          setTimeout(() => { this.inviteMessage = ''; }, 3500);
+        },
+        error: (e) => {
+          this.inviteSuccess = false;
+          this.inviteMessage = e?.error?.message ?? 'Error al enviar invitación.';
+        }
       });
   }
 

@@ -66,6 +66,13 @@
         }
       </div>
 
+      @if (errorMessage) {
+        <div style="margin-bottom:12px;padding:10px 14px;background:rgba(239,68,68,0.1);
+                    border:1px solid rgba(239,68,68,0.3);border-radius:10px;
+                    color:#fca5a5;font-size:0.85rem;font-weight:600;">
+          ⚠️ {{ errorMessage }}
+        </div>
+      }
       <button class="btn-start" style="width:100%;" (click)="start()" [disabled]="loading">
         {{ loading ? 'SINCRONIZANDO...' : 'INICIAR TEST DE CONCIENCIA →' }}
       </button>

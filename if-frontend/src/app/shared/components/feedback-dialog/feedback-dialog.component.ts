@@ -46,9 +46,15 @@ import { FamilyStateService } from '../../../core/services/family-state.service'
             class="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-indigo-500 min-h-[100px]"
           ></textarea>
 
-          <button 
-            (click)="submit()" 
-            [disabled]="loading || !comment.trim()"
+          <div *ngIf="feedbackMsg" [style]="feedbackSuccess
+              ? 'padding:10px 14px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:12px;color:#6ee7b7;font-size:0.82rem;font-weight:600;text-align:center;'
+              : 'padding:10px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;color:#fca5a5;font-size:0.82rem;font-weight:600;text-align:center;'">
+            {{ feedbackMsg }}
+          </div>
+
+          <button
+            (click)="submit()"
+            [disabled]="loading || !comment.trim() || feedbackSuccess"
             class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl transition-all shadow-lg active:scale-95 disabled:opacity-50">
             {{ loading ? 'Sincronizando...' : 'Enviar Feedback' }}
           </button>
@@ -82,7 +88,9 @@ export class FeedbackDialogComponent {
 
   visible = false;
   loading = false;
-  
+  feedbackMsg = '';
+  feedbackSuccess = false;
+
   type = 'EXPERIENCE';
   score = 5;
   comment = '';
@@ -97,6 +105,7 @@ export class FeedbackDialogComponent {
     this.visible = false;
     this.comment = '';
     this.score = 5;
+    this.feedbackMsg = '';
   }
 
   submit() {
@@ -111,12 +120,14 @@ export class FeedbackDialogComponent {
     this.feedbackService.sendFeedback(data).subscribe({
       next: () => {
         this.loading = false;
-        this.close();
-        alert('¡Gracias! Tu voz ha sido sincronizada con el equipo de desarrollo.');
+        this.feedbackSuccess = true;
+        this.feedbackMsg = '¡Gracias! Tu voz ha sido sincronizada con el equipo de desarrollo.';
+        setTimeout(() => { this.close(); }, 2200);
       },
       error: () => {
         this.loading = false;
-        alert('Error al enviar el feedback. Reintenta en un momento.');
+        this.feedbackSuccess = false;
+        this.feedbackMsg = 'Error al enviar el feedback. Reintenta en un momento.';
       }
     });
   }

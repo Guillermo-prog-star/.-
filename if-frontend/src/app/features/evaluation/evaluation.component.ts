@@ -35,6 +35,7 @@ export class EvaluationComponent implements OnInit {
    * En ese caso, sendResults() vuelve al modo clásico (envía todas las respuestas en el body).
    */
   incrementalSaveFailed: boolean = false;
+  finalizeError: string = '';
 
   ngOnInit(): void {
     this.familyId = Number(localStorage.getItem('selectedFamilyId') || 0);
@@ -178,7 +179,7 @@ export class EvaluationComponent implements OnInit {
         console.error('[ASSESSMENT] Error al finalizar:', err);
         this.isLoadingResults = false;
         this.isFinished = false; // Permitir reintentar
-        alert('Error al finalizar el diagnóstico: ' + (err.error?.message || err.message));
+        this.finalizeError = err?.error?.message || err?.message || 'Error al finalizar el diagnóstico. Intenta de nuevo.';
       }
     });
   }

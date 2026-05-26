@@ -20,6 +20,7 @@ export class ChatPageComponent implements OnInit {
   inputText = '';
   loading = false;
   recording = false;
+  micError = '';
   private mediaRecorder: any;
   private audioChunks: any[] = [];
 
@@ -96,7 +97,8 @@ export class ChatPageComponent implements OnInit {
       this.recording = true;
     }).catch(err => {
       console.error("Mic access denied", err);
-      alert("Se requiere permiso de micrófono para esta función.");
+      this.micError = "Se requiere permiso de micrófono para esta función.";
+      setTimeout(() => { this.micError = ''; }, 4000);
     });
   }
 

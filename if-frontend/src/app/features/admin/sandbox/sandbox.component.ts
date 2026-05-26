@@ -84,10 +84,9 @@ export class SandboxComponent {
   triggerMassFailure() {
     this.loadingTrend = true;
     this.http.post<any>(`/api/simulation/trigger-mass-failure`, {}).subscribe({
-        next: (res) => { 
-            this.logContent = res.data; 
+        next: (res) => {
+            this.logContent = { msg: '¡Ruido Sistémico Inyectado! Verifica los stats agregados.', data: res.data };
             this.loadingTrend = false;
-            alert('¡Ruido Sistémico Inyectado! Verifica los stats agregados.');
         },
         error: (err) => { this.logContent = err; this.loadingTrend = false; }
     });

@@ -1,6 +1,7 @@
 package com.integrityfamily.chat.controller;
 
 import com.integrityfamily.ai.service.AiService;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.common.service.NotificationWebSocketService;
 import com.integrityfamily.domain.ChatMessage;
 import com.integrityfamily.domain.Family;
@@ -8,6 +9,7 @@ import com.integrityfamily.domain.repository.FamilyRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Controller;
@@ -29,7 +31,7 @@ public class ChatWebSocketController {
         
         try {
             Family family = familyRepository.findById(request.getFamilyId())
-                    .orElseThrow(() -> new RuntimeException("Familia no encontrada"));
+                    .orElseThrow(() -> new BusinessException("Familia no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
             // Procesar el chat (guarda mensaje y genera respuesta)
             ChatMessage aiResponse = aiService.processInteractiveChat(request.getMessage(), family);

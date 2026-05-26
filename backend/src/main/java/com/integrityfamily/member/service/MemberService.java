@@ -12,6 +12,7 @@ import com.integrityfamily.common.event.SystemEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +38,7 @@ public class MemberService {
 
     public FamilyMember findById(Long id) {
         return memberRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Miembro no encontrado"));
+                .orElseThrow(() -> new BusinessException("Miembro no encontrado", "MEMBER_NOT_FOUND", HttpStatus.NOT_FOUND));
     }
 
     @Transactional

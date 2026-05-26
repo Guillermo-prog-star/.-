@@ -2,6 +2,7 @@ package com.integrityfamily.ai.service;
 
 import com.integrityfamily.ai.dto.AiContext;
 import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.CriticalDay;
@@ -9,6 +10,7 @@ import com.integrityfamily.domain.repository.CriticalDayRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -30,7 +32,7 @@ public class AiInferenceService {
         try {
             Long id = Long.parseLong(familyId.trim());
             Family family = familyRepository.findById(id)
-                    .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + id));
+                    .orElseThrow(() -> new BusinessException("Familia no encontrada: " + id, "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
             log.info("Ã°Å¸Â§Â  Sintetizando contexto para: {}", family.getName());
 

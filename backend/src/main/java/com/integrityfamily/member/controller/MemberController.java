@@ -1,12 +1,14 @@
 package com.integrityfamily.member.controller;
 
 import com.integrityfamily.common.dto.ApiResponse;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.FamilyMember;
 import com.integrityfamily.member.dto.MemberRequest;
 import com.integrityfamily.member.service.MemberService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 
@@ -41,7 +43,7 @@ public class MemberController {
     @Transactional(readOnly = true)
     public ApiResponse<List<FamilyMember>> getMyFamilyMembers(org.springframework.security.core.Authentication auth) {
         com.integrityfamily.domain.User user = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado", "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
         
         if (user.getFamily() == null) {
             return ApiResponse.ok(java.util.Collections.emptyList());
@@ -63,7 +65,7 @@ public class MemberController {
         }
 
         com.integrityfamily.domain.User user = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado", "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         com.integrityfamily.domain.Family family = null;
         if (request.familyId() != null) {
@@ -77,7 +79,7 @@ public class MemberController {
         if (family == null) {
             log.warn("[MEMBER-AUTH] Usuario {} sin vínculo. Intentando recuperación por dueño...", auth.getName());
             family = familyRepository.findByCreatedBy_Email(auth.getName())
-                    .orElseThrow(() -> new RuntimeException("No tienes una familia asociada."));
+                    .orElseThrow(() -> new BusinessException("No tienes una familia asociada.", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
             
             user.setFamily(family);
             userRepository.saveAndFlush(user);

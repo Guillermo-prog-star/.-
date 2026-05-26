@@ -19,9 +19,11 @@ import com.integrityfamily.domain.repository.FamilyLogbookRepository;
 import com.integrityfamily.domain.repository.PlanTaskRepository;
 import com.integrityfamily.domain.repository.RiskSnapshotRepository;
 import com.integrityfamily.domain.repository.ImprovementPlanRepository;
+import com.integrityfamily.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -78,7 +80,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         // 1. Recuperar Entidad Core
         Family family = familyRepository.findById(familyId)
                 .orElseGet(() -> familyRepository.findAll().stream().findFirst()
-                .orElseThrow(() -> new RuntimeException("No se encontro ninguna familia en el sistema.")));
+                .orElseThrow(() -> new BusinessException("No se encontró ninguna familia en el sistema.", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND)));
 
         // 2. Recuperar Historial de Evaluaciones
         List<Evaluation> allEvals = evaluationRepository.findByFamilyIdOrderByFinalizedAtAsc(familyId);

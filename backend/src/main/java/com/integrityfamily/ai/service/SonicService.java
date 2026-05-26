@@ -32,8 +32,8 @@ public class SonicService {
         Objects.requireNonNull(family, "family no puede ser null");
         
         // Pipeline de voz orquestado
-        WhisperSttService sttService = stt.orElseThrow(() -> 
-                new IllegalStateException("STT no disponible"));
+        WhisperSttService sttService = stt.orElseThrow(() ->
+                new RuntimeException("STT no disponible"));
 
         String transcription = sttService.transcribe(audioBytes, mimeType);
         String aiText = claude.generateFamilyResponse(transcription, family);

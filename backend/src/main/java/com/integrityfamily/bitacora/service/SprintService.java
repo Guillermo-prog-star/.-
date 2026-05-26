@@ -4,10 +4,12 @@ import com.integrityfamily.ai.dto.AiContext;
 import com.integrityfamily.ai.provider.AiProvider;
 import com.integrityfamily.ai.service.ContextSynthesizer;
 import com.integrityfamily.bitacora.dto.SprintDtos.*;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,15 +56,15 @@ public class SprintService {
         
         Optional<FamilySprint> activeSprintOpt = sprintRepository.findActiveSprintForFamily(familyId);
         if (activeSprintOpt.isPresent()) {
-            throw new IllegalStateException("Ya existe un sprint activo para esta familia. Cierra o cancela el actual primero.");
+            throw new BusinessException("Ya existe un sprint activo para esta familia. Cierra o cancela el actual primero.", "SPRINT_ALREADY_ACTIVE", HttpStatus.CONFLICT);
         }
 
         Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new IllegalArgumentException("Familia no encontrada para ID: " + familyId));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada para ID: " + familyId, "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         int duration = request.durationDays() != null ? request.durationDays() : 7;
         if (duration != 7 && duration != 15) {
-            throw new IllegalArgumentException("La duración del sprint debe ser de 7 o 15 días.");
+            throw new BusinessException("La duración del sprint debe ser de 7 o 15 días.", "INVALID_SPRINT_DURATION", HttpStatus.BAD_REQUEST);
         }
 
         FamilySprint sprint = FamilySprint.builder()
@@ -98,13 +100,13 @@ public class SprintService {
         log.info("🎯 [SPRINT] Cambiando estado de misión ID: {} en sprint ID: {}", missionId, sprintId);
         
         FamilySprint sprint = sprintRepository.findById(sprintId)
-                .orElseThrow(() -> new IllegalArgumentException("Sprint no encontrado con ID: " + sprintId));
+                .orElseThrow(() -> new BusinessException("Sprint no encontrado con ID: " + sprintId, "SPRINT_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         SprintMission mission = missionRepository.findById(missionId)
-                .orElseThrow(() -> new IllegalArgumentException("Misión no encontrada con ID: " + missionId));
+                .orElseThrow(() -> new BusinessException("Misión no encontrada con ID: " + missionId, "MISSION_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         if (!mission.getSprint().getId().equals(sprintId)) {
-            throw new IllegalArgumentException("La misión no pertenece a este sprint.");
+            throw new BusinessException("La misión no pertenece a este sprint.", "MISSION_NOT_IN_SPRINT", HttpStatus.BAD_REQUEST);
         }
 
         if ("PENDING".equals(mission.getStatus())) {
@@ -124,12 +126,12 @@ public class SprintService {
         log.info("📝 [DAILY] Registrando check-in diario para miembro: {} en sprint ID: {}", request.memberName(), sprintId);
 
         FamilySprint sprint = sprintRepository.findById(sprintId)
-                .orElseThrow(() -> new IllegalArgumentException("Sprint no encontrado con ID: " + sprintId));
+                .orElseThrow(() -> new BusinessException("Sprint no encontrado con ID: " + sprintId, "SPRINT_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         LocalDate today = LocalDate.now();
         boolean exists = dailyRepository.existsBySprintIdAndMemberNameAndCheckinDate(sprintId, request.memberName(), today);
         if (exists) {
-            throw new IllegalStateException("Ya registraste tu Check-in Diario el día de hoy.");
+            throw new BusinessException("Ya registraste tu Check-in Diario el día de hoy.", "CHECKIN_ALREADY_TODAY", HttpStatus.CONFLICT);
         }
 
         SprintDaily daily = SprintDaily.builder()
@@ -152,10 +154,10 @@ public class SprintService {
         log.info("🏁 [SPRINT] Cerrando sprint ID: {} y generando retrospectiva", sprintId);
 
         FamilySprint sprint = sprintRepository.findById(sprintId)
-                .orElseThrow(() -> new IllegalArgumentException("Sprint no encontrado con ID: " + sprintId));
+                .orElseThrow(() -> new BusinessException("Sprint no encontrado con ID: " + sprintId, "SPRINT_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         if (!"ACTIVE".equals(sprint.getStatus())) {
-            throw new IllegalStateException("El sprint ya no está activo.");
+            throw new BusinessException("El sprint ya no está activo.", "SPRINT_NOT_ACTIVE", HttpStatus.CONFLICT);
         }
 
         List<SprintMission> missions = missionRepository.findBySprintId(sprintId);

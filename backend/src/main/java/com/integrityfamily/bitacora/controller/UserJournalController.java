@@ -51,7 +51,7 @@ public class UserJournalController {
         }
         String email = auth.getName();
         User user = userRepository.findByEmailIgnoreCase(email)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado para email: " + email));
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado para email: " + email, "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
         return user.getId();
     }
 }

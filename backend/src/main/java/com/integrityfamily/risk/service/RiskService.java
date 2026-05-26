@@ -1,11 +1,13 @@
 package com.integrityfamily.risk.service;
 
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.RiskSnapshot;
 import com.integrityfamily.domain.repository.RiskSnapshotRepository;
 import com.integrityfamily.admin.service.SecurityWatchdogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +35,7 @@ public class RiskService {
 
     public RiskSnapshot findById(Long id) {
         return riskSnapshotRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("InstantÃƒÂ¡nea de riesgo no encontrada"));
+                .orElseThrow(() -> new BusinessException("Instantánea de riesgo no encontrada", "RISK_SNAPSHOT_NOT_FOUND", HttpStatus.NOT_FOUND));
     }
 
     @Transactional

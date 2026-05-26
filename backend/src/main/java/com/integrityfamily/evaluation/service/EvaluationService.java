@@ -27,10 +27,12 @@ import com.integrityfamily.scanner.repository.InferenceRecordRepository;
 import com.integrityfamily.scanner.service.AlertEngine;
 import com.integrityfamily.scanner.service.DeterministicExplanationPipeline;
 import com.integrityfamily.scanner.service.InferenceRecordService;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.scanner.service.RuleExecutionEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,7 +98,7 @@ public class EvaluationService {
     @Transactional
     public Evaluation start(EvaluationDtos.EvaluationStartRequest req) {
         Family family = familyRepository.findById(req.familyId())
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada"));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         Evaluation evaluation = new Evaluation();
         evaluation.setFamily(family);
@@ -308,7 +310,7 @@ public class EvaluationService {
     public void processSimulatedResult(Long familyId, Double icf, boolean hasCrisis) {
         log.info("🧪 [SIMULATION] Ejecutando ráfaga para familia: {}", familyId);
         Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new RuntimeException("Especificación de Familia no encontrada"));
+                .orElseThrow(() -> new BusinessException("Especificación de Familia no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         Evaluation eval = new Evaluation();
         eval.setFamily(family);

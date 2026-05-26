@@ -1,11 +1,13 @@
 package com.integrityfamily.evaluation.service;
 
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.Evaluation;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.repository.EvaluationRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.dto.TerritorialEvolutionReportDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +24,7 @@ public class ReportService {
     @Transactional(readOnly = true)
     public TerritorialEvolutionReportDto getTerritorialReport(Long familyId) {
         com.integrityfamily.domain.repository.FamilySummary family = familyRepository.findProjectedById(familyId)
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada"));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         List<Evaluation> evaluations = evaluationRepository.findWithScoresByFamilyId(familyId);
 

@@ -68,10 +68,10 @@ public class JournalService {
     public Reflection createReflection(ReflectionCreateRequest req) {
         log.info("🧠 [REFLECTION] Creando reflexión guiada para Tarea ID: {}", req.taskId());
         PlanTask task = planTaskRepository.findById(req.taskId())
-                .orElseThrow(() -> new RuntimeException("Tarea no encontrada: " + req.taskId()));
+                .orElseThrow(() -> new BusinessException("Tarea no encontrada: " + req.taskId(), "TASK_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         Family family = familyRepository.findById(req.familyId())
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + req.familyId()));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada: " + req.familyId(), "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         Reflection reflection = Reflection.builder()
                 .task(task)
@@ -128,7 +128,7 @@ public class JournalService {
     public JournalEntry createJournal(JournalCreateRequest req) {
         log.info("📖 [JOURNAL] Registrando entrada de bitácora para familia ID: {}", req.familyId());
         Family family = familyRepository.findById(req.familyId())
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + req.familyId()));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada: " + req.familyId(), "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         PlanTask task = null;
         if (req.relatedTaskId() != null) {
@@ -227,7 +227,7 @@ public class JournalService {
     @Transactional(readOnly = true)
     public LongitudinalMetricsDto getMetrics(Long familyId) {
         Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + familyId));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada: " + familyId, "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         // Calcular adherencia
         List<PlanTask> familyTasks = planTaskRepository.findAll().stream()

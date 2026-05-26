@@ -214,7 +214,7 @@ public class AuthService {
         }
 
         User user = prt.getUser();
-        user.setPassword(passwordEncoder.encode(request.newPassword()));
+        user.setPasswordHash(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
 
         prt.setUsedAt(LocalDateTime.now());

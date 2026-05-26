@@ -1,11 +1,13 @@
 package com.integrityfamily.bitacora.service;
 
 import com.integrityfamily.bitacora.dto.BitacoraRequest;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.FamilyLogbookEntry;
 import com.integrityfamily.domain.repository.FamilyLogbookRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +29,7 @@ public class BitacoraService {
         
         FamilyLogbookEntry entry = new FamilyLogbookEntry();
         entry.setFamily(familyRepository.findById(req.familyId())
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada")));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND)));
         
         // SDD-MAPPING: Mapeo de Insight de IA a campos de Bitácora
         entry.setSituation("Evento: " + req.relatedEntity() + " ID: " + req.relatedId());

@@ -2,10 +2,12 @@ package com.integrityfamily.plan.messaging;
 
 import com.integrityfamily.analytics.dto.DashboardSummaryResponse;
 import com.integrityfamily.common.config.RabbitConfig;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.plan.service.PlanTaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +36,7 @@ public class PlanConsumer {
         try {
             // 1. Obtener la familia
             com.integrityfamily.domain.Family family = familyRepository.findById(summary.familyId())
-                    .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + summary.familyId()));
+                    .orElseThrow(() -> new BusinessException("Familia no encontrada: " + summary.familyId(), "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
             // 2. Generar misiones estructuradas usando la IA
             String jsonMissions = aiService.generateMissions(family);

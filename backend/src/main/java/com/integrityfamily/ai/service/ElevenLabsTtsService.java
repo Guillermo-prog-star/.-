@@ -68,7 +68,7 @@ public class ElevenLabsTtsService {
      */
     public byte[] synthesize(String text) {
         if (config.getVoiceId() == null || config.getVoiceId().isBlank()) {
-            throw new IllegalStateException("ElevenLabs voice-id no está configurado — "
+            throw new RuntimeException("ElevenLabs voice-id no está configurado — "
                     + "establece app.ai.elevenlabs.voice-id en la configuración.");
         }
         if (text == null || text.isBlank()) {

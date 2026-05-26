@@ -48,7 +48,7 @@ public class PlanService {
     @Transactional(readOnly = true)
     public PlanResponse findPlanById(Long id) {
         ImprovementPlan plan = planRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + id));
+                .orElseThrow(() -> new BusinessException("Plan no encontrado: " + id, "PLAN_NOT_FOUND", HttpStatus.NOT_FOUND));
         return toPlanResponse(plan);
     }
 
@@ -60,7 +60,7 @@ public class PlanService {
     @Transactional
     public PlanResponse updatePlan(Long id, ImprovementPlan request) {
         ImprovementPlan existing = planRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Plan no encontrado: " + id));
+                .orElseThrow(() -> new BusinessException("Plan no encontrado: " + id, "PLAN_NOT_FOUND", HttpStatus.NOT_FOUND));
         existing.setTitle(request.getTitle());
         existing.setDescription(request.getDescription());
         return toPlanResponse(planRepository.save(existing));
@@ -77,7 +77,7 @@ public class PlanService {
     public PlanResponse generateDeterministicPlan(Long evaluationId) {
         log.info("🎯 [PLAN DETERMINÍSTICO] Iniciando ensamblado dinámico para Evaluation ID: {}", evaluationId);
         Evaluation evaluation = evaluationRepository.findById(evaluationId)
-                .orElseThrow(() -> new RuntimeException("Evaluación no encontrada: " + evaluationId));
+                .orElseThrow(() -> new BusinessException("Evaluación no encontrada: " + evaluationId, "EVALUATION_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         List<Question> evaluationQuestions = new ArrayList<>();
         if (evaluation.getAnswers() != null) {
@@ -253,7 +253,7 @@ public class PlanService {
     public PlanResponse createPlanFromAiResponse(Long evaluationId, IaPlanResponse aiResponse) {
         log.info("🎯 [PLAN ADAPTATIVO] Creando plan desde respuesta IA para Evaluation ID: {}", evaluationId);
         Evaluation evaluation = evaluationRepository.findById(evaluationId)
-                .orElseThrow(() -> new RuntimeException("Evaluación no encontrada: " + evaluationId));
+                .orElseThrow(() -> new BusinessException("Evaluación no encontrada: " + evaluationId, "EVALUATION_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         List<Question> evaluationQuestions = new ArrayList<>();
         if (evaluation.getAnswers() != null) {
@@ -290,7 +290,7 @@ public class PlanService {
 
         for (IaMilestone iaMilestone : aiResponse.milestones()) {
             Milestone milestone = milestoneRepository.findByCode(iaMilestone.code())
-                    .orElseThrow(() -> new RuntimeException("Hito no encontrado: " + iaMilestone.code()));
+                    .orElseThrow(() -> new BusinessException("Hito no encontrado: " + iaMilestone.code(), "MILESTONE_NOT_FOUND", HttpStatus.NOT_FOUND));
 
             for (IaTask iaTask : iaMilestone.tasks()) {
                 PlanTask task = PlanTask.builder()
@@ -340,7 +340,7 @@ public class PlanService {
     @Transactional(readOnly = true)
     public PlanTaskResponse findTaskById(Long id) {
         PlanTask task = planTaskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tarea no encontrada: " + id));
+                .orElseThrow(() -> new BusinessException("Tarea no encontrada: " + id, "TASK_NOT_FOUND", HttpStatus.NOT_FOUND));
         return toTaskResponse(task);
     }
 
@@ -352,7 +352,7 @@ public class PlanService {
     @Transactional
     public PlanTaskResponse updateTask(Long id, PlanTask request) {
         PlanTask existing = planTaskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tarea no encontrada: " + id));
+                .orElseThrow(() -> new BusinessException("Tarea no encontrada: " + id, "TASK_NOT_FOUND", HttpStatus.NOT_FOUND));
         existing.setTitle(request.getTitle());
         existing.setDescription(request.getDescription());
         existing.setCompleted(request.isCompleted());
@@ -362,7 +362,7 @@ public class PlanService {
     @Transactional
     public PlanTaskResponse completeTask(Long id, boolean completed) {
         PlanTask task = planTaskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tarea no encontrada: " + id));
+                .orElseThrow(() -> new BusinessException("Tarea no encontrada: " + id, "TASK_NOT_FOUND", HttpStatus.NOT_FOUND));
         task.setCompleted(completed);
         
         PlanTask savedTask = planTaskRepository.save(task);

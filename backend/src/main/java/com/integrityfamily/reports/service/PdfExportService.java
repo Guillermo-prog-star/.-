@@ -22,6 +22,8 @@ import com.itextpdf.layout.element.Table;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import com.itextpdf.layout.properties.VerticalAlignment;
+import com.integrityfamily.common.exception.BusinessException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -176,7 +178,7 @@ public class PdfExportService {
         log.info("🏡 [PDF-EXPORT] Generando Reporte Evolutivo Individual para Familia ID: {}", familyId);
         
         Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada para ID: " + familyId));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada para ID: " + familyId, "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
         
         // Cargar última evaluación finalizada (para diagnosticar ICF y vulnerabilidades)
         Optional<Evaluation> lastEvalOpt = evaluationRepository.findFirstByFamilyIdAndStatusOrderByFinalizedAtDesc(familyId, EvaluationStatus.FINALIZED);

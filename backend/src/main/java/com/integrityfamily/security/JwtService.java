@@ -97,7 +97,7 @@ public class JwtService {
     private SecretKey getSignInKey() {
         // Validación fail-fast si la clave no fue inyectada
         if (secretKey == null || secretKey.trim().isEmpty()) {
-            throw new IllegalStateException("CRITICAL: JWT Secret Key not configured in environment variables.");
+            throw new RuntimeException("CRITICAL: JWT Secret Key not configured in environment variables.");
         }
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);

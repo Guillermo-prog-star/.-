@@ -47,7 +47,7 @@ public class FamilyService {
     @Transactional(readOnly = true)
     public Family getFullFamilyContext(String email) {
         return familyRepository.findByCreatedByEmailWithMembers(email)
-                .orElseThrow(() -> new RuntimeException("No se encontrÃƒÂ³ un nÃƒÂºcleo familiar asociado a: " + email));
+                .orElseThrow(() -> new BusinessException("No se encontró un núcleo familiar asociado a: " + email, "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
     }
 
     /**
@@ -56,7 +56,7 @@ public class FamilyService {
     @Transactional(readOnly = true)
     public FamilyResponse findById(Long id) {
         Family family = familyRepository.findByIdWithMembers(id)
-                .orElseThrow(() -> new RuntimeException("Familia con ID " + id + " no encontrada"));
+                .orElseThrow(() -> new BusinessException("Familia con ID " + id + " no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
         return toResponse(family);
     }
 
@@ -101,7 +101,7 @@ public class FamilyService {
     @Transactional
     public FamilyResponse update(Long id, Family request) {
         Family existing = familyRepository.findById(id) // Búsqueda directa para actualización
-                .orElseThrow(() -> new RuntimeException("Familia con ID " + id + " no encontrada"));
+                .orElseThrow(() -> new BusinessException("Familia con ID " + id + " no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
         
         existing.setName(request.getName());
         existing.setDescription(request.getDescription());

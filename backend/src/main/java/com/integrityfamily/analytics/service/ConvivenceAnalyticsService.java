@@ -1,10 +1,12 @@
 package com.integrityfamily.analytics.service;
 
 import com.integrityfamily.analytics.dto.ConvivenceAnalyticsDto.*;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +34,7 @@ public class ConvivenceAnalyticsService {
     public OperativeDashboardResponse getOperativeDashboard(Long familyId) {
         log.info("📊 [DASHBOARD SPRINT 5] Calculando motor analítico longitudinal para familia ID: {}", familyId);
         Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + familyId));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada: " + familyId, "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         // 1. Diagnóstico Actual
         List<Evaluation> evals = evaluationRepository.findWithScoresByFamilyId(familyId).stream()

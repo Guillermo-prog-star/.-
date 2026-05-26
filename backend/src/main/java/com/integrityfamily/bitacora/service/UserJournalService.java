@@ -1,11 +1,13 @@
 package com.integrityfamily.bitacora.service;
 
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.UserJournal;
 import com.integrityfamily.domain.User;
 import com.integrityfamily.domain.repository.UserJournalRepository;
 import com.integrityfamily.domain.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +31,7 @@ public class UserJournalService {
     public UserJournal createJournal(Long userId, UserJournal journal) {
         log.info("📝 [USER_JOURNAL] Creando entrada para usuario ID: {}", userId);
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + userId));
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado: " + userId, "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
         
         journal.setUser(user);
         return userJournalRepository.save(journal);
@@ -38,6 +40,6 @@ public class UserJournalService {
     @Transactional(readOnly = true)
     public UserJournal getJournalById(Long id) {
         return userJournalRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Entrada de bitácora no encontrada: " + id));
+                .orElseThrow(() -> new BusinessException("Entrada de bitácora no encontrada: " + id, "JOURNAL_NOT_FOUND", HttpStatus.NOT_FOUND));
     }
 }

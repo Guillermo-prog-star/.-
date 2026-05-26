@@ -1,5 +1,6 @@
 package com.integrityfamily.assessment.service;
 
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.common.exception.NotFoundException;
 import com.integrityfamily.domain.DimensionType;
 import com.integrityfamily.domain.Evaluation;
@@ -12,6 +13,7 @@ import com.integrityfamily.domain.repository.QuestionRepository;
 import com.integrityfamily.dto.EvaluationDtos;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -164,8 +166,9 @@ public class AssessmentAnswerService {
         Evaluation eval = evaluationRepository.findById(evalId)
                 .orElseThrow(() -> new NotFoundException("Evaluación no encontrada: " + evalId));
         if (eval.getStatus() == EvaluationStatus.FINALIZED) {
-            throw new IllegalStateException(
-                    "No se pueden guardar respuestas: la evaluación " + evalId + " ya fue finalizada.");
+            throw new BusinessException(
+                    "No se pueden guardar respuestas: la evaluación " + evalId + " ya fue finalizada.",
+                    "EVALUATION_ALREADY_FINALIZED", HttpStatus.CONFLICT);
         }
         return eval;
     }

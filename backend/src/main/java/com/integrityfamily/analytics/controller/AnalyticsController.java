@@ -3,12 +3,14 @@ package com.integrityfamily.analytics.controller;
 import com.integrityfamily.analytics.dto.DashboardSummaryResponse;
 import com.integrityfamily.analytics.service.AnalyticsService;
 import com.integrityfamily.common.dto.ApiResponse;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.evaluation.service.EvaluationService;
 import com.integrityfamily.domain.Evaluation;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -61,7 +63,7 @@ public class AnalyticsController {
         log.info("📊 [ANALYTICS] Solicitando análisis de progreso para familia: {}", familyId);
         
         com.integrityfamily.analytics.dto.FamilyProgressResponse response = familyProgressAnalyticsService.getLatestProgress(familyId)
-                .orElseThrow(() -> new RuntimeException("No se encontró análisis de progreso para esta familia."));
+                .orElseThrow(() -> new BusinessException("No se encontró análisis de progreso para esta familia.", "PROGRESS_NOT_FOUND", HttpStatus.NOT_FOUND));
                 
         return ApiResponse.ok(response);
     }
@@ -79,7 +81,7 @@ public class AnalyticsController {
         }
 
         com.integrityfamily.domain.User user = userRepository.findByEmail(auth.getName())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado", "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         if (user.getFamily() == null) {
             log.warn("⚠️ [ANALYTICS] Usuario sin familia vinculada: {}", auth.getName());

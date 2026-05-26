@@ -27,7 +27,7 @@ public class RefreshTokenService {
     @Transactional
     public RefreshToken createRefreshToken(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado al generar refresh token"));
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado al generar refresh token", "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         // Revocar o eliminar tokens anteriores del usuario
         refreshTokenRepository.deleteByUser(user);
@@ -59,6 +59,6 @@ public class RefreshTokenService {
     @Transactional(readOnly = true)
     public RefreshToken findByToken(String token) {
         return refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new RuntimeException("Token de refresco no encontrado en la base de datos"));
+                .orElseThrow(() -> new BusinessException("Token de refresco no encontrado", "REFRESH_TOKEN_NOT_FOUND", HttpStatus.UNAUTHORIZED));
     }
 }

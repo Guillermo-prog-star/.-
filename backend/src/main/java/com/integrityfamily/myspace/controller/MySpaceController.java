@@ -1,6 +1,7 @@
 package com.integrityfamily.myspace.controller;
 
 import com.integrityfamily.common.dto.ApiResponse;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.repository.UserRepository;
 import com.integrityfamily.myspace.domain.PrivateJournalEntry;
 import com.integrityfamily.myspace.repository.PrivateJournalRepository;
@@ -64,6 +65,6 @@ public class MySpaceController {
     private Long resolveUserId(Principal principal) {
         return userRepository.findByEmail(principal.getName())
                 .map(u -> u.getId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseThrow(() -> new BusinessException("Usuario no encontrado", "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
     }
 }

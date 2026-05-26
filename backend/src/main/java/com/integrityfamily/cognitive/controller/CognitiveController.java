@@ -3,6 +3,7 @@ package com.integrityfamily.cognitive.controller;
 import com.integrityfamily.cognitive.dto.CognitiveDtos.*;
 import com.integrityfamily.cognitive.service.*;
 import com.integrityfamily.common.dto.ApiResponse;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.FamilyMemory.MemoryType;
 import com.integrityfamily.domain.repository.*;
@@ -11,6 +12,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -271,8 +273,8 @@ public class CognitiveController {
                 .stream()
                 .filter(e -> e.getStatus() == EvaluationStatus.FINALIZED && e.getIcf() != null)
                 .reduce((first, second) -> second)  // la más reciente
-                .orElseThrow(() -> new RuntimeException(
-                        "No hay evaluaciones finalizadas para la familia " + familyId));
+                .orElseThrow(() -> new BusinessException(
+                        "No hay evaluaciones finalizadas para la familia " + familyId, "EVALUATION_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         log.info("📊 [COGNITIVE] Evaluación de referencia: ID={} | ICF={} | Risk={}",
                 latestEval.getId(), latestEval.getIcf(), latestEval.getRiskLevel());

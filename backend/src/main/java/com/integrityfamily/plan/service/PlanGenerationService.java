@@ -12,12 +12,14 @@ import com.integrityfamily.domain.repository.MilestoneRepository;
 import com.integrityfamily.domain.repository.ImprovementPlanRepository;
 import com.integrityfamily.risk.service.RiskAlgoV1Engine;
 import com.integrityfamily.ai.service.AiService;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.common.service.WhatsAppService;
 import com.integrityfamily.checklist.service.ChecklistService;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -100,7 +102,7 @@ public class PlanGenerationService {
             
             Long evaluationId = Long.valueOf(payload.get("evaluationId").toString());
             Evaluation evaluation = evaluationRepository.findById(evaluationId)
-                    .orElseThrow(() -> new RuntimeException("Evaluación no encontrada: " + evaluationId));
+                    .orElseThrow(() -> new BusinessException("Evaluación no encontrada: " + evaluationId, "EVALUATION_NOT_FOUND", HttpStatus.NOT_FOUND));
 
             // 1. Generar Síntesis Espiritual Asíncrona (Desbloqueo de UI)
             try {

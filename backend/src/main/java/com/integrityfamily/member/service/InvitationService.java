@@ -1,12 +1,14 @@
 package com.integrityfamily.member.service;
 
 import com.integrityfamily.auth.service.EmailService;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.common.service.WhatsAppService;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.FamilyMember;
 import com.integrityfamily.domain.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Slf4j
@@ -20,7 +22,7 @@ public class InvitationService {
 
     public void sendInvitation(Long memberId) {
         FamilyMember member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new RuntimeException("Miembro no encontrado: " + memberId));
+                .orElseThrow(() -> new BusinessException("Miembro no encontrado: " + memberId, "MEMBER_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         Family family = member.getFamily();
         String familyName = family.getName();

@@ -8,11 +8,13 @@ import com.integrityfamily.cognitive.service.FamilyMemoryService;
 import com.integrityfamily.cognitive.service.FamilyReflectionService;
 import com.integrityfamily.cognitive.service.NarrativeEvolutionEngine;
 import com.integrityfamily.cognitive.service.FamilyIdentityGraphService;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.FamilyMemory.MemoryType;
 import com.integrityfamily.domain.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +51,7 @@ public class CopilotService {
     public CompactFamilyContext buildContext(Long familyId) {
         log.info("🧩 [CONTEXT BUILDER] Construyendo resumen estructurado compacto para familia ID: {}", familyId);
         Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + familyId));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada: " + familyId, "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         // Nivel de Riesgo y Dimensión
         List<Evaluation> evals = evaluationRepository.findByFamilyIdOrderByFinalizedAtAsc(familyId);

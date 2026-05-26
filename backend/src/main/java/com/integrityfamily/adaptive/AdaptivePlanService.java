@@ -2,10 +2,12 @@ package com.integrityfamily.adaptive;
 
 import com.integrityfamily.analytics.dto.ConvivenceAnalyticsDto.OperativeDashboardResponse;
 import com.integrityfamily.analytics.service.ConvivenceAnalyticsService;
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -161,10 +163,10 @@ public class AdaptivePlanService {
     public AdaptiveAdjustmentEntity approveAdjustment(UUID adjustmentId, String approvedBy) {
         log.info("👍 [ADAPTIVE ENGINE] Aprobando ajuste ID: {} por {}", adjustmentId, approvedBy);
         AdaptiveAdjustmentEntity entity = adaptiveAdjustmentRepository.findById(adjustmentId)
-                .orElseThrow(() -> new RuntimeException("Ajuste no encontrado: " + adjustmentId));
+                .orElseThrow(() -> new BusinessException("Ajuste no encontrado: " + adjustmentId, "ADJUSTMENT_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         if (entity.getStatus() != AdjustmentStatus.PROPOSED) {
-            throw new IllegalStateException("Solo los ajustes en estado PROPOSED pueden ser aprobados. Estado actual: " + entity.getStatus());
+            throw new BusinessException("Solo los ajustes en estado PROPOSED pueden ser aprobados. Estado actual: " + entity.getStatus(), "ADJUSTMENT_INVALID_STATE", HttpStatus.CONFLICT);
         }
 
         entity.setStatus(AdjustmentStatus.APPROVED);
@@ -172,7 +174,7 @@ public class AdaptivePlanService {
         entity.setApprovedBy(approvedBy != null && !approvedBy.isEmpty() ? approvedBy : "Consejo de Familia");
 
         Family family = familyRepository.findById(entity.getFamilyId())
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + entity.getFamilyId()));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada: " + entity.getFamilyId(), "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         JournalEntry auditEntry = JournalEntry.builder()
                 .family(family)
@@ -195,17 +197,17 @@ public class AdaptivePlanService {
     public AdaptiveAdjustmentEntity applyAdjustment(UUID adjustmentId) {
         log.info("⚡ [ADAPTIVE ENGINE] Aplicando mutaciones de ajuste ID: {}", adjustmentId);
         AdaptiveAdjustmentEntity entity = adaptiveAdjustmentRepository.findById(adjustmentId)
-                .orElseThrow(() -> new RuntimeException("Ajuste no encontrado: " + adjustmentId));
+                .orElseThrow(() -> new BusinessException("Ajuste no encontrado: " + adjustmentId, "ADJUSTMENT_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         if (entity.getStatus() != AdjustmentStatus.APPROVED) {
-            throw new IllegalStateException("Solo los ajustes en estado APPROVED pueden ser aplicados. Estado actual: " + entity.getStatus());
+            throw new BusinessException("Solo los ajustes en estado APPROVED pueden ser aplicados. Estado actual: " + entity.getStatus(), "ADJUSTMENT_INVALID_STATE", HttpStatus.CONFLICT);
         }
 
         entity.setStatus(AdjustmentStatus.APPLIED);
         entity.setAppliedAt(LocalDateTime.now());
 
         Family family = familyRepository.findById(entity.getFamilyId())
-                .orElseThrow(() -> new RuntimeException("Familia no encontrada: " + entity.getFamilyId()));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada: " + entity.getFamilyId(), "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         List<ImprovementPlan> plans = planRepository.findByFamilyId(entity.getFamilyId());
         if (!plans.isEmpty()) {

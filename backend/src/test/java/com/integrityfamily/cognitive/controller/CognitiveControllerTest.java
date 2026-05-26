@@ -407,13 +407,13 @@ public class CognitiveControllerTest {
 
     @Test
     @WithMockUser(roles = "USER")
-    @DisplayName("POST /bootstrap sin evaluaciones finalizadas → 500 con mensaje claro")
-    void bootstrap_noFinalizedEvaluations_returns500() throws Exception {
+    @DisplayName("POST /bootstrap sin evaluaciones finalizadas → 404 NOT_FOUND")
+    void bootstrap_noFinalizedEvaluations_returns404() throws Exception {
         when(evaluationRepository.findByFamilyIdOrderByFinalizedAtAsc(1L))
                 .thenReturn(List.of());
 
         mockMvc.perform(post("/api/cognitive/1/bootstrap"))
-                .andExpect(status().is5xxServerError());
+                .andExpect(status().isNotFound());
     }
 
     // ═══════════════════════════════════════════════════════════════════════

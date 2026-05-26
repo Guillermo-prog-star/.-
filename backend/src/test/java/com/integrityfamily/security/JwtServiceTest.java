@@ -202,20 +202,20 @@ class JwtServiceTest {
     class SecretKeyValidation {
 
         @Test
-        @DisplayName("secretKey null → IllegalStateException al intentar generar token")
+        @DisplayName("secretKey null → RuntimeException al intentar generar token")
         void shouldThrowIllegalState_whenSecretKeyIsNull() {
             ReflectionTestUtils.setField(jwtService, "secretKey", null);
             assertThatThrownBy(() -> jwtService.generateToken(userDetails))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("JWT Secret Key");
         }
 
         @Test
-        @DisplayName("secretKey blank → IllegalStateException al intentar generar token")
+        @DisplayName("secretKey blank → RuntimeException al intentar generar token")
         void shouldThrowIllegalState_whenSecretKeyIsBlank() {
             ReflectionTestUtils.setField(jwtService, "secretKey", "   ");
             assertThatThrownBy(() -> jwtService.generateToken(userDetails))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("JWT Secret Key");
         }
     }

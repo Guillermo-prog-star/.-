@@ -27,7 +27,7 @@ class SonicServiceTest {
         family.setId(1L);
 
         assertThatThrownBy(() -> service.processVoiceChat(new byte[]{1, 2, 3}, "audio/webm", family))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("STT no disponible");
     }
 

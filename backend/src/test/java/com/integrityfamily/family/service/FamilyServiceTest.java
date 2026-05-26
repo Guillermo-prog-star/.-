@@ -87,20 +87,18 @@ class FamilyServiceTest {
         }
 
         @Test
-        @DisplayName("Usuario ya tiene familia → BusinessException CONFLICT")
-        void shouldThrow_whenUserAlreadyHasFamily() {
+        @DisplayName("Usuario ya tiene familia → devuelve familia existente (idempotente, sin excepción)")
+        void shouldReturnExistingFamily_whenUserAlreadyHasFamily() {
             when(userRepository.findByEmail(creator.getEmail()))
                     .thenReturn(Optional.of(creator));
-            when(familyRepository.findByCreatedBy_Email(creator.getEmail()))
+            when(familyRepository.findByCreatedByEmailWithMembers(creator.getEmail()))
                     .thenReturn(Optional.of(family)); // ya existe
 
-            assertThatThrownBy(() -> familyService.create(family, creator.getEmail()))
-                    .isInstanceOf(BusinessException.class)
-                    .satisfies(ex -> {
-                        BusinessException bex = (BusinessException) ex;
-                        assertThat(bex.getStatus()).isEqualTo(HttpStatus.CONFLICT);
-                        assertThat(bex.getCode()).isEqualTo("ALREADY_HAS_FAMILY");
-                    });
+            FamilyResponse response = familyService.create(family, creator.getEmail());
+
+            assertThat(response.id()).isEqualTo(family.getId());
+            assertThat(response.name()).isEqualTo(family.getName());
+            verify(familyRepository, never()).save(any());
         }
 
         @Test
@@ -108,9 +106,8 @@ class FamilyServiceTest {
         void shouldCreate_withCorrectFamilyCodeFormat() {
             when(userRepository.findByEmail(creator.getEmail()))
                     .thenReturn(Optional.of(creator));
-            when(familyRepository.findByCreatedBy_Email(creator.getEmail()))
+            when(familyRepository.findByCreatedByEmailWithMembers(creator.getEmail()))
                     .thenReturn(Optional.empty());
-            when(familyRepository.count()).thenReturn(0L);
             when(familyRepository.save(any(Family.class))).thenReturn(family);
             when(userRepository.saveAndFlush(any(User.class))).thenReturn(creator);
 
@@ -118,9 +115,10 @@ class FamilyServiceTest {
             familyService.create(newFamily, creator.getEmail());
 
             ArgumentCaptor<Family> captor = ArgumentCaptor.forClass(Family.class);
-            verify(familyRepository).save(captor.capture());
+            verify(familyRepository, times(2)).save(captor.capture());
 
-            String code = captor.getValue().getFamilyCode();
+            // La segunda llamada a save() contiene el código definitivo basado en el ID
+            String code = captor.getAllValues().get(1).getFamilyCode();
             assertThat(code).matches("IF-\\d{4}-\\d{4}");
         }
 
@@ -129,9 +127,8 @@ class FamilyServiceTest {
         void shouldCreate_withInitialMilestone() {
             when(userRepository.findByEmail(creator.getEmail()))
                     .thenReturn(Optional.of(creator));
-            when(familyRepository.findByCreatedBy_Email(creator.getEmail()))
+            when(familyRepository.findByCreatedByEmailWithMembers(creator.getEmail()))
                     .thenReturn(Optional.empty());
-            when(familyRepository.count()).thenReturn(5L);
             when(familyRepository.save(any(Family.class))).thenReturn(family);
             when(userRepository.saveAndFlush(any(User.class))).thenReturn(creator);
 
@@ -139,8 +136,9 @@ class FamilyServiceTest {
             familyService.create(newFamily, creator.getEmail());
 
             ArgumentCaptor<Family> captor = ArgumentCaptor.forClass(Family.class);
-            verify(familyRepository).save(captor.capture());
-            assertThat(captor.getValue().getCurrentMilestone())
+            verify(familyRepository, times(2)).save(captor.capture());
+            // La primera llamada a save() contiene el milestone inicial
+            assertThat(captor.getAllValues().get(0).getCurrentMilestone())
                     .isEqualTo("MES_00_DIAGNOSTICO_BASE");
         }
 
@@ -149,9 +147,8 @@ class FamilyServiceTest {
         void shouldCreate_andLinkCreatorToFamily() {
             when(userRepository.findByEmail(creator.getEmail()))
                     .thenReturn(Optional.of(creator));
-            when(familyRepository.findByCreatedBy_Email(creator.getEmail()))
+            when(familyRepository.findByCreatedByEmailWithMembers(creator.getEmail()))
                     .thenReturn(Optional.empty());
-            when(familyRepository.count()).thenReturn(3L);
             when(familyRepository.save(any(Family.class))).thenReturn(family);
 
             ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
@@ -163,21 +160,27 @@ class FamilyServiceTest {
         }
 
         @Test
-        @DisplayName("count()=0 → secuencia es 0001")
+        @DisplayName("ID=1 → código de familia termina en -0001")
         void shouldCreate_withSequence0001_whenFirstFamily() {
+            // La secuencia del código se deriva del ID asignado por la BD (no de count())
+            Family firstFamily = Family.builder()
+                    .id(1L)
+                    .name("Primera")
+                    .members(new ArrayList<>())
+                    .build();
             when(userRepository.findByEmail(creator.getEmail()))
                     .thenReturn(Optional.of(creator));
-            when(familyRepository.findByCreatedBy_Email(creator.getEmail()))
+            when(familyRepository.findByCreatedByEmailWithMembers(creator.getEmail()))
                     .thenReturn(Optional.empty());
-            when(familyRepository.count()).thenReturn(0L);
-            when(familyRepository.save(any(Family.class))).thenReturn(family);
+            when(familyRepository.save(any(Family.class))).thenReturn(firstFamily);
             when(userRepository.saveAndFlush(any(User.class))).thenReturn(creator);
 
             familyService.create(Family.builder().name("Primera").build(), creator.getEmail());
 
             ArgumentCaptor<Family> captor = ArgumentCaptor.forClass(Family.class);
-            verify(familyRepository).save(captor.capture());
-            assertThat(captor.getValue().getFamilyCode()).endsWith("-0001");
+            verify(familyRepository, times(2)).save(captor.capture());
+            // La segunda llamada a save() contiene el código definitivo basado en ID=1
+            assertThat(captor.getAllValues().get(1).getFamilyCode()).endsWith("-0001");
         }
     }
 

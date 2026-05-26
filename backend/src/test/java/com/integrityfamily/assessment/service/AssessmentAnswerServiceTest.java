@@ -1,5 +1,6 @@
 package com.integrityfamily.assessment.service;
 
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.common.exception.NotFoundException;
 import com.integrityfamily.domain.Evaluation;
 import com.integrityfamily.domain.EvaluationAnswer;
@@ -234,7 +235,7 @@ class AssessmentAnswerServiceTest {
     }
 
     @Test
-    @DisplayName("Evaluación FINALIZED lanza IllegalStateException")
+    @DisplayName("Evaluación FINALIZED lanza BusinessException CONFLICT")
     void saveAnswers_finalizedEval_throwsException() {
         Evaluation finalized = Evaluation.builder()
                 .id(10L)
@@ -245,7 +246,7 @@ class AssessmentAnswerServiceTest {
         var request = List.of(new EvaluationDtos.SaveAnswerRequest(1L, 4, null));
 
         assertThatThrownBy(() -> service.saveAnswers(10L, request))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("ya fue finalizada");
     }
 

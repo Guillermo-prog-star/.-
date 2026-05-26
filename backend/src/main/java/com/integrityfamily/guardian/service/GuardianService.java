@@ -51,7 +51,7 @@ public class GuardianService {
         List<Object[]> voteCounts = voteRepository.countVotesByFamilyGroupedByNominated(familyId);
         long totalVotes = voteRepository.countByFamilyId(familyId);
         boolean currentUserVoted = currentMemberId != null &&
-            voteRepository.existsByFamilyIdAndVoterMemberId(familyId, currentMemberId);
+            voteRepository.existsByFamilyIdAndVoterId(familyId, currentMemberId);
 
         List<GuardianStatusResponse.VoteCount> counts = voteCounts.stream()
             .map(row -> {
@@ -104,7 +104,7 @@ public class GuardianService {
 
         // Upsert: si ya votó, cambia el voto
         GuardianVote vote = voteRepository
-            .findByFamilyIdAndVoterMemberId(familyId, voter.getId())
+            .findByFamilyIdAndVoterId(familyId, voter.getId())
             .orElseGet(() -> GuardianVote.builder()
                 .family(family).voter(voter).build());
         vote.setNominated(nominated);

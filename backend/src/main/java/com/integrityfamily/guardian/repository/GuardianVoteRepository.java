@@ -9,9 +9,9 @@ import java.util.Optional;
 
 public interface GuardianVoteRepository extends JpaRepository<GuardianVote, Long> {
 
-    boolean existsByFamilyIdAndVoterMemberId(Long familyId, Long voterMemberId);
+    boolean existsByFamilyIdAndVoterId(Long familyId, Long voterId);
 
-    Optional<GuardianVote> findByFamilyIdAndVoterMemberId(Long familyId, Long voterMemberId);
+    Optional<GuardianVote> findByFamilyIdAndVoterId(Long familyId, Long voterId);
 
     /** Cuenta votos por candidato para una familia. */
     @Query("SELECT v.nominated.id, COUNT(v) FROM GuardianVote v WHERE v.family.id = :familyId GROUP BY v.nominated.id ORDER BY COUNT(v) DESC")

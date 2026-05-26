@@ -1,5 +1,6 @@
 package com.integrityfamily.bitacora.service;
 
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.ai.provider.AiProvider;
 import com.integrityfamily.ai.service.ContextSynthesizer;
 import com.integrityfamily.bitacora.dto.SprintDtos.*;
@@ -177,7 +178,7 @@ class SprintServiceTest {
         }
 
         @Test
-        @DisplayName("Lanza IllegalStateException cuando ya existe un sprint activo")
+        @DisplayName("Lanza BusinessException cuando ya existe un sprint activo")
         void shouldThrow_whenActiveSprintAlreadyExists() {
             when(sprintRepository.findActiveSprintForFamily(1L))
                     .thenReturn(Optional.of(activeSprint));
@@ -186,12 +187,12 @@ class SprintServiceTest {
                     "Otro objetivo", "emociones", 7, List.of());
 
             assertThatThrownBy(() -> service.createSprint(1L, request))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("Ya existe un sprint activo");
         }
 
         @Test
-        @DisplayName("Lanza IllegalArgumentException cuando la familia no existe")
+        @DisplayName("Lanza BusinessException cuando la familia no existe")
         void shouldThrow_whenFamilyNotFound() {
             when(sprintRepository.findActiveSprintForFamily(99L)).thenReturn(Optional.empty());
             when(familyRepository.findById(99L)).thenReturn(Optional.empty());
@@ -200,12 +201,12 @@ class SprintServiceTest {
                     "Objetivo", "comunicacion", 7, List.of());
 
             assertThatThrownBy(() -> service.createSprint(99L, request))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("Familia no encontrada");
         }
 
         @Test
-        @DisplayName("Lanza IllegalArgumentException para duración inválida (10 días)")
+        @DisplayName("Lanza BusinessException para duración inválida (10 días)")
         void shouldThrow_whenDurationIsInvalid() {
             when(sprintRepository.findActiveSprintForFamily(1L)).thenReturn(Optional.empty());
             when(familyRepository.findById(1L)).thenReturn(Optional.of(family));
@@ -214,7 +215,7 @@ class SprintServiceTest {
                     "Objetivo", "comunicacion", 10, List.of());
 
             assertThatThrownBy(() -> service.createSprint(1L, request))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("duración del sprint debe ser de 7 o 15");
         }
     }
@@ -273,7 +274,7 @@ class SprintServiceTest {
         }
 
         @Test
-        @DisplayName("Lanza IllegalArgumentException cuando la misión no pertenece al sprint")
+        @DisplayName("Lanza BusinessException cuando la misión no pertenece al sprint")
         void shouldThrow_whenMissionDoesNotBelongToSprint() {
             FamilySprint otherSprint = FamilySprint.builder().id(99L).build();
             pendingMission.setSprint(otherSprint);
@@ -282,7 +283,7 @@ class SprintServiceTest {
             when(missionRepository.findById(5L)).thenReturn(Optional.of(pendingMission));
 
             assertThatThrownBy(() -> service.toggleMission(10L, 5L))
-                    .isInstanceOf(IllegalArgumentException.class)
+                    .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("no pertenece a este sprint");
         }
     }
@@ -334,14 +335,14 @@ class SprintServiceTest {
         }
 
         @Test
-        @DisplayName("Lanza IllegalStateException cuando ya se hizo check-in hoy")
+        @DisplayName("Lanza BusinessException cuando ya se hizo check-in hoy")
         void shouldThrow_whenCheckinAlreadySubmittedToday() {
             when(sprintRepository.findById(10L)).thenReturn(Optional.of(activeSprint));
             when(dailyRepository.existsBySprintIdAndMemberNameAndCheckinDate(
                     10L, "William", LocalDate.now())).thenReturn(true);
 
             assertThatThrownBy(() -> service.submitDailyCheckin(10L, dailyRequest))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("Ya registraste tu Check-in Diario");
         }
     }
@@ -469,7 +470,7 @@ class SprintServiceTest {
         }
 
         @Test
-        @DisplayName("Lanza IllegalStateException cuando el sprint ya está COMPLETED")
+        @DisplayName("Lanza BusinessException cuando el sprint ya está COMPLETED")
         void shouldThrow_whenSprintAlreadyCompleted() {
             activeSprint.setStatus("COMPLETED");
             when(sprintRepository.findById(10L)).thenReturn(Optional.of(activeSprint));
@@ -477,7 +478,7 @@ class SprintServiceTest {
             CloseSprintRequest request = retroWith(5, 5);
             assertThatThrownBy(() ->
                     service.closeSprintAndCreateRetrospective(10L, request))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("ya no está activo");
         }
 

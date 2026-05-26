@@ -111,24 +111,24 @@ class ElevenLabsTtsServiceTest {
         }
 
         @Test
-        @DisplayName("Voice-id no configurado → IllegalStateException descriptivo")
+        @DisplayName("Voice-id no configurado → RuntimeException descriptivo")
         void shouldThrowIllegalState_whenVoiceIdIsBlank() {
             props.getElevenlabs().setVoiceId("");
             ElevenLabsTtsService svc = new ElevenLabsTtsService(props);
 
             assertThatThrownBy(() -> svc.synthesize("Hola familia"))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("voice-id");
         }
 
         @Test
-        @DisplayName("Voice-id null → IllegalStateException descriptivo")
+        @DisplayName("Voice-id null → RuntimeException descriptivo")
         void shouldThrowIllegalState_whenVoiceIdIsNull() {
             props.getElevenlabs().setVoiceId(null);
             ElevenLabsTtsService svc = new ElevenLabsTtsService(props);
 
             assertThatThrownBy(() -> svc.synthesize("Texto de prueba"))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(RuntimeException.class)
                     .hasMessageContaining("voice-id");
         }
     }

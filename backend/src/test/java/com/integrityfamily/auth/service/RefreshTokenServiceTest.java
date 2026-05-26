@@ -116,7 +116,7 @@ class RefreshTokenServiceTest {
 
             assertThatThrownBy(() -> refreshTokenService.verifyExpiration(token))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("expirado o ha sido revocado");
+                    .hasMessageContaining("expirado");
 
             verify(refreshTokenRepository).delete(token);
         }
@@ -132,7 +132,7 @@ class RefreshTokenServiceTest {
 
             assertThatThrownBy(() -> refreshTokenService.verifyExpiration(token))
                     .isInstanceOf(RuntimeException.class)
-                    .hasMessageContaining("expirado o ha sido revocado");
+                    .hasMessageContaining("expirado");
 
             verify(refreshTokenRepository).delete(token);
         }

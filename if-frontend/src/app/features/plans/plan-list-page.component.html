@@ -348,17 +348,49 @@
 
             <div class="misiones-grid">
               @for (mision of plan.misiones; track mision.id) {
-                <div class="card-mision">
+                <!-- Tarjeta normal; si es la misión llave del Bloque Dorado, resalta con borde y sombra dorados -->
+                <div class="card-mision"
+                     [style.borderColor]="mision.id === 'mis-tiempos-1' ? 'rgba(245,176,65,0.55)' : ''"
+                     [style.boxShadow]="mision.id === 'mis-tiempos-1' ? '0 0 22px rgba(245,176,65,0.1), 0 0 0 1px rgba(245,176,65,0.2)' : ''">
+
+                  <!-- ── BANNER LLAVE DEL BLOQUE DORADO (solo para mis-tiempos-1) ── -->
+                  @if (mision.id === 'mis-tiempos-1') {
+                    <div style="
+                        background: linear-gradient(90deg, rgba(245,176,65,0.13) 0%, transparent 85%);
+                        border: 1px solid rgba(245,176,65,0.3);
+                        border-radius: 8px;
+                        padding: 8px 12px;
+                        margin-bottom: 12px;
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;">
+                      <span style="font-size: 20px; flex-shrink: 0;">🔑</span>
+                      <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 10.5px; font-weight: 800; color: #f5b041; text-transform: uppercase; letter-spacing: 0.5px;">
+                          Llave del Bloque Familiar Dorado
+                        </div>
+                        <div style="font-size: 10.5px; color: #d97706; margin-top: 2px; line-height: 1.4;">
+                          Completar esta misión desbloquea el avance al siguiente hito clínico de la familia.
+                        </div>
+                      </div>
+                      <span style="font-size: 22px; opacity: 0.35; flex-shrink: 0;">👑</span>
+                    </div>
+                  }
+
                   <div class="card-header">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
                       <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #fff;">{{ mision.titulo }}</h4>
-                      <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px;">
+                      <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; flex-wrap: wrap;">
                         @if (mision.isAi) {
                           <span style="font-size: 9px; padding: 2px 6px; background: rgba(56, 139, 253, 0.15); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.3); border-radius: 4px; font-weight: 700; text-transform: uppercase;">🧠 IA: Diagnóstico</span>
                         } @else if (mision.esIniciativaFamiliar) {
                           <span style="font-size: 9px; padding: 2px 6px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 4px; font-weight: 700; text-transform: uppercase;">🎨 Iniciativa Familiar</span>
                         } @else {
                           <span style="font-size: 9px; padding: 2px 6px; background: rgba(255, 255, 255, 0.06); color: #8b949e; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; font-weight: 700; text-transform: uppercase;">⚙️ Plan Clínico</span>
+                        }
+                        <!-- Badge adicional exclusivo para la misión llave -->
+                        @if (mision.id === 'mis-tiempos-1') {
+                          <span style="font-size: 9px; padding: 2px 6px; background: rgba(245,176,65,0.15); color: #f5b041; border: 1px solid rgba(245,176,65,0.4); border-radius: 4px; font-weight: 700; text-transform: uppercase;">🔑 Llave del Bloque Dorado</span>
                         }
                       </div>
                     </div>

@@ -75,8 +75,8 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
   familyDashboard: any = null;
   familyMembers: any[] = [];
   
-  get familyId() { return this.familyState.currentFamilyId(); }
-  get familyCode() { return localStorage.getItem('selectedFamilyCode') || 'IF-CO-QUI-2026-0001'; }
+  get familyId()   { return this.familyState.currentFamilyId(); }
+  get familyCode() { return this.familyState.currentFamilyCode() || 'IF-CO-QUI-2026-0001'; }
 
   selectTask(taskId: number, event: Event) {
     event.stopPropagation();

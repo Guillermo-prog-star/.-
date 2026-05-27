@@ -16,10 +16,11 @@ export class MySpaceComponent implements OnInit {
   private mySpaceService = inject(MySpaceService);
 
   entries:  any[] = [];
-  loading       = false;
-  saving        = false;
-  errorMessage  = '';
+  loading        = false;
+  saving         = false;
+  errorMessage   = '';
   successMessage = '';
+  pendingDeleteId: number | null = null;
 
   newEntry = {
     title: '',
@@ -90,11 +91,21 @@ export class MySpaceComponent implements OnInit {
   }
 
   deleteEntry(id: number): void {
-    if (!confirm('¿Eliminar esta reflexión? No se puede deshacer.')) return;
+    this.pendingDeleteId = id;
+  }
+
+  confirmDelete(): void {
+    if (this.pendingDeleteId === null) return;
+    const id = this.pendingDeleteId;
+    this.pendingDeleteId = null;
     this.mySpaceService.deleteEntry(id).subscribe({
       next: () => { this.entries = this.entries.filter((e: any) => e.id !== id); },
       error: () => { this.errorMessage = 'No se pudo eliminar la entrada.'; }
     });
+  }
+
+  cancelDelete(): void {
+    this.pendingDeleteId = null;
   }
 
   getEmotionIcon(state: string): string {

@@ -1,4 +1,4 @@
-import { Component, signal, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -185,9 +185,15 @@ interface NavItem {
             <span class="nav-icon">👤</span>
             <span class="nav-label footer-name">{{ firstName }}</span>
           </a>
-          <button class="logout-btn" (click)="onLogout()">
-            <span>⏏</span>
-          </button>
+          <div *ngIf="showLogoutConfirm(); else logoutIconBtn">
+            <button class="logout-btn logout-btn--confirm" (click)="confirmLogout()">✓</button>
+            <button class="logout-btn" (click)="cancelLogout()">✕</button>
+          </div>
+          <ng-template #logoutIconBtn>
+            <button class="logout-btn" (click)="onLogout()">
+              <span>⏏</span>
+            </button>
+          </ng-template>
         </div>
 
       </aside>
@@ -396,6 +402,15 @@ interface NavItem {
       background: rgba(239,68,68,0.15);
       color: #f87171;
     }
+    .logout-btn--confirm {
+      background: rgba(34,197,94,0.12);
+      border-color: rgba(34,197,94,0.25);
+      color: rgba(34,197,94,0.8);
+    }
+    .logout-btn--confirm:hover {
+      background: rgba(34,197,94,0.25);
+      color: #4ade80;
+    }
 
     /* ── Main ────────────────────────────────────────────────────── */
     .main-wrapper {
@@ -450,7 +465,8 @@ export class ShellComponent {
   public sentinel: SentinelCoreService    = inject(SentinelCoreService);
   private familyState: FamilyStateService = inject(FamilyStateService);
 
-  readonly sidebarOpen = signal(false);
+  readonly sidebarOpen        = signal(false);
+  readonly showLogoutConfirm  = signal(false);
 
   get isAdmin(): boolean {
     return this.auth.user()?.role === 'ADMIN';
@@ -474,8 +490,14 @@ export class ShellComponent {
   }
 
   onLogout(): void {
-    if (confirm('¿Deseas cerrar la sesión en el Nodo Central?')) {
-      this.auth.logout();
-    }
+    this.showLogoutConfirm.set(true);
+  }
+
+  confirmLogout(): void {
+    this.auth.logout();
+  }
+
+  cancelLogout(): void {
+    this.showLogoutConfirm.set(false);
   }
 }

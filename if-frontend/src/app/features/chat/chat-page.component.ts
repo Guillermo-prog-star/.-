@@ -24,8 +24,8 @@ export class ChatPageComponent implements OnInit {
   private mediaRecorder: any;
   private audioChunks: any[] = [];
 
-  get familyId() { return this.familyState.currentFamilyId(); }
-  familyName = localStorage.getItem('selectedFamilyName') ?? 'Familia';
+  get familyId()   { return this.familyState.currentFamilyId(); }
+  get familyName() { return this.familyState.currentFamilyName() || 'Familia'; }
 
   ngOnInit() {
     this.loadHistory();

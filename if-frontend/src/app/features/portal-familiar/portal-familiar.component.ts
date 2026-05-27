@@ -74,8 +74,7 @@ export class PortalFamiliarComponent implements OnInit, OnDestroy {
   }
 
   get guardianMemberId(): number | undefined {
-    const id = localStorage.getItem('currentMemberId');
-    return id ? Number(id) : undefined;
+    return this.familyState.currentMemberId() ?? undefined;
   }
 
   // ── Etiqueta de rol legible ───────────────────────────────────────────────
@@ -111,8 +110,8 @@ export class PortalFamiliarComponent implements OnInit, OnDestroy {
       this.userFullName = currentUser.fullName;
       this.roleLabel    = currentUser.role;
     }
-    this.familyId  = this.familyState.getSelectedFamilyId();
-    this.familyName = localStorage.getItem('selectedFamilyName') || 'Familia';
+    this.familyId   = this.familyState.getSelectedFamilyId();
+    this.familyName = this.familyState.currentFamilyName() || 'Familia';
 
     if (this.familyId) {
       this.loadAllData();
@@ -153,8 +152,8 @@ export class PortalFamiliarComponent implements OnInit, OnDestroy {
           const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
           const matched  = this.members.find((m: any) => m.email === authUser.email);
           // resolver currentMemberId si aún no está
-          if (matched?.id && !localStorage.getItem('currentMemberId')) {
-            localStorage.setItem('currentMemberId', matched.id.toString());
+          if (matched?.id && !this.familyState.currentMemberId()) {
+            this.familyState.setMemberId(matched.id);
           }
         }
 

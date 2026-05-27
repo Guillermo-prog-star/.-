@@ -86,11 +86,19 @@ describe('ProfilePageComponent', () => {
     expect(component.initials()).toBe('WL');
   });
 
-  it('debe cerrar sesión usando AuthService', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
+  it('debe cerrar sesión usando AuthService tras confirmación inline', () => {
     component.logout();
+    expect(component.showLogoutConfirm()).toBeTrue();
 
+    component.confirmLogout();
     expect(authServiceMock.logout).toHaveBeenCalled();
+  });
+
+  it('debe cancelar cierre de sesión al llamar cancelLogout()', () => {
+    component.logout();
+    component.cancelLogout();
+    expect(component.showLogoutConfirm()).toBeFalse();
+    expect(authServiceMock.logout).not.toHaveBeenCalled();
   });
 
   it('debe usar datos locales cuando falla la verificación del backend', () => {

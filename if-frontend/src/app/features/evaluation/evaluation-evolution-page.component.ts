@@ -35,8 +35,8 @@ export class EvaluationEvolutionPageComponent implements OnInit {
   readonly loading = signal(true);
   readonly hoveredPointIndex = signal<number | null>(null);
 
-  get familyId() { return this.familyState.currentFamilyId(); }
-  get familyName() { return localStorage.getItem('selectedFamilyName') ?? 'la familia'; }
+  get familyId()   { return this.familyState.currentFamilyId(); }
+  get familyName() { return this.familyState.currentFamilyName() || 'la familia'; }
 
   // Ordenar timeline cronológicamente de más antiguo a más reciente para el eje X
   readonly chronologicalTimeline = computed(() => {

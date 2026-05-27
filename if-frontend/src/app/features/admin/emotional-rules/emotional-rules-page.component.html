@@ -95,12 +95,21 @@
           <!-- Acciones -->
           <div class="rule-actions">
             <button class="btn-edit" *ngIf="editingId() !== rule.id" (click)="openEdit(rule)">✏️</button>
-            <div class="toggle-wrapper" (click)="toggle(rule)" [title]="rule.active ? 'Desactivar' : 'Activar'">
-              <div class="toggle-track" [class.on]="rule.active">
-                <div class="toggle-thumb"></div>
+            <ng-container *ngIf="pendingToggleRule?.id === rule.id; else toggleBtn">
+              <div class="toggle-confirm">
+                <span class="tc-label">{{ pendingToggleRule!.active ? '¿Desactivar regla?' : '¿Activar regla?' }}</span>
+                <button class="tc-yes" (click)="confirmToggle()">Sí</button>
+                <button class="tc-no" (click)="cancelToggle()">No</button>
               </div>
-              <span class="toggle-label">{{ rule.active ? 'Activa' : 'Inactiva' }}</span>
-            </div>
+            </ng-container>
+            <ng-template #toggleBtn>
+              <div class="toggle-wrapper" (click)="toggle(rule)" [title]="rule.active ? 'Desactivar' : 'Activar'">
+                <div class="toggle-track" [class.on]="rule.active">
+                  <div class="toggle-thumb"></div>
+                </div>
+                <span class="toggle-label">{{ rule.active ? 'Activa' : 'Inactiva' }}</span>
+              </div>
+            </ng-template>
           </div>
         </div>
 

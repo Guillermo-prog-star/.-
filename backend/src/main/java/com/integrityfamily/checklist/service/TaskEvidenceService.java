@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import com.integrityfamily.common.config.RabbitConfig;
 import com.integrityfamily.common.event.SystemEvent;
+import com.integrityfamily.common.exception.BusinessException;
+import org.springframework.http.HttpStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -46,10 +48,10 @@ public class TaskEvidenceService {
                                         String description, String fileUrl, String textContent, String submittedBy) {
         
         PlanTask task = planTaskRepository.findById(taskId)
-                .orElseThrow(() -> new IllegalArgumentException("Tarea de Plan no encontrada con ID: " + taskId));
-        
+                .orElseThrow(() -> new BusinessException("Tarea no encontrada", "TASK_NOT_FOUND", HttpStatus.NOT_FOUND));
+
         Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new IllegalArgumentException("Familia no encontrada con ID: " + familyId));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         TaskEvidence evidence = TaskEvidence.builder()
                 .task(task)
@@ -87,7 +89,7 @@ public class TaskEvidenceService {
     @Transactional
     public TaskEvidence validateEvidence(Long evidenceId, Double score, String validatorName) {
         TaskEvidence evidence = taskEvidenceRepository.findById(evidenceId)
-                .orElseThrow(() -> new IllegalArgumentException("Evidencia no encontrada con ID: " + evidenceId));
+                .orElseThrow(() -> new BusinessException("Evidencia no encontrada", "EVIDENCE_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         evidence.validate(score, validatorName);
         TaskEvidence saved = taskEvidenceRepository.save(evidence);
@@ -106,7 +108,7 @@ public class TaskEvidenceService {
     @Transactional
     public TaskEvidence rejectEvidence(Long evidenceId, String validatorName) {
         TaskEvidence evidence = taskEvidenceRepository.findById(evidenceId)
-                .orElseThrow(() -> new IllegalArgumentException("Evidencia no encontrada con ID: " + evidenceId));
+                .orElseThrow(() -> new BusinessException("Evidencia no encontrada", "EVIDENCE_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         evidence.setStatus(EvidenceStatus.REJECTED);
         evidence.setValidated(false);

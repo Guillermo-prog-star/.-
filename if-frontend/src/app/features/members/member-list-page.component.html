@@ -76,7 +76,16 @@
             </div>
             
             <button (click)="invite(m.id)" class="btn-invite" title="Enviar invitación">🚀</button>
-            <button (click)="remove(m.id)" class="btn-remove" title="Eliminar">✕</button>
+            <ng-container *ngIf="pendingDeleteId === m.id; else removeBtn">
+              <div class="inline-confirm">
+                <span class="confirm-label">¿Eliminar?</span>
+                <button (click)="confirmRemove()" class="btn-confirm-yes">Sí</button>
+                <button (click)="cancelRemove()" class="btn-confirm-no">No</button>
+              </div>
+            </ng-container>
+            <ng-template #removeBtn>
+              <button (click)="remove(m.id)" class="btn-remove" title="Eliminar">✕</button>
+            </ng-template>
           </div>
           
           <div class="member-stats">

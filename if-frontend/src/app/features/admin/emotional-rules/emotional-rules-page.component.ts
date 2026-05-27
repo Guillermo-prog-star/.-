@@ -36,6 +36,7 @@ export class EmotionalRulesPageComponent implements OnInit {
 
   // Form state
   form: EmotionalRuleRequest = { ...EMPTY_FORM, requiredSignals: [] };
+  pendingToggleRule: EmotionalRuleDto | null = null;
 
   readonly filtered = computed(() => {
     let list = this.rules();
@@ -66,17 +67,22 @@ export class EmotionalRulesPageComponent implements OnInit {
   }
 
   toggle(rule: EmotionalRuleDto): void {
-    const action  = rule.active ? 'desactivar' : 'activar';
-    const impact  = rule.active
-      ? 'Dejará de aplicarse en nuevas evaluaciones.'
-      : 'Comenzará a aplicarse en nuevas evaluaciones.';
-    if (!confirm(`¿${action.charAt(0).toUpperCase() + action.slice(1)} la regla "${rule.ruleKey}"?\n${impact}`)) return;
+    this.pendingToggleRule = rule;
+  }
 
+  confirmToggle(): void {
+    if (!this.pendingToggleRule) return;
+    const rule = this.pendingToggleRule;
+    this.pendingToggleRule = null;
     this.scanner.toggleRule(rule.id).pipe(catchError(() => of(null))).subscribe(updated => {
       if (updated) {
         this.rules.update(list => list.map(r => r.id === updated.id ? updated : r));
       }
     });
+  }
+
+  cancelToggle(): void {
+    this.pendingToggleRule = null;
   }
 
   toggleExpand(id: number): void {

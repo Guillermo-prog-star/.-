@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AssessmentService } from '../../core/services/assessment.service';
 import { Question, SaveAnswerRequest, FinalizeRequest } from '../../core/models/question.model';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
+import { FamilyStateService } from '../../core/services/family-state.service';
 import { catchError, EMPTY } from 'rxjs';
 import { PRESENCE_SCALE } from '../../../domain/constants/presenceScaleDomain';
 
@@ -16,8 +17,9 @@ import { PRESENCE_SCALE } from '../../../domain/constants/presenceScaleDomain';
 })
 export class EvaluationComponent implements OnInit {
   private assessmentService = inject(AssessmentService);
+  private familyState       = inject(FamilyStateService);
   private router = inject(Router);
-  private route = inject(ActivatedRoute);
+  private route  = inject(ActivatedRoute);
 
   evaluationId: number = 0;
   questions: Question[] = [];
@@ -38,8 +40,8 @@ export class EvaluationComponent implements OnInit {
   finalizeError: string = '';
 
   ngOnInit(): void {
-    this.familyId = Number(localStorage.getItem('selectedFamilyId') || 0);
-    this.familyName = localStorage.getItem('selectedFamilyName') || 'la familia';
+    this.familyId   = this.familyState.currentFamilyId();
+    this.familyName = this.familyState.currentFamilyName() || 'la familia';
 
     this.route.params.subscribe((params: any) => {
       this.evaluationId = Number(params['id']);
@@ -58,8 +60,8 @@ export class EvaluationComponent implements OnInit {
   loadQuestions(): void {
     if (this.familyId === 0) return;
 
-    // Lee el hito actual del localStorage si está disponible (lo guarda el DashboardService)
-    const milestone = localStorage.getItem('currentMilestone') ?? undefined;
+    // Lee el hito actual desde el servicio de estado (fuente reactiva única)
+    const milestone = this.familyState.currentMilestone() || undefined;
 
     this.assessmentService.getRandomQuestions(this.familyId, milestone).subscribe({
       next: (data: Question[]) => {

@@ -115,7 +115,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
   readonly alerts$ = this._alerts.asObservable();
 
   get familyName(): string {
-    return localStorage.getItem('selectedFamilyName') || 'Familia';
+    return this.familyState.currentFamilyName() || 'Familia';
   }
 
   get guardianFamilyId(): number {
@@ -123,21 +123,19 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Resuelve el memberId del usuario actual desde el cache local.
-   * Se persiste en 'currentMemberId' cuando la familia se carga en ngOnInit.
+   * ID del miembro autenticado, leído desde la señal de FamilyStateService.
    */
   get guardianMemberId(): number | undefined {
-    const id = localStorage.getItem('currentMemberId');
-    return id ? Number(id) : undefined;
+    return this.familyState.currentMemberId() ?? undefined;
   }
 
-  /** Persiste el memberId del usuario autenticado dado un array de miembros. */
+  /** Resuelve y persiste el memberId del usuario autenticado dado un array de miembros. */
   private resolveCurrentMemberId(members: any[]): void {
-    if (localStorage.getItem('currentMemberId')) return; // ya resuelto
+    if (this.familyState.currentMemberId() != null) return; // ya resuelto
     try {
       const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
       const matched = members.find((m: any) => m.email === authUser.email);
-      if (matched?.id) localStorage.setItem('currentMemberId', matched.id.toString());
+      if (matched?.id) this.familyState.setMemberId(matched.id);
     } catch { /* ignorar */ }
   }
 
@@ -246,7 +244,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
     } else {
       // [SDD] Carga inicial del ecosistema cuando hay una familia activa
       // Resolver memberId si aún no está en cache
-      if (!localStorage.getItem('currentMemberId')) {
+      if (!this.familyState.currentMemberId()) {
         this.http.get<any>('/api/families/mine').subscribe({
           next: (res) => {
             const family = res?.data ?? res;

@@ -31,7 +31,7 @@ export class EvaluationStartPageComponent implements OnInit {
   pendingEvalId: number | null = null;
 
   get familyId() { return this.familyState.currentFamilyId(); }
-  get milestone() { return localStorage.getItem('currentMilestone') ?? 'inicio'; }
+  get milestone() { return this.familyState.currentMilestone() || 'inicio'; }
 
   ngOnInit() {
     if (this.familyId > 0) {

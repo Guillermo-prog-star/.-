@@ -1,7 +1,8 @@
-import { Component, inject, computed, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive, Router, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
+import { FamilyStateService } from '../../core/services/family-state.service';
 import { filter } from 'rxjs/operators';
 
 /**
@@ -64,7 +65,7 @@ import { filter } from 'rxjs/operators';
         <a routerLink="/logbook"   class="nav-item" routerLinkActive="active"><span class="icon">📔</span> 6. Bitácora</a>
         <a routerLink="/gratitude" class="nav-item" routerLinkActive="active"><span class="icon">💖</span> 7. Gratitud</a>
         <a routerLink="/my-space"  class="nav-item" routerLinkActive="active"><span class="icon">🔒</span> 8. Mi Espacio</a>
-        <a [routerLink]="guardianRoute" class="nav-item guardian-nav" routerLinkActive="active">
+        <a [routerLink]="guardianRoute()" class="nav-item guardian-nav" routerLinkActive="active">
           <span class="icon">🌱</span> 9. Guardián Familiar
         </a>
 
@@ -80,7 +81,16 @@ import { filter } from 'rxjs/operators';
       <div class="family-box">
         <div class="f-name">{{ user()?.fullName }}</div>
         <div class="f-milestone">● {{ user()?.role }}</div>
-        <button (click)="handleLogout()" class="logout-link">Cerrar Sesión</button>
+        <div *ngIf="showLogoutConfirm(); else logoutBtn" class="logout-confirm">
+          <span class="confirm-text">¿Finalizar sesión?</span>
+          <div class="confirm-actions">
+            <button (click)="confirmLogout()" class="confirm-yes">Sí</button>
+            <button (click)="cancelLogout()" class="confirm-no">No</button>
+          </div>
+        </div>
+        <ng-template #logoutBtn>
+          <button (click)="handleLogout()" class="logout-link">Cerrar Sesión</button>
+        </ng-template>
       </div>
     </div>
   `,
@@ -100,6 +110,13 @@ import { filter } from 'rxjs/operators';
     .f-name { color: #fff; font-size: 13px; font-weight: 700; }
     .f-milestone { color: #6366f1; font-size: 10px; text-transform: uppercase; font-weight: bold; margin-bottom: 8px; }
     .logout-link { background: none; border: none; color: #ff4444; font-size: 10px; font-weight: bold; cursor: pointer; padding: 0; text-transform: uppercase; }
+    .logout-confirm { display: flex; flex-direction: column; gap: 6px; }
+    .confirm-text { font-size: 11px; color: rgba(255,255,255,0.65); }
+    .confirm-actions { display: flex; gap: 8px; }
+    .confirm-yes { background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #f87171; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+    .confirm-yes:hover { background: rgba(239,68,68,0.3); color: #fff; }
+    .confirm-no { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+    .confirm-no:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
     .admin-item { border: 1px dashed rgba(99, 102, 241, 0.3); }
     .group-header { background: none; border: none; width: 100%; text-align: left; cursor: pointer; font-family: inherit; }
     .group-header .chevron { margin-left: auto; font-size: 10px; transition: transform 0.3s ease; color: rgba(255,255,255,0.3); }
@@ -119,20 +136,20 @@ import { filter } from 'rxjs/operators';
   `]
 })
 export class SidebarComponent implements OnInit {
-  private router = inject(Router);
-
-  constructor(private authService: AuthService) {}
+  private router      = inject(Router);
+  private authService = inject(AuthService);
+  private familyState = inject(FamilyStateService);
 
   // Estado reactivo sincronizado
-  user = this.authService.user;
+  readonly user = this.authService.user;
+  readonly showLogoutConfirm = signal(false);
 
   isDiagnosticExpanded = false;
 
-  /** Ruta dinámica a la pantalla de elección del Guardián Familiar */
-  get guardianRoute(): string[] {
-    const familyId = localStorage.getItem('selectedFamilyId') || '0';
-    return ['/guardian', familyId, 'election'];
-  }
+  /** Ruta dinámica a la pantalla de elección del Guardián Familiar — reactiva vía signal */
+  readonly guardianRoute = computed(() =>
+    ['/guardian', String(this.familyState.currentFamilyId()), 'election']
+  );
 
   ngOnInit() {
     this.checkActiveRoute();
@@ -162,9 +179,15 @@ export class SidebarComponent implements OnInit {
     this.isDiagnosticExpanded = !this.isDiagnosticExpanded;
   }
 
-  handleLogout() {
-    if (confirm('¿Finalizar sesión en el Nodo Central?')) {
-      this.authService.logout();
-    }
+  handleLogout(): void {
+    this.showLogoutConfirm.set(true);
+  }
+
+  confirmLogout(): void {
+    this.authService.logout();
+  }
+
+  cancelLogout(): void {
+    this.showLogoutConfirm.set(false);
   }
 }

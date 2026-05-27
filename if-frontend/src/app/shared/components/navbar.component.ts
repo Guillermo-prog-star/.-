@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common'; 
 import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
@@ -55,6 +55,12 @@ import { FamilyStateService } from '../../core/services/family-state.service';
       transition: all 0.2s;
     }
     .btn-exit:hover { background: var(--error); color: #fff; transform: scale(1.05); }
+    .logout-inline { display: flex; align-items: center; gap: 8px; }
+    .confirm-label { font-size: 12px; color: rgba(255,255,255,0.65); white-space: nowrap; }
+    .confirm-yes { font-size: 12px; font-weight: 700; padding: 6px 14px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); color: #f87171; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .confirm-yes:hover { background: rgba(239,68,68,0.35); color: #fff; }
+    .confirm-no { font-size: 12px; font-weight: 700; padding: 6px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .confirm-no:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.8); }
 
     @media (max-width: 768px) {
       .topbar {
@@ -96,17 +102,24 @@ import { FamilyStateService } from '../../core/services/family-state.service';
 
       <div class="user-area">
         <span class="chip">👤 {{ userName }}</span>
-        <button class="btn-exit" (click)="logout()">Salir</button>
+        @if (showLogoutConfirm()) {
+          <div class="logout-inline">
+            <span class="confirm-label">¿Cerrar sesión?</span>
+            <button class="confirm-yes" (click)="confirmLogout()">Sí, salir</button>
+            <button class="confirm-no" (click)="cancelLogout()">No</button>
+          </div>
+        } @else {
+          <button class="btn-exit" (click)="logout()">Salir</button>
+        }
       </div>
     </div>`
 })
 export class NavbarComponent {
   private familyState = inject(FamilyStateService);
+  protected auth      = inject(AuthService);
+  private router      = inject(Router);
 
-  constructor(
-    protected auth: AuthService,
-    private router: Router
-  ) {}
+  readonly showLogoutConfirm = signal(false);
 
   /**
    * Recupera el nombre de la familia seleccionada reactivamente desde el signal.
@@ -115,20 +128,19 @@ export class NavbarComponent {
     return this.familyState.currentFamilyName() || null; 
   }
 
-  /**
-   * Retorna el nombre del usuario logueado.
-   * Resuelve la inconsistencia de propiedad 'fullName' en el AuthService.
-   */
-  get userName(): string { 
-    return this.auth.fullName || localStorage.getItem('fullName') || 'Usuario'; 
+  get userName(): string {
+    return this.auth.user()?.fullName || 'Usuario';
   }
 
-  /**
-   * Cierre de sesión seguro. auth.logout() ya redirige a /auth/login internamente.
-   */
   logout(): void {
-    if (confirm('¿Deseas cerrar tu sesión de forma segura?')) {
-      this.auth.logout();
-    }
+    this.showLogoutConfirm.set(true);
+  }
+
+  confirmLogout(): void {
+    this.auth.logout();
+  }
+
+  cancelLogout(): void {
+    this.showLogoutConfirm.set(false);
   }
 }

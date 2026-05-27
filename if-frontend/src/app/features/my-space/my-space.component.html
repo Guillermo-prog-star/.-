@@ -130,9 +130,18 @@
           <p class="ms-entry-body">{{ entry.content }}</p>
 
           <div class="ms-entry-footer">
-            <button type="button" class="ms-btn-delete" (click)="deleteEntry(entry.id)">
-              🗑 Eliminar
-            </button>
+            <ng-container *ngIf="pendingDeleteId === entry.id; else deleteBtn">
+              <div class="ms-confirm-inline">
+                <span class="ms-confirm-text">¿Eliminar esta reflexión?</span>
+                <button type="button" class="ms-confirm-yes" (click)="confirmDelete()">Sí, eliminar</button>
+                <button type="button" class="ms-confirm-no" (click)="cancelDelete()">No</button>
+              </div>
+            </ng-container>
+            <ng-template #deleteBtn>
+              <button type="button" class="ms-btn-delete" (click)="deleteEntry(entry.id)">
+                🗑 Eliminar
+              </button>
+            </ng-template>
           </div>
 
         </div>

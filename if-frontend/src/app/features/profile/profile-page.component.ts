@@ -230,6 +230,13 @@ interface UserProfile {
       border-color: rgba(239,68,68,0.35);
       transform: translateY(-1px);
     }
+    .logout-inline { display: flex; flex-direction: column; gap: 10px; }
+    .confirm-msg { font-size: 13px; color: rgba(255,255,255,0.7); margin: 0; }
+    .confirm-actions { display: flex; gap: 10px; }
+    .btn-confirm-yes { flex: 1; padding: 10px; background: rgba(239,68,68,0.15); border: 1px solid rgba(239,68,68,0.3); border-radius: 10px; color: #f87171; font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-confirm-yes:hover { background: rgba(239,68,68,0.3); color: #fff; }
+    .btn-confirm-no { flex: 1; padding: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: rgba(255,255,255,0.55); font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+    .btn-confirm-no:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
 
     /* Loading skeleton */
     .skeleton {
@@ -360,9 +367,19 @@ interface UserProfile {
         <!-- Actions -->
         <div class="glass-card">
           <p class="section-title">Acciones de Cuenta</p>
-          <button class="btn-logout" (click)="logout()">
-            🚪 Cerrar Sesión de Forma Segura
-          </button>
+          @if (showLogoutConfirm()) {
+            <div class="logout-inline">
+              <p class="confirm-msg">¿Cerrar sesión de forma segura?</p>
+              <div class="confirm-actions">
+                <button class="btn-confirm-yes" (click)="confirmLogout()">Sí, salir</button>
+                <button class="btn-confirm-no" (click)="cancelLogout()">Cancelar</button>
+              </div>
+            </div>
+          } @else {
+            <button class="btn-logout" (click)="logout()">
+              🚪 Cerrar Sesión de Forma Segura
+            </button>
+          }
         </div>
 
       </div>
@@ -438,9 +455,17 @@ export class ProfilePageComponent implements OnInit {
     return (role.includes('ADMIN') || role.includes('SENTINEL')) ? 'badge-admin' : 'badge-user';
   });
 
+  readonly showLogoutConfirm = signal(false);
+
   logout(): void {
-    if (confirm('¿Deseas cerrar tu sesión de forma segura?')) {
-      this.auth.logout();
-    }
+    this.showLogoutConfirm.set(true);
+  }
+
+  confirmLogout(): void {
+    this.auth.logout();
+  }
+
+  cancelLogout(): void {
+    this.showLogoutConfirm.set(false);
   }
 }

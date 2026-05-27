@@ -54,8 +54,8 @@ export class InvisibleStoriesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.familyId = this.familyState.getSelectedFamilyId();
-    this.familyName = localStorage.getItem('selectedFamilyName') || 'Familia';
+    this.familyId   = this.familyState.getSelectedFamilyId();
+    this.familyName = this.familyState.currentFamilyName() || 'Familia';
 
     if (this.familyId > 0) {
       this.loadStimulus();

@@ -1,5 +1,6 @@
 package com.integrityfamily.family.service;
 
+import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.FamilyGratitudeEntry;
 import com.integrityfamily.dto.CreateFamilyGratitudeRequest;
@@ -7,6 +8,7 @@ import com.integrityfamily.dto.FamilyGratitudeResponse;
 import com.integrityfamily.domain.repository.FamilyGratitudeEntryRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,7 +35,7 @@ public class FamilyGratitudeService {
                 request.fromMember(), request.toMember(), request.familyId());
 
         Family family = familyRepository.findById(request.familyId())
-                .orElseThrow(() -> new IllegalArgumentException("Familia no encontrada: " + request.familyId()));
+                .orElseThrow(() -> new BusinessException("Familia no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         FamilyGratitudeEntry entry = new FamilyGratitudeEntry(
                 family,

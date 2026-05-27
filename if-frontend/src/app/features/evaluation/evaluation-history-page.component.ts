@@ -23,7 +23,7 @@ export class EvaluationHistoryPageComponent implements OnInit {
   readonly loading  = signal(true);
 
   get familyId()   { return this.familyState.currentFamilyId(); }
-  get familyName() { return localStorage.getItem('selectedFamilyName') ?? 'la familia'; }
+  get familyName() { return this.familyState.currentFamilyName() || 'la familia'; }
 
   /** Evaluaciones finalizadas ordenadas de más reciente a más antigua */
   readonly finalized = computed(() =>

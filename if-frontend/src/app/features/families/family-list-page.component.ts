@@ -34,7 +34,7 @@ export class FamilyListPageComponent implements OnInit {
   
   select(f: Family) {
     this.familyState.setFamily(f);
-    localStorage.setItem('currentMilestone', f.currentMilestone ?? 'inicio');
+    this.familyState.setMilestone(f.currentMilestone ?? 'inicio');
     this.router.navigate(['/members']);
   }
   

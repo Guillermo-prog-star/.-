@@ -25,7 +25,7 @@ export class InferenceHistoryPageComponent implements OnInit {
   readonly expandedId     = signal<number | null>(null);
 
   get familyId()   { return this.familyState.currentFamilyId(); }
-  get familyName() { return localStorage.getItem('selectedFamilyName') ?? 'la familia'; }
+  get familyName() { return this.familyState.currentFamilyName() || 'la familia'; }
 
   // KPIs
   readonly totalInferences = computed(() => this.inferences().length);

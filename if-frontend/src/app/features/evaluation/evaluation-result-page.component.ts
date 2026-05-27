@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
+import { FamilyStateService } from '../../core/services/family-state.service';
 import { EvaluationResultResponse } from '../../core/models/models';
 
 @Component({
@@ -13,14 +14,15 @@ import { EvaluationResultResponse } from '../../core/models/models';
   styleUrls: ['./evaluation-result-page.component.css']
 })
 export class EvaluationResultPageComponent implements OnInit {
-  private http = inject(HttpClient);
-  private api = inject(ApiService);
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
+  private http        = inject(HttpClient);
+  private api         = inject(ApiService);
+  private familyState = inject(FamilyStateService);
+  private route       = inject(ActivatedRoute);
+  private router      = inject(Router);
 
   result: EvaluationResultResponse | null = null;
   loading = true;
-  currentMilestone = localStorage.getItem('currentMilestone') || 'Inicio';
+  get currentMilestone() { return this.familyState.currentMilestone() || 'Inicio'; }
 
   /** Dimensiones en el orden del radar (emociones, comunicacion, habitos, tiempos) */
   readonly dimConfig = [
@@ -49,7 +51,7 @@ export class EvaluationResultPageComponent implements OnInit {
 
   private loadFromApi(id: string) {
     // Intentar desde el historial de la familia
-    const familyId = localStorage.getItem('selectedFamilyId');
+    const familyId = this.familyState.currentFamilyId();
     if (!familyId) { this.loading = false; return; }
 
     this.http.get<any>(`${this.api.base}/assessments/family/${familyId}/history`).subscribe({

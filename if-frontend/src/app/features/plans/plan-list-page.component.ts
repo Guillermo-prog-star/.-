@@ -207,6 +207,8 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
         next: (res) => {
           // FIX: AnalyticsController returns ApiResponse<DashboardSummaryResponse> — extract .data
           this.familyDashboard = res?.data ?? res;
+          // Re-adaptar misiones IA-2 al hito real una vez que llega el dashboard
+          this.adaptIaMissionsToDiagnostic();
         },
         error: (err) => console.error('Error fetching dashboard summary:', err)
       });
@@ -330,8 +332,9 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
             entrega: { completed: 0, total: 0, percentage: 0 }
           };
 
-          // Sincronizar dinámicamente con el PLANES_MOCK
+          // Sincronizar dinámicamente con el PLANES_MOCK (6 misiones fijas: 2 clínicas + 2 IA + 2 iniciativas)
           this.planes = JSON.parse(JSON.stringify(PLANES_MOCK));
+          this.adaptIaMissionsToDiagnostic(); // Adaptar misiones IA-2 al hito diagnóstico actual
           
           if (this.plans.length > 0) {
             const planTasks = this.plans[0].tasks || [];
@@ -405,36 +408,8 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
                 }
               });
 
-              // 2. Inyectar tareas únicas del backend no mapeadas (máx. 2 extras por plan)
-              // Las genéricas ya fueron excluidas en el pre-filtro, solo se inyectan tareas realmente nuevas
-              const existingTitles = new Set(plan.misiones.map(m => m.titulo.toLowerCase()));
-              let extraInjected = 0;
-              const MAX_EXTRAS = 2;
-
-              matchedTasks.forEach(task => {
-                if (!mappedTaskIds.has(task.id) && extraInjected < MAX_EXTRAS) {
-                  const titleNorm = task.title.toLowerCase();
-                  if (existingTitles.has(titleNorm)) { mappedTaskIds.add(task.id); return; }
-
-                  const isAi = task.title.includes('[IA]') || task.title.includes('Sentinel');
-                  plan.misiones.push({
-                    id: 'backend-task-' + task.id,
-                    titulo: task.title,
-                    estado: task.completed ? 'Completada' : 'En_Progreso',
-                    backendTaskId: task.id,
-                    descripcionGeneral: task.description || 'Misión clínica adaptada por la IA.',
-                    isAi: isAi,
-                    microacciones: [
-                      { id: 'ma-ai-1-' + task.id, icono: isAi ? 'psychology' : 'settings', descripcion: task.accionConcreta || 'Realizar la dinámica principal recomendada.' },
-                      { id: 'ma-ai-2-' + task.id, icono: 'assignment', descripcion: task.indicadorCumplimiento || 'Registrar la asimilación o avance del compromiso.' },
-                      { id: 'ma-ai-3-' + task.id, icono: 'done_all', descripcion: task.evidenciaRequerida || 'Reportar la evidencia en el portal familiar.' }
-                    ]
-                  });
-                  existingTitles.add(titleNorm);
-                  mappedTaskIds.add(task.id);
-                  extraInjected++;
-                }
-              });
+              // 2. El mock es la fuente de verdad (6 misiones fijas: 2 clínicas + 2 IA + 2 iniciativas).
+              // No se inyectan tareas del backend — el paso 1 ya sincronizó los estados de completado.
               
               // 3. Calcular progreso dinámico del pilar real
               const completedTasks = matchedTasks.filter((t: any) => t.completed).length;
@@ -676,6 +651,72 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
 
   getResultadoEsperado(code: string): string {
     return this.fasesDetalles[code]?.resultado || 'Evolución y madurez del núcleo familiar.';
+  }
+
+  /**
+   * Adapta el contenido de las misiones IA-2 (id termina en '-ia-2') al hito diagnóstico actual.
+   * Se llama tras clonar el mock y también cuando llega familyDashboard (ambos son async).
+   */
+  adaptIaMissionsToDiagnostic(): void {
+    if (!this.planes || this.planes.length === 0) return;
+    const milestone = this.familyDashboard?.currentMilestone || 'W1';
+    const fase = this.fasesDetalles[milestone] || this.fasesDetalles['W1'];
+    const qs = fase.queSeHace;
+    const resultado = fase.resultado;
+
+    const contenidos: Record<string, { titulo: string; descripcionGeneral: string; queBusca: string; pasoAPaso: string[] }> = {
+      EMOCIONES: {
+        titulo: '[IA] Diagnóstico Emocional Adaptativo',
+        descripcionGeneral: `Análisis Sentinel de regulación emocional en la fase ${milestone}: ${qs.slice(0, 3).join(' · ')}.`,
+        queBusca: 'Mapear los patrones emocionales dominantes y diseñar intervenciones específicas según el diagnóstico actual.',
+        pasoAPaso: [
+          `Evaluar el indicador de reactividad familiar en el contexto del hito ${milestone}: ${qs[0] || 'observar convivencia'}.`,
+          'Identificar las 2 emociones más frecuentes y disruptivas de la semana.',
+          `Registrar los avances hacia el resultado esperado del hito: "${resultado}".`
+        ]
+      },
+      COMUNICACION: {
+        titulo: '[IA] Mapa de Fricciones Comunicativas',
+        descripcionGeneral: `Diagnóstico Sentinel de patrones comunicativos críticos en la fase ${milestone}: ${qs.slice(0, 3).join(' · ')}.`,
+        queBusca: 'Localizar los bloqueos lingüísticos repetitivos y generar un plan de intervención personalizado.',
+        pasoAPaso: [
+          `Identificar las 3 fricciones comunicativas más frecuentes (fase ${milestone}): ${qs[1] || 'fortalecer comunicación'}.`,
+          'Aplicar la técnica diagnóstica de reformulación asertiva en los conflictos detectados.',
+          `Registrar el progreso esperado hacia: "${resultado}".`
+        ]
+      },
+      HABITOS: {
+        titulo: '[IA] Diagnóstico de Adherencia de Hábitos',
+        descripcionGeneral: `Evaluación Sentinel de sostenibilidad de rutinas en la fase ${milestone}: ${qs.slice(0, 3).join(' · ')}.`,
+        queBusca: 'Determinar qué hábitos están consolidados y cuáles necesitan refuerzo inmediato según el avance clínico.',
+        pasoAPaso: [
+          `Revisar el cumplimiento de rutinas de la fase ${milestone}: ${qs[0] || 'mantener constancia'}.`,
+          'Identificar los 2 hábitos con menor adherencia y su causa raíz.',
+          `Proponer ajuste de refuerzo de 7 días para alcanzar: "${resultado}".`
+        ]
+      },
+      TIEMPOS: {
+        titulo: '[IA] Auditoría de Distribución de Tiempos',
+        descripcionGeneral: `Análisis Sentinel de uso del tiempo relacional en la fase ${milestone}: ${qs.slice(0, 3).join(' · ')}.`,
+        queBusca: 'Detectar fugas de tiempo vincular y redistribuir la agenda familiar hacia espacios de alto impacto afectivo.',
+        pasoAPaso: [
+          `Mapear la distribución de tiempo familiar en la fase ${milestone}.`,
+          'Identificar los 3 bloques de tiempo con mayor fuga relacional.',
+          `Rediseñar la agenda hacia el objetivo del hito: "${resultado}".`
+        ]
+      }
+    };
+
+    this.planes.forEach(plan => {
+      const contenido = contenidos[plan.pilar];
+      if (!contenido) return;
+      const ia2 = plan.misiones.find((m: any) => m.id.endsWith('-ia-2'));
+      if (!ia2) return;
+      ia2.titulo = contenido.titulo;
+      ia2.descripcionGeneral = contenido.descripcionGeneral;
+      ia2.queBusca = contenido.queBusca;
+      ia2.pasoAPaso = contenido.pasoAPaso;
+    });
   }
 
   // Getter para verificar si se completó la misión lúdica del Bloque Dorado

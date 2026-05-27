@@ -396,9 +396,20 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
                 }
               });
               
-              // 2. Inyectar dinámicamente cualquier tarea del backend del pilar no mapeada aún (ej: IA o custom)
+              // 2. Inyectar tareas únicas del backend no mapeadas (máx. 2 extras por plan)
+              // Se deduplica por título y se filtran títulos genéricos del backend
+              const existingTitles = new Set(plan.misiones.map(m => m.titulo.toLowerCase()));
+              let extraInjected = 0;
+              const MAX_EXTRAS = 2;
+              const GENERIC_PATTERNS = ['misión de reconocimiento', 'misión clínica', 'tarea generada', 'task '];
+
               matchedTasks.forEach(task => {
-                if (!mappedTaskIds.has(task.id)) {
+                if (!mappedTaskIds.has(task.id) && extraInjected < MAX_EXTRAS) {
+                  const titleNorm = task.title.toLowerCase();
+                  const isGeneric = GENERIC_PATTERNS.some(p => titleNorm.startsWith(p)) ||
+                                    existingTitles.has(titleNorm);
+                  if (isGeneric) { mappedTaskIds.add(task.id); return; }
+
                   const isAi = task.title.includes('[IA]') || task.title.includes('Sentinel');
                   plan.misiones.push({
                     id: 'backend-task-' + task.id,
@@ -413,7 +424,9 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
                       { id: 'ma-ai-3-' + task.id, icono: 'done_all', descripcion: task.evidenciaRequerida || 'Reportar la evidencia en el portal familiar.' }
                     ]
                   });
+                  existingTitles.add(titleNorm);
                   mappedTaskIds.add(task.id);
+                  extraInjected++;
                 }
               });
               

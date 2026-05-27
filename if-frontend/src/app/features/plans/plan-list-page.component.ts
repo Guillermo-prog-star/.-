@@ -58,7 +58,63 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
     submittedBy: '',
     feelingEmoji: ''
   };
-  
+
+  // Estado para la personalización de Iniciativas Familiares (Misiones 4-6)
+  isCreativeModalOpen = false;
+  activeCreativePlan: any = null;
+  activeCreativeMision: any = null;
+  creativeForm = {
+    titulo: '',
+    queBusca: '',
+    accion1: '',
+    accion2: '',
+    accion3: ''
+  };
+
+  // Detalles clínicos y estructurados por hito (36 meses)
+  fasesDetalles: { [key: string]: { queSeHace: string[], resultado: string } } = {
+    'W1': {
+      queSeHace: ['disminuir tensión emocional', 'organizar rutinas mínimas', 'iniciar escucha básica', 'reducir caos relacional', 'establecer seguridad emocional inicial'],
+      resultado: 'La familia logra disminuir reactividad y crear estabilidad básica.'
+    },
+    'M1': {
+      queSeHace: ['identificar emociones', 'reconocer hábitos negativos', 'comprender impacto de acciones', 'iniciar autorreflexión'],
+      resultado: 'Cada miembro comienza a reconocer cómo afecta al sistema familiar.'
+    },
+    'M3': {
+      queSeHace: ['fortalecer comunicación', 'reconstruir confianza', 'establecer acuerdos', 'promover espacios compartidos'],
+      resultado: 'La familia comienza a operar como unidad colaborativa.'
+    },
+    'M6': {
+      queSeHace: ['intervención activa sobre conflictos', 'regulación emocional constante', 'reconstrucción afectiva', 'acompañamiento mutuo'],
+      resultado: 'Se reducen patrones destructivos recurrentes.'
+    },
+    'M9': {
+      queSeHace: ['fortalecer rutinas saludables', 'mantener actividades familiares', 'sostener disciplina emocional', 'practicar acuerdos permanentes'],
+      resultado: 'Los nuevos hábitos comienzan a estabilizarse.'
+    },
+    'M12': {
+      queSeHace: ['coherencia entre emoción, comunicación y acción', 'autonomía emocional', 'convivencia estable', 'confianza sostenida'],
+      resultado: 'La familia alcanza funcionamiento íntegro y consciente.'
+    },
+    'M18': {
+      queSeHace: ['transmisión de valores', 'liderazgo familiar', 'mentoría entre generaciones', 'protección emocional colectiva'],
+      resultado: 'La evolución comienza a impactar nuevas generaciones.'
+    },
+    'M24': {
+      queSeHace: ['construcción de cultura familiar', 'consolidación de identidad', 'rituales positivos', 'memoria compartida'],
+      resultado: 'La familia desarrolla un legado emocional sostenible.'
+    },
+    'M30': {
+      queSeHace: ['servicio', 'expansión del bienestar', 'plenitud relacional', 'estabilidad intergeneracional'],
+      resultado: 'La familia alcanza madurez emocional sostenida y capacidad de inspirar a otros.'
+    },
+    'M36': {
+      queSeHace: ['consolidación de madurez intergeneracional activa', 'cohesión sistémica plena', 'sostenimiento a largo plazo de la autorregulación'],
+      resultado: 'El núcleo familiar alcanza la trascendencia y la plenitud total del hogar.'
+    }
+  };
+
   // Dynamic Milestone states and family metadata
   milestones: any[] = [
     { code: 'W1', label: 'Estabilización', title: 'Estabilización inicial', orderIndex: 1 },
@@ -74,6 +130,7 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
   ];
   familyDashboard: any = null;
   familyMembers: any[] = [];
+
   
   get familyId()   { return this.familyState.currentFamilyId(); }
   get familyCode() { return this.familyState.currentFamilyCode() || 'IF-CO-QUI-2026-0001'; }
@@ -593,6 +650,114 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
     const current = this.milestones.find(m => m.code === code);
     return current ? current.orderIndex : 1;
   }
+
+  getQueSeHace(code: string): string[] {
+    return this.fasesDetalles[code]?.queSeHace || ['Desplegar el plan de evolución familiar.'];
+  }
+
+  getResultadoEsperado(code: string): string {
+    return this.fasesDetalles[code]?.resultado || 'Evolución y madurez del núcleo familiar.';
+  }
+
+  // Getter para verificar si se completó la misión lúdica del Bloque Dorado
+  get isBloqueDoradoUnlocked(): boolean {
+    if (!this.planes || this.planes.length === 0) return false;
+    
+    // Buscar el plan de tiempos
+    const tiemposPlan = this.planes.find(p => p.pilar === 'TIEMPOS');
+    if (!tiemposPlan) return false;
+    
+    // Buscar la misión "El Bloque Familiar Dorado"
+    const bloqueMision = tiemposPlan.misiones.find(m => 
+      m.id === 'mis-tiempos-1' || 
+      m.titulo.toLowerCase().includes('dorado')
+    );
+    
+    // Se desbloquea si la misión está Completada
+    return bloqueMision?.estado === 'Completada';
+  }
+
+  // Avanzar hito clínico de manera asertiva gatillado desde el botón áureo
+  ejecutarAvanceBloqueDorado(): void {
+    if (!this.isBloqueDoradoUnlocked) return;
+    
+    this.terminalLogs.push('🌟 [BLOQUE DORADO]: ¡Felicidades! Han completado la agenda lúdica blindada semanal.');
+    this.terminalLogs.push('🌟 [BLOQUE DORADO]: Iniciando transición de fase evolutiva familiar...');
+    this.scrollToBottom();
+    
+    this.http.post<any>(`${this.api.base}/milestones/family/${this.familyId}/advance`, {})
+      .subscribe({
+        next: (res) => {
+          const nextMilestoneCode = res?.data ?? 'siguiente hito';
+          this.terminalLogs.push(`✅ ÉXITO: ¡Felicidades! La familia ha avanzado formalmente al hito [${nextMilestoneCode}].`);
+          this.terminalLogs.push('🔄 [SISTEMA]: Sincronizando nuevo estado con el motor de IA...');
+          this.scrollToBottom();
+          
+          // Recargar todo el estado dinámico
+          this.loadDashboard();
+          this.load(true);
+        },
+        error: (err) => {
+          this.terminalLogs.push('❌ ERROR: Ocurrió un problema inesperado al registrar el avance en el servidor.');
+          this.scrollToBottom();
+        }
+      });
+  }
+
+  openCreativeModal(plan: PlanTransformacion, mision: Mision) {
+    this.activeCreativePlan = plan;
+    this.activeCreativeMision = mision;
+    this.isCreativeModalOpen = true;
+    
+    // Cargar valores previos o por defecto
+    this.creativeForm = {
+      titulo: mision.titulo.includes('(Iniciativa)') ? mision.titulo.replace(' (Iniciativa)', '') : mision.titulo,
+      queBusca: mision.queBusca || '',
+      accion1: mision.microacciones[0]?.descripcion || '',
+      accion2: mision.microacciones[1]?.descripcion || '',
+      accion3: mision.microacciones[2]?.descripcion || ''
+    };
+  }
+
+  closeCreativeModal() {
+    this.isCreativeModalOpen = false;
+    this.activeCreativePlan = null;
+    this.activeCreativeMision = null;
+  }
+
+  saveCreativeMision() {
+    if (!this.creativeForm.titulo.trim()) return;
+    
+    const plan = this.activeCreativePlan;
+    const mision = this.activeCreativeMision;
+    
+    mision.titulo = `${this.creativeForm.titulo} (Iniciativa)`;
+    mision.queBusca = this.creativeForm.queBusca || 'Iniciativa y creatividad familiar activa.';
+    mision.descripcionGeneral = `Dinámica personalizada: ${mision.titulo}.`;
+    
+    mision.microacciones = [
+      { id: mision.id + '-ma1', icono: 'palette', descripcion: this.creativeForm.accion1 || 'Paso creativo 1' },
+      { id: mision.id + '-ma2', icono: 'timer', descripcion: this.creativeForm.accion2 || 'Paso creativo 2' },
+      { id: mision.id + '-ma3', icono: 'done_all', descripcion: this.creativeForm.accion3 || 'Paso creativo 3' }
+    ];
+    
+    mision.pasoAPaso = [
+      this.creativeForm.accion1 || 'Establecer la dinámica familiar.',
+      this.creativeForm.accion2 || 'Ejecutar el compromiso de mutuo acuerdo.',
+      this.creativeForm.accion3 || 'Subir evidencia fotográfica o nota al portal.'
+    ];
+
+    // Ahora la marcamos lista para ser activada (en progreso)
+    mision.estado = 'En_Progreso';
+    
+    // Inyectar en el CLI para que la familia vea la trazabilidad
+    this.terminalLogs.push(`🎨 [CREATIVIDAD]: La familia ha definido una misión personalizada: "${mision.titulo}".`);
+    this.terminalLogs.push(`⚙️ [CREATIVIDAD]: Misión acoplada. Se inicia el paso a paso en el plan de ${plan.pilar}.`);
+    this.scrollToBottom();
+    
+    this.closeCreativeModal();
+  }
+
 
   getMilestoneMonthLabel(code: string): string {
     if (code.startsWith('W')) {

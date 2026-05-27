@@ -34,36 +34,11 @@ export class MemberListPageComponent implements OnInit {
   }
 
   ngOnInit() {
-    if (this.auth.user()?.role === 'ADMIN') {
-      this.saving = true;
-      this.http.get<any>(`${this.api.base}/families`).subscribe({
-        next: (res) => {
-          const list = res?.data ?? res ?? [];
-          if (Array.isArray(list) && list.length > 0) {
-            const activeId = this.familyId;
-            const exists = list.some(f => f.id === activeId);
-            if (!activeId || !exists) {
-              const first = list[0];
-              this.familyState.setFamily(first);
-              console.log('[SDD-MEMBER] Self-Healing: Auto-selected family:', first.name);
-            }
-            this.saving = false;
-            this.load();
-          } else {
-            this.saving = false;
-            console.warn('[SDD-MEMBER] No families available for ADMIN. Redirecting to creation.');
-            this.router.navigate(['/families/create']);
-          }
-        },
-        error: (err) => {
-          console.error('[SDD-MEMBER] Failed to validate admin families:', err);
-          this.saving = false;
-          this.load();
-        }
-      });
-    } else {
-      this.load();
+    if (!this.familyId) {
+      this.router.navigate(['/families']);
+      return;
     }
+    this.load();
   }
 
   load() {

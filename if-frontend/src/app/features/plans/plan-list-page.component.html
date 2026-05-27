@@ -13,6 +13,20 @@
   <!-- Narrative Guidance Engine -->
   <app-narrative-companion module="plans"></app-narrative-companion>
 
+  <!-- JUNTOS HOY — ACOMPAÑAMIENTO EMOCIONAL -->
+  <div style="margin-bottom: 24px; padding: 20px 24px; background: linear-gradient(135deg, rgba(168,85,247,0.08) 0%, rgba(99,102,241,0.06) 100%); border: 1px solid rgba(168,85,247,0.2); border-radius: 14px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+    <div style="font-size: 40px; line-height: 1;">🏠</div>
+    <div style="flex: 1;">
+      <h3 style="margin: 0 0 4px 0; color: #e2e8f0; font-size: 17px; font-weight: 700;">Juntos Hoy — Acompañamiento Emocional para la Familia</h3>
+      <p style="margin: 0; color: #94a3b8; font-size: 13px; line-height: 1.5;">
+        Con esta alegría familiar, no hay misión que se nos resista. Aquí cada acción cuenta, cada evidencia construye historia y cada fase completada es un hito real de transformación. <strong style="color: #c084fc;">¡A divertirse juntos!</strong>
+      </p>
+    </div>
+    <div style="display: flex; gap: 8px; align-items: center; flex-shrink: 0;">
+      <span style="padding: 4px 12px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #10b981; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">● Nodo Activo</span>
+    </div>
+  </div>
+
   <!-- ACCIONES RÁPIDAS / CAPA PRIVADA -->
   <div class="quick-actions-bar" style="margin-bottom: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
     <div class="glass-card" style="padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid rgba(168, 85, 247, 0.2);" [routerLink]="['/my-space']">
@@ -23,6 +37,50 @@
         <p style="margin: 4px 0 0 0; color: #8b949e; font-size: 12px;">Tu bitácora personal de evolución.</p>
       </div>
       <span style="font-size: 20px; color: #a855f7;">➔</span>
+    </div>
+  </div>
+
+  <!-- LOS 3 PILARES DE TRANSFORMACIÓN — TABLA RESUMEN -->
+  <div class="glass-card" style="margin-bottom: 24px; padding: 20px 24px;">
+    <h2 class="card-title" style="margin: 0 0 16px 0; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+      <span>🧭</span> Los 3 Pilares de Transformación
+    </h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;">
+      <!-- Pilar 1 -->
+      <div style="padding: 16px; background: rgba(251,191,36,0.04); border: 1px solid rgba(251,191,36,0.18); border-radius: 10px; border-left: 3px solid #fbbf24;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span style="font-size: 22px;">💛</span>
+          <strong style="color: #fbbf24; font-size: 14px;">Reconocimiento</strong>
+        </div>
+        <p style="margin: 0 0 6px 0; color: #94a3b8; font-size: 12px;"><strong style="color: #e2e8f0;">Propósito:</strong> Comprender la realidad familiar actual y estabilizar el sistema emocional.</p>
+        <p style="margin: 0; color: #94a3b8; font-size: 12px;"><strong style="color: #e2e8f0;">Fases:</strong> Estabilización → Conciencia Inicial → Cimentación de Vínculos</p>
+        <div style="margin-top: 8px; padding: 6px 10px; background: rgba(251,191,36,0.08); border-radius: 6px; font-size: 11px; color: #fbbf24; font-weight: 600;">🎯 Resultado: Estabilización del núcleo familiar</div>
+      </div>
+      <!-- Pilar 2 -->
+      <div style="padding: 16px; background: rgba(251,113,133,0.04); border: 1px solid rgba(251,113,133,0.18); border-radius: 10px; border-left: 3px solid #fb7185;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span style="font-size: 22px;">💖</span>
+          <strong style="color: #fb7185; font-size: 14px;">Amor</strong>
+        </div>
+        <p style="margin: 0 0 6px 0; color: #94a3b8; font-size: 12px;"><strong style="color: #e2e8f0;">Propósito:</strong> Transformar vínculos y consolidar hábitos saludables de convivencia.</p>
+        <p style="margin: 0; color: #94a3b8; font-size: 12px;"><strong style="color: #e2e8f0;">Fases:</strong> Transformación Profunda → Consolidación de Hábitos → Integridad Plena</p>
+        <div style="margin-top: 8px; padding: 6px 10px; background: rgba(251,113,133,0.08); border-radius: 6px; font-size: 11px; color: #fb7185; font-weight: 600;">🎯 Resultado: Consolidación de vínculos</div>
+      </div>
+      <!-- Pilar 3 -->
+      <div style="padding: 16px; background: rgba(167,139,250,0.04); border: 1px solid rgba(167,139,250,0.18); border-radius: 10px; border-left: 3px solid #a78bfa;">
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+          <span style="font-size: 22px;">👑</span>
+          <strong style="color: #a78bfa; font-size: 14px;">Entrega</strong>
+        </div>
+        <p style="margin: 0 0 6px 0; color: #94a3b8; font-size: 12px;"><strong style="color: #e2e8f0;">Propósito:</strong> Trascender hacia legado, plenitud y crecimiento generacional sostenido.</p>
+        <p style="margin: 0; color: #94a3b8; font-size: 12px;"><strong style="color: #e2e8f0;">Fases:</strong> Crecimiento Generacional → Legado Familiar → Trascendencia → Plenitud Total</p>
+        <div style="margin-top: 8px; padding: 6px 10px; background: rgba(167,139,250,0.08); border-radius: 6px; font-size: 11px; color: #a78bfa; font-weight: 600;">🎯 Resultado: Evolución sostenible</div>
+      </div>
+    </div>
+    <!-- Regla estructural de progresión -->
+    <div style="margin-top: 16px; padding: 10px 16px; background: rgba(56,189,248,0.04); border: 1px solid rgba(56,189,248,0.12); border-radius: 8px; font-size: 12px; color: #94a3b8; line-height: 1.6;">
+      <strong style="color: #38bdf8;">⛓️ Progresión estructural:</strong>
+      Diagnóstico → Pilar → Fase → Plan Dimensional → Misiones → Evidencia → Validación → Desbloqueo → Evolución
     </div>
   </div>
 
@@ -172,14 +230,31 @@
               </div>
               
               <div class="step-details-body">
-                <h4 class="step-title">{{ m.title }}</h4>
-                <p class="step-description">
+                <h4 class="step-title" style="font-size: 16px; font-weight: bold; margin-bottom: 8px;">{{ m.title }}</h4>
+                
+                <!-- Actividades detalladas de la fase clínica (¿Qué se hace?) -->
+                <div class="step-clinical-details" style="margin-top: 10px; margin-bottom: 12px; font-size: 13px;">
+                  <strong style="color: #ab7df6; display: flex; align-items: center; gap: 6px; margin-bottom: 6px;">
+                    <span>📋</span> ¿Qué se hace en esta fase?
+                  </strong>
+                  <ul style="margin: 0; padding-left: 20px; color: #cbd5e1; display: flex; flex-direction: column; gap: 4px; line-height: 1.4;">
+                    @for (act of getQueSeHace(m.code); track act) {
+                      <li style="text-transform: capitalize;">{{ act }}</li>
+                    }
+                  </ul>
+                  
+                  <div style="margin-top: 10px; padding: 8px 12px; background: rgba(88, 166, 255, 0.05); border-radius: 8px; border: 1px solid rgba(88, 166, 255, 0.1); font-size: 12.5px; color: #e6edf3;">
+                    <strong style="color: #58a6ff;">🎯 Resultado esperado:</strong> {{ getResultadoEsperado(m.code) }}
+                  </div>
+                </div>
+
+                <p class="step-description" style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px; font-style: italic; font-size: 11.5px; color: #8b949e;">
                   @if (m.orderIndex < getCurrentMilestoneOrderIndex()) {
-                    Hito consolidado con éxito. Evolución completada para este período de la transformación.
+                    ✓ Hito consolidado con éxito. Evolución completada para este período de la transformación.
                   } @else if (m.orderIndex === getCurrentMilestoneOrderIndex()) {
-                    Fase clínica activa. Complete las misiones sugeridas y suba la evidencia requerida para desbloquear el avance.
+                    ⏳ Fase clínica activa. Complete las misiones sugeridas y suba la evidencia requerida para desbloquear el avance.
                   } @else {
-                    Fase futura de madurez y asimilación de hábitos familiares en la ruta longitudinal.
+                    🔒 Fase futura de madurez y asimilación de hábitos familiares en la ruta longitudinal.
                   }
                 </p>
               </div>
@@ -192,15 +267,23 @@
   </div>
 
 
-  <!-- SECCIÓN 2: MISIONES Y TAREAS ACTIVAS (IA CLINICAL PLANS) -->
+  <!-- SECCIÓN 2: PLANES DE TRANSFORMACIÓN INTELIGENTE -->
   <div class="glass-card">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 8px;">
       <h2 class="card-title" style="margin: 0;">
-        <i>📌</i> Misiones Activas de Transformación
+        <i>📌</i> Planes de Transformación Inteligente
       </h2>
       <div style="background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.3); padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: bold; color: #c084fc;">
         Pilar Activo: {{ activePillar }}
       </div>
+    </div>
+    <!-- Descripción de las 4 dimensiones -->
+    <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+      <span style="padding: 4px 12px; background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.25); color: #fb7185; border-radius: 20px; font-size: 11px; font-weight: 600;">❤️ Emociones</span>
+      <span style="padding: 4px 12px; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.25); color: #38bdf8; border-radius: 20px; font-size: 11px; font-weight: 600;">💬 Comunicación</span>
+      <span style="padding: 4px 12px; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25); color: #fbbf24; border-radius: 20px; font-size: 11px; font-weight: 600;">⚙️ Hábitos</span>
+      <span style="padding: 4px 12px; background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.25); color: #a78bfa; border-radius: 20px; font-size: 11px; font-weight: 600;">⏱️ Tiempos</span>
+      <span style="margin-left: auto; font-size: 11.5px; color: #6e7681; align-self: center;">Cada plan responde al diagnóstico y evoluciona con la evidencia.</span>
     </div>
 
     <!-- PROPUESTA DE SENTINEL AI: PLAN DE DECISIÓN ACTIVA -->
@@ -268,10 +351,16 @@
                 <div class="card-mision">
                   <div class="card-header">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
-                      <h4 style="margin: 0;">{{ mision.titulo }}</h4>
-                      @if (mision.isAi) {
-                        <span style="font-size: 10px; padding: 2px 6px; background: rgba(56, 139, 253, 0.15); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.3); border-radius: 4px; font-weight: 600; width: fit-content; margin-top: 4px;">🧠 IA: DIAGNÓSTICO</span>
-                      }
+                      <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #fff;">{{ mision.titulo }}</h4>
+                      <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px;">
+                        @if (mision.isAi) {
+                          <span style="font-size: 9px; padding: 2px 6px; background: rgba(56, 139, 253, 0.15); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.3); border-radius: 4px; font-weight: 700; text-transform: uppercase;">🧠 IA: Diagnóstico</span>
+                        } @else if (mision.esIniciativaFamiliar) {
+                          <span style="font-size: 9px; padding: 2px 6px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 4px; font-weight: 700; text-transform: uppercase;">🎨 Iniciativa Familiar</span>
+                        } @else {
+                          <span style="font-size: 9px; padding: 2px 6px; background: rgba(255, 255, 255, 0.06); color: #8b949e; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; font-weight: 700; text-transform: uppercase;">⚙️ Plan Clínico</span>
+                        }
+                      </div>
                     </div>
                     <span class="estado-tag" [ngClass]="{
                       'code-pendiente': mision.estado === 'Pendiente',
@@ -280,9 +369,37 @@
                     }">{{ mision.estado === 'Completada' ? '✓ Lograda' : (mision.estado === 'En_Progreso' ? '● Activa' : '○ Pendiente') }}</span>
                   </div>
                   
-                  <p class="desc-general">{{ mision.descripcionGeneral }}</p>
+                  <p class="desc-general" style="margin-bottom: 12px; color: #cbd5e1; font-size: 13px;">{{ mision.descripcionGeneral }}</p>
 
-                  <ul class="microacciones-list">
+                  <!-- Sección: ¿Qué busca? -->
+                  <div *ngIf="mision.queBusca" style="margin-bottom: 12px; padding: 8px 12px; background: rgba(168, 85, 247, 0.03); border-left: 3px solid #a855f7; border-radius: 4px; font-size: 12px; color: #cbd5e1;">
+                    <strong style="color: #c084fc; display: block; margin-bottom: 2px;">👁️ ¿Qué busca?</strong>
+                    {{ mision.queBusca }}
+                  </div>
+
+                  <!-- Botón para Personalizar Iniciativas Familiares (Misiones 4-6) -->
+                  <div *ngIf="mision.esIniciativaFamiliar" style="margin-bottom: 12px;">
+                    <button (click)="openCreativeModal(plan, mision)" style="width: 100%; background: rgba(168, 85, 247, 0.08); border: 1px dashed rgba(168, 85, 247, 0.4); color: #c084fc; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
+                      <span>🎨</span> {{ mision.titulo.includes('Iniciativa') && !mision.queBusca ? 'Definir Iniciativa Personalizada' : 'Editar Diseño Creativo' }}
+                    </button>
+                  </div>
+
+                  <!-- Paso a Paso interactivo (Ruta de Ejecución) -->
+                  <div *ngIf="mision.pasoAPaso" style="margin-bottom: 16px; background: rgba(255,255,255,0.01); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
+                    <strong style="font-size: 10.5px; text-transform: uppercase; color: #8b949e; display: block; margin-bottom: 8px; letter-spacing: 0.5px;">🐾 Ruta de Ejecución:</strong>
+                    <div style="display: flex; flex-direction: column; gap: 8px; padding-left: 4px; position: relative;">
+                      @for (step of mision.pasoAPaso; track step; let idx = $index) {
+                        <div style="display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; line-height: 1.4;">
+                          <div [ngStyle]="{'background': mision.estado === 'Completada' ? '#10b981' : (mision.backendTaskId ? '#38bdf8' : 'rgba(255,255,255,0.1)'), 'color': mision.estado === 'Completada' || mision.backendTaskId ? '#000' : '#8b949e'}" style="width: 16px; height: 16px; border-radius: 50%; font-weight: bold; font-size: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;">
+                            {{ idx + 1 }}
+                          </div>
+                          <span [style.color]="mision.estado === 'Completada' ? '#8b949e' : (mision.backendTaskId ? '#f0f6fc' : '#8b949e')">{{ step }}</span>
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <ul class="microacciones-list" *ngIf="!mision.pasoAPaso">
                     @for (acc of mision.microacciones; track acc.id) {
                       <li>
                         <span class="emoji-icon">{{ getEmoji(acc.icono) }}</span>
@@ -351,6 +468,40 @@
         <p>No se encontraron misiones de transformación activas para la familia López Rivera. Diagnóstico o recalibración clínica requerida.</p>
       </div>
     }
+  </div>
+
+  <!-- SECCIÓN 3: BLOQUE FAMILIAR DORADO — LLAVE DE EVOLUCIÓN CLÍNICA -->
+  <div class="glass-card golden-block-card" style="margin-top: 24px; position: relative; overflow: hidden; transition: all 0.3s ease;">
+    <div class="golden-bg-glow"></div>
+    <div style="position: relative; z-index: 2; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px;">
+      <div style="display: flex; gap: 16px; align-items: flex-start;">
+        <span class="golden-lock-icon" [ngClass]="{'unlocked': isBloqueDoradoUnlocked}" style="font-size: 36px; line-height: 1; display: inline-block; transition: transform 0.4s ease;">
+          {{ isBloqueDoradoUnlocked ? '🔓' : '🔒' }}
+        </span>
+        <div>
+          <h2 style="margin: 0; color: #f5b041; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px; text-shadow: 0 0 10px rgba(245, 176, 65, 0.2);">
+            👑 BLOQUE FAMILIAR DORADO
+          </h2>
+          <p style="margin: 4px 0 0 0; color: #cbd5e1; font-size: 13.5px; max-width: 600px; line-height: 1.5;">
+            El portal evolutivo clínico de transición. Se activa de manera estricta al blindar y registrar al menos 1 hora semanal dedicada a actividades lúdicas o recreativas compartidas (completando la misión de Tiempos).
+          </p>
+          <div style="margin-top: 10px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <span class="status-pill" [ngClass]="isBloqueDoradoUnlocked ? 'status-completed' : 'status-active'" style="font-size: 11px; font-weight: bold; text-transform: uppercase;">
+              {{ isBloqueDoradoUnlocked ? '✓ Desbloqueado' : '⏳ Esperando Agenda' }}
+            </span>
+            <span style="font-size: 12.5px; color: #8b949e;">
+              {{ isBloqueDoradoUnlocked ? '¡Cohesión familiar óptima lograda para esta fase! Ya pueden avanzar.' : 'Requiere completar la misión "El Bloque Familiar Dorado" en el Plan de Tiempos.' }}
+            </span>
+          </div>
+        </div>
+      </div>
+      
+      <div>
+        <button [disabled]="!isBloqueDoradoUnlocked" (click)="ejecutarAvanceBloqueDorado()" [style.background]="isBloqueDoradoUnlocked ? 'linear-gradient(135deg, #f5b041 0%, #d97706 100%)' : 'rgba(255,255,255,0.03)'" [style.borderColor]="isBloqueDoradoUnlocked ? '#f5b041' : 'rgba(255,255,255,0.08)'" [style.color]="isBloqueDoradoUnlocked ? '#000' : '#8b949e'" [style.cursor]="isBloqueDoradoUnlocked ? 'pointer' : 'not-allowed'" style="border: 1px solid; padding: 12px 24px; border-radius: 8px; font-size: 13.5px; font-weight: bold; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); transition: all 0.2s;">
+          <span>🚀</span> Consolidar Hito y Avanzar de Fase
+        </button>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -487,6 +638,76 @@
             } @else {
               <span>🚀 Enviar a Sentinel AI</span>
             }
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+}
+
+<!-- MODAL DE PERSONALIZACIÓN CREATIVA — INICIATIVA FAMILIAR (4-6) -->
+@if (isCreativeModalOpen) {
+  <div class="modal-backdrop-premium" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 9999;">
+    <div class="modal-card-premium glass-card" style="width: 100%; max-width: 550px; background: rgba(13, 17, 28, 0.95); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 12px; padding: 24px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);">
+      
+      <!-- Cabecera -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px;">
+        <h3 style="margin: 0; color: #fff; font-size: 18px; display: flex; align-items: center; gap: 8px;">
+          <span>🎨 Co-Diseño Familiar</span>
+          <span style="font-size: 11px; font-weight: normal; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc; padding: 2px 6px; border-radius: 4px;">INICIATIVA CREATIVA</span>
+        </h3>
+        <button (click)="closeCreativeModal()" style="background: none; border: none; color: #8b949e; font-size: 20px; cursor: pointer;">&times;</button>
+      </div>
+
+      <!-- Cuerpo -->
+      <div>
+        <p style="font-size: 13px; color: #8b949e; margin-bottom: 20px;">
+          Define de mutuo acuerdo una misión creativa que responda a sus intereses y contexto en la dimensión de <strong style="color: #fff;">{{ activeCreativePlan?.pilar }}</strong>.
+        </p>
+
+        <!-- Título -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 11.5px; text-transform: uppercase; color: #cbd5e1; font-weight: 600; margin-bottom: 6px;">Título de la Misión</label>
+          <input type="text" [(ngModel)]="creativeForm.titulo" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; padding: 10px; font-size: 14px; box-sizing: border-box;" placeholder="Ej: Pícnic de risas en la sala de estar" />
+        </div>
+
+        <!-- Qué busca -->
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 11.5px; text-transform: uppercase; color: #cbd5e1; font-weight: 600; margin-bottom: 6px;">¿Qué busca lograr? (Objetivo familiar)</label>
+          <textarea [(ngModel)]="creativeForm.queBusca" rows="2" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; padding: 10px; font-size: 13px; resize: none; box-sizing: border-box;" placeholder="Ej: Fomentar el humor espontáneo y liberar tensiones del colegio/trabajo..."></textarea>
+        </div>
+
+        <!-- Flujo paso a paso -->
+        <div style="background: rgba(168, 85, 247, 0.03); border: 1px dashed rgba(168, 85, 247, 0.25); border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 12px 0; font-size: 13px; color: #c084fc; display: flex; align-items: center; gap: 6px;">
+            <span>🐾</span> Micro-Pasos para su Ejecución (Paso a Paso)
+          </h4>
+          
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div>
+              <label style="display: block; font-size: 10.5px; color: #8b949e; font-weight: 600; margin-bottom: 4px;">Paso 1: Preparación</label>
+              <input type="text" [(ngModel)]="creativeForm.accion1" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; padding: 8px 12px; font-size: 13px; box-sizing: border-box;" placeholder="Ej: Disponer cojines y preparar botanas en el suelo." />
+            </div>
+            
+            <div>
+              <label style="display: block; font-size: 10.5px; color: #8b949e; font-weight: 600; margin-bottom: 4px;">Paso 2: Ejecución lúdica</label>
+              <input type="text" [(ngModel)]="creativeForm.accion2" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; padding: 8px 12px; font-size: 13px; box-sizing: border-box;" placeholder="Ej: Turnarse para contar anécdotas cómicas sin hablar del colegio." />
+            </div>
+
+            <div>
+              <label style="display: block; font-size: 10.5px; color: #8b949e; font-weight: 600; margin-bottom: 4px;">Paso 3: Evidencia y Cierre</label>
+              <input type="text" [(ngModel)]="creativeForm.accion3" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; color: #fff; padding: 8px 12px; font-size: 13px; box-sizing: border-box;" placeholder="Ej: Cargar selfie del equipo al portal con el índice de risa." />
+            </div>
+          </div>
+        </div>
+
+        <!-- Botones de Control -->
+        <div style="display: flex; justify-content: flex-end; gap: 12px;">
+          <button (click)="closeCreativeModal()" style="background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #c9d1d9; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">Cancelar</button>
+          <button [disabled]="!creativeForm.titulo.trim()" (click)="saveCreativeMision()" style="background: linear-gradient(135deg, #a855f7 0%, #6366f1 100%); border: none; color: #fff; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; border-radius: 6px;">
+            <span>✨</span> Activar Iniciativa
           </button>
         </div>
 

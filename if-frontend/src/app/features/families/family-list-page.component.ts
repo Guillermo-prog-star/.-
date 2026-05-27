@@ -26,8 +26,18 @@ export class FamilyListPageComponent implements OnInit {
   
   ngOnInit() {
     this.loading = true;
-    this.http.get<ApiResponse<Family[]>>(`${this.api.base}/families`).subscribe({
-      next: ({ data }) => { this.families = data; this.loading = false; },
+    this.http.get<ApiResponse<Family>>(`${this.api.base}/families/mine`).subscribe({
+      next: ({ data }) => {
+        if (data) {
+          this.families = [data];
+          // Corrige cualquier estado stale en localStorage
+          this.familyState.setFamily(data);
+          this.familyState.setMilestone((data as any).currentMilestone ?? 'inicio');
+        } else {
+          this.families = [];
+        }
+        this.loading = false;
+      },
       error: () => this.loading = false
     });
   }

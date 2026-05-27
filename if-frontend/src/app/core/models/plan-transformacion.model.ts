@@ -12,7 +12,12 @@ export interface Mision {
   microacciones: Microaccion[];
   backendTaskId?: number;
   isAi?: boolean;
+  queBusca?: string;
+  pasoAPaso?: string[];
+  esIniciativaFamiliar?: boolean;
+  iniciada?: boolean;
 }
+
 
 export interface PlanTransformacion {
   id: string;

@@ -366,24 +366,33 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
             // Recorrer los planes del Mock y mapear tareas del backend de manera inteligente y multidimensional
             this.planes.forEach(plan => {
               const matchedTasks = planTasks.filter((t: any) => t.dimension.toUpperCase() === plan.pilar.toUpperCase());
-              
-              // Mantener un conjunto de IDs de tareas del backend mapeadas
+
+              // Mantener un conjunto de IDs de tareas del backend mapeadas/excluidas
               const mappedTaskIds = new Set<number>();
-              
+
+              // PRE-FILTRO: excluir tareas genéricas del backend antes de cualquier paso
+              // Así no pueden sobreescribir títulos del mock (paso 1) ni ser inyectadas (paso 2)
+              const GENERIC_PATTERNS = ['misión de reconocimiento', 'misión clínica', 'tarea generada', 'task '];
+              matchedTasks.forEach((t: any) => {
+                if (GENERIC_PATTERNS.some(p => t.title.toLowerCase().startsWith(p))) {
+                  mappedTaskIds.add(t.id);
+                }
+              });
+
               // 1. Sincronizar misiones predefinidas en el mock con tareas que coincidan por título o contexto de hito
               plan.misiones.forEach(mision => {
                 const titleLower = mision.titulo.toLowerCase();
                 const matchedTask = matchedTasks.find(t => {
-                  if (mappedTaskIds.has(t.id)) return false;
-                  
+                  if (mappedTaskIds.has(t.id)) return false; // excluye genéricas y ya usadas
+
                   const tTitle = t.title.toLowerCase();
-                  return tTitle.includes(titleLower) || 
+                  return tTitle.includes(titleLower) ||
                          titleLower.includes(tTitle) ||
                          (titleLower.includes('semáforo') && tTitle.includes('gratitud')) ||
                          (titleLower.includes('cena') && tTitle.includes('diálogo')) ||
                          (titleLower.includes('descanso') && tTitle.includes('responsabilidades'));
                 });
-                
+
                 if (matchedTask) {
                   mision.backendTaskId = matchedTask.id;
                   mision.estado = matchedTask.completed ? 'Completada' : 'En_Progreso';
@@ -395,20 +404,17 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
                   mision.estado = 'Pendiente';
                 }
               });
-              
+
               // 2. Inyectar tareas únicas del backend no mapeadas (máx. 2 extras por plan)
-              // Se deduplica por título y se filtran títulos genéricos del backend
+              // Las genéricas ya fueron excluidas en el pre-filtro, solo se inyectan tareas realmente nuevas
               const existingTitles = new Set(plan.misiones.map(m => m.titulo.toLowerCase()));
               let extraInjected = 0;
               const MAX_EXTRAS = 2;
-              const GENERIC_PATTERNS = ['misión de reconocimiento', 'misión clínica', 'tarea generada', 'task '];
 
               matchedTasks.forEach(task => {
                 if (!mappedTaskIds.has(task.id) && extraInjected < MAX_EXTRAS) {
                   const titleNorm = task.title.toLowerCase();
-                  const isGeneric = GENERIC_PATTERNS.some(p => titleNorm.startsWith(p)) ||
-                                    existingTitles.has(titleNorm);
-                  if (isGeneric) { mappedTaskIds.add(task.id); return; }
+                  if (existingTitles.has(titleNorm)) { mappedTaskIds.add(task.id); return; }
 
                   const isAi = task.title.includes('[IA]') || task.title.includes('Sentinel');
                   plan.misiones.push({

@@ -97,7 +97,7 @@ public class AiServiceImpl implements AiService {
             try {
                 conversationSessionService.updateEmotionalState(sessionId, emotionalSnapshot);
                 int turnCount = conversationSessionService.incrementTurnCount(sessionId);
-                postSessionAnalyzer.analyzeIfThresholdReached(sessionId, memberId, turnCount, context);
+                postSessionAnalyzer.analyzeIfThresholdReached(sessionId, family.getId(), memberId, turnCount, context);
             } catch (Exception e) {
                 log.warn("[AI_CHAT] No se pudo actualizar sesión {}: {}", sessionId, e.getMessage());
             }

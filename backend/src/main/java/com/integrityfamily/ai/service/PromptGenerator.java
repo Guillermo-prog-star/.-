@@ -617,6 +617,66 @@ public class PromptGenerator {
         }
     }
 
+    // ─── Síntesis de Sesión Conversacional ──────────────────────────────────
+
+    /**
+     * Fase E: Sintetiza una sesión completa en una memoria estructurada.
+     * El JSON resultante se persiste en FamilyMemory como episodio conversacional.
+     */
+    public String buildSessionSynthesisPrompt(
+            java.util.List<String> userMessages,
+            String memberRole,
+            String memberName,
+            String sessionGoal,
+            String emotionalArc) {
+
+        String messagesText = java.util.stream.IntStream.range(0, userMessages.size())
+                .mapToObj(i -> (i + 1) + ". " + userMessages.get(i))
+                .collect(java.util.stream.Collectors.joining("\n"));
+
+        return String.format("""
+            <system_identity>
+            Eres un analizador de sesiones conversacionales de Integrity Family.
+            Tu función es sintetizar una conversación en una memoria estructurada y accionable.
+            Solo usa evidencia del texto. No inventes ni proyectes.
+            </system_identity>
+
+            <context>
+            Miembro: %s (Rol: %s) | Objetivo de sesión: %s | Arco emocional: %s
+            </context>
+
+            <conversation>
+            %s
+            </conversation>
+
+            <task>
+            Sintetiza esta conversación en un JSON que capture los patrones clave.
+
+            {
+              "themes": ["máximo 3 temas observados"],
+              "emotionalSummary": "1-2 oraciones sobre el estado emocional del miembro",
+              "memberState": "OPEN | STRUGGLING | IMPROVING | RESISTANT | NEUTRAL",
+              "progressSignals": ["señal positiva o de riesgo observada, puede ser []"],
+              "recommendedFollowUp": "una microacción de seguimiento para la próxima sesión, o null",
+              "importanceScore": 0.1-1.0
+            }
+
+            Criterio de importanceScore:
+            - 0.9-1.0: señales de crisis o breakthrough transformador
+            - 0.7-0.8: struggle significativo o avance notable
+            - 0.5-0.6: apoyo conversacional normal
+            - 0.3-0.4: conversación superficial o muy breve
+            </task>
+
+            Solo el JSON. Sin explicaciones ni texto adicional.
+            """,
+                memberName, memberRole,
+                sessionGoal != null ? sessionGoal : "GENERAL",
+                emotionalArc != null ? emotionalArc : "STABLE",
+                messagesText
+        );
+    }
+
     // ─── Análisis de Identidad Conversacional ────────────────────────────────
 
     /**

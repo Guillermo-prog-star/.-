@@ -28,12 +28,14 @@ public class PostSessionAnalyzer {
     private final ChatMessageRepository chatMessageRepository;
     private final ConversationSessionRepository sessionRepository;
     private final MemberIdentityProfileService identityProfileService;
+    private final SessionMemoryConsolidator sessionMemoryConsolidator;
     private final AiProvider aiProvider;
     private final PromptGenerator promptGenerator;
     private final ObjectMapper objectMapper;
 
-    private static final int ANALYSIS_INTERVAL   = 5;
-    private static final int MIN_MESSAGES_TO_ANALYZE = 3;
+    private static final int ANALYSIS_INTERVAL        = 5;   // identidad: cada 5 turnos
+    private static final int MEMORY_INTERVAL          = 10;  // memoria episódica: cada 10 turnos
+    private static final int MIN_MESSAGES_TO_ANALYZE  = 3;
 
     /**
      * Verifica si el turno actual alcanza el umbral de análisis y, si es así,
@@ -45,11 +47,22 @@ public class PostSessionAnalyzer {
      * @param context    AiContext del turno actual (para obtener nombre/rol sin re-query)
      */
     @Transactional
-    public void analyzeIfThresholdReached(Long sessionId, Long memberId, int turnCount, AiContext context) {
-        if (sessionId == null || memberId == null) return;
-        if (turnCount < MIN_MESSAGES_TO_ANALYZE) return;
-        if (turnCount % ANALYSIS_INTERVAL != 0) return;
+    public void analyzeIfThresholdReached(
+            Long sessionId, Long familyId, Long memberId, int turnCount, AiContext context) {
+        if (sessionId == null || turnCount < MIN_MESSAGES_TO_ANALYZE) return;
 
+        // Identidad: cada ANALYSIS_INTERVAL turnos (requiere memberId)
+        if (memberId != null && turnCount % ANALYSIS_INTERVAL == 0) {
+            runIdentityAnalysis(sessionId, memberId, turnCount, context);
+        }
+
+        // Memoria episódica: cada MEMORY_INTERVAL turnos
+        if (familyId != null && turnCount % MEMORY_INTERVAL == 0) {
+            sessionMemoryConsolidator.consolidate(sessionId, familyId, context);
+        }
+    }
+
+    private void runIdentityAnalysis(Long sessionId, Long memberId, int turnCount, AiContext context) {
         try {
             List<String> userMessages = chatMessageRepository.findUserMessageContentsBySessionId(sessionId);
             if (userMessages.size() < MIN_MESSAGES_TO_ANALYZE) return;
@@ -63,7 +76,7 @@ public class PostSessionAnalyzer {
             parseAndUpdateProfile(memberId, rawResponse);
             log.info("[IDENTITY_EVOLUTION] Perfil actualizado — miembro={} sesión={} turno={}", memberId, sessionId, turnCount);
         } catch (Exception e) {
-            log.warn("[IDENTITY_EVOLUTION] Error en análisis — sesión={}: {}", sessionId, e.getMessage());
+            log.warn("[IDENTITY_EVOLUTION] Error en análisis de identidad — sesión={}: {}", sessionId, e.getMessage());
         }
     }
 
@@ -110,4 +123,5 @@ public class PostSessionAnalyzer {
     private Integer intOrNull(JsonNode node, String field) {
         return (node.has(field) && !node.get(field).isNull()) ? node.get(field).asInt() : null;
     }
+
 }

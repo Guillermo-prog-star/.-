@@ -617,6 +617,63 @@ public class PromptGenerator {
         }
     }
 
+    // ─── Análisis de Identidad Conversacional ────────────────────────────────
+
+    /**
+     * Fase D: Analiza los mensajes del usuario en una sesión y devuelve un JSON
+     * con los patrones de identidad conversacional detectados.
+     */
+    public String buildIdentityAnalysisPrompt(java.util.List<String> userMessages, String memberRole, String memberName) {
+        String messagesText = java.util.stream.IntStream.range(0, userMessages.size())
+                .mapToObj(i -> (i + 1) + ". " + userMessages.get(i))
+                .collect(java.util.stream.Collectors.joining("\n"));
+
+        return String.format("""
+            <system_identity>
+            Eres un analista de patrones comunicacionales de Integrity Family.
+            Tu función es leer los mensajes de un miembro y detectar su perfil conversacional real.
+            Solo infiere desde lo que está escrito. No asumas. No proyectes.
+            </system_identity>
+
+            <context>
+            Miembro analizado: %s (Rol familiar: %s)
+            </context>
+
+            <messages>
+            %s
+            </messages>
+
+            <task>
+            Analiza el lenguaje, estructura y contenido de los mensajes.
+            Detecta patrones comunicacionales con base en evidencia textual.
+
+            Responde ÚNICAMENTE con un objeto JSON válido:
+            {
+              "communicationStyle": "DIRECT | REFLECTIVE | AVOIDANT | ASSERTIVE",
+              "reflexivityLevel": 1-5,
+              "emotionalSensitivity": 1-5,
+              "changeResistance": "LOW | MED | HIGH",
+              "evasionPatterns": ["patrón observado en <10 palabras"] | null,
+              "motivators": ["motivador observado en <10 palabras"] | null
+            }
+
+            Criterios:
+            - DIRECT: respuestas cortas, al grano
+            - REFLECTIVE: introspectivo, autocuestiona, respuestas largas
+            - AVOIDANT: cambia de tema, minimiza, respuestas evasivas
+            - ASSERTIVE: expresa necesidades con claridad y sin agresividad
+            - reflexivityLevel 1=ninguna, 5=muy profunda
+            - emotionalSensitivity 1=muy calmado, 5=muy reactivo
+            - changeResistance LOW=abierto, MED=moderado, HIGH=resistente
+            - Si no hay suficiente evidencia para motivators o evasionPatterns, usa null
+            </task>
+
+            Solo el JSON. Sin explicaciones ni texto adicional.
+            """,
+                memberName, memberRole, messagesText
+        );
+    }
+
     public String buildDashboardInsightPrompt(com.integrityfamily.domain.Family family, java.util.Map<String, Double> dimensions, String riskLevel) {
         try {
             String dimensionsJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dimensions);

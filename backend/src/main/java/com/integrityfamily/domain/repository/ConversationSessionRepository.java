@@ -30,4 +30,17 @@ public interface ConversationSessionRepository extends JpaRepository<Conversatio
             @Param("memberId") Long memberId,
             @Param("since") LocalDateTime since,
             Pageable pageable);
+
+    /** Sesiones abiertas (sin ended_at) anteriores al corte de tiempo — para cierre de sesiones obsoletas. */
+    @Query("""
+        SELECT s FROM ConversationSession s
+        WHERE s.familyId = :familyId
+          AND s.memberId = :memberId
+          AND s.endedAt IS NULL
+          AND s.startedAt < :before
+        """)
+    List<ConversationSession> findOpenStaleSessionsForMember(
+            @Param("familyId") Long familyId,
+            @Param("memberId") Long memberId,
+            @Param("before") LocalDateTime before);
 }

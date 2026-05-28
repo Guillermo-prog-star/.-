@@ -34,6 +34,7 @@ public class AiServiceImpl implements AiService {
     private final ConversationSessionService conversationSessionService;
     private final ConversationGoalManager conversationGoalManager;
     private final EmotionalStateTracker emotionalStateTracker;
+    private final PostSessionAnalyzer postSessionAnalyzer;
 
     @Override
     @Transactional
@@ -91,11 +92,12 @@ public class AiServiceImpl implements AiService {
                 .sessionId(sessionId)
                 .build());
 
-        // 10. Actualizar métricas de sesión
+        // 10. Actualizar métricas de sesión y analizar identidad si corresponde
         if (sessionId != null) {
             try {
                 conversationSessionService.updateEmotionalState(sessionId, emotionalSnapshot);
-                conversationSessionService.incrementTurnCount(sessionId);
+                int turnCount = conversationSessionService.incrementTurnCount(sessionId);
+                postSessionAnalyzer.analyzeIfThresholdReached(sessionId, memberId, turnCount, context);
             } catch (Exception e) {
                 log.warn("[AI_CHAT] No se pudo actualizar sesión {}: {}", sessionId, e.getMessage());
             }

@@ -16,4 +16,7 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
 
     @Query("SELECT m.emotionalSnapshot FROM ChatMessage m WHERE m.sessionId = :sessionId AND m.ai = false AND m.emotionalSnapshot IS NOT NULL ORDER BY m.createdAt DESC")
     List<String> findRecentUserSnapshotsForSession(@Param("sessionId") Long sessionId, Pageable pageable);
+
+    @Query("SELECT m.content FROM ChatMessage m WHERE m.sessionId = :sessionId AND m.ai = false ORDER BY m.createdAt ASC")
+    List<String> findUserMessageContentsBySessionId(@Param("sessionId") Long sessionId);
 }

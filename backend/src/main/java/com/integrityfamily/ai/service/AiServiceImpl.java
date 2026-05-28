@@ -32,6 +32,8 @@ public class AiServiceImpl implements AiService {
     private final SentimentAnalysisService sentimentAnalysisService;
     private final ParticipationService participationService;
     private final ConversationSessionService conversationSessionService;
+    private final ConversationGoalManager conversationGoalManager;
+    private final EmotionalStateTracker emotionalStateTracker;
 
     @Override
     @Transactional
@@ -40,8 +42,9 @@ public class AiServiceImpl implements AiService {
         var sentiment = sentimentAnalysisService.analyze(message);
         log.info("[AI_SENTIMENT] Detectado: {} (score: {})", sentiment.getLabel(), sentiment.getScore());
 
-        // 2. Obtener o crear sesión conversacional
-        final Long sessionId = findOrCreateSessionSilent(family.getId(), memberId);
+        // 2. Inferir objetivo y obtener/crear sesión conversacional
+        final String inferredGoal = inferGoalSilent(family.getId(), memberId);
+        final Long sessionId = findOrCreateSessionSilent(family.getId(), memberId, inferredGoal);
 
         // 3. Guardar mensaje del usuario con sesión y snapshot emocional
         String emotionalSnapshot = toEmotionalSnapshot(sentiment.getLabel());
@@ -57,10 +60,13 @@ public class AiServiceImpl implements AiService {
         // 4. Registrar evento de participación
         participationService.record(family.getId(), memberId, ParticipationEventType.CHAT_MESSAGE);
 
-        // 5. Sintetizar contexto relacional unificado
-        AiContext context = contextSynthesizer.synthesize(family, memberId, sentiment.getLabel());
+        // 5. Actualizar arco emocional de la sesión (incluye el mensaje recién guardado)
+        emotionalStateTracker.computeAndUpdateArc(sessionId);
 
-        // 6. Routing explícito al prompt diferenciado por rol
+        // 6. Sintetizar contexto relacional unificado (lee arco + goal desde la sesión)
+        AiContext context = contextSynthesizer.synthesize(family, memberId, sessionId, sentiment.getLabel());
+
+        // 7. Routing explícito al prompt diferenciado por rol
         String fullPrompt;
         if (context.activeMember() != null && context.activeMember().isGuardian()) {
             log.info("[AI_CHAT] Modo GUARDIAN — familia {} / miembro {}", family.getId(), memberId);
@@ -74,10 +80,10 @@ public class AiServiceImpl implements AiService {
             fullPrompt = promptGenerator.buildFamilyMentorPrompt(message, context);
         }
 
-        // 7. Generar respuesta con el prompt pre-construido
+        // 8. Generar respuesta con el prompt pre-construido
         String response = aiProvider.generateWithFullPrompt(fullPrompt);
 
-        // 8. Guardar respuesta de la IA vinculada a la misma sesión
+        // 9. Guardar respuesta de la IA vinculada a la misma sesión
         ChatMessage aiMessage = chatMessageRepository.save(ChatMessage.builder()
                 .content(response)
                 .family(family)
@@ -85,7 +91,7 @@ public class AiServiceImpl implements AiService {
                 .sessionId(sessionId)
                 .build());
 
-        // 9. Actualizar métricas de sesión
+        // 10. Actualizar métricas de sesión
         if (sessionId != null) {
             try {
                 conversationSessionService.updateEmotionalState(sessionId, emotionalSnapshot);
@@ -98,13 +104,23 @@ public class AiServiceImpl implements AiService {
         return aiMessage;
     }
 
-    private Long findOrCreateSessionSilent(Long familyId, Long memberId) {
+    private Long findOrCreateSessionSilent(Long familyId, Long memberId, String goal) {
         if (memberId == null) return null;
         try {
-            return conversationSessionService.findOrCreateSession(familyId, memberId, "GENERAL").getId();
+            return conversationSessionService.findOrCreateSession(familyId, memberId, goal).getId();
         } catch (Exception e) {
             log.warn("[AI_CHAT] No se pudo obtener sesión conversacional: {}", e.getMessage());
             return null;
+        }
+    }
+
+    private String inferGoalSilent(Long familyId, Long memberId) {
+        if (memberId == null) return "GENERAL";
+        try {
+            return conversationGoalManager.inferGoal(familyId, memberId);
+        } catch (Exception e) {
+            log.warn("[AI_CHAT] No se pudo inferir objetivo conversacional: {}", e.getMessage());
+            return "GENERAL";
         }
     }
 

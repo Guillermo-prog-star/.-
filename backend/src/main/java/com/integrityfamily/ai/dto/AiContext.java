@@ -27,7 +27,10 @@ public record AiContext(
     String relationalGraph,  // resumen del grafo de relaciones, null si sin datos
     String interventionLevel, // NONE | ATTENTION | URGENT | CRISIS
     // ── Fase B: Perfil de Identidad del Miembro ──────
-    MemberIdentitySnapshot memberIdentity // null si sin memberId o sin perfil aún
+    MemberIdentitySnapshot memberIdentity, // null si sin memberId o sin perfil aún
+    // ── Fase C: Arco Emocional + Objetivo Conversacional
+    String emotionalArc,      // STABLE | MILD_TENSION | ESCALATING | ESCALATED | DE_ESCALATING | null
+    String conversationGoal   // GENERAL | SUPPORT | REFLECTION | PLANNING | CRISIS_CONTAINMENT | null
 ) {
     public record FamilyMetadata(String name, String milestone, String lastUpdate) {}
     public record MemberNode(String firstName, String role) {}

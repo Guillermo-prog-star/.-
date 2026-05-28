@@ -5,8 +5,10 @@ import com.integrityfamily.ai.dto.CopilotDtos;
 import com.integrityfamily.cognitive.service.FamilyMemoryService;
 import com.integrityfamily.cognitive.service.FamilyIdentityGraphService;
 import com.integrityfamily.cognitive.service.MemberIdentityProfileService;
+import com.integrityfamily.domain.ConversationSession;
 import com.integrityfamily.domain.MemberIdentityProfile;
 import com.integrityfamily.domain.ChatMessage;
+import com.integrityfamily.domain.repository.ConversationSessionRepository;
 import com.integrityfamily.domain.FamilyMember;
 import com.integrityfamily.domain.FamilyMemory;
 import com.integrityfamily.domain.ImprovementPlan;
@@ -52,6 +54,7 @@ public class ContextSynthesizer {
     private final FamilyIdentityGraphService identityGraphService;
     private final FamilyAlertRepository alertRepository;
     private final MemberIdentityProfileService memberIdentityProfileService;
+    private final ConversationSessionRepository conversationSessionRepository;
 
     private static final int MISSION_LIMIT = 5;
     private static final int NEXT_MISSIONS_LIMIT = 3;
@@ -74,7 +77,16 @@ public class ContextSynthesizer {
      */
     @Transactional(readOnly = true)
     public AiContext synthesize(Family family, Long memberId, String sentiment) {
-        log.debug("[CONTEXT] Sintetizando contexto relacional para familia {} / miembro {}", family.getId(), memberId);
+        return synthesize(family, memberId, null, sentiment);
+    }
+
+    /**
+     * Síntesis enriquecida con sesión activa (Fase C).
+     * Lee arco emocional y objetivo conversacional desde la ConversationSession.
+     */
+    @Transactional(readOnly = true)
+    public AiContext synthesize(Family family, Long memberId, Long sessionId, String sentiment) {
+        log.debug("[CONTEXT] Sintetizando contexto para familia {} / miembro {} / sesión {}", family.getId(), memberId, sessionId);
 
         List<RiskSnapshot> riskHistory = riskRepo.findByFamilyIdOrderByCreatedAtDesc(family.getId());
         Optional<Evaluation> latestEval = evalRepo.findTopByFamilyIdAndStatusOrderByFinalizedAtDesc(
@@ -98,7 +110,9 @@ public class ContextSynthesizer {
             buildMemoryContext(family.getId()),
             buildRelationalGraph(family.getId()),
             buildInterventionLevel(family.getId()),
-            buildMemberIdentitySnapshot(memberId)
+            buildMemberIdentitySnapshot(memberId),
+            buildEmotionalArcFromSession(sessionId),
+            buildConversationGoalFromSession(sessionId)
         );
     }
 
@@ -374,6 +388,32 @@ public class ContextSynthesizer {
         } catch (Exception e) {
             log.warn("[CONTEXT] InterventionLevel no disponible para familia {}: {}", familyId, e.getMessage());
             return "NONE";
+        }
+    }
+
+    // ─── Fase C: Arco Emocional + Objetivo Conversacional ────────────────────
+
+    private String buildEmotionalArcFromSession(Long sessionId) {
+        if (sessionId == null) return null;
+        try {
+            return conversationSessionRepository.findById(sessionId)
+                    .map(ConversationSession::getEmotionalState)
+                    .orElse(null);
+        } catch (Exception e) {
+            log.warn("[CONTEXT] EmotionalArc no disponible para sesión {}: {}", sessionId, e.getMessage());
+            return null;
+        }
+    }
+
+    private String buildConversationGoalFromSession(Long sessionId) {
+        if (sessionId == null) return null;
+        try {
+            return conversationSessionRepository.findById(sessionId)
+                    .map(ConversationSession::getGoal)
+                    .orElse(null);
+        } catch (Exception e) {
+            log.warn("[CONTEXT] ConversationGoal no disponible para sesión {}: {}", sessionId, e.getMessage());
+            return null;
         }
     }
 

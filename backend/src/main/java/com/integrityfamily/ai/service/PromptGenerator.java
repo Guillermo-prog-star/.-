@@ -110,6 +110,9 @@ public class PromptGenerator {
                 + buildRelationalGraphBlock(ctx)
                 + buildInterventionBlock(ctx)
                 + buildMemberIdentityBlock(ctx)
+                + buildCriticalThinkingBlock(ctx)
+                + buildEmotionalArcBlock(ctx)
+                + buildGoalContextBlock(ctx)
                 + buildHistoryBlock(ctx)
                 + buildWelcomeBlock(ctx)
                 + buildSentimentBlock(ctx)
@@ -158,6 +161,9 @@ public class PromptGenerator {
                 + buildRelationalGraphBlock(ctx)
                 + buildInterventionBlock(ctx)
                 + buildMemberIdentityBlock(ctx)
+                + buildCriticalThinkingBlock(ctx)
+                + buildEmotionalArcBlock(ctx)
+                + buildGoalContextBlock(ctx)
                 + buildHistoryBlock(ctx)
                 + buildWelcomeBlock(ctx)
                 + buildSentimentBlock(ctx)
@@ -197,6 +203,9 @@ public class PromptGenerator {
                 + buildMemoryContextBlock(ctx)
                 + buildRelationalGraphBlock(ctx)
                 + buildInterventionBlock(ctx)
+                + buildCriticalThinkingBlock(ctx)
+                + buildEmotionalArcBlock(ctx)
+                + buildGoalContextBlock(ctx)
                 + buildHistoryBlock(ctx)
                 + buildWelcomeBlock(ctx)
                 + buildSentimentBlock(ctx)
@@ -207,6 +216,109 @@ public class PromptGenerator {
             log.error("[PROMPT] Error en buildFamilyMentorPrompt", e);
             return String.format("%s\n\n%s\n\n<user_input>%s</user_input>", MENTOR_IDENTITY, SAFETY_RULES, message);
         }
+    }
+
+    // ─── Fase C: Critical Thinking + Emotional Arc + Goal Context ───────────
+
+    private String buildCriticalThinkingBlock(AiContext ctx) {
+        if (ctx.activeMember() == null) return buildGenericCriticalThinking();
+        return switch (ctx.activeMember().role().toUpperCase()) {
+            case "PADRE" -> """
+                <critical_thinking>
+                ROL PADRE — patrón a detectar: contradicción entre deseo y comportamiento.
+                Si el padre expresa "quiero conectar más" pero describe conductas contrarias (horarios, ausencia, trabajo), nómbralo con gentileza, sin culpa: "Escucho que quieres X, y al mismo tiempo describes una situación donde Y. ¿Cómo reconcilias eso?"
+                No busques convencerlo. Hazlo consciente. La toma de conciencia precede al cambio.
+                </critical_thinking>
+                """;
+            case "MADRE" -> """
+                <critical_thinking>
+                ROL MADRE — patrón a detectar: agotamiento invisible enmascarado como "estoy bien".
+                Si la madre minimiza su estado pero el contexto sugiere sobrecarga, no aceptes la respuesta superficial.
+                Verifica con cuidado: "Te escucho decir que estás bien, y al mismo tiempo percibo X. ¿Qué hay debajo de eso?"
+                Tu función es crear un espacio seguro donde lo pueda nombrar, no resolverlo de inmediato.
+                </critical_thinking>
+                """;
+            case "HIJO", "HIJA" -> """
+                <critical_thinking>
+                ROL HIJO/HIJA — patrón a detectar: oscilación entre retraimiento y explosión.
+                Si detectas retraimiento (respuestas cortas, "todo bien"): no presiones. Ofrece espacio con preguntas simples y abiertas.
+                Si detectas explosión emocional: valida primero ("tiene sentido que te sientas así") ANTES de cualquier acción o consejo.
+                NUNCA compares con hermanos. NUNCA uses el pasado para explicar el presente.
+                </critical_thinking>
+                """;
+            default -> buildGenericCriticalThinking();
+        };
+    }
+
+    private String buildGenericCriticalThinking() {
+        return """
+            <critical_thinking>
+            Si detectas una contradicción entre lo que la persona dice que quiere y lo que describe hacer, nómbrala con gentileza.
+            Un buen acompañante sostiene la discrepancia sin juicio: "Escucho dos cosas al mismo tiempo..."
+            </critical_thinking>
+            """;
+    }
+
+    private String buildEmotionalArcBlock(AiContext ctx) {
+        if (ctx.emotionalArc() == null || "STABLE".equals(ctx.emotionalArc())) return "";
+        return switch (ctx.emotionalArc()) {
+            case "ESCALATED" -> """
+                <emotional_arc>
+                ARCO ESCALADO: Esta persona ha mostrado tensión creciente en toda la sesión.
+                PRIORIDAD ABSOLUTA: contención emocional. NO sugieras acciones ni misiones hasta que la persona se sienta escuchada y calmada.
+                Usa validación directa: "Tiene sentido que te sientas así", "Esto es mucho para cargar solo/a".
+                </emotional_arc>
+                """;
+            case "ESCALATING" -> """
+                <emotional_arc>
+                ARCO EN ESCALADA: La tensión emocional está aumentando en esta conversación.
+                Valida explícitamente el estado emocional antes de continuar. Reduce la densidad de sugerencias a máximo 1.
+                </emotional_arc>
+                """;
+            case "MILD_TENSION" -> """
+                <emotional_arc>
+                TENSIÓN LEVE detectada. Mantén tono extra empático y verifica el estado emocional antes de proponer cualquier acción.
+                </emotional_arc>
+                """;
+            case "DE_ESCALATING" -> """
+                <emotional_arc>
+                ARCO EN CALMA: La tensión está bajando. Puedes retomar sugerencias concretas con cuidado, celebrando la apertura al diálogo.
+                </emotional_arc>
+                """;
+            default -> "";
+        };
+    }
+
+    private String buildGoalContextBlock(AiContext ctx) {
+        if (ctx.conversationGoal() == null || "GENERAL".equals(ctx.conversationGoal())) return "";
+        return switch (ctx.conversationGoal()) {
+            case "CRISIS_CONTAINMENT" -> """
+                <session_goal>
+                OBJETIVO: CONTENCIÓN DE CRISIS
+                Hay alertas clínicas activas. No es momento para misiones ni planes. Foco total: escuchar, calmar, validar.
+                Si detectas riesgo real, provee recursos de ayuda inmediata antes de cualquier otra respuesta.
+                </session_goal>
+                """;
+            case "SUPPORT" -> """
+                <session_goal>
+                OBJETIVO: APOYO EMOCIONAL
+                La familia atraviesa un momento de vulnerabilidad. Prioriza la presencia y validación sobre la acción concreta.
+                </session_goal>
+                """;
+            case "PLANNING" -> """
+                <session_goal>
+                OBJETIVO: ACOMPAÑAMIENTO DE PLAN
+                Hay misiones activas pendientes. Si el momento emocional lo permite, puedes referenciar las próximas misiones y celebrar avances recientes.
+                </session_goal>
+                """;
+            case "REFLECTION" -> """
+                <session_goal>
+                OBJETIVO: REFLEXIÓN
+                Facilita la introspección. Usa preguntas abiertas más que sugerencias directas. Menos acción, más escucha.
+                </session_goal>
+                """;
+            default -> "";
+        };
     }
 
     // ─── Builders de bloques reutilizables ───────────────────────────────────

@@ -185,3 +185,24 @@
 .btn-round:active {
   transform: scale(0.95);
 }
+
+/* Markdown dentro de mensajes IA */
+.prose-ai p    { margin: 0 0 0.5rem; line-height: 1.6; }
+.prose-ai p:last-child { margin-bottom: 0; }
+.prose-ai h2, .prose-ai h3, .prose-ai h4 {
+  font-size: 0.9rem; font-weight: 700; color: #c7d2fe;
+  margin: 0.6rem 0 0.3rem;
+}
+.prose-ai ul, .prose-ai ol {
+  margin: 0.3rem 0 0.5rem 1.1rem; padding: 0;
+}
+.prose-ai li   { margin-bottom: 0.2rem; line-height: 1.5; }
+.prose-ai code {
+  background: rgba(99,102,241,0.15); color: #a5b4fc;
+  padding: 1px 5px; border-radius: 4px; font-size: 0.82em;
+  font-family: 'Courier New', monospace;
+}
+.prose-ai hr   { border: none; border-top: 1px solid rgba(99,102,241,0.2); margin: 0.5rem 0; }
+.prose-ai strong { color: #e0e7ff; font-weight: 700; }
+.prose-ai em   { color: #a5b4fc; }
+.prose-ai br   { display: block; content: ''; margin-top: 0.25rem; }

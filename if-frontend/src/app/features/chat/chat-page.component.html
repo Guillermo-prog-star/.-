@@ -22,7 +22,8 @@
       
       <div class="max-w-[80%] p-4 rounded-2xl shadow-xl transition-all duration-300"
            [ngClass]="msg.isAi ? 'bg-indigo-950/40 border border-indigo-500/30 text-indigo-50 rounded-tl-none' : 'bg-white/10 border border-white/10 text-white rounded-tr-none'">
-        <p class="text-sm leading-relaxed">{{ msg.content }}</p>
+        <div class="text-sm leading-relaxed prose-ai" *ngIf="msg.isAi" [innerHTML]="msg.content | markdown"></div>
+        <p class="text-sm leading-relaxed" *ngIf="!msg.isAi">{{ msg.content }}</p>
         <span class="text-[9px] mt-2 block opacity-40">{{ msg.createdAt | date:'shortTime' }}</span>
       </div>
     </div>

@@ -60,4 +60,10 @@ export class GuardianService {
       .get<ApiResponse<GuardianBriefingResponse>>(`${this.base}/${familyId}/guardian/briefing`)
       .pipe(map(r => r.data));
   }
+
+  generateReengagement(familyId: number, targetMemberId: number): Observable<string> {
+    return this.http
+      .post<ApiResponse<string>>(`${this.base}/${familyId}/guardian/reengage/${targetMemberId}`, {})
+      .pipe(map(r => r.data));
+  }
 }

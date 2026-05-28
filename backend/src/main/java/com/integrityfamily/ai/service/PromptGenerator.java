@@ -477,6 +477,44 @@ public class PromptGenerator {
         );
     }
 
+    // ─── Mensaje de re-invitación para miembro inactivo ──────────────────────
+
+    /**
+     * Genera un mensaje cálido que el Guardián puede compartir con un miembro inactivo.
+     * No presiona: invita desde el afecto. Máximo 3 líneas, copiable por WhatsApp o mensaje.
+     */
+    public String buildReengagementPrompt(
+            String guardianName,
+            String targetMemberName,
+            long daysSinceActivity,
+            String familyName
+    ) {
+        return String.format("""
+                %s
+
+                <task>
+                El Guardián Familiar %s quiere reconectar con %s, quien lleva %d días sin participar en la plataforma de la familia %s.
+
+                Genera UN SOLO mensaje corto (máximo 3 líneas) que el Guardián puede copiar y enviar directamente por WhatsApp o mensaje de texto.
+
+                REGLAS ABSOLUTAS:
+                - Escríbelo en primera persona desde el Guardián ("Hola [nombre], te echamos de menos...")
+                - NUNCA uses: "deberías", "llevas días sin conectarte", "es tu responsabilidad", lenguaje de culpa.
+                - SÍ usa: afecto genuino, un recuerdo o detalle cálido inventado pero plausible, una invitación suave a una actividad específica y pequeña.
+                - Máximo 3 líneas. Sin emoji de bandera, sin asteriscos, sin formato Markdown.
+                - El mensaje debe sonar como escrito por una persona real, no por un sistema.
+                </task>
+
+                Genera solo el mensaje. Sin introducción ni explicación.
+                """,
+                MENTOR_IDENTITY,
+                guardianName,
+                targetMemberName,
+                daysSinceActivity,
+                familyName
+        );
+    }
+
     public String buildExecutiveReportPrompt(com.integrityfamily.report.dto.TransformationSummary summary) {
         try {
             String summaryJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(summary);

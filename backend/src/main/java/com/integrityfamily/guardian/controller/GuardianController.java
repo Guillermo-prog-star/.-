@@ -42,6 +42,13 @@ public class GuardianController {
         return ApiResponse.ok(guardianBriefingService.getBriefing(familyId));
     }
 
+    @PostMapping("/reengage/{targetMemberId}")
+    public ApiResponse<String> reengageMember(
+            @PathVariable Long familyId,
+            @PathVariable Long targetMemberId) {
+        return ApiResponse.ok(guardianBriefingService.generateReengagementMessage(familyId, targetMemberId));
+    }
+
     @PostMapping("/vote")
     public ApiResponse<GuardianStatusResponse> vote(
             @PathVariable Long familyId,

@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.List;
 
 @Service
 @Slf4j
@@ -132,6 +133,46 @@ public class GuardianBriefingService {
             return inactiveCount > 0
                     ? "Esta semana " + inactiveCount + " miembro(s) no han participado. Cuando tengas un momento, una pequeña invitación sin presión puede marcar la diferencia."
                     : "Tu familia está activa esta semana. Sigue adelante.";
+        }
+    }
+
+    /**
+     * Genera un mensaje de re-invitación personalizado para un miembro inactivo.
+     * El Guardián puede copiar y enviar el texto resultante por WhatsApp o mensaje directo.
+     */
+    @Transactional(readOnly = true)
+    public String generateReengagementMessage(Long familyId, Long targetMemberId) {
+        Family family = familyRepository.findById(familyId)
+                .orElseThrow(() -> new BusinessException("Familia no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        Long guardianId = family.getGuardianMemberId();
+        String guardianName = family.getMembers().stream()
+                .filter(m -> m.getId().equals(guardianId))
+                .findFirst()
+                .map(FamilyMember::getFullName)
+                .orElse("el Guardián");
+
+        String targetName = family.getMembers().stream()
+                .filter(m -> m.getId().equals(targetMemberId))
+                .findFirst()
+                .map(FamilyMember::getFullName)
+                .orElseThrow(() -> new BusinessException("Miembro no encontrado", "MEMBER_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        ParticipationService.FamilyParticipationSummary summary = participationService.getSummary(familyId, guardianId);
+        long daysSince = summary.activities().stream()
+                .filter(a -> a.memberId().equals(targetMemberId))
+                .findFirst()
+                .map(ParticipationService.MemberActivity::daysSinceLastActivity)
+                .orElse(7L);
+
+        log.info("[REENGAGE] Guardián {} generando mensaje para {} ({} días inactivo)", guardianName, targetName, daysSince);
+
+        String prompt = promptGenerator.buildReengagementPrompt(guardianName, targetName, daysSince, family.getName());
+        try {
+            return aiProvider.generateWithFullPrompt(prompt);
+        } catch (Exception e) {
+            log.warn("[REENGAGE] Error generando mensaje: {}", e.getMessage());
+            return "Hola " + targetName + ", te echamos de menos esta semana. ¿Te apetece unirte a la próxima actividad familiar? 🙂";
         }
     }
 }

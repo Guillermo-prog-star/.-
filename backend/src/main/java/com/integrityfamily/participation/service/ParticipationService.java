@@ -5,14 +5,21 @@ import com.integrityfamily.domain.ParticipationEvent;
 import com.integrityfamily.domain.ParticipationEventType;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.ParticipationEventRepository;
+import com.integrityfamily.participation.dto.ParticipationPulseResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @Slf4j
@@ -90,4 +97,57 @@ public class ParticipationService {
             List<MemberActivity> activities,
             String fatigueSignal
     ) {}
+
+    /**
+     * Vista compacta para el widget de pulso en el dashboard.
+     * Incluye 7 días de actividad diaria para la sparkline.
+     */
+    @Transactional(readOnly = true)
+    public ParticipationPulseResponse getPulse(Long familyId) {
+        LocalDateTime since = LocalDateTime.now().minusDays(ACTIVITY_WINDOW_DAYS);
+        List<Long> activeMemberIds = repo.findActiveMemberIds(familyId, since);
+
+        List<FamilyMember> allActive = familyRepository.findById(familyId)
+                .map(f -> f.getMembers().stream().filter(FamilyMember::isActive).toList())
+                .orElse(List.of());
+
+        int totalMembers = allActive.size();
+        int activeCount = activeMemberIds.size();
+
+        List<ParticipationPulseResponse.MemberPulse> pulses = allActive.stream()
+                .map(m -> {
+                    LocalDateTime last = repo.findLastActivityByMember(familyId, m.getId()).orElse(null);
+                    long days = last == null ? 999 : ChronoUnit.DAYS.between(last, LocalDateTime.now());
+                    String initials = buildInitials(m.getFullName());
+                    return new ParticipationPulseResponse.MemberPulse(
+                            m.getId(), m.getFullName(), initials,
+                            activeMemberIds.contains(m.getId()), days);
+                })
+                .toList();
+
+        // Eventos de los últimos 7 días agrupados por día
+        List<LocalDateTime> allEvents = repo.findAllOccurredAt(familyId, since);
+        Map<LocalDate, Long> countsByDay = allEvents.stream()
+                .collect(Collectors.groupingBy(dt -> dt.toLocalDate(), Collectors.counting()));
+
+        List<ParticipationPulseResponse.DayActivity> weekly = IntStream.range(0, 7)
+                .mapToObj(i -> {
+                    LocalDate day = LocalDate.now().minusDays(6 - i);
+                    String label = day.getDayOfWeek().getDisplayName(TextStyle.SHORT, new Locale("es"));
+                    int count = countsByDay.getOrDefault(day, 0L).intValue();
+                    return new ParticipationPulseResponse.DayActivity(label, count);
+                })
+                .toList();
+
+        double rate = totalMembers > 0 ? (double) activeCount / totalMembers : 0.0;
+        return new ParticipationPulseResponse(totalMembers, activeCount, rate, pulses, weekly);
+    }
+
+    private String buildInitials(String fullName) {
+        if (fullName == null || fullName.isBlank()) return "?";
+        String[] parts = fullName.trim().split("\\s+");
+        String first = parts[0].substring(0, 1).toUpperCase();
+        String second = parts.length > 1 ? parts[1].substring(0, 1).toUpperCase() : "";
+        return first + second;
+    }
 }

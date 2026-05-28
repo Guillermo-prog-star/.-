@@ -29,6 +29,7 @@ import { AbandonmentRiskBannerComponent } from './components/abandonment-risk-ba
 import { DimensionHistoryChartComponent } from './components/dimension-history-chart/dimension-history-chart.component';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 import { GuardianPanelComponent } from '../guardian/guardian-panel.component';
+import { ParticipationPulseComponent } from './components/participation-pulse/participation-pulse.component';
 
 /**
  * SDD: Dashboard Page Component
@@ -53,7 +54,8 @@ import { GuardianPanelComponent } from '../guardian/guardian-panel.component';
     AbandonmentRiskBannerComponent,
     DimensionHistoryChartComponent,
     NarrativeCompanionComponent,
-    GuardianPanelComponent
+    GuardianPanelComponent,
+    ParticipationPulseComponent
   ],
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.css'],

@@ -17,4 +17,10 @@ public interface ParticipationEventRepository extends JpaRepository<Participatio
 
     @Query("SELECT MAX(e.occurredAt) FROM ParticipationEvent e WHERE e.familyId = :familyId AND e.memberId = :memberId")
     java.util.Optional<LocalDateTime> findLastActivityByMember(@Param("familyId") Long familyId, @Param("memberId") Long memberId);
+
+    @Query("SELECT e.occurredAt FROM ParticipationEvent e WHERE e.familyId = :familyId AND e.occurredAt >= :since")
+    List<LocalDateTime> findAllOccurredAt(@Param("familyId") Long familyId, @Param("since") LocalDateTime since);
+
+    @Query("SELECT e.occurredAt, e.memberId, e.eventType FROM ParticipationEvent e WHERE e.familyId = :familyId AND e.occurredAt >= :since ORDER BY e.occurredAt DESC")
+    List<Object[]> findRecentEvents(@Param("familyId") Long familyId, @Param("since") LocalDateTime since);
 }

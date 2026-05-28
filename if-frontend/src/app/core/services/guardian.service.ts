@@ -3,7 +3,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
-  GuardianStatusResponse, VoteRequest, ActivateMissionRequest, MissionDto, GuardianBriefingResponse
+  GuardianStatusResponse, VoteRequest, ActivateMissionRequest, MissionDto,
+  GuardianBriefingResponse, ParticipationPulseResponse
 } from '../models/models';
 
 interface ApiResponse<T> { data: T; message?: string; success?: boolean; }
@@ -64,6 +65,12 @@ export class GuardianService {
   generateReengagement(familyId: number, targetMemberId: number): Observable<string> {
     return this.http
       .post<ApiResponse<string>>(`${this.base}/${familyId}/guardian/reengage/${targetMemberId}`, {})
+      .pipe(map(r => r.data));
+  }
+
+  getParticipationPulse(familyId: number): Observable<ParticipationPulseResponse> {
+    return this.http
+      .get<ApiResponse<ParticipationPulseResponse>>(`${this.base}/${familyId}/participation/pulse`)
       .pipe(map(r => r.data));
   }
 }

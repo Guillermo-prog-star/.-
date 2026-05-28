@@ -53,6 +53,27 @@ export interface GuardianStatusResponse {
 
 export interface VoteRequest { voterMemberId: number; nominatedMemberId: number; }
 
+export interface MemberPulse {
+  memberId: number;
+  name: string;
+  initials: string;
+  activeThisWeek: boolean;
+  daysSinceLastActivity: number;
+}
+
+export interface DayActivity {
+  dayLabel: string;
+  eventCount: number;
+}
+
+export interface ParticipationPulseResponse {
+  totalMembers: number;
+  activeThisWeek: number;
+  participationRate: number;
+  members: MemberPulse[];
+  weeklyActivity: DayActivity[];
+}
+
 export interface GuardianMemberSummary {
   memberId: number;
   name: string;

@@ -26,6 +26,12 @@
       [currentMemberId]="guardianMemberId">
     </app-guardian-panel>
 
+    <!-- PULSO DE PARTICIPACIÓN — Actividad familiar de los últimos 7 días -->
+    <app-participation-pulse
+      *ngIf="guardianFamilyId > 0"
+      [familyId]="guardianFamilyId">
+    </app-participation-pulse>
+
     <!-- [SDD Analytics v2] ABANDONMENT RISK BANNER — visible sólo si HIGH/CRITICAL -->
     <app-abandonment-risk-banner></app-abandonment-risk-banner>
 

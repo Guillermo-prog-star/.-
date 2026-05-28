@@ -4,9 +4,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * SDD-AI-03.3 v2: High-Fidelity Relational Context Record.
- * Añade identidad del miembro activo, perfil del Guardián,
- * snapshot cognitivo y estado del plan activo.
+ * SDD-AI-03.3 v3: High-Fidelity Relational Context Record.
+ * Fase A: conecta memoria cognitiva, grafo relacional y nivel de intervención.
  */
 public record AiContext(
     FamilyMetadata family,
@@ -22,7 +21,11 @@ public record AiContext(
     ActiveMemberProfile activeMember,
     GuardianProfile guardian,
     CognitiveSnapshot cognitive,
-    ActivePlanSnapshot activePlan
+    ActivePlanSnapshot activePlan,
+    // ── Fase A: Motor Cognitivo Conectado ────────────
+    String memoryContext,    // semántica + identidad familiar, null si sin datos
+    String relationalGraph,  // resumen del grafo de relaciones, null si sin datos
+    String interventionLevel // NONE | ATTENTION | URGENT | CRISIS
 ) {
     public record FamilyMetadata(String name, String milestone, String lastUpdate) {}
     public record MemberNode(String firstName, String role) {}

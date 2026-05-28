@@ -28,20 +28,20 @@ public class VoiceController {
     @PostMapping(path = "/{familyId}", consumes = "multipart/form-data")
     public ResponseEntity<SonicResponse> chat(
             @RequestParam("audio") MultipartFile audio,
-            @PathVariable("familyId") Long familyId) throws IOException {
+            @PathVariable("familyId") Long familyId,
+            @RequestParam(value = "memberId", required = false) Long memberId) throws IOException {
 
         SonicService sonicService = sonicServiceProvider.getIfAvailable();
         if (sonicService == null) {
-            return ResponseEntity.status(503).build(); // feature deshabilitado
+            return ResponseEntity.status(503).build();
         }
-        
+
         Family family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new NotFoundException("Familia no encontrada"));
-        
-        // Sincronizado para devolver SonicResponse (texto) segÃƒÂºn el nuevo contrato
+
         SonicResponse response = sonicService.processVoiceChat(
-                audio.getBytes(), audio.getContentType(), family);
-                
+                audio.getBytes(), audio.getContentType(), family, memberId);
+
         return ResponseEntity.ok(response);
     }
 }

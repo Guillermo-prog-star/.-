@@ -4,5 +4,6 @@ public enum ParticipationEventType {
     CHAT_MESSAGE,
     MISSION_COMPLETED,
     EVIDENCE_SUBMITTED,
-    LOGBOOK_ENTRY
+    LOGBOOK_ENTRY,
+    VOICE_MESSAGE
 }

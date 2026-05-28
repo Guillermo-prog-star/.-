@@ -91,6 +91,9 @@ public class PromptGenerator {
             String isFirstInteraction = buildWelcomeBlock(ctx);
             String planBlock = buildPlanBlock(ctx);
             String cognitiveBlock = buildCognitiveBlock(ctx);
+            String memoryBlock = buildMemoryContextBlock(ctx);
+            String graphBlock = buildRelationalGraphBlock(ctx);
+            String interventionBlock = buildInterventionBlock(ctx);
             String familyStateJson = buildFamilyStateJson(ctx);
 
             return String.format("""
@@ -127,6 +130,12 @@ public class PromptGenerator {
 
                 %s
 
+                %s
+
+                %s
+
+                %s
+
                 <user_input>
                 %s
                 </user_input>
@@ -139,6 +148,9 @@ public class PromptGenerator {
                 familyStateJson,
                 planBlock,
                 cognitiveBlock,
+                memoryBlock,
+                graphBlock,
+                interventionBlock,
                 history,
                 isFirstInteraction,
                 sentiment,
@@ -171,6 +183,9 @@ public class PromptGenerator {
             String isFirstInteraction = buildWelcomeBlock(ctx);
             String planBlock = buildPlanBlock(ctx);
             String cognitiveBlock = buildCognitiveBlock(ctx);
+            String memoryBlock = buildMemoryContextBlock(ctx);
+            String graphBlock = buildRelationalGraphBlock(ctx);
+            String interventionBlock = buildInterventionBlock(ctx);
             String familyStateJson = buildFamilyStateJson(ctx);
 
             return String.format("""
@@ -205,6 +220,12 @@ public class PromptGenerator {
 
                 %s
 
+                %s
+
+                %s
+
+                %s
+
                 <user_input>
                 %s
                 </user_input>
@@ -218,6 +239,9 @@ public class PromptGenerator {
                 familyStateJson,
                 planBlock,
                 cognitiveBlock,
+                memoryBlock,
+                graphBlock,
+                interventionBlock,
                 history,
                 isFirstInteraction,
                 sentiment,
@@ -246,6 +270,9 @@ public class PromptGenerator {
             String isFirstInteraction = buildWelcomeBlock(ctx);
             String planBlock = buildPlanBlock(ctx);
             String cognitiveBlock = buildCognitiveBlock(ctx);
+            String memoryBlock = buildMemoryContextBlock(ctx);
+            String graphBlock = buildRelationalGraphBlock(ctx);
+            String interventionBlock = buildInterventionBlock(ctx);
             String familyStateJson = buildFamilyStateJson(ctx);
 
             return String.format("""
@@ -277,6 +304,12 @@ public class PromptGenerator {
 
                 %s
 
+                %s
+
+                %s
+
+                %s
+
                 <user_input>
                 %s
                 </user_input>
@@ -288,6 +321,9 @@ public class PromptGenerator {
                 familyStateJson,
                 planBlock,
                 cognitiveBlock,
+                memoryBlock,
+                graphBlock,
+                interventionBlock,
                 history,
                 isFirstInteraction,
                 sentiment,
@@ -301,6 +337,26 @@ public class PromptGenerator {
     }
 
     // ─── Builders de bloques reutilizables ───────────────────────────────────
+
+    private String buildMemoryContextBlock(AiContext ctx) {
+        if (ctx.memoryContext() == null) return "";
+        return String.format("<family_memory>\n%s\n</family_memory>\n", ctx.memoryContext());
+    }
+
+    private String buildRelationalGraphBlock(AiContext ctx) {
+        if (ctx.relationalGraph() == null) return "";
+        return String.format("<relational_dynamics>\n%s\n</relational_dynamics>\n", ctx.relationalGraph());
+    }
+
+    private String buildInterventionBlock(AiContext ctx) {
+        if (ctx.interventionLevel() == null || "NONE".equals(ctx.interventionLevel())) return "";
+        return switch (ctx.interventionLevel()) {
+            case "CRISIS"    -> "<intervention_alert>⚠️ NIVEL CRISIS: Hay alertas clínicas activas de máxima prioridad. Antes de cualquier sugerencia, evalúa el estado emocional y ofrece contención inmediata.</intervention_alert>\n";
+            case "URGENT"    -> "<intervention_alert>🔶 NIVEL URGENTE: Patrones de alerta activos. Prioriza la estabilización antes de activar nuevas misiones.</intervention_alert>\n";
+            case "ATTENTION" -> "<intervention_alert>🔵 NIVEL ATENCIÓN: Hay una señal de alerta activa. Considera el contexto de vulnerabilidad en tu respuesta.</intervention_alert>\n";
+            default          -> "";
+        };
+    }
 
     private String buildHistoryBlock(AiContext ctx) {
         if (ctx.history() == null || ctx.history().isEmpty()) return "";

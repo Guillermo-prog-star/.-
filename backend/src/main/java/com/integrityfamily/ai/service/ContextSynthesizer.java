@@ -2,8 +2,11 @@ package com.integrityfamily.ai.service;
 
 import com.integrityfamily.ai.dto.AiContext;
 import com.integrityfamily.ai.dto.CopilotDtos;
+import com.integrityfamily.cognitive.service.FamilyMemoryService;
+import com.integrityfamily.cognitive.service.FamilyIdentityGraphService;
 import com.integrityfamily.domain.ChatMessage;
 import com.integrityfamily.domain.FamilyMember;
+import com.integrityfamily.domain.FamilyMemory;
 import com.integrityfamily.domain.ImprovementPlan;
 import com.integrityfamily.domain.PlanTask;
 import com.integrityfamily.domain.repository.ChatMessageRepository;
@@ -15,6 +18,8 @@ import com.integrityfamily.domain.repository.EvaluationRepository;
 import com.integrityfamily.domain.Evaluation;
 import com.integrityfamily.domain.EvaluationStatus;
 import com.integrityfamily.participation.service.ParticipationService;
+import com.integrityfamily.scanner.domain.FamilyAlert;
+import com.integrityfamily.scanner.repository.FamilyAlertRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
@@ -41,6 +46,9 @@ public class ContextSynthesizer {
     private final ChatMessageRepository chatRepo;
     private final CopilotService copilotService;
     private final ParticipationService participationService;
+    private final FamilyMemoryService familyMemoryService;
+    private final FamilyIdentityGraphService identityGraphService;
+    private final FamilyAlertRepository alertRepository;
 
     private static final int MISSION_LIMIT = 5;
     private static final int NEXT_MISSIONS_LIMIT = 3;
@@ -83,7 +91,10 @@ public class ContextSynthesizer {
             buildActiveMemberProfile(family, memberId, currentRisk),
             buildGuardianProfile(family),
             buildCognitiveSnapshot(family.getId()),
-            buildActivePlanSnapshot(family)
+            buildActivePlanSnapshot(family),
+            buildMemoryContext(family.getId()),
+            buildRelationalGraph(family.getId()),
+            buildInterventionLevel(family.getId())
         );
     }
 
@@ -264,6 +275,78 @@ public class ContextSynthesizer {
 
         return new AiContext.ActivePlanSnapshot(
                 latestPlan.getId(), currentMilestone, pillar, nextMissions, completionRate);
+    }
+
+    // ─── Fase A: Motor Cognitivo Conectado ───────────────────────────────────
+
+    /**
+     * Extrae la memoria semántica e identidad familiar del motor cognitivo.
+     * Falla silenciosamente para no bloquear el chat si el motor no tiene datos.
+     */
+    private String buildMemoryContext(Long familyId) {
+        try {
+            FamilyMemoryService.CognitiveContext ctx = familyMemoryService.buildCognitiveContext(familyId);
+            if (!ctx.hasPatterns() && !ctx.hasIdentity()) return null;
+
+            StringBuilder sb = new StringBuilder();
+
+            if (ctx.hasIdentity()) {
+                var identity = ctx.identityProfile();
+                sb.append(String.format(
+                    "Etapa evolutiva: %s | Ciclos completados: %d | Adaptabilidad: %.2f | Expresión emocional: %s",
+                    ctx.evolutionStage(),
+                    identity.getCompletedCycles(),
+                    identity.getAdaptabilityIndex(),
+                    identity.getEmotionalExpression() != null ? identity.getEmotionalExpression() : "N/A"
+                ));
+            }
+
+            if (ctx.hasPatterns()) {
+                String keys = ctx.semanticPatterns().stream()
+                        .map(FamilyMemory::getSemanticKey)
+                        .distinct()
+                        .collect(Collectors.joining(", "));
+                sb.append("\nPatrones semánticos activos: ").append(keys);
+            }
+
+            return sb.isEmpty() ? null : sb.toString();
+        } catch (Exception e) {
+            log.warn("[CONTEXT] MemoryContext no disponible para familia {}: {}", familyId, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Lee el grafo de relaciones entre miembros y devuelve el resumen textual.
+     * Retorna null si la familia tiene menos de 2 miembros activos o sin evaluaciones.
+     */
+    private String buildRelationalGraph(Long familyId) {
+        try {
+            FamilyIdentityGraphService.GraphSnapshot snapshot = identityGraphService.getSnapshot(familyId);
+            return snapshot.totalDyads() > 0 ? snapshot.summary() : null;
+        } catch (Exception e) {
+            log.warn("[CONTEXT] RelationalGraph no disponible para familia {}: {}", familyId, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Calcula el nivel de intervención clínica basado en alertas IF-ALT activas sin resolver.
+     */
+    private String buildInterventionLevel(Long familyId) {
+        try {
+            List<FamilyAlert> alerts = alertRepository
+                    .findByFamilyIdAndResolvedFalseOrderByCreatedAtDesc(familyId);
+            if (alerts.isEmpty()) return "NONE";
+            boolean hasCritical = alerts.stream().anyMatch(a -> "CRITICAL".equals(a.getSeverity()));
+            if (hasCritical) return "CRISIS";
+            boolean hasHigh = alerts.stream().anyMatch(a -> "HIGH".equals(a.getSeverity()));
+            if (hasHigh || alerts.size() >= 2) return "URGENT";
+            return "ATTENTION";
+        } catch (Exception e) {
+            log.warn("[CONTEXT] InterventionLevel no disponible para familia {}: {}", familyId, e.getMessage());
+            return "NONE";
+        }
     }
 
     private String pillarFromMilestone(String code) {

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { GuardianService } from '../../core/services/guardian.service';
 import { GuardianStatusResponse, MissionDto, MissionTemplate, MissionCategory } from '../../core/models/models';
+import { GuardianBriefingComponent } from './guardian-briefing.component';
 
 const MISSION_TEMPLATES: MissionTemplate[] = [
   { title: 'Cena sin pantallas',       description: 'Una comida juntos donde nadie usa el celular.', category: 'CONEXION',      durationMinutes: 60,  difficulty: 'FACIL', emoji: '🍽️' },
@@ -18,7 +19,7 @@ const MISSION_TEMPLATES: MissionTemplate[] = [
 @Component({
   selector: 'app-guardian-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, GuardianBriefingComponent],
   template: `
 <div class="guardian-panel" *ngIf="status">
 
@@ -101,6 +102,11 @@ const MISSION_TEMPLATES: MissionTemplate[] = [
           <span class="step-label">{{ step }}</span>
         </div>
       </div>
+    </div>
+
+    <!-- Briefing diario: solo visible para el propio Guardián -->
+    <div class="briefing-section" *ngIf="isGuardian">
+      <app-guardian-briefing [familyId]="familyId"></app-guardian-briefing>
     </div>
 
   </ng-container>
@@ -224,6 +230,9 @@ const MISSION_TEMPLATES: MissionTemplate[] = [
     }
     .step-label { font-size: 0.6rem; color: #475569; white-space: nowrap; }
     .evolution-step.reached .step-label { color: #818cf8; }
+
+    /* Briefing */
+    .briefing-section { margin-top: 1rem; border-top: 1px solid rgba(99,102,241,0.15); padding-top: 1rem; }
   `]
 })
 export class GuardianPanelComponent implements OnInit, OnChanges {

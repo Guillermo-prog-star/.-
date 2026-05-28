@@ -9,6 +9,8 @@ import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.Evaluation;
 import com.integrityfamily.domain.repository.EvaluationRepository;
 import com.integrityfamily.domain.EvaluationStatus;
+import com.integrityfamily.domain.ParticipationEventType;
+import com.integrityfamily.participation.service.ParticipationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -28,10 +30,11 @@ public class AiServiceImpl implements AiService {
     private final ChatMessageRepository chatMessageRepository;
     private final PromptGenerator promptGenerator;
     private final SentimentAnalysisService sentimentAnalysisService;
+    private final ParticipationService participationService;
 
     @Override
     @Transactional
-    public ChatMessage processInteractiveChat(String message, Family family) {
+    public ChatMessage processInteractiveChat(String message, Family family, Long memberId) {
         // 1. Guardar mensaje del usuario
         chatMessageRepository.save(ChatMessage.builder()
                 .content(message)
@@ -39,17 +42,34 @@ public class AiServiceImpl implements AiService {
                 .ai(false)
                 .build());
 
-        // 2. Análisis de Sentimiento para adaptar la respuesta
+        // Registrar evento de participación
+        participationService.record(family.getId(), memberId, ParticipationEventType.CHAT_MESSAGE);
+
+        // 2. Análisis de sentimiento para adaptar el tono de respuesta
         var sentiment = sentimentAnalysisService.analyze(message);
         log.info("[AI_SENTIMENT] Detectado: {} (score: {})", sentiment.getLabel(), sentiment.getScore());
 
-        // 3. Sintetizar contexto
-        AiContext context = contextSynthesizer.synthesize(family, sentiment.getLabel());
-        
-        // 4. Generar respuesta (Aquí podríamos pasar el sentimiento al promptGenerator en el futuro)
-        String response = aiProvider.generateResponse(message, context);
+        // 3. Sintetizar contexto relacional unificado
+        AiContext context = contextSynthesizer.synthesize(family, memberId, sentiment.getLabel());
 
-        // 5. Guardar respuesta de la IA
+        // 4. Routing explícito al prompt diferenciado por rol (Fase 2)
+        String fullPrompt;
+        if (context.activeMember() != null && context.activeMember().isGuardian()) {
+            log.info("[AI_CHAT] Modo GUARDIAN — familia {} / miembro {}", family.getId(), memberId);
+            fullPrompt = promptGenerator.buildGuardianMentorPrompt(message, context);
+        } else if (context.activeMember() != null) {
+            log.info("[AI_CHAT] Modo MEMBER ({}) — familia {} / miembro {}",
+                    context.activeMember().role(), family.getId(), memberId);
+            fullPrompt = promptGenerator.buildMemberMentorPrompt(message, context);
+        } else {
+            log.info("[AI_CHAT] Modo FAMILY — familia {}", family.getId());
+            fullPrompt = promptGenerator.buildFamilyMentorPrompt(message, context);
+        }
+
+        // 5. Generar respuesta con el prompt pre-construido (sin re-envolver)
+        String response = aiProvider.generateWithFullPrompt(fullPrompt);
+
+        // 6. Guardar respuesta de la IA
         return chatMessageRepository.save(ChatMessage.builder()
                 .content(response)
                 .family(family)

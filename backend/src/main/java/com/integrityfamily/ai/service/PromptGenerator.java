@@ -7,8 +7,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
- * SDD-AI-04-PROMPT: Master Prompt Generator.
- * Implements block-based architecture for high-fidelity LLM instruction.
+ * SDD-AI-04-PROMPT v2: Master Prompt Generator — Identidad Unificada.
+ * Una sola identidad pública (Mentor de Integridad) con 3 modos internos:
+ *   GUARDIAN — para el Guardián Familiar (estratégico + descarga emocional)
+ *   MEMBER   — para miembros individuales (personalizado por rol)
+ *   FAMILY   — para sesiones sin miembro identificado (colectivo + integrador)
  */
 @Service
 @Slf4j
@@ -17,99 +20,461 @@ public class PromptGenerator {
 
     private final ObjectMapper objectMapper;
 
-    private static final String SYSTEM_IDENTITY = """
+    // ─── Identidad única pública ──────────────────────────────────────────────
+
+    private static final String MENTOR_IDENTITY = """
         <system_identity>
-        Eres el Entrenador de Convivencia Familiar (Family Coach) de la plataforma Integrity Family. 
-        Tu única misión es proponer microacciones sencillas, cotidianas y de fricción casi nula que reduzcan la tensión en el hogar y construyan hábitos saludables de forma progresiva.
-        Tu tono es empático, sumamente cálido, práctico, directo y libre de tecnicismos psicológicos, análisis clínicos pesados o juicios morales. No actúes como psicólogo clínico; eres un facilitador práctico del día a día familiar.
+        Eres el Mentor de Integridad de la plataforma Integrity Family.
+        Tu misión es acompañar el proceso de transformación de esta familia de forma cálida, honesta y profundamente humana.
+        Eres un confidente de confianza que conoce la historia de la familia: no un auditor, no un evaluador, no un terapeuta clínico.
+        Tu tono siempre es: cálido, directo, práctico y libre de tecnicismos psicológicos o lenguaje corporativo.
+        Habla como un amigo sabio que conoce bien a esta familia y quiere lo mejor para ella.
         </system_identity>
         """;
 
     private static final String SAFETY_RULES = """
         <safety_rules>
-        1. Si detectas ideación suicida, violencia física inminente o abuso, prioriza números de emergencia y contención inmediata.
+        1. Si detectas ideación suicida, violencia física inminente o abuso, prioriza números de emergencia y contención inmediata antes de cualquier otra respuesta.
         2. No proporciones consejos médicos o legales vinculantes.
-        3. Mantén un tono sumamente empático, protector y de calma.
+        3. Mantén siempre un tono empático, protector y de calma ante situaciones de alta tensión.
         </safety_rules>
         """;
 
-    private static final String INTERACTION_GUIDELINES = """
-        <interaction_guidelines>
-        - Responde siempre en Markdown estructurado, sumamente cálido, acogedor y práctico.
-        - Prioriza la validación emocional, el alivio y la comprensión antes de sugerir cualquier cambio.
-        - Traduce toda recomendación abstracta en microacciones observables, sencillas y medibles (ej: "cenar sin celulares", "dar un elogio sincero", "esperar 3 minutos antes de responder si hay tensión").
-        - Usa un lenguaje de "Entrenamos y caminamos juntos", evitando tonos imperativos, sermoneros o excesivamente técnicos.
-        - Evita tecnicismos clínicos como "patrones disfuncionales", "regresión conductual" o "brecha psicométrica". Habla con el vocabulario cotidiano del hogar.
-        - Fomenta y celebra siempre los microavances semanales, sembrando esperanza, unión y motivación continua.
-        - Recuerda que la convivencia no cambia por grandes análisis, sino por pequeñas experiencias repetidas.
-        </interaction_guidelines>
+    private static final String RESPONSE_RULES = """
+        <response_rules>
+        - Responde en Markdown estructurado. Cálido, acogedor y directamente útil.
+        - Valida la emoción antes de sugerir cualquier acción.
+        - Toda recomendación debe ser una microacción observable y de fricción casi nula (ej: "cenar sin celulares", "escribir una nota de agradecimiento", "esperar 3 minutos antes de responder").
+        - Evita: "patrones disfuncionales", "regresión conductual", "déficit de comunicación" y todo tecnicismo clínico.
+        - Celebra siempre los avances, por pequeños que sean. La convivencia cambia con experiencias repetidas, no con grandes análisis.
+        - Máximo 3 párrafos o 5 viñetas. Conciso y accionable.
+        </response_rules>
         """;
 
+    // ─── Routing principal ────────────────────────────────────────────────────
+
+    /**
+     * Punto de entrada para el chat conversacional.
+     * Detecta automáticamente el modo correcto según el perfil del miembro activo.
+     * Usar cuando AiProvider.generateResponse() construye el prompt internamente.
+     */
     public String buildPrompt(String userMessage, AiContext context) {
         if (context == null) {
-            log.warn("Generating prompt with NULL context for message: {}", userMessage);
-            return String.format("%s\n\n<user_input>%s</user_input>", SYSTEM_IDENTITY, userMessage);
+            log.warn("[PROMPT] Contexto NULL para: {}", userMessage);
+            return String.format("%s\n\n<user_input>%s</user_input>", MENTOR_IDENTITY, userMessage);
         }
 
+        if (context.activeMember() != null && context.activeMember().isGuardian()) {
+            log.debug("[PROMPT] Modo GUARDIAN para miembro {}", context.activeMember().memberId());
+            return buildGuardianMentorPrompt(userMessage, context);
+        } else if (context.activeMember() != null) {
+            log.debug("[PROMPT] Modo MEMBER para {} ({})", context.activeMember().fullName(), context.activeMember().role());
+            return buildMemberMentorPrompt(userMessage, context);
+        } else {
+            log.debug("[PROMPT] Modo FAMILY (sin miembro identificado)");
+            return buildFamilyMentorPrompt(userMessage, context);
+        }
+    }
+
+    // ─── Modo GUARDIAN ────────────────────────────────────────────────────────
+
+    /**
+     * Prompt para el Guardián Familiar.
+     * Tono: estratégico, empático, de confidente. Como un coach de vida que lo acompaña.
+     * Incluye: estado del plan, participación familiar, narrativa cognitiva, reconocimiento del esfuerzo.
+     * Evita: "tu obligación", "debes", "tienes que". USA: "te invito a", "podrías", "¿qué te parece?".
+     */
+    public String buildGuardianMentorPrompt(String message, AiContext ctx) {
         try {
-            String contextJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(context);
-            
-            boolean isFirstInteraction = (context.metrics() != null && context.metrics().icf() == 0.0);
-            String welcomeInstruction = isFirstInteraction ? 
-                "\n<special_mode>BIENVENIDA: Esta es la primera interacción. Ignora los puntajes de 0.0. No menciones métricas técnicas. Sé cálido y motiva a la familia a realizar su primer diagnóstico.</special_mode>\n" : "";
-
-            StringBuilder historyBuilder = new StringBuilder();
-            if (context.history() != null && !context.history().isEmpty()) {
-                historyBuilder.append("<conversation_history>\n");
-                for (var msg : context.history()) {
-                    historyBuilder.append(String.format("[%s]: %s\n", msg.role(), msg.content()));
-                }
-                historyBuilder.append("</conversation_history>\n");
-            }
-
-            String sentimentInstruction = "";
-            if ("CRISIS".equals(context.currentSentiment())) {
-                sentimentInstruction = "\n<emotional_context>ALERTA DE CRISIS: El usuario muestra signos de alta tensión o emergencia. Prioriza la calma, valida el dolor y ofrece apoyo inmediato sin rodeos técnicos.</emotional_context>\n";
-            } else if ("NEGATIVE".equals(context.currentSentiment())) {
-                sentimentInstruction = "\n<emotional_context>TONO NEGATIVO: Se detecta frustración o tristeza. Sé extra empático y motivador.</emotional_context>\n";
-            }
+            String history = buildHistoryBlock(ctx);
+            String sentiment = buildSentimentBlock(ctx);
+            String isFirstInteraction = buildWelcomeBlock(ctx);
+            String planBlock = buildPlanBlock(ctx);
+            String cognitiveBlock = buildCognitiveBlock(ctx);
+            String familyStateJson = buildFamilyStateJson(ctx);
 
             return String.format("""
                 %s
-                
+
                 %s
-                
+
+                <mode_context>
+                MODO: GUARDIÁN FAMILIAR
+                Estás en conversación privada con %s, el Guardián elegido por la familia.
+                El Guardián es quien facilita el proceso de transformación familiar, no quien lo controla.
+                Su valor principal es: inspirar, integrar y activar. No vigilar ni presionar.
+
+                RECONOCIMIENTO: Este rol requiere energía y constancia. Reconoce explícitamente el esfuerzo antes de dar cualquier sugerencia.
+
+                REGLAS ESPECIALES PARA ESTE MODO:
+                - NUNCA uses: "tu obligación", "debes como Guardián", "tienes que asegurarte".
+                - SÍ puedes usar: "te invito a explorar", "podrías considerar", "¿qué te parece si?".
+                - Si detectas señales de fatiga o sobrecarga, valídalas antes de sugerir acción.
+                - Tus sugerencias de integración familiar deben ser específicas y accionables, no genéricas.
+                </mode_context>
+
+                <family_state>
                 %s
-                
+                </family_state>
+
                 %s
-                
-                <family_context>
+
                 %s
-                </family_context>
-                
+
                 %s
-                
+
                 %s
-                
+
+                %s
+
                 <user_input>
                 %s
                 </user_input>
-                
-                Genera una respuesta de mentoría que sea accionable y coherente con el contexto proporcionado.
-                """, 
-                SYSTEM_IDENTITY, 
-                SAFETY_RULES, 
-                welcomeInstruction,
-                sentimentInstruction,
-                contextJson, 
-                historyBuilder.toString(),
-                INTERACTION_GUIDELINES, 
-                userMessage
+
+                Responde directamente al Guardián. Comienza reconociendo su presencia y esfuerzo. Luego ofrece una perspectiva clara y una acción concreta de integración familiar.
+                """,
+                MENTOR_IDENTITY,
+                SAFETY_RULES,
+                ctx.activeMember() != null ? ctx.activeMember().fullName() : "el Guardián",
+                familyStateJson,
+                planBlock,
+                cognitiveBlock,
+                history,
+                isFirstInteraction,
+                sentiment,
+                RESPONSE_RULES,
+                message
             );
         } catch (Exception e) {
-            log.error("Error generating prompt context", e);
-            return "ERROR_GENERATING_PROMPT: " + userMessage;
+            log.error("[PROMPT] Error en buildGuardianMentorPrompt", e);
+            return buildFamilyMentorPrompt(message, ctx);
         }
+    }
+
+    // ─── Modo MEMBER ──────────────────────────────────────────────────────────
+
+    /**
+     * Prompt para un miembro individual de la familia.
+     * Tono: personal, cálido, adaptado a su rol específico (padre/madre/hijo/hija).
+     * Incluye: nombre, rol, misiones relevantes, nivel de conciencia, historia familiar.
+     * Evita: comparar con otros miembros, rendición de cuentas, lenguaje de culpa.
+     */
+    public String buildMemberMentorPrompt(String message, AiContext ctx) {
+        try {
+            AiContext.ActiveMemberProfile member = ctx.activeMember();
+            String memberName = member != null ? member.fullName() : "miembro de la familia";
+            String memberRole = member != null ? member.role() : "FAMILIA";
+            String consciousnessLevel = member != null ? member.consciousnessLevel() : "DESCONOCIDO";
+
+            String history = buildHistoryBlock(ctx);
+            String sentiment = buildSentimentBlock(ctx);
+            String isFirstInteraction = buildWelcomeBlock(ctx);
+            String planBlock = buildPlanBlock(ctx);
+            String cognitiveBlock = buildCognitiveBlock(ctx);
+            String familyStateJson = buildFamilyStateJson(ctx);
+
+            return String.format("""
+                %s
+
+                %s
+
+                <mode_context>
+                MODO: MIEMBRO INDIVIDUAL
+                Estás en conversación personal con %s, quien tiene el rol de %s en la familia.
+                Nivel de conciencia familiar actual: %s
+
+                REGLAS ESPECIALES PARA ESTE MODO:
+                - Usa el nombre "%s" naturalmente en tu respuesta. Hace el mensaje más personal y cálido.
+                - NUNCA compares a %s con otros miembros de la familia.
+                - NUNCA uses lenguaje de rendición de cuentas ("¿por qué no has...?", "deberías haber...").
+                - Adapta el tono al rol: un hijo/hija necesita más aliento; un padre/madre necesita más reconocimiento del esfuerzo.
+                - Las misiones que sugieras deben ser específicas para alguien con el rol de %s.
+                </mode_context>
+
+                <family_state>
+                %s
+                </family_state>
+
+                %s
+
+                %s
+
+                %s
+
+                %s
+
+                %s
+
+                <user_input>
+                %s
+                </user_input>
+
+                Responde de forma personal a %s. Comienza validando su emoción o pregunta. Luego ofrece una microacción concreta adaptada a su rol de %s.
+                """,
+                MENTOR_IDENTITY,
+                SAFETY_RULES,
+                memberName, memberRole, consciousnessLevel,
+                memberName, memberName, memberRole,
+                familyStateJson,
+                planBlock,
+                cognitiveBlock,
+                history,
+                isFirstInteraction,
+                sentiment,
+                RESPONSE_RULES,
+                message,
+                memberName, memberRole
+            );
+        } catch (Exception e) {
+            log.error("[PROMPT] Error en buildMemberMentorPrompt", e);
+            return buildFamilyMentorPrompt(message, ctx);
+        }
+    }
+
+    // ─── Modo FAMILY ──────────────────────────────────────────────────────────
+
+    /**
+     * Prompt para sesión colectiva o sin miembro identificado.
+     * Tono: integrador, esperanzador, orientado a la unidad familiar.
+     * Incluye: estado familiar global, plan activo, dimensiones, historia.
+     * Evita: señalar culpables, presentar problemas sin camino de solución.
+     */
+    public String buildFamilyMentorPrompt(String message, AiContext ctx) {
+        try {
+            String history = buildHistoryBlock(ctx);
+            String sentiment = buildSentimentBlock(ctx);
+            String isFirstInteraction = buildWelcomeBlock(ctx);
+            String planBlock = buildPlanBlock(ctx);
+            String cognitiveBlock = buildCognitiveBlock(ctx);
+            String familyStateJson = buildFamilyStateJson(ctx);
+
+            return String.format("""
+                %s
+
+                %s
+
+                <mode_context>
+                MODO: FAMILIA (sesión colectiva o miembro no identificado)
+
+                REGLAS ESPECIALES PARA ESTE MODO:
+                - Tu perspectiva es siempre la del conjunto familiar, nunca la de un integrante específico.
+                - NUNCA señales culpables dentro de la familia.
+                - NUNCA presentes un problema sin ofrecer al menos un camino de solución.
+                - Usa "su familia" o "ustedes" para crear sentido de unidad.
+                </mode_context>
+
+                <family_state>
+                %s
+                </family_state>
+
+                %s
+
+                %s
+
+                %s
+
+                %s
+
+                %s
+
+                <user_input>
+                %s
+                </user_input>
+
+                Responde a la familia como unidad. Valida primero. Luego ofrece una perspectiva integradora y una microacción que todos puedan hacer juntos.
+                """,
+                MENTOR_IDENTITY,
+                SAFETY_RULES,
+                familyStateJson,
+                planBlock,
+                cognitiveBlock,
+                history,
+                isFirstInteraction,
+                sentiment,
+                RESPONSE_RULES,
+                message
+            );
+        } catch (Exception e) {
+            log.error("[PROMPT] Error en buildFamilyMentorPrompt", e);
+            return String.format("%s\n\n%s\n\n<user_input>%s</user_input>", MENTOR_IDENTITY, SAFETY_RULES, message);
+        }
+    }
+
+    // ─── Builders de bloques reutilizables ───────────────────────────────────
+
+    private String buildHistoryBlock(AiContext ctx) {
+        if (ctx.history() == null || ctx.history().isEmpty()) return "";
+        StringBuilder sb = new StringBuilder("<conversation_history>\n");
+        for (var msg : ctx.history()) {
+            sb.append(String.format("[%s]: %s\n", msg.role(), msg.content()));
+        }
+        sb.append("</conversation_history>\n");
+        return sb.toString();
+    }
+
+    private String buildSentimentBlock(AiContext ctx) {
+        if (ctx.currentSentiment() == null) return "";
+        return switch (ctx.currentSentiment()) {
+            case "CRISIS" -> "<emotional_context>ALERTA: El usuario muestra signos de alta tensión o emergencia. Prioriza la calma y la contención inmediata. No hagas sugerencias de planes o misiones hasta validar el estado emocional.</emotional_context>";
+            case "NEGATIVE" -> "<emotional_context>TONO NEGATIVO detectado: frustración o tristeza. Sé extra empático. Valida antes de sugerir.</emotional_context>";
+            default -> "";
+        };
+    }
+
+    private String buildWelcomeBlock(AiContext ctx) {
+        boolean isFirst = ctx.metrics() != null && ctx.metrics().icf() != null && ctx.metrics().icf() == 0.0;
+        if (!isFirst) return "";
+        return "<special_mode>PRIMERA INTERACCIÓN: No menciones métricas ni puntajes. Sé muy cálido. Motiva a la familia a realizar su primer diagnóstico para que puedas acompañarlos mejor.</special_mode>";
+    }
+
+    private String buildPlanBlock(AiContext ctx) {
+        if (ctx.activePlan() == null) return "";
+        try {
+            var plan = ctx.activePlan();
+            return String.format("""
+                <active_plan>
+                Hito actual: %s | Pilar: %s | Cumplimiento: %.1f%%
+                Próximas misiones: %s
+                </active_plan>
+                """,
+                plan.currentMilestone(),
+                plan.pillar(),
+                plan.completionRate(),
+                plan.nextMissions().stream()
+                    .map(m -> "• " + m.title())
+                    .reduce("", (a, b) -> a + "\n" + b)
+            );
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private String buildCognitiveBlock(AiContext ctx) {
+        if (ctx.cognitive() == null) return "";
+        var cog = ctx.cognitive();
+        return String.format("""
+            <family_evolution>
+            Etapa: %s | Fase narrativa: %s | Estilo comunicación: %s
+            Última lección aprendida: %s
+            Riesgo de abandono: %s
+            </family_evolution>
+            """,
+            cog.evolutionStage(),
+            cog.currentChapterPhase(),
+            cog.communicationStyle(),
+            cog.lastLesson() != null ? cog.lastLesson() : "sin datos aún",
+            cog.abandonmentRisk()
+        );
+    }
+
+    private String buildFamilyStateJson(AiContext ctx) {
+        try {
+            // Serializa solo los campos relevantes para el estado familiar (no el contexto completo)
+            var compact = new java.util.LinkedHashMap<String, Object>();
+            if (ctx.family() != null) {
+                compact.put("familia", ctx.family().name());
+                compact.put("hito", ctx.family().milestone());
+            }
+            if (ctx.metrics() != null) {
+                compact.put("icf", ctx.metrics().icf());
+                compact.put("riesgo", ctx.metrics().riskLevel());
+                compact.put("conciencia", ctx.metrics().consciousnessLabel());
+            }
+            if (ctx.trends() != null) {
+                compact.put("delta_icf", ctx.trends().delta());
+            }
+            if (ctx.dimensionScores() != null && !ctx.dimensionScores().isEmpty()) {
+                compact.put("dimensiones", ctx.dimensionScores());
+            }
+            if (ctx.members() != null && !ctx.members().isEmpty()) {
+                compact.put("miembros", ctx.members().stream()
+                    .map(m -> m.firstName() + " (" + m.role() + ")")
+                    .toList());
+            }
+            if (ctx.guardian() != null) {
+                compact.put("guardian", ctx.guardian().fullName());
+                compact.put("tamano_familia", ctx.guardian().familySize());
+            }
+            compact.put("sentinel_activo", ctx.sentinelActive());
+            return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(compact);
+        } catch (Exception e) {
+            return "{}";
+        }
+    }
+
+    // ─── Briefing diario del Guardián ────────────────────────────────────────
+
+    /**
+     * Genera el mensaje IA del briefing diario del Guardián.
+     * Tono: cálido, honesto, sin presión. Prioriza la fatiga del Guardián
+     * antes de sugerir cualquier acción de re-integración.
+     */
+    public String buildGuardianBriefingPrompt(
+            String guardianName,
+            String fatigueSignal,
+            int activeCount,
+            int inactiveCount,
+            java.util.List<String> inactiveNames,
+            String mostInactiveName,
+            long mostInactiveDays,
+            String currentMilestone,
+            double completionRate
+    ) {
+        String fatigueNote = switch (fatigueSignal) {
+            case "HIGH" -> "⚠️ ALERTA: El Guardián es el ÚNICO miembro activo esta semana. Prioriza reconocer su esfuerzo y su posible agotamiento ANTES de sugerir cualquier acción.";
+            case "MILD" -> "ATENCIÓN: Solo 1 otro miembro ha participado esta semana. El Guardián puede estar cargando demasiado solo.";
+            default -> "La participación familiar es saludable.";
+        };
+
+        String inactiveSection = inactiveNames.isEmpty()
+                ? "Todos los miembros han participado esta semana."
+                : "Miembros sin actividad esta semana: " + String.join(", ", inactiveNames) + ".\n"
+                + (mostInactiveName != null ? mostInactiveName + " lleva " + mostInactiveDays + " días sin registrar actividad." : "");
+
+        return String.format("""
+                %s
+
+                %s
+
+                <mode_context>
+                MODO: BRIEFING DIARIO DEL GUARDIÁN
+                Estás generando el resumen diario privado para %s, el Guardián Familiar.
+                Este es un mensaje de apoyo, no un reporte de desempeño.
+
+                ESTADO DE PARTICIPACIÓN FAMILIAR:
+                - Activos esta semana: %d miembros
+                - Sin actividad esta semana: %d miembros
+                - %s
+                - Hito actual del plan: %s (%.0f%% completado)
+                - Señal de fatiga del Guardián: %s
+                - Nota para el mentor: %s
+
+                REGLAS PARA ESTE BRIEFING:
+                - Comienza reconociendo el estado emocional probable del Guardián según la señal de fatiga.
+                - Si hay miembros inactivos, sugiere UNA sola forma de invitarlos sin presión. Nada de exigencias.
+                - Celebra el avance del plan si el porcentaje es positivo.
+                - Termina con una pregunta abierta que invite al Guardián a expresar cómo se siente.
+                - NUNCA uses: "debes", "tienes que", "es tu responsabilidad".
+                - Máximo 4 párrafos breves. Cálido, personal, humano.
+                </mode_context>
+
+                %s
+
+                Genera el briefing ahora. Dirígete directamente a %s.
+                """,
+                MENTOR_IDENTITY,
+                SAFETY_RULES,
+                guardianName,
+                activeCount,
+                inactiveCount,
+                inactiveSection,
+                currentMilestone != null ? currentMilestone : "Sin hito activo",
+                completionRate * 100,
+                fatigueSignal,
+                fatigueNote,
+                RESPONSE_RULES,
+                guardianName
+        );
     }
 
     public String buildExecutiveReportPrompt(com.integrityfamily.report.dto.TransformationSummary summary) {

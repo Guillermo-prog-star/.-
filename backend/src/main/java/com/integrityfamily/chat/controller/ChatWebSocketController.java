@@ -34,7 +34,8 @@ public class ChatWebSocketController {
                     .orElseThrow(() -> new BusinessException("Familia no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
             // Procesar el chat (guarda mensaje y genera respuesta)
-            ChatMessage aiResponse = aiService.processInteractiveChat(request.getMessage(), family);
+            // memberId null: WebSocket no transporta identidad de miembro aún
+            ChatMessage aiResponse = aiService.processInteractiveChat(request.getMessage(), family, null);
 
             // Enviar la respuesta de la IA de vuelta por WebSocket
             webSocketService.sendToFamily(request.getFamilyId(), "/chat", Map.of(

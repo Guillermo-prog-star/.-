@@ -53,6 +53,24 @@ export interface GuardianStatusResponse {
 
 export interface VoteRequest { voterMemberId: number; nominatedMemberId: number; }
 
+export interface GuardianMemberSummary {
+  memberId: number;
+  name: string;
+  activeThisWeek: boolean;
+  daysSinceLastActivity: number;
+}
+
+export interface GuardianBriefingResponse {
+  guardianName: string;
+  fatigueSignal: 'NONE' | 'MILD' | 'HIGH';
+  activeParticipants: number;
+  inactiveParticipants: number;
+  members: GuardianMemberSummary[];
+  currentMilestone: string | null;
+  planCompletionRate: number;
+  aiMessage: string;
+}
+
 export interface ActivateMissionRequest {
   title: string; description: string;
   category: MissionCategory; durationMinutes: number;

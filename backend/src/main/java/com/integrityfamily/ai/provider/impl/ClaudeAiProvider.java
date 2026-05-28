@@ -502,6 +502,55 @@ public class ClaudeAiProvider implements AiProvider {
         return generateResponse(rawPrompt, null);
     }
 
+    /**
+     * Fase 2: envía el prompt pre-construido directamente a Claude sin ningún wrapper.
+     * Usar cuando PromptGenerator ya construyó el prompt completo con identidad y reglas.
+     */
+    @Override
+    public String generateWithFullPrompt(String fullPrompt) {
+        String apiKey = aiProperties.getAnthropic().getApiKey();
+        if ("MOCK_KEY".equals(apiKey) || apiKey == null || apiKey.isEmpty()) {
+            log.warn("[SYSTEM] API Key ausente en generateWithFullPrompt. Retornando simulación.");
+            return "### 💡 SIMULACIÓN\nLa plataforma está en modo de prueba. Tu mensaje fue recibido correctamente.";
+        }
+        return callClaude(apiKey, fullPrompt);
+    }
+
+    /**
+     * Helper que realiza la llamada HTTP a Claude con el prompt ya construido.
+     */
+    private String callClaude(String apiKey, String fullPrompt) {
+        String model = aiProperties.getAnthropic().getModel();
+        String baseUrl = aiProperties.getAnthropic().getBaseUrl();
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-api-key", apiKey);
+            headers.set("anthropic-version", "2023-06-01");
+
+            Map<String, Object> requestBody = Map.of(
+                    "model", model,
+                    "max_tokens", 1024,
+                    "messages", List.of(Map.of("role", "user", "content", fullPrompt)));
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+            log.info("[CLAUDE] Invocando {} via {}...", model, baseUrl);
+
+            ResponseEntity<Map> response = restTemplate.postForEntity(baseUrl + "/messages", entity, Map.class);
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
+                if (content != null && !content.isEmpty()) {
+                    return (String) content.get(0).get("text");
+                }
+            }
+            return "### ⚠️ ERROR\nStatus: " + response.getStatusCode();
+        } catch (Exception e) {
+            log.error("❌ Error en callClaude: {}", e.getMessage());
+            return "### ⚠️ ERROR DE CONEXIÓN\nIntenta de nuevo en un momento.";
+        }
+    }
+
     @Override
     public String getProviderId() {
         return "CLAUDE_PRO";

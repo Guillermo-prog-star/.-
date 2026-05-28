@@ -2,6 +2,7 @@ package com.integrityfamily.guardian.controller;
 
 import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.guardian.dto.*;
+import com.integrityfamily.guardian.service.GuardianBriefingService;
 import com.integrityfamily.guardian.service.GuardianService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -13,12 +14,13 @@ import java.util.List;
  * GuardianController — API del Guardián Familiar.
  *
  * Endpoints públicos (autenticado):
- *   GET  /api/families/{familyId}/guardian          → estado del guardián
- *   POST /api/families/{familyId}/guardian/vote     → votar por un miembro
- *   POST /api/families/{familyId}/guardian/confirm  → confirmar guardián directamente
- *   POST /api/families/{familyId}/guardian/missions → activar misión
+ *   GET  /api/families/{familyId}/guardian              → estado del guardián
+ *   GET  /api/families/{familyId}/guardian/briefing     → resumen diario + mensaje IA
+ *   POST /api/families/{familyId}/guardian/vote         → votar por un miembro
+ *   POST /api/families/{familyId}/guardian/confirm      → confirmar guardián directamente
+ *   POST /api/families/{familyId}/guardian/missions     → activar misión
  *   POST /api/families/{familyId}/guardian/missions/{missionId}/complete → completar
- *   GET  /api/families/{familyId}/guardian/missions → historial de misiones
+ *   GET  /api/families/{familyId}/guardian/missions     → historial de misiones
  */
 @RestController
 @RequestMapping("/api/families/{familyId}/guardian")
@@ -26,12 +28,18 @@ import java.util.List;
 public class GuardianController {
 
     private final GuardianService guardianService;
+    private final GuardianBriefingService guardianBriefingService;
 
     @GetMapping
     public ApiResponse<GuardianStatusResponse> getStatus(
             @PathVariable Long familyId,
             @RequestParam(required = false) Long memberId) {
         return ApiResponse.ok(guardianService.getStatus(familyId, memberId));
+    }
+
+    @GetMapping("/briefing")
+    public ApiResponse<GuardianBriefingResponse> getBriefing(@PathVariable Long familyId) {
+        return ApiResponse.ok(guardianBriefingService.getBriefing(familyId));
     }
 
     @PostMapping("/vote")

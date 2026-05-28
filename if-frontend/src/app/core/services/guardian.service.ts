@@ -3,7 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import {
-  GuardianStatusResponse, VoteRequest, ActivateMissionRequest, MissionDto
+  GuardianStatusResponse, VoteRequest, ActivateMissionRequest, MissionDto, GuardianBriefingResponse
 } from '../models/models';
 
 interface ApiResponse<T> { data: T; message?: string; success?: boolean; }
@@ -52,6 +52,12 @@ export class GuardianService {
   getMissions(familyId: number): Observable<MissionDto[]> {
     return this.http
       .get<ApiResponse<MissionDto[]>>(`${this.base}/${familyId}/guardian/missions`)
+      .pipe(map(r => r.data));
+  }
+
+  getBriefing(familyId: number): Observable<GuardianBriefingResponse> {
+    return this.http
+      .get<ApiResponse<GuardianBriefingResponse>>(`${this.base}/${familyId}/guardian/briefing`)
       .pipe(map(r => r.data));
   }
 }

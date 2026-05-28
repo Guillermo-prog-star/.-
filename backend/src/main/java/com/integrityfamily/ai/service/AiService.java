@@ -9,12 +9,17 @@ import java.util.Map;
  */
 public interface AiService {
 
-    // SDD-FIX: Alias 'chat' para mantener compatibilidad con Controllers y SonicService
+    // Alias para Controllers y SonicService (compatibilidad sin memberId)
     default ChatMessage chat(String message, Family family) {
-        return processInteractiveChat(message, family);
+        return processInteractiveChat(message, family, null);
     }
 
-    ChatMessage processInteractiveChat(String message, Family family);
+    // Alias enriquecido con identidad del miembro activo
+    default ChatMessage chat(String message, Family family, Long memberId) {
+        return processInteractiveChat(message, family, memberId);
+    }
+
+    ChatMessage processInteractiveChat(String message, Family family, Long memberId);
 
     String processAnalyticInference(String prompt, Long familyId);
 

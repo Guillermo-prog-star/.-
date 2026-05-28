@@ -4,11 +4,13 @@ import com.integrityfamily.cognitive.service.FamilyMemoryService;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.FamilyLogbookEntry;
 import com.integrityfamily.domain.LogbookStatus;
+import com.integrityfamily.domain.ParticipationEventType;
 import com.integrityfamily.dto.CreateFamilyLogbookEntryRequest;
 import com.integrityfamily.dto.FamilyLogbookEntryResponse;
 import com.integrityfamily.dto.ResolveFamilyLogbookEntryRequest;
 import com.integrityfamily.domain.repository.FamilyLogbookEntryRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
+import com.integrityfamily.participation.service.ParticipationService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,15 +29,18 @@ public class FamilyLogbookService {
     private final FamilyRepository familyRepository;
     private final FamilyLogbookEntryRepository logbookRepository;
     private final FamilyMemoryService familyMemoryService;
+    private final ParticipationService participationService;
 
     public FamilyLogbookService(
             FamilyRepository familyRepository,
             FamilyLogbookEntryRepository logbookRepository,
-            FamilyMemoryService familyMemoryService
+            FamilyMemoryService familyMemoryService,
+            ParticipationService participationService
     ) {
         this.familyRepository = familyRepository;
         this.logbookRepository = logbookRepository;
         this.familyMemoryService = familyMemoryService;
+        this.participationService = participationService;
     }
 
     @Transactional
@@ -55,6 +60,9 @@ public class FamilyLogbookService {
         );
 
         FamilyLogbookEntry saved = logbookRepository.save(entry);
+
+        participationService.record(request.familyId(), null, ParticipationEventType.LOGBOOK_ENTRY);
+
         try {
             familyMemoryService.captureLogbookOpenMemory(saved);
         } catch (Exception e) {

@@ -49,7 +49,7 @@ public class ChatController {
         Family family = familyRepository.findById(request.getFamilyId())
                 .orElseThrow(() -> new NotFoundException("Familia no encontrada"));
 
-        return ApiResponse.ok(aiService.chat(request.getMessage(), family));
+        return ApiResponse.ok(aiService.chat(request.getMessage(), family, request.getMemberId()));
     }
 
     /**
@@ -75,6 +75,7 @@ public class ChatController {
     public static class ChatRequest {
         private Long familyId;
         private String message;
+        private Long memberId;  // Fase 1: identidad del miembro activo
     }
 }
 

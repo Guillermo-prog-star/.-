@@ -3,11 +3,13 @@ package com.integrityfamily.checklist.service;
 import com.integrityfamily.domain.TaskEvidence;
 import com.integrityfamily.domain.EvidenceType;
 import com.integrityfamily.domain.EvidenceStatus;
+import com.integrityfamily.domain.ParticipationEventType;
 import com.integrityfamily.domain.PlanTask;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.repository.TaskEvidenceRepository;
 import com.integrityfamily.domain.repository.PlanTaskRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
+import com.integrityfamily.participation.service.ParticipationService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +36,7 @@ public class TaskEvidenceService {
     private final PlanTaskRepository planTaskRepository;
     private final FamilyRepository familyRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final ParticipationService participationService;
 
     public List<TaskEvidence> getFamilyEvidences(Long familyId) {
         return taskEvidenceRepository.findByFamilyId(familyId);
@@ -73,6 +76,8 @@ public class TaskEvidenceService {
                 title, submittedBy, taskId);
 
         TaskEvidence saved = taskEvidenceRepository.save(evidence);
+
+        participationService.record(familyId, null, ParticipationEventType.EVIDENCE_SUBMITTED);
 
         // Publicar evento en RabbitMQ para disparar el procesamiento asíncrono cognitivo con Claude
         try {

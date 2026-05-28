@@ -26,6 +26,7 @@ export class ChatPageComponent implements OnInit {
 
   get familyId()   { return this.familyState.currentFamilyId(); }
   get familyName() { return this.familyState.currentFamilyName() || 'Familia'; }
+  get memberId()   { return this.familyState.currentMemberId(); }
 
   ngOnInit() {
     this.loadHistory();
@@ -59,7 +60,7 @@ export class ChatPageComponent implements OnInit {
     this.loading = true;
     this.scroll();
 
-    this.http.post<any>(`/api/chat/send`, { familyId: this.familyId, message: text })
+    this.http.post<any>(`/api/chat/send`, { familyId: this.familyId, message: text, memberId: this.memberId })
       .subscribe({
         next: (res: any) => {
           // FIX Bug #16: ChatMessage entity serializes boolean 'ai' field, not 'isAi'

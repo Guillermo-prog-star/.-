@@ -4,6 +4,7 @@ import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.plan.dto.PlanDtos.*;
 import com.integrityfamily.domain.repository.*;
+import com.integrityfamily.participation.service.ParticipationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +35,7 @@ public class PlanService {
     private final MilestoneRepository milestoneRepository;
     private final QuestionRepository questionRepository;
     private final org.springframework.amqp.rabbit.core.RabbitTemplate rabbitTemplate;
+    private final ParticipationService participationService;
 
     @Transactional(readOnly = true)
     public List<PlanResponse> findAllPlans() {
@@ -366,6 +368,12 @@ public class PlanService {
         task.setCompleted(completed);
         
         PlanTask savedTask = planTaskRepository.save(task);
+
+        // Registrar participación cuando una misión se completa
+        if (completed && task.getPlan() != null && task.getPlan().getFamily() != null) {
+            Long responsibleId = task.getResponsible() != null ? task.getResponsible().getId() : null;
+            participationService.record(task.getPlan().getFamily().getId(), responsibleId, ParticipationEventType.MISSION_COMPLETED);
+        }
 
         // [SDD SPEC: Sentinel Auto-Evidence Engine]
         if (completed && task.getPlan() != null && task.getPlan().getFamily() != null) {

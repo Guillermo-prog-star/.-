@@ -25,7 +25,9 @@ public record AiContext(
     // ── Fase A: Motor Cognitivo Conectado ────────────
     String memoryContext,    // semántica + identidad familiar, null si sin datos
     String relationalGraph,  // resumen del grafo de relaciones, null si sin datos
-    String interventionLevel // NONE | ATTENTION | URGENT | CRISIS
+    String interventionLevel, // NONE | ATTENTION | URGENT | CRISIS
+    // ── Fase B: Perfil de Identidad del Miembro ──────
+    MemberIdentitySnapshot memberIdentity // null si sin memberId o sin perfil aún
 ) {
     public record FamilyMetadata(String name, String milestone, String lastUpdate) {}
     public record MemberNode(String firstName, String role) {}
@@ -72,5 +74,15 @@ public record AiContext(
         String pillar,
         List<ActiveMission> nextMissions,
         double completionRate
+    ) {}
+
+    /** Perfil conversacional individual del miembro. Se construye progresivamente. */
+    public record MemberIdentitySnapshot(
+        String communicationStyle,   // DIRECT | REFLECTIVE | AVOIDANT | ASSERTIVE
+        int reflexivityLevel,        // 1-5
+        int emotionalSensitivity,    // 1-5
+        String changeResistance,     // LOW | MED | HIGH
+        String evasionPatterns,      // JSON array como String, puede ser null
+        String motivators            // JSON array como String, puede ser null
     ) {}
 }

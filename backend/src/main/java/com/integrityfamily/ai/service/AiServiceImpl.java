@@ -31,28 +31,36 @@ public class AiServiceImpl implements AiService {
     private final PromptGenerator promptGenerator;
     private final SentimentAnalysisService sentimentAnalysisService;
     private final ParticipationService participationService;
+    private final ConversationSessionService conversationSessionService;
 
     @Override
     @Transactional
     public ChatMessage processInteractiveChat(String message, Family family, Long memberId) {
-        // 1. Guardar mensaje del usuario
+        // 1. Análisis de sentimiento (antes de guardar para enriquecer el mensaje)
+        var sentiment = sentimentAnalysisService.analyze(message);
+        log.info("[AI_SENTIMENT] Detectado: {} (score: {})", sentiment.getLabel(), sentiment.getScore());
+
+        // 2. Obtener o crear sesión conversacional
+        final Long sessionId = findOrCreateSessionSilent(family.getId(), memberId);
+
+        // 3. Guardar mensaje del usuario con sesión y snapshot emocional
+        String emotionalSnapshot = toEmotionalSnapshot(sentiment.getLabel());
         chatMessageRepository.save(ChatMessage.builder()
                 .content(message)
                 .family(family)
                 .ai(false)
+                .memberId(memberId)
+                .sessionId(sessionId)
+                .emotionalSnapshot(emotionalSnapshot)
                 .build());
 
-        // Registrar evento de participación
+        // 4. Registrar evento de participación
         participationService.record(family.getId(), memberId, ParticipationEventType.CHAT_MESSAGE);
 
-        // 2. Análisis de sentimiento para adaptar el tono de respuesta
-        var sentiment = sentimentAnalysisService.analyze(message);
-        log.info("[AI_SENTIMENT] Detectado: {} (score: {})", sentiment.getLabel(), sentiment.getScore());
-
-        // 3. Sintetizar contexto relacional unificado
+        // 5. Sintetizar contexto relacional unificado
         AiContext context = contextSynthesizer.synthesize(family, memberId, sentiment.getLabel());
 
-        // 4. Routing explícito al prompt diferenciado por rol (Fase 2)
+        // 6. Routing explícito al prompt diferenciado por rol
         String fullPrompt;
         if (context.activeMember() != null && context.activeMember().isGuardian()) {
             log.info("[AI_CHAT] Modo GUARDIAN — familia {} / miembro {}", family.getId(), memberId);
@@ -66,15 +74,48 @@ public class AiServiceImpl implements AiService {
             fullPrompt = promptGenerator.buildFamilyMentorPrompt(message, context);
         }
 
-        // 5. Generar respuesta con el prompt pre-construido (sin re-envolver)
+        // 7. Generar respuesta con el prompt pre-construido
         String response = aiProvider.generateWithFullPrompt(fullPrompt);
 
-        // 6. Guardar respuesta de la IA
-        return chatMessageRepository.save(ChatMessage.builder()
+        // 8. Guardar respuesta de la IA vinculada a la misma sesión
+        ChatMessage aiMessage = chatMessageRepository.save(ChatMessage.builder()
                 .content(response)
                 .family(family)
                 .ai(true)
+                .sessionId(sessionId)
                 .build());
+
+        // 9. Actualizar métricas de sesión
+        if (sessionId != null) {
+            try {
+                conversationSessionService.updateEmotionalState(sessionId, emotionalSnapshot);
+                conversationSessionService.incrementTurnCount(sessionId);
+            } catch (Exception e) {
+                log.warn("[AI_CHAT] No se pudo actualizar sesión {}: {}", sessionId, e.getMessage());
+            }
+        }
+
+        return aiMessage;
+    }
+
+    private Long findOrCreateSessionSilent(Long familyId, Long memberId) {
+        if (memberId == null) return null;
+        try {
+            return conversationSessionService.findOrCreateSession(familyId, memberId, "GENERAL").getId();
+        } catch (Exception e) {
+            log.warn("[AI_CHAT] No se pudo obtener sesión conversacional: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private String toEmotionalSnapshot(String sentimentLabel) {
+        if (sentimentLabel == null) return "CALM";
+        return switch (sentimentLabel) {
+            case "CRISIS"   -> "ANXIOUS";
+            case "NEGATIVE" -> "FRUSTRATED";
+            case "POSITIVE" -> "ENGAGED";
+            default         -> "CALM";
+        };
     }
 
     @Override

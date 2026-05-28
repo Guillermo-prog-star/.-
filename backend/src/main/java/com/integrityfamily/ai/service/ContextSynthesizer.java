@@ -4,6 +4,8 @@ import com.integrityfamily.ai.dto.AiContext;
 import com.integrityfamily.ai.dto.CopilotDtos;
 import com.integrityfamily.cognitive.service.FamilyMemoryService;
 import com.integrityfamily.cognitive.service.FamilyIdentityGraphService;
+import com.integrityfamily.cognitive.service.MemberIdentityProfileService;
+import com.integrityfamily.domain.MemberIdentityProfile;
 import com.integrityfamily.domain.ChatMessage;
 import com.integrityfamily.domain.FamilyMember;
 import com.integrityfamily.domain.FamilyMemory;
@@ -49,6 +51,7 @@ public class ContextSynthesizer {
     private final FamilyMemoryService familyMemoryService;
     private final FamilyIdentityGraphService identityGraphService;
     private final FamilyAlertRepository alertRepository;
+    private final MemberIdentityProfileService memberIdentityProfileService;
 
     private static final int MISSION_LIMIT = 5;
     private static final int NEXT_MISSIONS_LIMIT = 3;
@@ -94,7 +97,8 @@ public class ContextSynthesizer {
             buildActivePlanSnapshot(family),
             buildMemoryContext(family.getId()),
             buildRelationalGraph(family.getId()),
-            buildInterventionLevel(family.getId())
+            buildInterventionLevel(family.getId()),
+            buildMemberIdentitySnapshot(memberId)
         );
     }
 
@@ -275,6 +279,30 @@ public class ContextSynthesizer {
 
         return new AiContext.ActivePlanSnapshot(
                 latestPlan.getId(), currentMilestone, pillar, nextMissions, completionRate);
+    }
+
+    // ─── Fase B: Perfil de Identidad del Miembro ─────────────────────────────
+
+    /**
+     * Lee el perfil de identidad conversacional del miembro activo.
+     * Retorna null si memberId es null o si el servicio falla.
+     */
+    private AiContext.MemberIdentitySnapshot buildMemberIdentitySnapshot(Long memberId) {
+        if (memberId == null) return null;
+        try {
+            MemberIdentityProfile profile = memberIdentityProfileService.getOrCreate(memberId);
+            return new AiContext.MemberIdentitySnapshot(
+                    profile.getCommunicationStyle(),
+                    profile.getReflexivityLevel() != null ? profile.getReflexivityLevel() : 3,
+                    profile.getEmotionalSensitivity() != null ? profile.getEmotionalSensitivity() : 3,
+                    profile.getChangeResistance() != null ? profile.getChangeResistance() : "MED",
+                    profile.getEvasionPatterns(),
+                    profile.getMotivators()
+            );
+        } catch (Exception e) {
+            log.warn("[CONTEXT] MemberIdentitySnapshot no disponible para miembro {}: {}", memberId, e.getMessage());
+            return null;
+        }
     }
 
     // ─── Fase A: Motor Cognitivo Conectado ───────────────────────────────────

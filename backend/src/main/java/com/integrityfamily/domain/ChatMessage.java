@@ -31,6 +31,16 @@ public class ChatMessage {
     @Builder.Default
     private boolean ai = false;
 
+    @Column(name = "member_id")
+    private Long memberId;
+
+    @Column(name = "session_id")
+    private Long sessionId;
+
+    /** Instantánea del estado emocional detectado en el turno del usuario (CALM, ANXIOUS, …) */
+    @Column(name = "emotional_snapshot", length = 20)
+    private String emotionalSnapshot;
+
     private LocalDateTime createdAt;
 
     @PrePersist

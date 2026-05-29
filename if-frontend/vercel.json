@@ -6,12 +6,12 @@
   "installCommand": "npm ci",
   "framework": "angular",
   "env": {
-    "BACKEND_URL": "https://if-backend-v1-0-0.onrender.com"
+    "BACKEND_URL": "https://if-backend-production.up.railway.app"
   },
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://if-backend-v1-0-0.onrender.com/api/:path*"
+      "destination": "https://if-backend-production.up.railway.app/api/:path*"
     },
     { "source": "/(.*)", "destination": "/index.html" }
   ],

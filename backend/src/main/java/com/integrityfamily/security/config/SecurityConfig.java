@@ -22,7 +22,7 @@ public class SecurityConfig {
     private final com.integrityfamily.security.JwtAuthenticationFilter jwtAuthFilter;
 
     @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:4200,http://127.0.0.1:4200}")
-    private String[] allowedOrigins;
+    private String allowedOrigins;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
@@ -37,7 +37,10 @@ public class SecurityConfig {
     @Bean
     public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
         org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
-        configuration.setAllowedOrigins(java.util.Arrays.asList(allowedOrigins));
+        java.util.List<String> originsList = java.util.Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .collect(java.util.stream.Collectors.toList());
+        configuration.setAllowedOrigins(originsList);
         configuration.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(java.util.Arrays.asList("*"));
         configuration.setAllowCredentials(true);

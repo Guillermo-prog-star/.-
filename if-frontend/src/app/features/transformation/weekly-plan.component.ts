@@ -1,7 +1,11 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
+import { ApiService } from '../../core/services/api.service';
+import { catchError, of } from 'rxjs';
 
 interface WeeklyTask {
   id: string;
@@ -105,7 +109,9 @@ const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: st
             <textarea class="dq-input" rows="2" [placeholder]="'Tu respuesta…'"></textarea>
           </div>
         </div>
-        <button class="btn-save-daily">💾 Guardar Daily en Bitácora</button>
+        <button class="btn-save-daily" (click)="savePhase()">
+          {{ saving() ? '⏳ Guardando…' : saved() ? '✓ Guardado' : '💾 Guardar fase en plan semanal' }}
+        </button>
       </div>
     </div>
   `,
@@ -164,40 +170,87 @@ const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: st
     .btn-save-daily:hover { background: rgba(99,102,241,0.25); }
   `]
 })
-export class WeeklyPlanComponent {
+export class WeeklyPlanComponent implements OnInit {
   protected familyState = inject(FamilyStateService);
+  private flow          = inject(TransformationFlowService);
+  private http          = inject(HttpClient);
+  private api           = inject(ApiService);
 
-  readonly phases = WEEK_PHASES;
-  readonly activePhase = signal<WeekPhase>('prepare');
+  readonly phases       = WEEK_PHASES;
+  readonly activePhase  = signal<WeekPhase>('prepare');
   readonly currentSprint = signal(1);
+  readonly saving       = signal(false);
+  readonly saved        = signal(false);
 
   readonly dailyQuestions = [
-    '¿Qué logré hoy?',
-    '¿Qué aprendí hoy?',
-    '¿Qué dificultad encontré?',
-    '¿Cómo me sentí?',
-    '¿Qué haré mañana?',
+    '¿Qué logré hoy?', '¿Qué aprendí hoy?', '¿Qué dificultad encontré?',
+    '¿Cómo me sentí?',  '¿Qué haré mañana?',
   ];
+  readonly dailyAnswers = signal<Record<string, string>>({});
 
-  private tasks = signal<WeeklyTask[]>([]);
+  private tasks         = signal<WeeklyTask[]>([]);
 
   readonly currentPhase = computed(() => WEEK_PHASES.find(p => p.key === this.activePhase()));
-
-  readonly phaseTasks = computed(() =>
-    this.tasks().filter(t => t.phase === this.activePhase())
-  );
-
-  readonly doneCount   = computed(() => this.phaseTasks().filter(t => t.done).length);
-  readonly donePercent = computed(() => {
+  readonly phaseTasks   = computed(() => this.tasks().filter(t => t.phase === this.activePhase()));
+  readonly doneCount    = computed(() => this.phaseTasks().filter(t => t.done).length);
+  readonly donePercent  = computed(() => {
     const total = this.phaseTasks().length;
     return total ? Math.round((this.doneCount() / total) * 100) : 0;
   });
 
+  get familyId() { return this.familyState.currentFamilyId(); }
+  get apiBase()  { return `${this.api.base}/families/${this.familyId}/weekly-plans`; }
+
+  ngOnInit() {
+    this.currentSprint.set(this.flow.currentSprintNumber());
+    if (this.familyId > 0) this.loadAll();
+  }
+
+  private loadAll() {
+    this.http.get<any[]>(this.apiBase).pipe(catchError(() => of([]))).subscribe(plans => {
+      if (!plans?.length) return;
+      const allTasks: WeeklyTask[] = [];
+      plans.forEach((plan: any) => {
+        const phase = plan.phase?.toLowerCase() as WeekPhase;
+        (plan.tasks ?? []).forEach((t: any, i: number) => {
+          allTasks.push({
+            id:          String(t.id ?? `${phase}-${i}`),
+            description: t.description ?? '',
+            responsible: t.responsible ?? '',
+            when:        t.when ?? '',
+            indicator:   t.indicator ?? '',
+            done:        !!t.done,
+            phase,
+          });
+        });
+      });
+      this.tasks.set(allTasks);
+    });
+  }
+
+  savePhase() {
+    if (this.familyId <= 0) return;
+    const phase   = this.activePhase().toUpperCase();
+    const tasks   = this.phaseTasks().map((t, i) => ({
+      description: t.description, responsible: t.responsible,
+      when: t.when, indicator: t.indicator, done: t.done, sortOrder: i,
+    }));
+    const body = { sprintNumber: this.currentSprint(), phase, tasks };
+
+    this.saving.set(true);
+    this.http.put<any>(`${this.apiBase}/${phase}`, body)
+      .pipe(catchError(() => of(null)))
+      .subscribe(() => {
+        this.saving.set(false);
+        this.saved.set(true);
+        setTimeout(() => this.saved.set(false), 2500);
+      });
+  }
+
   addTask() {
-    const id = Date.now().toString();
     this.tasks.update(tasks => [...tasks, {
-      id, description: '', responsible: '', when: '',
-      indicator: '', done: false, phase: this.activePhase(),
+      id: Date.now().toString(), description: '', responsible: '',
+      when: '', indicator: '', done: false, phase: this.activePhase(),
     }]);
   }
 

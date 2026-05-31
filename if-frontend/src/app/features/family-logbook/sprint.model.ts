@@ -76,4 +76,6 @@ export interface SprintResponse {
   dailies: SprintDailyResponse[];
   retrospective?: SprintRetrospectiveResponse;
   createdAt: string;
+  /** ID del PlanTask que originó este sprint. Null si fue creado manualmente. */
+  missionTaskId?: number | null;
 }

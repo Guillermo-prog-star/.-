@@ -15,6 +15,7 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
 import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { HttpClient } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
+import { Router } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import {
   SprintResponse,
@@ -678,6 +679,13 @@ const EMPTY_RETRO_FORM: RetroFormState = {
               <span class="text-[9px] uppercase tracking-widest text-white/30 font-black">Días Restantes</span>
             </div>
 
+            <!-- Ir a Evidencias (si el sprint viene de una misión del plan) -->
+            <button *ngIf="activeSprint()?.missionTaskId"
+                    (click)="goToEvidence()"
+                    class="w-full sm:w-auto px-5 py-4 bg-amber-600/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/25 font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all hover:scale-105 flex items-center justify-center gap-2">
+              📸 Agregar Evidencia
+            </button>
+
             <!-- Complete/Close Sprint Button -->
             <button (click)="openRetrospectiveModal()"
                     class="w-full sm:w-auto px-6 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl shadow-lg transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2">
@@ -1198,6 +1206,7 @@ export class FamilyLogbookComponent implements OnInit {
   private readonly flow            = inject(TransformationFlowService);
   private readonly http            = inject(HttpClient);
   private readonly api             = inject(ApiService);
+  private readonly router          = inject(Router);
 
   // ─── State ──────────────────────────────────────────────────────────────────
   private familyId = 0;
@@ -1282,6 +1291,9 @@ export class FamilyLogbookComponent implements OnInit {
       this.loadEntries();
       this.loadCorrelation();
       this.loadActiveSprint();
+      // Si viene con ?tab=SPRINT en la URL (desde plan/misión), activar ese tab
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('tab') === 'SPRINT') this.activeTab.set('SPRINT');
     } else {
       this.error.set('No se encontró una familia asociada a tu cuenta.');
     }
@@ -1402,6 +1414,22 @@ export class FamilyLogbookComponent implements OnInit {
     return entry.id;
   }
 
+  /** Navega a la sección de Evidencias con el task ID de la misión del sprint activo */
+  goToEvidence(): void {
+    const sprint = this.activeSprint();
+    const taskId = sprint ? (sprint as any).missionTaskId : null;
+    if (taskId) {
+      this.router.navigate(['/plans/mission', taskId]);
+    } else {
+      this.router.navigate(['/checklist']);
+    }
+  }
+
+  /** Navega a la ruta de 36 meses */
+  goToTransformationRoute(): void {
+    this.router.navigate(['/transformation/route']);
+  }
+
   // ─── Agile Sprints Actions ────────────────────────────────────────────────
   loadActiveSprint(): void {
     if (!this.familyId) return;
@@ -1411,8 +1439,17 @@ export class FamilyLogbookComponent implements OnInit {
       next: res => {
         this.activeSprint.set(res);
         this.loadingSprint.set(false);
-        // Si NO hay sprint activo, intentar pre-cargar desde la misión activa
-        if (!res) this.tryLoadMissionSuggestion();
+        if (res) {
+          // Sprint activo encontrado → mostrar tab SPRINT automáticamente
+          // (solo si no vino redirigido expresamente a LOGBOOK)
+          const urlParams = new URLSearchParams(window.location.search);
+          if (!urlParams.get('tab')) this.activeTab.set('SPRINT');
+          // Actualizar número de sprint en el flujo de transformación
+          this.flow.setSprint((res as any).id ?? 1);
+        } else {
+          // Sin sprint → intentar sugerir desde misión activa
+          this.tryLoadMissionSuggestion();
+        }
       },
       error: () => {
         this.error.set('No se pudo cargar el sprint activo.');

@@ -1,6 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { ApiService } from '../../core/services/api.service';
+import { FamilyStateService } from '../../core/services/family-state.service';
+import { catchError, of } from 'rxjs';
 
 type LegadoTab = 'history' | 'constitution' | 'mission' | 'values' | 'letter';
 
@@ -58,7 +62,9 @@ interface FamilyValue { id: string; icon: string; name: string; description: str
             <textarea class="rq-input" rows="4" [(ngModel)]="history.recognition"
               placeholder="Escriban un homenaje a sus padres/abuelos reconociendo su misión, sus sacrificios y el amor que dejaron como herencia…"></textarea>
           </div>
-          <button class="btn-save">💾 Guardar Historia</button>
+          <button class="btn-save" (click)="save()" [disabled]="saving()">
+            {{ saving() ? '⏳ Guardando…' : saved() ? '✓ Guardado' : '💾 Guardar Historia' }}
+          </button>
         </div>
       }
 
@@ -94,7 +100,9 @@ interface FamilyValue { id: string; icon: string; name: string; description: str
               <textarea [(ngModel)]="constitution.conflictResolution" rows="2" class="rq-input" placeholder="Cuando haya desacuerdo…"></textarea>
             </div>
           </div>
-          <button class="btn-save">📜 Guardar Constitución</button>
+          <button class="btn-save" (click)="save()" [disabled]="saving()">
+            {{ saving() ? '⏳ Guardando…' : saved() ? '✓ Guardado' : '📜 Guardar Constitución' }}
+          </button>
         </div>
       }
 
@@ -120,7 +128,9 @@ interface FamilyValue { id: string; icon: string; name: string; description: str
             <label class="rq-label">Lema familiar (tagline)</label>
             <input class="cd-input" [(ngModel)]="missionVision.tagline" placeholder="Ej: Unidos, crecemos. Separados, fallamos." />
           </div>
-          <button class="btn-save">✅ Guardar Misión &amp; Visión</button>
+          <button class="btn-save" (click)="save()" [disabled]="saving()">
+            {{ saving() ? '⏳ Guardando…' : saved() ? '✓ Guardado' : '✅ Guardar Misión &amp; Visión' }}
+          </button>
         </div>
       }
 
@@ -142,7 +152,9 @@ interface FamilyValue { id: string; icon: string; name: string; description: str
               <button class="add-value-btn" (click)="addValue()">+ Agregar valor</button>
             }
           </div>
-          <button class="btn-save">💎 Guardar Valores</button>
+          <button class="btn-save" (click)="save()" [disabled]="saving()">
+            {{ saving() ? '⏳ Guardando…' : saved() ? '✓ Guardado' : '💎 Guardar Valores' }}
+          </button>
         </div>
       }
 
@@ -160,7 +172,9 @@ interface FamilyValue { id: string; icon: string; name: string; description: str
             <textarea rows="14" class="letter-textarea" [(ngModel)]="letter.content"
               placeholder="Querida generación futura,&#10;&#10;Cuando lean esto ya no estaremos aquí, pero lo que fuimos, lo que amamos y lo que construimos juntos…"></textarea>
           </div>
-          <button class="btn-save letter-btn">✉️ Sellar Carta del Legado</button>
+          <button class="btn-save letter-btn" (click)="sealLetter()" [disabled]="saving()">
+            {{ saving() ? '⏳ Sellando…' : saved() ? '✓ Carta sellada' : '✉️ Sellar Carta del Legado' }}
+          </button>
         </div>
       }
 
@@ -231,28 +245,146 @@ interface FamilyValue { id: string; icon: string; name: string; description: str
     .letter-btn { background: rgba(251,191,36,0.15) !important; border-color: rgba(251,191,36,0.35) !important; }
   `]
 })
-export class LegadoComponent {
-  readonly activeTab = signal<LegadoTab>('history');
+export class LegadoComponent implements OnInit {
+  private http        = inject(HttpClient);
+  private api         = inject(ApiService);
+  private familyState = inject(FamilyStateService);
+
+  readonly activeTab   = signal<LegadoTab>('history');
+  readonly saving      = signal(false);
+  readonly saved       = signal(false);
+  readonly loadError   = signal('');
   readonly currentYear = new Date().getFullYear();
 
-  history = {
-    lessons: '', conserve: '', avoidErrors: '', toLeave: '', recognition: ''
-  };
-  constitution = {
-    familyName: '', year: '', foundingPrinciple: '', commitments: '', neverDo: '', conflictResolution: ''
-  };
+  get familyId() { return this.familyState.currentFamilyId(); }
+  get apiBase()  { return `${this.api.base}/families/${this.familyId}/legacy`; }
+
+  history      = { lessons: '', conserve: '', avoidErrors: '', toLeave: '', recognition: '' };
+  constitution = { familyName: '', year: '', foundingPrinciple: '', commitments: '', neverDo: '', conflictResolution: '' };
   missionVision = { mission: '', vision: '', tagline: '' };
-  letter = { from: '', to: '', openIn: '', content: '' };
+  letter        = { from: '', to: '', openIn: '', content: '' };
 
   readonly familyValues = signal<FamilyValue[]>([
-    { id: '1', icon: '❤️', name: 'Amor',       description: '' },
-    { id: '2', icon: '🤝', name: 'Respeto',     description: '' },
-    { id: '3', icon: '✨', name: 'Integridad',  description: '' },
+    { id: '1', icon: '❤️', name: 'Amor',      description: '' },
+    { id: '2', icon: '🤝', name: 'Respeto',    description: '' },
+    { id: '3', icon: '✨', name: 'Integridad', description: '' },
   ]);
 
+  ngOnInit() {
+    if (this.familyId > 0) this.load();
+  }
+
+  private load() {
+    this.http.get<any>(this.apiBase).pipe(catchError(() => of(null))).subscribe(res => {
+      if (!res) return;
+      const l = res.legacy ?? {};
+      const v: any[] = res.values ?? [];
+
+      if (l.historyLessons    != null) this.history.lessons      = l.historyLessons;
+      if (l.historyConserve   != null) this.history.conserve     = l.historyConserve;
+      if (l.historyAvoidErrors!= null) this.history.avoidErrors  = l.historyAvoidErrors;
+      if (l.historyToLeave    != null) this.history.toLeave      = l.historyToLeave;
+      if (l.historyRecognition!= null) this.history.recognition  = l.historyRecognition;
+
+      if (l.constitutionFamilyName != null) this.constitution.familyName        = l.constitutionFamilyName;
+      if (l.constitutionYear       != null) this.constitution.year              = String(l.constitutionYear);
+      if (l.foundingPrinciple      != null) this.constitution.foundingPrinciple = l.foundingPrinciple;
+      if (l.commitments            != null) this.constitution.commitments       = l.commitments;
+      if (l.neverDo                != null) this.constitution.neverDo           = l.neverDo;
+      if (l.conflictResolution     != null) this.constitution.conflictResolution= l.conflictResolution;
+
+      if (l.familyMission  != null) this.missionVision.mission  = l.familyMission;
+      if (l.familyVision   != null) this.missionVision.vision   = l.familyVision;
+      if (l.familyTagline  != null) this.missionVision.tagline  = l.familyTagline;
+
+      if (l.letterFrom     != null) this.letter.from    = l.letterFrom;
+      if (l.letterTo       != null) this.letter.to      = l.letterTo;
+      if (l.letterOpenInYear!= null) this.letter.openIn = String(l.letterOpenInYear);
+      if (!l.letterSealed && l.letterContent != null) this.letter.content = l.letterContent;
+
+      if (v.length > 0) {
+        this.familyValues.set(v.map((x: any) => ({
+          id: String(x.id ?? Date.now()),
+          icon: x.icon ?? '⭐',
+          name: x.name ?? '',
+          description: x.description ?? '',
+        })));
+      }
+    });
+  }
+
+  save() {
+    if (this.familyId <= 0) return;
+    this.saving.set(true);
+    this.saved.set(false);
+
+    const body = {
+      historyLessons:          this.history.lessons,
+      historyConserve:         this.history.conserve,
+      historyAvoidErrors:      this.history.avoidErrors,
+      historyToLeave:          this.history.toLeave,
+      historyRecognition:      this.history.recognition,
+
+      constitutionFamilyName:  this.constitution.familyName,
+      constitutionYear:        this.constitution.year ? Number(this.constitution.year) : null,
+      foundingPrinciple:       this.constitution.foundingPrinciple,
+      commitments:             this.constitution.commitments,
+      neverDo:                 this.constitution.neverDo,
+      conflictResolution:      this.constitution.conflictResolution,
+
+      familyMission:           this.missionVision.mission,
+      familyVision:            this.missionVision.vision,
+      familyTagline:           this.missionVision.tagline,
+
+      letterFrom:              this.letter.from,
+      letterTo:                this.letter.to,
+      letterOpenInYear:        this.letter.openIn ? Number(this.letter.openIn) : null,
+      letterContent:           this.letter.content,
+      letterSealed:            false,
+
+      values: this.familyValues().map((v, i) => ({
+        icon: v.icon, name: v.name, description: v.description, sortOrder: i,
+      })),
+    };
+
+    this.http.put<any>(this.apiBase, body).pipe(catchError(() => of(null))).subscribe(res => {
+      this.saving.set(false);
+      this.saved.set(true);
+      setTimeout(() => this.saved.set(false), 3000);
+    });
+  }
+
+  sealLetter() {
+    if (this.familyId <= 0 || !this.letter.content.trim()) return;
+    this.saving.set(true);
+    const body = { ...this.buildBody(), letterSealed: true };
+    this.http.put<any>(this.apiBase, body).pipe(catchError(() => of(null))).subscribe(() => {
+      this.saving.set(false);
+      this.saved.set(true);
+      setTimeout(() => this.saved.set(false), 3000);
+    });
+  }
+
+  private buildBody() {
+    return {
+      historyLessons: this.history.lessons, historyConserve: this.history.conserve,
+      historyAvoidErrors: this.history.avoidErrors, historyToLeave: this.history.toLeave,
+      historyRecognition: this.history.recognition,
+      constitutionFamilyName: this.constitution.familyName,
+      constitutionYear: this.constitution.year ? Number(this.constitution.year) : null,
+      foundingPrinciple: this.constitution.foundingPrinciple, commitments: this.constitution.commitments,
+      neverDo: this.constitution.neverDo, conflictResolution: this.constitution.conflictResolution,
+      familyMission: this.missionVision.mission, familyVision: this.missionVision.vision,
+      familyTagline: this.missionVision.tagline,
+      letterFrom: this.letter.from, letterTo: this.letter.to,
+      letterOpenInYear: this.letter.openIn ? Number(this.letter.openIn) : null,
+      letterContent: this.letter.content, letterSealed: false,
+      values: this.familyValues().map((v, i) => ({ icon: v.icon, name: v.name, description: v.description, sortOrder: i })),
+    };
+  }
+
   addValue() {
-    const id = Date.now().toString();
-    this.familyValues.update(v => [...v, { id, icon: '⭐', name: '', description: '' }]);
+    this.familyValues.update(v => [...v, { id: Date.now().toString(), icon: '⭐', name: '', description: '' }]);
   }
 
   removeValue(id: string) {

@@ -1,6 +1,10 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { FamilyStateService } from '../../core/services/family-state.service';
+import { ApiService } from '../../core/services/api.service';
+import { catchError, of } from 'rxjs';
 
 type ErrorStep = 'detect' | 'feel' | 'understand' | 'action' | 'agreement' | 'followup' | 'learning';
 
@@ -175,46 +179,83 @@ const STEPS: Array<{ key: ErrorStep; label: string; icon: string; question: stri
     .hc-badge  { font-size: 10px; color: #10b981; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); padding: 3px 8px; border-radius: 5px; flex-shrink: 0; }
   `]
 })
-export class ErrorProtocolComponent {
-  readonly steps = STEPS;
+export class ErrorProtocolComponent implements OnInit {
+  private http        = inject(HttpClient);
+  private familyState = inject(FamilyStateService);
+  private api         = inject(ApiService);
+
+  readonly steps      = STEPS;
   private _records    = signal<ErrorRecord[]>([]);
   private _activeId   = signal<string | null>(null);
   readonly _stepIndex = signal(0);
+  readonly saving     = signal(false);
 
-  readonly activeRecord  = computed(() =>
+  get familyId() { return this.familyState.currentFamilyId(); }
+  get apiBase()  { return `${this.api.base}/families/${this.familyId}/error-protocols`; }
+
+  readonly activeRecord     = computed(() =>
     this._records().find(r => r.id === this._activeId() && !r.closed) ?? null
   );
-  readonly closedRecords = computed(() => this._records().filter(r => r.closed));
+  readonly closedRecords    = computed(() => this._records().filter(r => r.closed));
   readonly currentStepIndex = this._stepIndex.asReadonly();
-  readonly currentStep = computed(() => STEPS[this._stepIndex()]);
+  readonly currentStep      = computed(() => STEPS[this._stepIndex()]);
+
+  ngOnInit() {
+    if (this.familyId > 0) this.loadAll();
+  }
+
+  private loadAll() {
+    this.http.get<any[]>(this.apiBase).pipe(catchError(() => of([]))).subscribe(list => {
+      if (!list?.length) return;
+      this._records.set(list.map(p => this.mapFromServer(p)));
+    });
+  }
+
+  private mapFromServer(p: any): ErrorRecord {
+    return {
+      id:               String(p.id),
+      missionFailed:    p.missionFailed   ?? '',
+      step:             (p.currentStep?.toLowerCase() ?? 'detect') as ErrorStep,
+      feelings:         p.feelings        ?? '',
+      whatHappened:     p.whatHappened    ?? '',
+      correctiveAction: p.correctiveAction ?? '',
+      whoHelps:         p.whoHelps        ?? '',
+      agreement:        p.agreement       ?? '',
+      followupDate:     p.followupDate    ?? '',
+      learning:         p.learning        ?? '',
+      closed:           !!p.closed,
+      createdAt:        p.createdAt ? new Date(p.createdAt) : new Date(),
+    };
+  }
 
   isStepDone(i: number): boolean {
     const r = this.activeRecord();
     if (!r) return false;
-    const stepKey = STEPS[i].key;
-    if (stepKey === 'detect')     return !!r.missionFailed;
-    if (stepKey === 'feel')       return !!r.feelings;
-    if (stepKey === 'understand') return !!r.whatHappened;
-    if (stepKey === 'action')     return !!r.correctiveAction;
-    if (stepKey === 'agreement')  return !!r.agreement;
-    if (stepKey === 'followup')   return !!r.followupDate;
+    const k = STEPS[i].key;
+    if (k === 'detect')     return !!r.missionFailed;
+    if (k === 'feel')       return !!r.feelings;
+    if (k === 'understand') return !!r.whatHappened;
+    if (k === 'action')     return !!r.correctiveAction;
+    if (k === 'agreement')  return !!r.agreement;
+    if (k === 'followup')   return !!r.followupDate;
     return false;
   }
 
   startNew() {
-    const id = Date.now().toString();
-    const record: ErrorRecord = {
-      id, missionFailed: '', step: 'detect', feelings: '',
-      whatHappened: '', correctiveAction: '', whoHelps: '',
-      agreement: '', followupDate: '', learning: '',
-      closed: false, createdAt: new Date(),
-    };
-    this._records.update(r => [...r, record]);
-    this._activeId.set(id);
-    this._stepIndex.set(0);
+    if (this.familyId <= 0) return;
+    this.http.post<any>(this.apiBase, { missionFailed: '' })
+      .pipe(catchError(() => of(null)))
+      .subscribe(server => {
+        if (!server) return;
+        const rec = this.mapFromServer(server);
+        this._records.update(r => [rec, ...r]);
+        this._activeId.set(rec.id);
+        this._stepIndex.set(0);
+      });
   }
 
   nextStep() {
+    this.persistCurrentStep();
     if (this._stepIndex() < STEPS.length - 1) this._stepIndex.update(i => i + 1);
   }
 
@@ -222,13 +263,41 @@ export class ErrorProtocolComponent {
     if (this._stepIndex() > 0) this._stepIndex.update(i => i - 1);
   }
 
+  /** Persiste el campo del paso actual antes de avanzar */
+  private persistCurrentStep() {
+    const rec = this.activeRecord();
+    if (!rec || this.familyId <= 0) return;
+
+    const step = this.currentStep();
+    const fields: Record<string, any> = { currentStep: step.key.toUpperCase() };
+    if (step.key === 'detect')     fields['missionFailed']    = rec.missionFailed;
+    if (step.key === 'feel')       fields['feelings']         = rec.feelings;
+    if (step.key === 'understand') fields['whatHappened']     = rec.whatHappened;
+    if (step.key === 'action')     { fields['correctiveAction'] = rec.correctiveAction; fields['whoHelps'] = rec.whoHelps; }
+    if (step.key === 'agreement')  fields['agreement']        = rec.agreement;
+    if (step.key === 'followup')   fields['followupDate']     = rec.followupDate;
+
+    this.http.patch<any>(`${this.apiBase}/${rec.id}`, fields)
+      .pipe(catchError(() => of(null))).subscribe();
+  }
+
   closeProtocol() {
-    const id = this._activeId();
-    if (!id) return;
-    this._records.update(records =>
-      records.map(r => r.id === id ? { ...r, closed: true } : r)
-    );
-    this._activeId.set(null);
-    this._stepIndex.set(0);
+    const rec = this.activeRecord();
+    if (!rec || this.familyId <= 0) return;
+
+    this.saving.set(true);
+    this.http.post<any>(`${this.apiBase}/${rec.id}/close`, { learning: rec.learning })
+      .pipe(catchError(() => of(null)))
+      .subscribe(server => {
+        this.saving.set(false);
+        const id = rec.id;
+        this._records.update(records =>
+          records.map(r => r.id === id
+            ? { ...r, closed: true, learning: rec.learning }
+            : r)
+        );
+        this._activeId.set(null);
+        this._stepIndex.set(0);
+      });
   }
 }

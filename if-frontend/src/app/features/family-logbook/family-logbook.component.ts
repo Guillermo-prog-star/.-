@@ -1714,7 +1714,14 @@ export class FamilyLogbookComponent implements OnInit {
         this.savingRetro.set(false);
         this.showRetroForm.set(false);
         this.activeSprint.set(null);
-        this.setTab('HISTORY');
+        this.retroForm.set({ ...EMPTY_RETRO_FORM });
+        // Sprint completado → avanzar sprint en el flujo + ir a Gratitud
+        this.flow.setSprint(this.flow.currentSprintNumber() + 1);
+        this.loadSprintHistory();
+        // Redirigir al Muro de Gratitud para cerrar el ciclo
+        setTimeout(() => this.router.navigate(['/gratitude'], {
+          state: { sprintCompleted: true }
+        }), 400);
       },
       error: () => {
         this.error.set('Error al cerrar el sprint familiar.');

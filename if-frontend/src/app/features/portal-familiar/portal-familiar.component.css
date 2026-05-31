@@ -1293,3 +1293,32 @@ h2 {
   color: #818cf8 !important;
 }
 
+
+/* ── Tarjeta de Transformación ───────────────────────────── */
+.transform-card {
+  margin: 0 4px 14px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05));
+  border: 1px solid rgba(99,102,241,0.22);
+  border-radius: 18px;
+}
+.tc-pillar-row    { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.tc-pillar-icon   { font-size: 22px; flex-shrink: 0; }
+.tc-pillar-body   { flex: 1; }
+.tc-label         { font-size: 8px; font-weight: 800; color: rgba(255,255,255,0.3); letter-spacing: .1em; text-transform: uppercase; }
+.tc-pillar-name   { font-size: 13px; font-weight: 800; color: #fff; }
+.tc-month-badge   { font-size: 11px; font-weight: 900; color: #818cf8; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); padding: 2px 8px; border-radius: 6px; }
+.tc-progress-row  { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.tc-bar-wrap      { flex: 1; height: 4px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; }
+.tc-bar           { height: 100%; background: linear-gradient(90deg, #6366f1, #818cf8); border-radius: 2px; transition: width .5s; }
+.tc-pct           { font-size: 10px; font-weight: 700; color: #818cf8; flex-shrink: 0; }
+.tc-phase         { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 10px; }
+.tc-sprint        { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 9px 12px; margin-bottom: 10px; }
+.tc-sprint-label  { font-size: 8px; font-weight: 800; color: rgba(255,255,255,0.3); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 3px; }
+.tc-sprint-obj    { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.8); margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tc-sprint-meta   { display: flex; gap: 6px; font-size: 10px; color: rgba(255,255,255,0.35); }
+.tc-actions       { display: flex; gap: 8px; }
+.tc-btn           { flex: 1; padding: 8px 4px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: rgba(255,255,255,0.6); font-size: 11px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center; transition: all .2s; }
+.tc-btn:hover     { background: rgba(255,255,255,0.08); color: #fff; }
+.tc-btn.primary   { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.35); color: #818cf8; }
+.tc-btn.primary:hover { background: rgba(99,102,241,0.25); }

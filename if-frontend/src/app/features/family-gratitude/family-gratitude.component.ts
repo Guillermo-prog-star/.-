@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CreateFamilyGratitudeRequest, FamilyGratitude } from './family-gratitude.model';
 import { FamilyGratitudeService } from './family-gratitude.service';
 import { AuthService } from '../../core/services/auth.service';
@@ -13,9 +14,12 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrl: './family-gratitude.component.css'
 })
 export class FamilyGratitudeComponent implements OnInit {
-  familyId = 0;
+  private router = inject(Router);
 
+  familyId = 0;
   entries: FamilyGratitude[] = [];
+  /** true cuando el usuario llega desde el cierre de un sprint */
+  sprintJustCompleted = false;
 
   form: CreateFamilyGratitudeRequest = {
     familyId: 0,
@@ -34,11 +38,15 @@ export class FamilyGratitudeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    // Detectar si viene del cierre de un sprint (queryParam o navigation state)
+    const nav = window.history.state;
+    if (nav?.sprintCompleted) this.sprintJustCompleted = true;
+
     const user = this.authService.user();
     if (user && user.familyId) {
       this.familyId = user.familyId;
       this.form.familyId = user.familyId;
-      this.form.fromMember = user.fullName; // Pre-populamos con el miembro activo
+      this.form.fromMember = user.fullName;
       this.loadGratitudes();
     } else {
       this.errorMessage = 'No se encontró una familia asociada a tu cuenta.';

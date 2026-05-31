@@ -29,9 +29,35 @@
 
   <!-- ACCIONES RÁPIDAS / CAPA PRIVADA -->
   <div class="quick-actions-bar" style="margin-bottom: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
+
+    <!-- Ir al Sprint / Daily — CTA principal del flujo -->
+    <div class="glass-card" style="padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid rgba(99,102,241,0.35); background: linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.05));"
+         [routerLink]="['/logbook']" [queryParams]="{tab: 'SPRINT'}">
+      <div>
+        <h3 style="margin: 0; color: #818cf8; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+          <span>📔</span> Sprint &amp; Daily Familiar
+        </h3>
+        <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12px;">Seguimiento diario de la misión activa.</p>
+      </div>
+      <span style="font-size: 20px; color: #6366f1;">➔</span>
+    </div>
+
+    <!-- Ruta de transformación -->
+    <div class="glass-card" style="padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid rgba(16,185,129,0.25);"
+         [routerLink]="['/transformation/route']">
+      <div>
+        <h3 style="margin: 0; color: #fff; font-size: 15px; display: flex; align-items: center; gap: 8px;">
+          <span>🗺️</span> Ruta de 36 Meses
+        </h3>
+        <p style="margin: 4px 0 0 0; color: #8b949e; font-size: 12px;">Hitos y misiones de transformación.</p>
+      </div>
+      <span style="font-size: 20px; color: #10b981;">➔</span>
+    </div>
+
+    <!-- Mi Espacio Privado -->
     <div class="glass-card" style="padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; border: 1px solid rgba(168, 85, 247, 0.2);" [routerLink]="['/my-space']">
       <div>
-        <h3 style="margin: 0; color: #fff; font-size: 16px; display: flex; align-items: center; gap: 8px;">
+        <h3 style="margin: 0; color: #fff; font-size: 15px; display: flex; align-items: center; gap: 8px;">
           <span>🔒</span> Mi Espacio Privado
         </h3>
         <p style="margin: 4px 0 0 0; color: #8b949e; font-size: 12px;">Tu bitácora personal de evolución.</p>

@@ -11,6 +11,9 @@ import { DashboardDataService } from '../dashboard/services/dashboard-data.servi
 import { FamilyGratitude } from '../family-gratitude/family-gratitude.model';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 import { GuardianPanelComponent } from '../guardian/guardian-panel.component';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
+import { SprintService } from '../family-logbook/sprint.service';
+import { SprintResponse } from '../family-logbook/sprint.model';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -28,7 +31,9 @@ export class PortalFamiliarComponent implements OnInit, OnDestroy {
   private readonly authService    = inject(AuthService);
   private readonly gratitudeService = inject(FamilyGratitudeService);
   private readonly dashboardService = inject(DashboardDataService);
-  private readonly router         = inject(Router);
+  private readonly router           = inject(Router);
+  readonly flow                     = inject(TransformationFlowService);
+  private readonly sprintService    = inject(SprintService);
 
   // ── Identidad ─────────────────────────────────────────────────────────────
   familyId     = 0;
@@ -47,6 +52,7 @@ export class PortalFamiliarComponent implements OnInit, OnDestroy {
   behavioralEvents: any[]           = [];
   ivrSummary:       any             = null;
   stats:            any             = null;
+  activeSprint:     SprintResponse | null = null;
 
   // ── Formulario rápido de gratitud ─────────────────────────────────────────
   gratitudeForm = { toMember: '', description: '' };
@@ -135,14 +141,15 @@ export class PortalFamiliarComponent implements OnInit, OnDestroy {
     this.errorMessage = '';
 
     forkJoin({
-      family: this.http.get<any>(`${this.api.base}/families/${this.familyId}`).pipe(catchError(() => of(null))),
-      checklist: this.http.get<any>(`${this.api.base}/checklist/family/${this.familyId}`).pipe(catchError(() => of({ data: [] }))),
+      family:     this.http.get<any>(`${this.api.base}/families/${this.familyId}`).pipe(catchError(() => of(null))),
+      checklist:  this.http.get<any>(`${this.api.base}/checklist/family/${this.familyId}`).pipe(catchError(() => of({ data: [] }))),
       gratitudes: this.gratitudeService.findByFamily(this.familyId).pipe(catchError(() => of([]))),
-      events: this.http.get<any>(`${this.api.base}/family-behavioral-events/family/${this.familyId}`).pipe(catchError(() => of({ data: [] }))),
-      ivr: this.http.get<any>(`${this.api.base}/family-behavioral-events/family/${this.familyId}/ivr`).pipe(catchError(() => of({ data: null }))),
-      dashboard: this.dashboardService.fetchData(this.familyId).pipe(catchError(() => of(null)))
+      events:     this.http.get<any>(`${this.api.base}/family-behavioral-events/family/${this.familyId}`).pipe(catchError(() => of({ data: [] }))),
+      ivr:        this.http.get<any>(`${this.api.base}/family-behavioral-events/family/${this.familyId}/ivr`).pipe(catchError(() => of({ data: null }))),
+      dashboard:  this.dashboardService.fetchData(this.familyId).pipe(catchError(() => of(null))),
+      sprint:     this.sprintService.getActiveSprint(this.familyId).pipe(catchError(() => of(null))),
     }).subscribe({
-      next: ({ family, checklist, gratitudes, events, ivr, dashboard }) => {
+      next: ({ family, checklist, gratitudes, events, ivr, dashboard, sprint }) => {
         // Miembros del núcleo familiar para selector
         const familyData = family?.data ?? family;
         this.members = familyData?.members ?? [];
@@ -164,8 +171,11 @@ export class PortalFamiliarComponent implements OnInit, OnDestroy {
           familyId: this.familyId, totalConflicts: 0, repairedConflicts: 0,
           averageRepairTimeHours: 0.0, ivrScore: 100.0
         };
-        this.stats   = dashboard;
-        this.loading = false;
+        this.stats        = dashboard;
+        this.activeSprint = sprint;
+        this.loading      = false;
+        // Sincronizar estado de transformación con el backend
+        this.flow.loadFromBackend(this.familyId);
       },
       error: () => {
         this.errorMessage = 'Ocurrió un error sincronizando el portal familiar.';

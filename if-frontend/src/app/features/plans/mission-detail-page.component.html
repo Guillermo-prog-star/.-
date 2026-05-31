@@ -32,6 +32,23 @@
 
       <p class="md-mission-desc" *ngIf="task.description">{{ task.description }}</p>
 
+      <!-- CTA Flujo: Iniciar Sprint o ir al Daily -->
+      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+        <a [routerLink]="['/logbook']" [queryParams]="{tab:'SPRINT'}"
+           style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;
+                  background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.35);
+                  color:#818cf8;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;
+                  transition:all .2s;">
+          📔 Ir al Sprint / Daily
+        </a>
+        <a [routerLink]="['/transformation/weekly-plan']"
+           style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;
+                  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+                  color:rgba(255,255,255,0.5);border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;">
+          📅 Planeación Semanal
+        </a>
+      </div>
+
       <div class="md-mission-meta" *ngIf="task.accionConcreta || task.indicadorCumplimiento || task.evidenciaRequerida">
         <div class="md-meta-item" *ngIf="task.accionConcreta">
           <span class="md-meta-label">🎯 Acción concreta</span>

@@ -81,6 +81,52 @@
           </div>
         </section>
 
+        <!-- ── Tarjeta de Transformación ── -->
+        <section class="transform-card">
+          <!-- Pilar activo -->
+          <div class="tc-pillar-row">
+            <span class="tc-pillar-icon">
+              {{ flow.currentPillar() === 'reconocimiento' ? '💛' : flow.currentPillar() === 'amor' ? '❤️' : '💙' }}
+            </span>
+            <div class="tc-pillar-body">
+              <div class="tc-label">PILAR ACTIVO</div>
+              <div class="tc-pillar-name">{{ flow.pillarLabel() }}</div>
+            </div>
+            <div class="tc-month-badge">{{ flow.milestoneLabel() }}</div>
+          </div>
+
+          <!-- Barra de progreso 36 meses -->
+          <div class="tc-progress-row">
+            <div class="tc-bar-wrap">
+              <div class="tc-bar" [style.width.%]="flow.progressPercent()"></div>
+            </div>
+            <span class="tc-pct">{{ flow.progressPercent() }}%</span>
+          </div>
+
+          <!-- Fase narrativa -->
+          <div class="tc-phase">{{ flow.currentPhaseLabel() }}</div>
+
+          <!-- Sprint activo (si existe) -->
+          <div class="tc-sprint" *ngIf="activeSprint">
+            <div class="tc-sprint-label">SPRINT ACTIVO</div>
+            <div class="tc-sprint-obj">{{ activeSprint.objective }}</div>
+            <div class="tc-sprint-meta">
+              <span>{{ activeSprint.durationDays }}d</span>
+              <span>·</span>
+              <span>{{ (activeSprint.missions | slice:0:999)?.length ?? 0 }} misiones</span>
+            </div>
+          </div>
+
+          <!-- Acciones rápidas -->
+          <div class="tc-actions">
+            <button class="tc-btn primary" [routerLink]="['/logbook']" [queryParams]="{tab: activeSprint ? 'SPRINT' : 'LOGBOOK'}">
+              {{ activeSprint ? '📔 Ir al Sprint' : '📔 Bitácora' }}
+            </button>
+            <button class="tc-btn" [routerLink]="['/transformation/route']">🗺️ Ruta</button>
+            <button class="tc-btn" [routerLink]="['/evaluations/start']">◈ Diagnóstico</button>
+          </div>
+        </section>
+
         <!-- ── Historias Invisibles banner ── -->
         <section class="stories-banner-card" [routerLink]="['/portal/invisible-stories']">
           <div class="stories-icon">🎬</div>

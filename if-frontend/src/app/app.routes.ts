@@ -95,6 +95,7 @@ export const routes: Routes = [
       // Rutas Transversales
       { path: 'members', loadComponent: () => import('./features/members/member-list-page.component').then(m => m.MemberListPageComponent) },
       { path: 'plans', loadComponent: () => import('./features/plans/plan-list-page.component').then(m => m.PlanListPageComponent) },
+      { path: 'plans/mission/:taskId', loadComponent: () => import('./features/plans/mission-detail-page.component').then(m => m.MissionDetailPageComponent) },
       { path: 'checklist', loadComponent: () => import('./features/checklist/checklist-page.component').then(m => m.ChecklistPageComponent) },
       { path: 'chat', loadComponent: () => import('./features/chat/chat-page.component').then(m => m.ChatPageComponent) },
       { path: 'crisis', loadComponent: () => import('./features/crisis/crisis-page.component').then(m => m.CrisisPageComponent) },
@@ -109,6 +110,39 @@ export const routes: Routes = [
         path: 'guardian/:familyId/election',
         title: 'Elegir Guardián Familiar',
         loadComponent: () => import('./features/guardian/guardian-election.component').then(m => m.GuardianElectionComponent)
+      },
+
+      // ── Flujo Maestro: Transformación ────────────────────────────────
+      {
+        path: 'transformation',
+        children: [
+          {
+            path: 'route',
+            title: 'Ruta de Transformación — 36 Meses',
+            loadComponent: () => import('./features/transformation/transformation-route.component')
+              .then(m => m.TransformationRouteComponent)
+          },
+          {
+            path: 'weekly-plan',
+            title: 'Planeación Semanal Familiar',
+            loadComponent: () => import('./features/transformation/weekly-plan.component')
+              .then(m => m.WeeklyPlanComponent)
+          },
+          {
+            path: 'error-protocol',
+            title: 'Gestión del Error Familiar',
+            loadComponent: () => import('./features/transformation/error-protocol.component')
+              .then(m => m.ErrorProtocolComponent)
+          },
+        ]
+      },
+
+      // ── Legado Familiar ──────────────────────────────────────────────
+      {
+        path: 'legado',
+        title: 'Legado Familiar',
+        loadComponent: () => import('./features/legado/legado.component')
+          .then(m => m.LegadoComponent)
       },
 
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }

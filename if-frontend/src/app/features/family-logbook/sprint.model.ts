@@ -3,6 +3,8 @@ export interface CreateSprintRequest {
   riskDimension: string;
   durationDays: number;
   missions: string[];
+  /** ID del PlanTask que originó este sprint (auto-creación desde misión activa) */
+  missionTaskId?: number;
 }
 
 export interface CreateDailyCheckinRequest {

@@ -10,7 +10,9 @@ public class SprintDtos {
             String objective,
             String riskDimension,
             Integer durationDays,
-            List<String> missions
+            List<String> missions,
+            /** ID del PlanTask que originó este sprint (auto-creación desde misión activa). Opcional. */
+            Long missionTaskId
     ) {}
 
     public record CreateDailyCheckinRequest(
@@ -81,6 +83,8 @@ public class SprintDtos {
             List<SprintMissionResponse> missions,
             List<SprintDailyResponse> dailies,
             SprintRetrospectiveResponse retrospective,
-            LocalDateTime createdAt
+            LocalDateTime createdAt,
+            /** ID del PlanTask origen. Null si fue creado manualmente. */
+            Long missionTaskId
     ) {}
 }

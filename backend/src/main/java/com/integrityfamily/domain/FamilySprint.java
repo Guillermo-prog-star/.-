@@ -41,6 +41,13 @@ public class FamilySprint {
     @Column(nullable = false, length = 30)
     private String status; // ACTIVE, COMPLETED, CANCELLED
 
+    /**
+     * ID del PlanTask (misión del plan) que originó este sprint.
+     * Null cuando el sprint fue creado manualmente.
+     */
+    @Column(name = "mission_task_id")
+    private Long missionTaskId;
+
     @OneToMany(mappedBy = "sprint", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
     private List<SprintMission> missions = new ArrayList<>();

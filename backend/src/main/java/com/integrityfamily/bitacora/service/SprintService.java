@@ -75,6 +75,7 @@ public class SprintService {
                 .startDate(LocalDate.now())
                 .endDate(LocalDate.now().plusDays(duration))
                 .status("ACTIVE")
+                .missionTaskId(request.missionTaskId())
                 .missions(new ArrayList<>())
                 .build();
 
@@ -323,7 +324,8 @@ public class SprintService {
                 missions,
                 dailies,
                 retroDto,
-                sprint.getCreatedAt()
+                sprint.getCreatedAt(),
+                sprint.getMissionTaskId()
         );
     }
 

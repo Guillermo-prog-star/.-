@@ -12,6 +12,10 @@ import { FamilyLogbookService } from './family-logbook.service';
 import { AuthService } from '../../core/services/auth.service';
 import { SprintService } from './sprint.service';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
+import { HttpClient } from '@angular/common/http';
+import { ApiService } from '../../core/services/api.service';
+import { catchError, of } from 'rxjs';
 import {
   SprintResponse,
   SprintDailyResponse,
@@ -117,6 +121,8 @@ const EMPTY_RETRO_FORM: RetroFormState = {
     .markdown-content ::ng-deep strong { color: #6366f1; font-weight: 800; }
     .markdown-content ::ng-deep p { margin: 0 0 1rem; line-height: 1.7; }
     .markdown-content ::ng-deep li { margin-left: 1.5rem; margin-bottom: 6px; list-style-type: disc; }
+    @keyframes gradient-slide { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+    @keyframes spin { to { transform: rotate(360deg); } }
   `],
   template: `
 <div class="min-h-screen p-4 lg:p-10 space-y-8">
@@ -491,6 +497,69 @@ const EMPTY_RETRO_FORM: RetroFormState = {
     <!-- CASE 2.1: NO ACTIVE SPRINT - FORM TO CREATE ONE -->
     <div *ngIf="!loadingSprint() && !activeSprint()"
          class="glass-premium p-8 rounded-[2rem] border border-indigo-500/20 max-w-3xl mx-auto space-y-6">
+
+      <!-- ── BANNER SUGERENCIA DESDE MISIÓN ACTIVA ───────────────────────── -->
+      <div *ngIf="sprintSuggestion() && !suggestionDismissed()"
+           class="relative overflow-hidden rounded-2xl border p-5 mb-2"
+           style="background:rgba(99,102,241,0.07);border-color:rgba(99,102,241,0.35);">
+        <!-- Borde superior animado -->
+        <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#6366f1,#818cf8,#6366f1);background-size:200%;animation:gradient-slide 2s linear infinite;"></div>
+
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-content-center text-xl flex-shrink-0"
+               style="background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;">
+            🎯
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:10px;font-weight:800;color:#818cf8;letter-spacing:.1em;text-transform:uppercase;margin-bottom:4px;">
+              Misión activa detectada
+            </div>
+            <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              {{ sprintSuggestion()!.missionTitle }}
+            </div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-bottom:12px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">
+              {{ sprintSuggestion()!.missionDescription }}
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span style="font-size:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);padding:2px 8px;border-radius:5px;color:rgba(255,255,255,0.5);">
+                ⏱️ {{ sprintSuggestion()!.durationDays }} días
+              </span>
+              <span style="font-size:10px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);padding:2px 8px;border-radius:5px;color:rgba(255,255,255,0.5);">
+                📐 {{ sprintSuggestion()!.dimension }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:14px;">
+          <button
+            (click)="acceptAndCreateSprint()"
+            [disabled]="savingSprint()"
+            style="flex:1;padding:11px;background:linear-gradient(135deg,#6366f1,#818cf8);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;transition:all .2s;">
+            <span *ngIf="savingSprint()">⏳ Creando sprint…</span>
+            <span *ngIf="!savingSprint()">🚀 Crear sprint de esta misión</span>
+          </button>
+          <button
+            (click)="acceptSuggestion()"
+            style="padding:11px 16px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:rgba(255,255,255,0.5);font-size:12px;cursor:pointer;">
+            Personalizar
+          </button>
+          <button
+            (click)="dismissSuggestion()"
+            title="Ignorar sugerencia"
+            style="padding:11px 14px;background:none;border:1px solid rgba(255,255,255,0.07);border-radius:10px;color:rgba(255,255,255,0.25);font-size:13px;cursor:pointer;">
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <!-- Cargando sugerencia -->
+      <div *ngIf="loadingSuggestion()"
+           style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;color:rgba(255,255,255,0.35);font-size:12px;">
+        <div style="width:14px;height:14px;border:2px solid rgba(99,102,241,0.3);border-top-color:#6366f1;border-radius:50%;animation:spin 0.7s linear infinite;"></div>
+        Buscando misión activa del plan…
+      </div>
+
       <div class="text-center space-y-2">
         <div class="w-16 h-16 bg-indigo-600/10 text-indigo-400 rounded-2xl flex items-center justify-center text-3xl mx-auto shadow-inner">
           ⚡
@@ -1123,9 +1192,12 @@ const EMPTY_RETRO_FORM: RetroFormState = {
   `
 })
 export class FamilyLogbookComponent implements OnInit {
-  private readonly service       = inject(FamilyLogbookService);
-  private readonly sprintService  = inject(SprintService);
-  private readonly authService    = inject(AuthService);
+  private readonly service         = inject(FamilyLogbookService);
+  private readonly sprintService   = inject(SprintService);
+  private readonly authService     = inject(AuthService);
+  private readonly flow            = inject(TransformationFlowService);
+  private readonly http            = inject(HttpClient);
+  private readonly api             = inject(ApiService);
 
   // ─── State ──────────────────────────────────────────────────────────────────
   private familyId = 0;
@@ -1150,6 +1222,18 @@ export class FamilyLogbookComponent implements OnInit {
   readonly loadingSprint   = signal(false);
   readonly savingSprint    = signal(false);
   readonly sprintForm      = signal<SprintFormState>({ ...EMPTY_SPRINT_FORM });
+
+  // ── Auto-sprint desde misión activa ────────────────────────────────────────
+  /** Sugerencia de sprint pre-cargada desde la misión activa del plan */
+  readonly sprintSuggestion = signal<{
+    missionTitle: string;
+    missionDescription: string;
+    dimension: string;
+    durationDays: number;
+    missionTaskId: number;
+  } | null>(null);
+  readonly loadingSuggestion = signal(false);
+  readonly suggestionDismissed = signal(false);
   
   readonly showDailyForm   = signal(false);
   readonly dailyForm       = signal<DailyFormState>({ ...EMPTY_DAILY_FORM });
@@ -1327,10 +1411,13 @@ export class FamilyLogbookComponent implements OnInit {
       next: res => {
         this.activeSprint.set(res);
         this.loadingSprint.set(false);
+        // Si NO hay sprint activo, intentar pre-cargar desde la misión activa
+        if (!res) this.tryLoadMissionSuggestion();
       },
       error: () => {
         this.error.set('No se pudo cargar el sprint activo.');
         this.loadingSprint.set(false);
+        this.tryLoadMissionSuggestion();
       }
     });
   }
@@ -1371,6 +1458,96 @@ export class FamilyLogbookComponent implements OnInit {
       ...f,
       missions: f.missions.filter((_, i) => i !== idx)
     }));
+  }
+
+  /**
+   * Intenta cargar la misión activa del plan y pre-rellenar la sugerencia de sprint.
+   * Solo actúa si hay un activeMissionId en TransformationFlowService y
+   * la sugerencia no fue descartada por el usuario en esta sesión.
+   */
+  private tryLoadMissionSuggestion(): void {
+    if (this.suggestionDismissed()) return;
+    const missionId = this.flow.activeMissionId();
+    if (!missionId) return;
+
+    this.loadingSuggestion.set(true);
+    this.http.get<any>(`${this.api.base}/plans/tasks/${missionId}`)
+      .pipe(catchError(() => of(null)))
+      .subscribe(res => {
+        this.loadingSuggestion.set(false);
+        const task = res?.data ?? res;
+        if (!task?.title) return;
+
+        // Mapear dimensión del task al riskDimension del sprint
+        const dim = (task.dimension ?? 'comunicacion').toLowerCase();
+
+        this.sprintSuggestion.set({
+          missionTitle:       task.title,
+          missionDescription: task.description ?? task.objective ?? task.title,
+          dimension:          dim,
+          durationDays:       task.sprintDays ?? 7,
+          missionTaskId:      Number(missionId),
+        });
+
+        // Pre-rellenar el formulario de sprint
+        this.sprintForm.update(f => ({
+          ...f,
+          objective:     `Misión: ${task.title}`,
+          riskDimension: dim,
+          durationDays:  task.sprintDays ?? 7,
+          missions:      task.description ? [task.description] : [task.title],
+        }));
+      });
+  }
+
+  /** El usuario acepta la sugerencia → cambia a tab SPRINT y hace scroll al form */
+  acceptSuggestion(): void {
+    this.activeTab.set('SPRINT');
+    this.suggestionDismissed.set(true);
+  }
+
+  /** El usuario descarta la sugerencia sin crear sprint */
+  dismissSuggestion(): void {
+    this.suggestionDismissed.set(true);
+    this.sprintSuggestion.set(null);
+    this.sprintForm.set({ ...EMPTY_SPRINT_FORM });
+  }
+
+  /**
+   * Crea el sprint directamente desde la sugerencia (un solo clic).
+   * Una vez creado, limpia la sugerencia y activa el tab SPRINT.
+   */
+  acceptAndCreateSprint(): void {
+    const suggestion = this.sprintSuggestion();
+    if (!suggestion) return;
+
+    this.savingSprint.set(true);
+    this.error.set('');
+
+    const req: CreateSprintRequest = {
+      objective:     `Misión: ${suggestion.missionTitle}`,
+      riskDimension: suggestion.dimension,
+      durationDays:  suggestion.durationDays,
+      missions:      [suggestion.missionDescription],
+      missionTaskId: suggestion.missionTaskId,
+    };
+
+    this.sprintService.createSprint(this.familyId, req).subscribe({
+      next: res => {
+        this.activeSprint.set(res);
+        this.savingSprint.set(false);
+        this.sprintSuggestion.set(null);
+        this.suggestionDismissed.set(true);
+        // Actualizar número de sprint en el flujo de transformación
+        this.flow.setSprint((res as any).sprintNumber ?? 1);
+        // Cambiar a tab SPRINT para mostrar el sprint recién creado
+        this.activeTab.set('SPRINT');
+      },
+      error: err => {
+        this.error.set(err?.error?.message || 'Error al crear el Sprint.');
+        this.savingSprint.set(false);
+      }
+    });
   }
 
   createSprint(): void {

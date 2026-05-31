@@ -1,6 +1,21 @@
 <!-- PANTALLA PRINCIPAL DE DIAGNÓSTICO -->
 <div class="assessment-container" *ngIf="questions && questions.length > 0 && !isLoadingResults; else loadingOrSaving">
-  
+
+  <!-- Banner de Pilar Activo -->
+  <div *ngIf="pillarMeta" class="pillar-banner"
+       [style.border-color]="pillarMeta.color + '40'"
+       [style.background]="pillarMeta.color + '12'">
+    <span class="pb-icon">{{ pillarMeta.icon }}</span>
+    <div class="pb-body">
+      <div class="pb-name" [style.color]="pillarMeta.color">Pilar {{ pillarMeta.name }}</div>
+      <div class="pb-range">{{ pillarMeta.range }} · Sesión de 20 preguntas</div>
+    </div>
+    <div class="pb-counter">
+      <span class="pb-num" [style.color]="pillarMeta.color">{{ currentIndex + 1 }}</span>
+      <span class="pb-den"> / {{ questions.length }}</span>
+    </div>
+  </div>
+
   <!-- Encabezado de Progreso Segmentado Premium -->
   <div class="progress-section">
     <div class="progress-header">

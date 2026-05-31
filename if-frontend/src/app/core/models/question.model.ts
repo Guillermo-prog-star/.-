@@ -66,3 +66,16 @@ export interface Question {
   riskType?: string;
   missionGenerator?: string;
 }
+// ── Progreso por pilar ────────────────────────────────────────────────────────
+
+export interface PillarProgressInfo {
+  pillar: string;
+  totalQuestions: number;
+  sessionsOf20: number;
+}
+
+export interface PillarProgressResult {
+  pillars: PillarProgressInfo[];
+  completedSessions: number;
+  totalSessions: number;
+}

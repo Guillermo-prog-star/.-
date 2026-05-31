@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { ApiService } from './api.service';
-import { Question, SaveAnswerRequest, AnswerProgressResponse, FinalizeRequest } from '../models/question.model';
+import { Question, SaveAnswerRequest, AnswerProgressResponse, FinalizeRequest, PillarProgressResult } from '../models/question.model';
 import { ApiResponse } from '../models/api-response.model';
 import { EvaluationHistory, TimelineEntryDto } from '../models/models';
 
@@ -35,13 +35,28 @@ export class AssessmentService {
    *    - familyId:      adapta reactivos al riesgo y dimensión crítica detectada
    *    - milestoneCode: hito explícito (W1-M36); si se omite, usa el hito actual de la familia
    */
-  getRandomQuestions(familyId: number, milestoneCode?: string): Observable<Question[]> {
+  getRandomQuestions(familyId: number, milestoneCode?: string, pillarName?: string): Observable<Question[]> {
     let url = `${this.api.base}/assessments/random?familyId=${familyId}`;
     if (milestoneCode?.trim()) {
       url += `&milestoneCode=${encodeURIComponent(milestoneCode.trim())}`;
     }
+    if (pillarName?.trim()) {
+      url += `&pillarName=${encodeURIComponent(pillarName.trim())}`;
+    }
     return this.http.get<ApiResponse<Question[]>>(url)
       .pipe(map(response => response.data));
+  }
+
+  /**
+   * Progreso de sesiones por pilar para una familia.
+   * GET /api/assessments/pillar-progress?familyId={id}
+   */
+  getPillarProgress(familyId: number): Observable<PillarProgressResult> {
+    return this.http
+      .get<ApiResponse<PillarProgressResult>>(
+        `${this.api.base}/assessments/pillar-progress?familyId=${familyId}`
+      )
+      .pipe(map(r => r.data));
   }
 
   /**

@@ -32,6 +32,15 @@ export class EvaluationComponent implements OnInit {
   familyId: number = 0;
   familyName: string = '';
 
+  /** Pilar activo recibido como query param desde EvaluationStartPage */
+  activePillar: string = '';
+  readonly PILLAR_META: Record<string, { icon: string; name: string; color: string; range: string }> = {
+    reconocimiento: { icon: '💛', name: 'Reconocimiento', color: '#fbbf24', range: 'Meses 1–6' },
+    amor:           { icon: '❤️', name: 'Amor',           color: '#ef4444', range: 'Meses 7–18' },
+    entrega:        { icon: '💙', name: 'Entrega',         color: '#3b82f6', range: 'Meses 19–36' },
+  };
+  get pillarMeta() { return this.PILLAR_META[this.activePillar] ?? null; }
+
   /**
    * Indica si algún guardado incremental falló.
    * En ese caso, sendResults() vuelve al modo clásico (envía todas las respuestas en el body).
@@ -50,6 +59,9 @@ export class EvaluationComponent implements OnInit {
       }
     });
 
+    // Leer el pilar seleccionado desde query params
+    this.activePillar = this.route.snapshot.queryParamMap.get('pillar') ?? '';
+
     if (this.familyId === 0) {
       this.router.navigate(['/families']);
       return;
@@ -62,8 +74,10 @@ export class EvaluationComponent implements OnInit {
 
     // Lee el hito actual desde el servicio de estado (fuente reactiva única)
     const milestone = this.familyState.currentMilestone() || undefined;
+    // Pasar el pilar para filtrar preguntas específicas del pilar activo
+    const pillar = this.activePillar || undefined;
 
-    this.assessmentService.getRandomQuestions(this.familyId, milestone).subscribe({
+    this.assessmentService.getRandomQuestions(this.familyId, milestone, pillar).subscribe({
       next: (data: Question[]) => {
         this.questions = data;
         // Tras cargar las preguntas, intentar recuperar el progreso guardado
@@ -174,7 +188,7 @@ export class EvaluationComponent implements OnInit {
         // Pasar el resultado en el estado de navegación para que el result-page lo muestre sin petición extra
         const result = response?.data ?? response;
         this.router.navigate(['/evaluations', this.evaluationId, 'result'], {
-          state: { result }
+          state: { result, pillar: this.activePillar }
         });
       },
       error: (err: any) => {

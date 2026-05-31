@@ -211,22 +211,22 @@
       <app-evolution-path
         [narrativeStage]="ls.narrativeStage || data.narrativeStage || 'RECONOCIMIENTO'"
         [evolutionPhase]="ls.evolutionPhase || data.evolutionPhase || 'inconsciente'"
-        [icfDelta30d]="ls.icfDelta30d ?? data.icfDelta30d ?? 0"
+        [icfDelta30d]="+(ls.icfDelta30d ?? data.icfDelta30d ?? 0)"
         [riskTrend]="ls.riskTrend || data.riskTrend || 'STABLE'"
-        [communicationCollapseActive]="ls.communicationCollapseActive || data.communicationCollapseActive || false"
-        [consecutiveDeteriorations]="ls.consecutiveDeteriorations ?? data.consecutiveDeteriorations ?? 0"
-        [inActiveCrisis]="ls.inActiveCrisis || data.inActiveCrisis || false">
+        [communicationCollapseActive]="!!(ls.communicationCollapseActive || data.communicationCollapseActive)"
+        [consecutiveDeteriorations]="+(ls.consecutiveDeteriorations ?? data.consecutiveDeteriorations ?? 0)"
+        [inActiveCrisis]="!!(ls.inActiveCrisis || data.inActiveCrisis)">
       </app-evolution-path>
     </ng-container>
     <ng-template #evolutionFallback>
       <app-evolution-path
         [narrativeStage]="data.narrativeStage || 'RECONOCIMIENTO'"
         [evolutionPhase]="data.evolutionPhase || 'inconsciente'"
-        [icfDelta30d]="data.icfDelta30d || 0"
+        [icfDelta30d]="+(data.icfDelta30d || 0)"
         [riskTrend]="data.riskTrend || 'STABLE'"
-        [communicationCollapseActive]="data.communicationCollapseActive || false"
-        [consecutiveDeteriorations]="data.consecutiveDeteriorations || 0"
-        [inActiveCrisis]="data.inActiveCrisis || false">
+        [communicationCollapseActive]="!!(data.communicationCollapseActive)"
+        [consecutiveDeteriorations]="+(data.consecutiveDeteriorations || 0)"
+        [inActiveCrisis]="!!(data.inActiveCrisis)">
       </app-evolution-path>
     </ng-template>
 

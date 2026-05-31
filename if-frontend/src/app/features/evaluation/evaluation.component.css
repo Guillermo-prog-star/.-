@@ -829,3 +829,21 @@
     padding: 2px 6px !important;
   }
 }
+/* ── Pillar banner ──────────────────────────────────────────────────────── */
+.pillar-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  margin-bottom: 16px;
+  border: 1px solid;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.02);
+}
+.pb-icon  { font-size: 22px; flex-shrink: 0; }
+.pb-body  { flex: 1; }
+.pb-name  { font-size: 13px; font-weight: 800; }
+.pb-range { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 1px; }
+.pb-counter { display: flex; align-items: baseline; gap: 2px; flex-shrink: 0; }
+.pb-num  { font-size: 22px; font-weight: 900; }
+.pb-den  { font-size: 13px; color: rgba(255,255,255,0.4); }

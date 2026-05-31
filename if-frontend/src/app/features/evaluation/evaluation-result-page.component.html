@@ -158,6 +158,29 @@
     </div>
   }
 
+  <!-- ── Banner pilar completado ──────────────────────────────────────────── -->
+  @if (pillarMeta) {
+    <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;margin-top:8px;margin-bottom:16px;
+                border-radius:12px;border:1px solid;background:rgba(255,255,255,0.02);"
+         [style.border-color]="pillarMeta.color + '40'">
+      <span style="font-size:24px">{{ pillarMeta.icon }}</span>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:800;" [style.color]="pillarMeta.color">
+          Sesión completada · Pilar {{ pillarMeta.name }}
+        </div>
+        <div style="font-size:12px;color:rgba(255,255,255,0.45);margin-top:2px;">
+          Cada sesión activa preguntas distintas. Puedes continuar explorando el mismo pilar.
+        </div>
+      </div>
+      <button class="btn" (click)="doAnotherSession()"
+              style="white-space:nowrap;border-color:var(--pillar-c,rgba(255,255,255,0.15));"
+              [style.--pillar-c]="pillarMeta.color + '60'"
+              [style.color]="pillarMeta.color">
+        {{ pillarMeta.icon }} 20 preguntas más
+      </button>
+    </div>
+  }
+
   <!-- ── Acciones ─────────────────────────────────────────────────────────── -->
   <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;">
     <button class="btn btn-primary" (click)="goToPlans()">Ver Plan de Acción →</button>

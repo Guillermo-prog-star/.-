@@ -65,9 +65,25 @@ public class AssessmentController {
             @Parameter(description = "ID de la familia — adapta reactivos al riesgo y dimensión crítica detectada", required = false)
             @RequestParam(required = false) Long familyId,
             @Parameter(description = "Hito explícito W1–M36. Si se omite, se usa el hito actual de la familia.", required = false)
-            @RequestParam(required = false) String milestoneCode) {
+            @RequestParam(required = false) String milestoneCode,
+            @Parameter(description = "Pilar explícito: reconocimiento | amor | entrega. Filtra las preguntas al pilar activo.", required = false)
+            @RequestParam(required = false) String pillarName) {
 
-        log.info("[ASSESSMENT-V2] Solicitud de set adaptativo. familyId={} | milestoneCode={}", familyId, milestoneCode);
+        log.info("[ASSESSMENT-V2] Solicitud de set adaptativo. familyId={} | milestoneCode={} | pillar={}",
+                familyId, milestoneCode, pillarName);
+
+        // ── Modo Pilar Puro: si se especifica pillarName devolver 20 preguntas del pilar ──
+        if (pillarName != null && !pillarName.isBlank()) {
+            String normalizedPillar = pillarName.trim().toLowerCase();
+            List<Question> pillarPool = new ArrayList<>(
+                    questionRepository.findByPillarNameAndActiveTrue(normalizedPillar));
+            if (pillarPool.isEmpty()) {
+                log.warn("[ASSESSMENT-V2] No hay preguntas para pilar '{}'. Usando fallback.", normalizedPillar);
+                return ApiResponse.ok(getDefaultFallbackQuestions(20));
+            }
+            Collections.shuffle(pillarPool);
+            return ApiResponse.ok(pillarPool.subList(0, Math.min(20, pillarPool.size())));
+        }
 
         // ── Resolver el hito efectivo ────────────────────────────────────────
         // Prioridad: milestoneCode explícito > hito de la familia > W1 por defecto
@@ -279,6 +295,48 @@ public class AssessmentController {
     @GetMapping("/resilience-check")
     public ResponseEntity<String> getResilienceCheck() {
         return ResponseEntity.ok("RESILIENCE_PATCH_ACTIVE_2026_05_24_V1");
+    }
+
+    /**
+     * GET /api/assessments/pillar-progress?familyId={id}
+     *
+     * Retorna, por cada pilar, cuántas preguntas hay en el banco y cuántas
+     * evaluaciones completadas tiene la familia (sesiones de 20 preguntas).
+     * El frontend lo usa para mostrar el avance pilar a pilar.
+     */
+    @GetMapping("/pillar-progress")
+    @PreAuthorize("#familyId == null or @familySecurity.check(#familyId)")
+    public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> getPillarProgress(
+            @RequestParam(required = false) Long familyId) {
+
+        final String[] PILLARS = {"reconocimiento", "amor", "entrega"};
+        java.util.List<java.util.Map<String, Object>> pillars = new java.util.ArrayList<>();
+
+        long completedSessions = 0;
+        if (familyId != null) {
+            completedSessions = evaluationRepository
+                    .findByFamilyIdOrderByStartedAtDesc(familyId)
+                    .stream()
+                    .filter(e -> e.getStatus() == EvaluationStatus.FINALIZED)
+                    .count();
+        }
+
+        for (String pillar : PILLARS) {
+            long total = questionRepository.findByPillarNameAndActiveTrue(pillar).size();
+            java.util.Map<String, Object> info = new java.util.LinkedHashMap<>();
+            info.put("pillar",       pillar);
+            info.put("totalQuestions", total);
+            info.put("sessionsOf20", total > 0 ? (int) Math.ceil((double) total / 20) : 0);
+            pillars.add(info);
+        }
+
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("pillars",           pillars);
+        result.put("completedSessions", completedSessions);
+        result.put("totalSessions",     pillars.stream()
+                .mapToInt(p -> (int) p.get("sessionsOf20")).sum());
+
+        return ResponseEntity.ok(ApiResponse.ok(result));
     }
 
     private EvaluationDtos.EvaluationResponse mapToResponse(Evaluation evaluation) {

@@ -34,9 +34,20 @@ export class EvaluationResultPageComponent implements OnInit {
     { key: 'tiempos',      label: 'Tiempos',       bg: '#FFFBEB', text: '#92400E', dot: '#F59E0B' },
   ];
 
+  /** Pilar que se estaba diagnosticando en esta sesión */
+  activePillar: string = '';
+
+  readonly PILLAR_META: Record<string, { icon: string; name: string; color: string }> = {
+    reconocimiento: { icon: '💛', name: 'Reconocimiento', color: '#fbbf24' },
+    amor:           { icon: '❤️', name: 'Amor',           color: '#ef4444' },
+    entrega:        { icon: '💙', name: 'Entrega',         color: '#3b82f6' },
+  };
+  get pillarMeta() { return this.PILLAR_META[this.activePillar] ?? null; }
+
   ngOnInit() {
     // 1. Prioridad: resultado pasado en el estado de navegación (desde EvaluationComponent)
     const nav = window.history.state;
+    if (nav?.pillar) this.activePillar = nav.pillar;
     if (nav?.result) {
       this.result = nav.result as EvaluationResultResponse;
       this.loading = false;
@@ -130,5 +141,12 @@ export class EvaluationResultPageComponent implements OnInit {
     // Diagnóstico completado → el plan se auto-genera → avanzar onboarding
     this.flow.advanceOnboarding('plan-generated');
     this.router.navigate(['/plans']);
+  }
+
+  /** Vuelve a /evaluations/start pre-seleccionando el mismo pilar para otra sesión de 20 preguntas */
+  doAnotherSession(): void {
+    this.router.navigate(['/evaluations/start'], {
+      queryParams: this.activePillar ? { pillar: this.activePillar } : {}
+    });
   }
 }

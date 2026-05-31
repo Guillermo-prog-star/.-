@@ -1,13 +1,20 @@
 package com.integrityfamily.risk.service;
 
+import com.integrityfamily.adaptive.AdaptivePlanService;
 import com.integrityfamily.ai.dto.AiContext;
 import com.integrityfamily.ai.provider.AiProvider;
 import com.integrityfamily.ai.service.ContextSynthesizer;
+import com.integrityfamily.common.event.EventPublisher;
+import com.integrityfamily.common.event.EventTopics;
+import com.integrityfamily.common.event.FamilyCrisisEvent;
+import com.integrityfamily.common.event.FamilyIcfRecalculatedEvent;
 import com.integrityfamily.domain.CriticalDay;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.FamilyMember;
+import com.integrityfamily.domain.RiskSnapshot;
 import com.integrityfamily.domain.repository.CriticalDayRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
+import com.integrityfamily.domain.repository.RiskSnapshotRepository;
 import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.common.service.WhatsAppService;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * SDD IMPLEMENTATION: Gestión unificada de Protocolos Sentinel y Registro Histórico.
@@ -30,9 +38,12 @@ public class CrisisServiceImpl implements CrisisService {
 
     private final CriticalDayRepository repository;
     private final FamilyRepository familyRepository;
+    private final RiskSnapshotRepository riskSnapshotRepository;
     private final AiProvider aiProvider;
     private final ContextSynthesizer contextSynthesizer;
     private final WhatsAppService whatsAppService;
+    private final EventPublisher eventPublisher;
+    private final AdaptivePlanService adaptivePlanService;
 
     @Override
     @Transactional
@@ -89,6 +100,22 @@ public class CrisisServiceImpl implements CrisisService {
         // 4. Activar el estado Sentinel en la familia
         family.setSentinelActive(true);
         familyRepository.save(family);
+
+        // ── CASCADE SISTÉMICA (FALLA 3 resuelta) ────────────────────────────
+        // Una crisis NO puede ser un módulo aislado. Debe impactar:
+        // ICF + planes + prioridad IA + alertas + seguimiento + intervención
+
+        // 4b. Publicar evento de crisis al Event Bus Familiar
+        FamilyCrisisEvent crisisEvent = FamilyCrisisEvent.of(
+                familyId, saved.getId(), category, emotion, description);
+        eventPublisher.publish(crisisEvent);
+        log.info("[CRISIS] {} publicado al Event Bus para familia {}", EventTopics.CRISIS_TRIGGERED, familyId);
+
+        // 4c. Recalcular ICF con penalización por crisis
+        triggerIcfRecalculationAfterCrisis(family, saved);
+
+        // 4d. Re-evaluar planes adaptativos — la crisis puede requerir soft-reset
+        triggerAdaptivePlanReassessment(familyId);
 
         // 5. [FIX SDD] Despachar la guía de contención de Claude y las alertas por WhatsApp
         try {
@@ -150,5 +177,72 @@ public class CrisisServiceImpl implements CrisisService {
     public boolean isUnderCrisis(Long familyId) {
         Family family = familyRepository.findById(familyId).orElse(null);
         return family != null && Boolean.TRUE.equals(family.getSentinelActive());
+    }
+
+    // ── Cascada sistémica privada ─────────────────────────────────────────────
+
+    /**
+     * Recalcula ICF con penalización por crisis y publica FamilyIcfRecalculatedEvent.
+     *
+     * La crisis fuerza el nivel de riesgo a CRITICO independientemente del ICF numérico.
+     * El snapshot anterior se recupera para comparar evolución longitudinal.
+     */
+    private void triggerIcfRecalculationAfterCrisis(Family family, CriticalDay crisis) {
+        try {
+            // Obtener último snapshot para comparar delta
+            Optional<RiskSnapshot> lastSnapshot = riskSnapshotRepository
+                    .findByFamilyIdOrderByCreatedAtDesc(family.getId())
+                    .stream().findFirst();
+
+            double previousIcf = lastSnapshot.map(RiskSnapshot::getIcf).orElse(50.0);
+            String previousRisk = lastSnapshot.map(RiskSnapshot::getRiskLevel).orElse("MODERADO");
+
+            // Crisis → ICF penalizado (reduce 15 puntos, mínimo 10)
+            double penalizedIcf = Math.max(10.0, previousIcf - 15.0);
+
+            RiskSnapshot crisisSnapshot = RiskSnapshot.builder()
+                    .family(family)
+                    .icf(penalizedIcf)
+                    .riskLevel("CRITICO")
+                    .hasCrisis(true)
+                    .consciousnessLevel(5)
+                    .consciousnessLabel("Inconsciente")
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            riskSnapshotRepository.save(crisisSnapshot);
+
+            FamilyIcfRecalculatedEvent icfEvent = new FamilyIcfRecalculatedEvent(
+                    family.getId(),
+                    previousIcf, penalizedIcf,
+                    previousRisk, "CRITICO",
+                    0.0, 0.0, 0.0, 0.0, // dimensiones no disponibles en modo crisis
+                    "CRISIS",
+                    LocalDateTime.now()
+            );
+            eventPublisher.publish(icfEvent);
+            log.warn("[CRISIS-CASCADE] ICF penalizado: {} → {} | Riesgo: {} → CRITICO | familia {}",
+                    String.format("%.1f", previousIcf), String.format("%.1f", penalizedIcf),
+                    previousRisk, family.getId());
+
+        } catch (Exception e) {
+            log.error("[CRISIS-CASCADE] Error recalculando ICF post-crisis: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Re-evalúa los planes adaptativos después de una crisis.
+     *
+     * Una crisis puede requerir un soft-reset del plan porque:
+     *   - La adherencia cae a 0% de golpe
+     *   - La dimensión de comunicación colapsa
+     *   - El contexto emocional invalida las misiones actuales
+     */
+    private void triggerAdaptivePlanReassessment(Long familyId) {
+        try {
+            adaptivePlanService.evaluateAndProposeForFamily(familyId);
+            log.info("[CRISIS-CASCADE] Re-evaluación adaptativa completada para familia {}", familyId);
+        } catch (Exception e) {
+            log.error("[CRISIS-CASCADE] Error en re-evaluación adaptativa post-crisis: {}", e.getMessage());
+        }
     }
 }

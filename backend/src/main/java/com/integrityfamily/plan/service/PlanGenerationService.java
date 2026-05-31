@@ -13,6 +13,7 @@ import com.integrityfamily.domain.repository.ImprovementPlanRepository;
 import com.integrityfamily.risk.service.RiskAlgoV1Engine;
 import com.integrityfamily.ai.service.AiService;
 import com.integrityfamily.common.exception.BusinessException;
+import com.integrityfamily.common.service.UserNotificationService;
 import com.integrityfamily.common.service.WhatsAppService;
 import com.integrityfamily.checklist.service.ChecklistService;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -50,6 +51,7 @@ public class PlanGenerationService {
     private final ImprovementPlanRepository planRepository;
     private final MilestoneAwarePlanEngine milestoneAwarePlanEngine;
     private final RiskAlgoV1Engine riskAlgoV1Engine;
+    private final UserNotificationService userNotificationService;
 
     public PlanGenerationService(PlanService planService,
                                 EvaluationRepository evaluationRepository,
@@ -62,7 +64,8 @@ public class PlanGenerationService {
                                 PlanValidator planValidator,
                                 ImprovementPlanRepository planRepository,
                                 MilestoneAwarePlanEngine milestoneAwarePlanEngine,
-                                RiskAlgoV1Engine riskAlgoV1Engine) {
+                                RiskAlgoV1Engine riskAlgoV1Engine,
+                                UserNotificationService userNotificationService) {
         this.planService = planService;
         this.evaluationRepository = evaluationRepository;
         this.aiService = aiService;
@@ -75,6 +78,7 @@ public class PlanGenerationService {
         this.planRepository = planRepository;
         this.milestoneAwarePlanEngine = milestoneAwarePlanEngine;
         this.riskAlgoV1Engine = riskAlgoV1Engine;
+        this.userNotificationService = userNotificationService;
     }
 
     @RabbitListener(queues = com.integrityfamily.common.config.RabbitConfig.PLAN_QUEUE)
@@ -434,6 +438,20 @@ public class PlanGenerationService {
                 .tasks(new java.util.ArrayList<>())
                 .build();
         plan = planRepository.save(plan);
+
+        // Notificar a la familia que el plan está listo
+        try {
+            userNotificationService.push(
+                evaluation.getFamily(), null,
+                "PLAN_GENERATED",
+                "Plan de Transformación generado 📋",
+                String.format("Tu plan para el hito %s está listo con 6 misiones. Visita la sección Planes para comenzar.",
+                    evaluation.getFamily().getCurrentMilestone() != null
+                        ? evaluation.getFamily().getCurrentMilestone() : "activo")
+            );
+        } catch (Exception e) {
+            log.warn("[PLAN-ENGINE] Error al crear notificación de plan generado: {}", e.getMessage());
+        }
 
         // Generar tareas congruentes con el hito
         List<com.integrityfamily.domain.PlanTask> tasks =

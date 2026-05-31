@@ -6,6 +6,7 @@ import { ApiService } from '../../core/services/api.service';
 import { ApiResponse } from '../../core/models/api-response.model';
 import { Family } from '../../core/models/models';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 
 @Component({
   selector: 'app-family-create-page', 
@@ -17,7 +18,8 @@ import { FamilyStateService } from '../../core/services/family-state.service';
 export class FamilyCreatePageComponent implements OnInit {
   private http = inject(HttpClient); 
   private api = inject(ApiService);
-  private familyState = inject(FamilyStateService);
+  private familyState   = inject(FamilyStateService);
+  private flow          = inject(TransformationFlowService);
   router = inject(Router);
   
   name=''; desc=''; municipio=''; whatsapp=''; pin=''; loading=false; error='';
@@ -58,8 +60,10 @@ export class FamilyCreatePageComponent implements OnInit {
         const family: Family = res.data ?? res;
         // Sincronización atómica del estado
         this.familyState.setFamily(family);
+        // Avanzar flujo de onboarding: familia creada → paso 2
+        this.flow.advanceOnboarding('add-members');
         console.log('✅ Familia creada y seleccionada:', family.name);
-        
+
         // Navegar a Miembros primero — el Guardián se elige DESPUÉS de añadir integrantes
         this.router.navigateByUrl('/members').then(() => {
           console.log('🚀 Familia creada → redirigiendo a Miembros para completar el núcleo familiar');

@@ -6,6 +6,7 @@ import com.integrityfamily.ai.provider.AiProvider;
 import com.integrityfamily.checklist.service.TaskEvidenceService;
 import com.integrityfamily.common.config.RabbitConfig;
 import com.integrityfamily.common.event.SystemEvent;
+import com.integrityfamily.common.service.UserNotificationService;
 import com.integrityfamily.domain.TaskEvidence;
 import com.integrityfamily.domain.PlanTask;
 import com.integrityfamily.domain.repository.TaskEvidenceRepository;
@@ -26,6 +27,7 @@ public class EvidenceAnalysisConsumer {
     private final TaskEvidenceRepository taskEvidenceRepository;
     private final TaskEvidenceService taskEvidenceService;
     private final AiProvider aiProvider;
+    private final UserNotificationService userNotificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @RabbitListener(queues = RabbitConfig.EVIDENCE_ANALYSIS_QUEUE)
@@ -130,9 +132,23 @@ public class EvidenceAnalysisConsumer {
             if (coherence) {
                 taskEvidenceService.validateEvidence(evidenceId, score, "Sentinel AI");
                 log.info("✅ [SENTINEL-AI] Evidencia ID '{}' aprobada con éxito. Score: {}", evidenceId, score);
+                userNotificationService.push(
+                    evidence.getFamily(), null,
+                    "EVIDENCE_VALIDATED",
+                    "Evidencia aprobada ✅",
+                    String.format("La misión \"%s\" fue validada por Sentinel AI con %.0f puntos. %s",
+                        task.getTitle(), score, feedback)
+                );
             } else {
                 taskEvidenceService.rejectEvidence(evidenceId, "Sentinel AI");
                 log.warn("❌ [SENTINEL-AI] Evidencia ID '{}' desaprobada por incoherencia conductual. Score: {}", evidenceId, score);
+                userNotificationService.push(
+                    evidence.getFamily(), null,
+                    "EVIDENCE_REJECTED",
+                    "Evidencia no aprobada ❌",
+                    String.format("La evidencia para \"%s\" fue rechazada (%.0f pts). %s",
+                        task.getTitle(), score, feedback)
+                );
             }
 
         } catch (Exception e) {

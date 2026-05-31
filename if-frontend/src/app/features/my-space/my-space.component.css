@@ -451,3 +451,117 @@
   color: rgba(255,255,255,0.5); border-radius: 8px; cursor: pointer; transition: all 0.2s;
 }
 .ms-confirm-no:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
+
+/* ── Identity Profile ── */
+.ms-identity-card {
+  background: rgba(15,23,42,0.5);
+  border: 1px solid rgba(99,102,241,0.15);
+  border-left: 4px solid #6366f1;
+  border-radius: 20px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.ms-identity-hint {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255,255,255,0.25);
+  font-weight: 700;
+  margin-left: auto;
+}
+
+.ms-identity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.ms-identity-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.ms-identity-wide {
+  grid-column: 1 / -1;
+}
+
+.ms-identity-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.3);
+  font-weight: 700;
+}
+
+.ms-identity-value {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.8);
+}
+
+.ms-identity-primary {
+  color: #818cf8;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.ms-identity-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.ms-identity-bar {
+  flex: 1;
+  height: 5px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.ms-identity-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width 0.8s ease;
+}
+
+.ms-bar-indigo { background: linear-gradient(90deg, #6366f1, #a5b4fc); }
+.ms-bar-pink   { background: linear-gradient(90deg, #ec4899, #f9a8d4); }
+
+.ms-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ms-tag {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid;
+}
+
+.ms-tag-green {
+  background: rgba(16,185,129,0.08);
+  border-color: rgba(16,185,129,0.25);
+  color: #34d399;
+}
+
+.ms-tag-amber {
+  background: rgba(245,158,11,0.08);
+  border-color: rgba(245,158,11,0.25);
+  color: #fbbf24;
+}
+
+.ms-identity-footer {
+  font-size: 0.7rem;
+  color: rgba(255,255,255,0.2);
+  text-align: right;
+  margin: 0;
+}

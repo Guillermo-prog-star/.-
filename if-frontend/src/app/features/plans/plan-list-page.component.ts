@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { Plan } from '../../core/models/models';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { TelemetryService } from '../../core/services/telemetry.service';
 import { PlanTransformacion, Mision } from '../../core/models/plan-transformacion.model';
 import { PLANES_MOCK } from '../../data/planes-transformacion.mock';
@@ -22,6 +23,7 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
   private http = inject(HttpClient); 
   private api = inject(ApiService);
   private familyState = inject(FamilyStateService);
+  private flow        = inject(TransformationFlowService);
   private router = inject(Router);
   private telemetry = inject(TelemetryService);
 
@@ -337,6 +339,10 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
           this.adaptIaMissionsToDiagnostic(); // Adaptar misiones IA-2 al hito diagnóstico actual
           
           if (this.plans.length > 0) {
+            // Plan cargado → onboarding completado
+            if (!this.flow.isOnboardingDone()) {
+              this.flow.completeOnboarding();
+            }
             const planTasks = this.plans[0].tasks || [];
             
             // Agrupar y calcular progreso por pilar en tiempo real

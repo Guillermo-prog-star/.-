@@ -1,5 +1,7 @@
 package com.integrityfamily.ai.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrityfamily.ai.dto.AiContext;
 import com.integrityfamily.ai.dto.CopilotDtos;
 import com.integrityfamily.cognitive.service.FamilyMemoryService;
@@ -21,6 +23,8 @@ import com.integrityfamily.domain.repository.ImprovementPlanRepository;
 import com.integrityfamily.domain.repository.EvaluationRepository;
 import com.integrityfamily.domain.Evaluation;
 import com.integrityfamily.domain.EvaluationStatus;
+import com.integrityfamily.domain.FamilyLongitudinalState;
+import com.integrityfamily.domain.repository.FamilyLongitudinalStateRepository;
 import com.integrityfamily.participation.service.ParticipationService;
 import com.integrityfamily.scanner.domain.FamilyAlert;
 import com.integrityfamily.scanner.repository.FamilyAlertRepository;
@@ -55,6 +59,8 @@ public class ContextSynthesizer {
     private final FamilyAlertRepository alertRepository;
     private final MemberIdentityProfileService memberIdentityProfileService;
     private final ConversationSessionRepository conversationSessionRepository;
+    private final FamilyLongitudinalStateRepository longitudinalStateRepository;
+    private final ObjectMapper objectMapper;
 
     private static final int MISSION_LIMIT = 5;
     private static final int NEXT_MISSIONS_LIMIT = 3;
@@ -112,7 +118,8 @@ public class ContextSynthesizer {
             buildInterventionLevel(family.getId()),
             buildMemberIdentitySnapshot(memberId),
             buildEmotionalArcFromSession(sessionId),
-            buildConversationGoalFromSession(sessionId)
+            buildConversationGoalFromSession(sessionId),
+            buildLongitudinalContext(family.getId())   // ← arquitectura epistemológica
         );
     }
 
@@ -344,16 +351,37 @@ public class ContextSynthesizer {
             }
 
             if (ctx.hasPatterns()) {
-                String keys = ctx.semanticPatterns().stream()
-                        .map(FamilyMemory::getSemanticKey)
-                        .distinct()
-                        .collect(Collectors.joining(", "));
-                sb.append("\nPatrones semánticos activos: ").append(keys);
+                for (FamilyMemory pattern : ctx.semanticPatterns()) {
+                    String summary = summarizeSemanticPattern(pattern);
+                    if (summary != null) sb.append("\n").append(summary);
+                }
             }
 
             return sb.isEmpty() ? null : sb.toString();
         } catch (Exception e) {
             log.warn("[CONTEXT] MemoryContext no disponible para familia {}: {}", familyId, e.getMessage());
+            return null;
+        }
+    }
+
+    private String summarizeSemanticPattern(FamilyMemory pattern) {
+        try {
+            JsonNode node = objectMapper.readTree(pattern.getContent());
+            return switch (pattern.getSemanticKey()) {
+                case "conversation-trend-pattern" -> String.format(
+                    "Tendencia conversacional: objetivo dominante=%s | arco emocional dominante=%s | promedio %s turnos/sesión (%d sesiones)",
+                    node.path("dominantGoal").asText("?"),
+                    node.path("dominantEmotionalArc").asText("?"),
+                    node.path("averageTurnsPerSession").asText("?"),
+                    node.path("episodeCount").asInt(0));
+                case "evaluation-trend-pattern" -> String.format(
+                    "Tendencia evaluativa: ICF promedio=%.1f | tendencia=%s | dimensión crítica=%s",
+                    node.path("averageIcf").asDouble(0),
+                    node.path("trend").asText("?"),
+                    node.path("dominantCriticalDimension").asText("?"));
+                default -> null;
+            };
+        } catch (Exception e) {
             return null;
         }
     }
@@ -415,6 +443,57 @@ public class ContextSynthesizer {
             log.warn("[CONTEXT] ConversationGoal no disponible para sesión {}: {}", sessionId, e.getMessage());
             return null;
         }
+    }
+
+    // ─── Arquitectura Epistemológica: Estado Longitudinal ─────────────────────
+
+    /**
+     * Construye el contexto longitudinal de la familia para el Consultor IA.
+     *
+     * Este es el componente que transforma el Consultor IA de un sistema
+     * sin memoria (FALLA 2) a un sistema con conocimiento estructural real.
+     *
+     * El contexto incluye:
+     *   - Trayectoria ICF (hoy vs 30d atrás)
+     *   - Tendencia: IMPROVING / STABLE / DETERIORATING
+     *   - Fase evolutiva: RECONOCIMIENTO → AMOR → ENTREGA
+     *   - Señales de crisis activa y deterioro sostenido
+     *
+     * Si no existe estado longitudinal aún, retorna un contexto neutro
+     * para no bloquear el chat.
+     */
+    private AiContext.LongitudinalContext buildLongitudinalContext(Long familyId) {
+        try {
+            return longitudinalStateRepository.findByFamilyId(familyId)
+                    .map(state -> new AiContext.LongitudinalContext(
+                            state.getIcfCurrent(),
+                            state.icfDelta30d(),
+                            state.getRiskTrend()       != null ? state.getRiskTrend()       : "STABLE",
+                            state.getCurrentRiskLevel() != null ? state.getCurrentRiskLevel() : "MODERADO",
+                            state.getEvolutionPhase()  != null ? state.getEvolutionPhase()  : "inconsciente",
+                            state.getNarrativeStage()  != null ? state.getNarrativeStage()  : "RECONOCIMIENTO",
+                            state.getConsciousnessLabel() != null ? state.getConsciousnessLabel() : "Reactiva",
+                            state.getCrisisCount30d()  != null ? state.getCrisisCount30d()  : 0,
+                            state.getConsecutiveDeteriorations() != null ? state.getConsecutiveDeteriorations() : 0,
+                            state.getConsecutiveImprovements()   != null ? state.getConsecutiveImprovements()   : 0,
+                            Boolean.TRUE.equals(state.getCommunicationCollapseActive()),
+                            state.isInActiveCrisis(),
+                            state.getCriticalDimension() != null ? state.getCriticalDimension() : "emociones"
+                    ))
+                    .orElse(neutralLongitudinalContext());
+        } catch (Exception e) {
+            log.warn("[CONTEXT] LongitudinalContext no disponible para familia {}: {}", familyId, e.getMessage());
+            return neutralLongitudinalContext();
+        }
+    }
+
+    /** Contexto longitudinal neutro para familias sin historial aún */
+    private AiContext.LongitudinalContext neutralLongitudinalContext() {
+        return new AiContext.LongitudinalContext(
+                50.0, 0.0, "STABLE", "MODERADO",
+                "inconsciente", "RECONOCIMIENTO", "Reactiva",
+                0, 0, 0, false, false, "emociones"
+        );
     }
 
     private String pillarFromMilestone(String code) {

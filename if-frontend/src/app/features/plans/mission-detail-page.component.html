@@ -1,0 +1,193 @@
+<div class="md-container">
+
+  <!-- Cabecera -->
+  <header class="md-header">
+    <a routerLink="/plans" class="md-back">← Volver a planes</a>
+    <div class="md-header-right" *ngIf="task">
+      <span class="md-dim-badge" [ngClass]="dimensionColor(task.dimension)">{{ task.dimension }}</span>
+    </div>
+  </header>
+
+  <!-- Loading -->
+  <div class="md-loading" *ngIf="loading">
+    <div class="md-spinner"></div>
+    <span>Cargando misión…</span>
+  </div>
+
+  <!-- Error -->
+  <div class="md-error" *ngIf="errorMsg && !loading">
+    <span>⚠️ {{ errorMsg }}</span>
+  </div>
+
+  <ng-container *ngIf="!loading && task">
+
+    <!-- Info de la misión -->
+    <section class="md-mission-card">
+      <div class="md-mission-header">
+        <h1 class="md-mission-title">{{ task.title }}</h1>
+        <span class="md-status-chip" [ngClass]="task.completed ? 'chip-done' : 'chip-progress'">
+          {{ task.completed ? '✅ Completada' : '⏳ En progreso' }}
+        </span>
+      </div>
+
+      <p class="md-mission-desc" *ngIf="task.description">{{ task.description }}</p>
+
+      <div class="md-mission-meta" *ngIf="task.accionConcreta || task.indicadorCumplimiento || task.evidenciaRequerida">
+        <div class="md-meta-item" *ngIf="task.accionConcreta">
+          <span class="md-meta-label">🎯 Acción concreta</span>
+          <span class="md-meta-value">{{ task.accionConcreta }}</span>
+        </div>
+        <div class="md-meta-item" *ngIf="task.indicadorCumplimiento">
+          <span class="md-meta-label">📊 Indicador de cumplimiento</span>
+          <span class="md-meta-value">{{ task.indicadorCumplimiento }}</span>
+        </div>
+        <div class="md-meta-item" *ngIf="task.evidenciaRequerida">
+          <span class="md-meta-label">📎 Evidencia solicitada</span>
+          <span class="md-meta-value">{{ task.evidenciaRequerida }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grid: formulario + historial -->
+    <div class="md-grid">
+
+      <!-- Formulario de envío -->
+      <section class="md-form-section">
+        <h2 class="md-section-title">
+          <span class="md-section-icon">✍️</span> Enviar evidencia
+        </h2>
+
+        <!-- Toast éxito -->
+        <div class="md-toast md-toast-ok" *ngIf="submitted">
+          <span>📤 Evidencia enviada. Sentinel AI la está analizando en segundo plano…</span>
+        </div>
+
+        <!-- Toast error -->
+        <div class="md-toast md-toast-err" *ngIf="errorMsg && !loading">
+          <span>⚠️ {{ errorMsg }}</span>
+        </div>
+
+        <form (ngSubmit)="submit()" class="md-form">
+
+          <!-- Tipo de evidencia -->
+          <div class="md-field">
+            <label>Tipo de evidencia</label>
+            <div class="md-type-row">
+              <button type="button"
+                class="md-type-btn"
+                [class.active]="form.evidenceType === 'BITACORA'"
+                (click)="form.evidenceType = 'BITACORA'">
+                📝 Bitácora
+              </button>
+              <button type="button"
+                class="md-type-btn"
+                [class.active]="form.evidenceType === 'PHOTO'"
+                (click)="form.evidenceType = 'PHOTO'">
+                🖼️ Foto / URL
+              </button>
+            </div>
+          </div>
+
+          <!-- Título -->
+          <div class="md-field">
+            <label for="ev-title">Título</label>
+            <input id="ev-title" type="text" [(ngModel)]="form.title" name="title"
+                   placeholder="Describe brevemente qué evidencias" />
+          </div>
+
+          <!-- Enviado por -->
+          <div class="md-field">
+            <label for="ev-by">Enviado por</label>
+            <select id="ev-by" [(ngModel)]="form.submittedBy" name="submittedBy">
+              <option value="">— Selecciona un miembro —</option>
+              <option *ngFor="let m of familyMembers" [value]="m.fullName">{{ m.fullName }}</option>
+            </select>
+          </div>
+
+          <!-- Contenido texto -->
+          <div class="md-field" *ngIf="form.evidenceType === 'BITACORA'">
+            <label for="ev-text">Reflexión / descripción</label>
+            <textarea id="ev-text" [(ngModel)]="form.textContent" name="textContent"
+                      rows="5"
+                      placeholder="Describe qué hiciste, cómo te sentiste, qué aprendiste…"></textarea>
+          </div>
+
+          <!-- URL de foto -->
+          <div class="md-field" *ngIf="form.evidenceType === 'PHOTO'">
+            <label for="ev-url">URL de imagen</label>
+            <input id="ev-url" type="url" [(ngModel)]="form.fileUrl" name="fileUrl"
+                   placeholder="https://…" />
+          </div>
+
+          <!-- Cohesión emocional -->
+          <div class="md-field">
+            <label>¿Cómo se siente la familia hoy?</label>
+            <div class="md-emoji-row">
+              <button type="button"
+                *ngFor="let e of emojis"
+                class="md-emoji-btn"
+                [class.selected]="form.feelingEmoji === e"
+                (click)="form.feelingEmoji = form.feelingEmoji === e ? '' : e">
+                {{ e }}
+              </button>
+            </div>
+          </div>
+
+          <button type="submit" class="md-btn-submit"
+                  [disabled]="submitting || !isFormValid()">
+            {{ submitting ? 'Enviando…' : '📤 Enviar a Sentinel AI' }}
+          </button>
+
+        </form>
+      </section>
+
+      <!-- Historial de evidencias -->
+      <section class="md-history-section">
+        <h2 class="md-section-title">
+          <span class="md-section-icon">🕓</span> Historial
+          <span class="md-history-count" *ngIf="evidences.length">{{ evidences.length }}</span>
+        </h2>
+
+        <div class="md-empty-history" *ngIf="evidences.length === 0">
+          <span class="md-empty-icon">📭</span>
+          <p>Aún no hay evidencias para esta misión.</p>
+        </div>
+
+        <div class="md-ev-list">
+          <div class="md-ev-card" *ngFor="let ev of evidences">
+
+            <div class="md-ev-top">
+              <span class="md-ev-status" [ngClass]="statusClass(ev.status)">
+                {{ statusLabel(ev.status) }}
+              </span>
+              <span class="md-ev-date">{{ ev.createdAt | date:'d MMM · HH:mm' }}</span>
+            </div>
+
+            <h4 class="md-ev-title">{{ ev.title }}</h4>
+
+            <p class="md-ev-by">Por {{ ev.submittedBy }}</p>
+
+            <!-- Score IA -->
+            <div class="md-ev-score-row" *ngIf="ev.aiScore != null">
+              <span class="md-ev-score-label">Score Sentinel AI</span>
+              <div class="md-ev-score-bar">
+                <div class="md-ev-score-fill" [ngClass]="scoreColor(ev.aiScore)"
+                     [style.width.%]="ev.aiScore"></div>
+              </div>
+              <span class="md-ev-score-num" [ngClass]="scoreColor(ev.aiScore)">
+                {{ ev.aiScore | number:'1.0-0' }}/100
+              </span>
+            </div>
+
+            <!-- Descripción / feedback IA -->
+            <p class="md-ev-desc" *ngIf="ev.description">{{ ev.description }}</p>
+
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+  </ng-container>
+
+</div>

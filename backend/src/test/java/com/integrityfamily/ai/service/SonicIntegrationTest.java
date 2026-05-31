@@ -1,6 +1,6 @@
 package com.integrityfamily.ai.service;
 
-import com.integrityfamily.ai.dto.VoiceChatResponse;
+import com.integrityfamily.ai.dto.SonicResponse;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +13,10 @@ import java.util.Base64;
 
 /**
  * SDD-SONIC-TEST: Integration test for real STT/TTS flow.
- * Movidp a src/test y actualizado para el nuevo DTO VoiceChatResponse.
+ * Solo activo bajo el perfil "sonic-test" — no corre en CI.
+ *
+ * Actualizado para firma actual:
+ *   processVoiceChat(audioBytes, mimeType, family, memberId)
  */
 @Configuration
 @Slf4j
@@ -23,28 +26,27 @@ public class SonicIntegrationTest {
     @Bean
     CommandLineRunner testSonicFlow(SonicService sonicService, FamilyRepository familyRepository) {
         return args -> {
-            log.info("ðŸ§ª [SONIC-TEST] Iniciando prueba de integraciÃ³n de audio real...");
-            
-            // 1. Obtener familia de prueba
+            log.info("🧪 [SONIC-TEST] Iniciando prueba de integración de audio real...");
+
             Family family = familyRepository.findAll().stream().findFirst()
                     .orElseThrow(() -> new RuntimeException("No hay familias para la prueba"));
 
-            // 2. Cargar audio sintÃ©tico (Silencio MP3 en Base64)
-            byte[] audioBytes = Base64.getDecoder().decode("SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA");
+            // Silencio MP3 mínimo en Base64
+            byte[] audioBytes = Base64.getDecoder().decode(
+                    "SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA");
 
             try {
-                log.info("ðŸ§ª [SONIC-TEST] Enviando payload de audio a SonicService...");
-                // Actualizado para usar el nuevo DTO y la firma del servicio
-                com.integrityfamily.ai.dto.SonicResponse response = sonicService.processVoiceChat(audioBytes, "audio/mpeg", family);
-                
-                log.info("ðŸ§ª [SONIC-TEST] RESULTADO STT: \"{}\"", response.transcript());
-                log.info("ðŸ§ª [SONIC-TEST] RESULTADO AI: \"{}\"", response.assistantReply());
-                
-                log.info("ðŸ§ª [SONIC-TEST] Prueba finalizada exitosamente.");
+                log.info("🧪 [SONIC-TEST] Enviando payload de audio a SonicService...");
+                // memberId = null para prueba sin miembro específico
+                SonicResponse response = sonicService.processVoiceChat(
+                        audioBytes, "audio/mpeg", family, null);
+
+                log.info("🧪 [SONIC-TEST] RESULTADO STT: \"{}\"", response.transcript());
+                log.info("🧪 [SONIC-TEST] RESULTADO AI: \"{}\"", response.assistantReply());
+                log.info("🧪 [SONIC-TEST] Prueba finalizada exitosamente.");
             } catch (Exception e) {
-                log.error("ðŸ§ª [SONIC-TEST] Fallo en la prueba de integraciÃ³n", e);
+                log.error("🧪 [SONIC-TEST] Fallo en la prueba de integración", e);
             }
         };
     }
 }
-

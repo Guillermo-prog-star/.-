@@ -1,11 +1,15 @@
 package com.integrityfamily.member.controller;
 
+import com.integrityfamily.cognitive.service.MemberIdentityProfileService;
 import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.FamilyMember;
+import com.integrityfamily.domain.MemberIdentityProfile;
 import com.integrityfamily.member.dto.MemberRequest;
 import com.integrityfamily.member.service.MemberService;
 import jakarta.validation.Valid;
+import lombok.Builder;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -13,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Slf4j
@@ -25,6 +30,7 @@ public class MemberController {
     private final com.integrityfamily.domain.repository.UserRepository userRepository;
     private final com.integrityfamily.domain.repository.FamilyRepository familyRepository;
     private final com.integrityfamily.member.service.InvitationService invitationService;
+    private final MemberIdentityProfileService memberIdentityProfileService;
 
     @PreAuthorize("@familySecurity.checkMember(#id)")
     @PostMapping("/{id}/invite")
@@ -122,5 +128,34 @@ public class MemberController {
     public ApiResponse<Void> delete(@PathVariable Long id) {
         memberService.delete(id);
         return ApiResponse.ok(null);
+    }
+
+    @GetMapping("/{id}/identity-profile")
+    @PreAuthorize("@familySecurity.checkMember(#id)")
+    public ApiResponse<IdentityProfileResponse> getIdentityProfile(@PathVariable Long id) {
+        MemberIdentityProfile p = memberIdentityProfileService.getOrCreate(id);
+        return ApiResponse.ok(IdentityProfileResponse.builder()
+                .memberId(p.getMemberId())
+                .communicationStyle(p.getCommunicationStyle())
+                .reflexivityLevel(p.getReflexivityLevel() != null ? p.getReflexivityLevel() : 3)
+                .emotionalSensitivity(p.getEmotionalSensitivity() != null ? p.getEmotionalSensitivity() : 3)
+                .changeResistance(p.getChangeResistance() != null ? p.getChangeResistance() : "MED")
+                .evasionPatterns(p.getEvasionPatterns())
+                .motivators(p.getMotivators())
+                .lastUpdated(p.getLastUpdated())
+                .build());
+    }
+
+    @Data
+    @Builder
+    public static class IdentityProfileResponse {
+        private Long memberId;
+        private String communicationStyle;
+        private int reflexivityLevel;
+        private int emotionalSensitivity;
+        private String changeResistance;
+        private String evasionPatterns;
+        private String motivators;
+        private LocalDateTime lastUpdated;
     }
 }

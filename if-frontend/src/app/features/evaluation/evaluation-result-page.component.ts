@@ -4,6 +4,7 @@ import { Router, ActivatedRoute, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { EvaluationResultResponse } from '../../core/models/models';
 
 @Component({
@@ -17,6 +18,7 @@ export class EvaluationResultPageComponent implements OnInit {
   private http        = inject(HttpClient);
   private api         = inject(ApiService);
   private familyState = inject(FamilyStateService);
+  private flow        = inject(TransformationFlowService);
   private route       = inject(ActivatedRoute);
   private router      = inject(Router);
 
@@ -125,6 +127,8 @@ export class EvaluationResultPageComponent implements OnInit {
   }
 
   goToPlans(): void {
+    // Diagnóstico completado → el plan se auto-genera → avanzar onboarding
+    this.flow.advanceOnboarding('plan-generated');
     this.router.navigate(['/plans']);
   }
 }

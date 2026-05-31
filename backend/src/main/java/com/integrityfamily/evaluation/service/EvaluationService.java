@@ -28,6 +28,7 @@ import com.integrityfamily.scanner.service.AlertEngine;
 import com.integrityfamily.scanner.service.DeterministicExplanationPipeline;
 import com.integrityfamily.scanner.service.InferenceRecordService;
 import com.integrityfamily.common.exception.BusinessException;
+import com.integrityfamily.common.service.UserNotificationService;
 import com.integrityfamily.scanner.service.RuleExecutionEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,6 +74,8 @@ public class EvaluationService {
     private final InferenceRecordRepository inferenceRecordRepository;
     private final RuleExecutionEngine ruleExecutionEngine;
     private final AlertEngine alertEngine;
+    private final UserNotificationService userNotificationService;
+    private final com.integrityfamily.risk.service.LongitudinalStateService longitudinalStateService;
 
     public List<Evaluation> findAll() {
         return evaluationRepository.findAll();
@@ -340,6 +343,33 @@ public class EvaluationService {
             if (snapshot != null && snapshot.getRiskLevel() != null) {
                 riskLevel = snapshot.getRiskLevel();
             }
+
+            // ── SINCRONIZACIÓN LONGITUDINAL ───────────────────────────────────
+            // Cada diagnóstico actualiza la memoria estructural de la familia.
+            // El Consultor IA usará este estado longitudinal en todas sus respuestas.
+            if (algo != null) {
+                // Con resultado completo de RiskAlgoV1 — incluye dimensiones
+                longitudinalStateService.syncFromSnapshot(
+                        saved.getFamily().getId(),
+                        saved.getIcf() != null ? saved.getIcf() : 50.0,
+                        riskLevel,
+                        algo.dimensionScores().getOrDefault("emociones",    50.0),
+                        algo.dimensionScores().getOrDefault("comunicacion", 50.0),
+                        algo.dimensionScores().getOrDefault("habitos",      50.0),
+                        algo.dimensionScores().getOrDefault("tiempos",      50.0)
+                );
+            } else {
+                // Sin dimensiones detalladas — sincroniza solo ICF y riesgo
+                longitudinalStateService.syncFromSnapshot(
+                        saved.getFamily().getId(),
+                        saved.getIcf() != null ? saved.getIcf() : 50.0,
+                        riskLevel, 50.0, 50.0, 50.0, 50.0
+                );
+            }
+            log.info("📊 [EVALUATION] Estado longitudinal sincronizado para familia {} | ICF={} | {}",
+                    saved.getFamily().getId(),
+                    String.format("%.1f", saved.getIcf() != null ? saved.getIcf() : 50.0),
+                    riskLevel);
         } catch (Exception e) {
             log.error("⚠️ [EVALUATION] Error al calcular instantánea de riesgo: {}", e.getMessage());
         }
@@ -443,6 +473,28 @@ public class EvaluationService {
                 payload, 
                 "SYSTEM"
             );
+
+        // Notificar a la familia que el diagnóstico está listo
+        try {
+            String riskLabel = switch (riskLevel) {
+                case "BAJO"     -> "Bajo ✅";
+                case "MODERADO" -> "Moderado ⚠️";
+                case "ALTO"     -> "Alto 🔶";
+                case "CRITICO"  -> "Crítico 🔴";
+                default         -> riskLevel;
+            };
+            userNotificationService.push(
+                saved.getFamily(), null,
+                "EVALUATION_DONE",
+                "Diagnóstico completado 📊",
+                String.format("ICF: %.1f | Riesgo: %s | Hito: %s. Revisa tu evolución en el panel clínico.",
+                    saved.getIcf() != null ? saved.getIcf() : 0.0,
+                    riskLabel,
+                    saved.getMilestoneKey() != null ? saved.getMilestoneKey() : "—")
+            );
+        } catch (Exception e) {
+            log.warn("[EVALUATION] Error al crear notificación de diagnóstico: {}", e.getMessage());
+        }
 
         try {
             rabbitTemplate.convertAndSend(com.integrityfamily.common.config.RabbitConfig.EXCHANGE_NAME, "evaluation.completed", eventObj);

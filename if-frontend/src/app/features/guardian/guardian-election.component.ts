@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { GuardianService } from '../../core/services/guardian.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { GuardianStatusResponse, VoteCount } from '../../core/models/models';
 
 interface MemberCandidate {
@@ -277,6 +278,8 @@ export class GuardianElectionComponent implements OnInit {
   voting = false;
   loading = true;
 
+  private flow = inject(TransformationFlowService);
+
   constructor(
     private guardianSvc: GuardianService,
     private router: Router,
@@ -385,11 +388,21 @@ export class GuardianElectionComponent implements OnInit {
   confirmGuardian() {
     if (!this.selectedMemberId) return;
     this.guardianSvc.confirmGuardian(this.familyId, this.selectedMemberId).subscribe({
-      next: s => { this.status = s; }
+      next: s => {
+        this.status = s;
+        // Guardián elegido → avanzar onboarding al diagnóstico
+        this.flow.advanceOnboarding('diagnosis');
+      }
     });
   }
 
   goToDashboard() {
-    this.router.navigate(['/dashboard']);
+    // Si ya tenemos guardián, marcamos onboarding como diagnosis y vamos al diagnóstico
+    if (this.status?.hasGuardian) {
+      this.flow.advanceOnboarding('diagnosis');
+      this.router.navigate(['/evaluations/start']);
+    } else {
+      this.router.navigate(['/dashboard']);
+    }
   }
 }

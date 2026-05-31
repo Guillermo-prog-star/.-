@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { MarkdownPipe } from '../../shared/pipes/markdown.pipe';
+import { SessionContext } from '../../core/models/models';
 
 @Component({
   selector: 'app-chat-page',
@@ -22,6 +23,7 @@ export class ChatPageComponent implements OnInit {
   loading = false;
   recording = false;
   micError = '';
+  sessionContext: SessionContext | null = null;
   private mediaRecorder: any;
   private audioChunks: any[] = [];
 
@@ -31,6 +33,7 @@ export class ChatPageComponent implements OnInit {
 
   ngOnInit() {
     this.loadHistory();
+    this.loadSessionContext();
   }
 
   loadHistory() {
@@ -51,6 +54,39 @@ export class ChatPageComponent implements OnInit {
     });
   }
 
+  loadSessionContext() {
+    if (!this.familyId || !this.memberId) return;
+    this.http.get<any>(`/api/chat/session/active?familyId=${this.familyId}&memberId=${this.memberId}`)
+      .subscribe({ next: (res) => { this.sessionContext = res?.data ?? null; } });
+  }
+
+  goalLabel(goal: string): string {
+    const map: Record<string, string> = {
+      GENERAL: 'General', SUPPORT: 'Acompañamiento',
+      PLANNING: 'Planificación', CRISIS_CONTAINMENT: 'Contención', REFLECTION: 'Reflexión'
+    };
+    return map[goal] ?? goal;
+  }
+
+  arcLabel(arc: string): string {
+    const map: Record<string, string> = {
+      STABLE: 'Estable', MILD_TENSION: 'Leve Tensión',
+      ESCALATING: 'En Alza', ESCALATED: 'Tensión Alta', DE_ESCALATING: 'Calmándose'
+    };
+    return map[arc] ?? arc;
+  }
+
+  arcColor(arc: string): string {
+    const map: Record<string, string> = {
+      STABLE: 'text-teal-400 border-teal-500/40',
+      MILD_TENSION: 'text-yellow-400 border-yellow-500/40',
+      ESCALATING: 'text-orange-400 border-orange-500/40',
+      ESCALATED: 'text-red-400 border-red-500/40',
+      DE_ESCALATING: 'text-cyan-400 border-cyan-500/40'
+    };
+    return map[arc] ?? 'text-white/40 border-white/20';
+  }
+
   send() {
     const text = this.inputText.trim();
     if (!text || this.loading) return;
@@ -64,11 +100,11 @@ export class ChatPageComponent implements OnInit {
     this.http.post<any>(`/api/chat/send`, { familyId: this.familyId, message: text, memberId: this.memberId })
       .subscribe({
         next: (res: any) => {
-          // FIX Bug #16: ChatMessage entity serializes boolean 'ai' field, not 'isAi'
           const msg = res.data;
           this.messages.push({ ...msg, isAi: msg?.ai ?? msg?.isAi ?? false });
           this.loading = false;
           this.scroll();
+          this.loadSessionContext();
         },
         error: () => {
           this.messages.push({ content: 'Disculpen, hay una interferencia en la red neuronal. Inténtenlo de nuevo en un momento.', isAi: true, createdAt: new Date() });
@@ -115,6 +151,7 @@ export class ChatPageComponent implements OnInit {
   private sendVoice(blob: Blob) {
     const formData = new FormData();
     formData.append('audio', blob, 'voice_message.mp3');
+    if (this.memberId != null) formData.append('memberId', String(this.memberId));
 
     this.http.post<any>(`/api/chat/voice/${this.familyId}`, formData).subscribe({
       next: (res) => {
@@ -122,9 +159,12 @@ export class ChatPageComponent implements OnInit {
         // NOT VoiceChatResponse (transcription/aiResponseText). Use the correct field names.
         this.messages.push({ content: res.transcript, isAi: false, createdAt: new Date() });
         this.messages.push({ content: res.assistantReply, isAi: true, createdAt: new Date() });
-
         this.loading = false;
         this.scroll();
+        this.loadSessionContext();
+        if (res.audioBase64) {
+          this.playAudio(res.audioBase64);
+        }
       },
       error: () => {
         this.loading = false;

@@ -150,4 +150,77 @@
     </div>
 
   </div>
+
+  <!-- ── Perfil de Identidad Conversacional ── -->
+  <section *ngIf="identityProfile && identityProfile.communicationStyle"
+           class="ms-identity-card">
+    <div class="ms-card-header">
+      <span class="ms-card-icon">🧬</span>
+      <h2>Tu Perfil de Identidad</h2>
+      <span class="ms-identity-hint">Inferido por el Mentor IA a partir de tus conversaciones</span>
+    </div>
+
+    <div class="ms-identity-grid">
+
+      <!-- Estilo de comunicación -->
+      <div class="ms-identity-item">
+        <span class="ms-identity-label">Estilo de comunicación</span>
+        <span class="ms-identity-value ms-identity-primary">{{ identityProfile.communicationStyle }}</span>
+      </div>
+
+      <!-- Reflexividad -->
+      <div class="ms-identity-item">
+        <span class="ms-identity-label">Reflexividad</span>
+        <div class="ms-identity-bar-wrap">
+          <div class="ms-identity-bar">
+            <div class="ms-identity-bar-fill ms-bar-indigo"
+                 [style.width.%]="identityProfile.reflexivityLevel * 20"></div>
+          </div>
+          <span class="ms-identity-value">{{ reflexivityLabel(identityProfile.reflexivityLevel) }}</span>
+        </div>
+      </div>
+
+      <!-- Sensibilidad emocional -->
+      <div class="ms-identity-item">
+        <span class="ms-identity-label">Sensibilidad emocional</span>
+        <div class="ms-identity-bar-wrap">
+          <div class="ms-identity-bar">
+            <div class="ms-identity-bar-fill ms-bar-pink"
+                 [style.width.%]="identityProfile.emotionalSensitivity * 20"></div>
+          </div>
+          <span class="ms-identity-value">{{ sensitivityLabel(identityProfile.emotionalSensitivity) }}</span>
+        </div>
+      </div>
+
+      <!-- Resistencia al cambio -->
+      <div class="ms-identity-item">
+        <span class="ms-identity-label">Resistencia al cambio</span>
+        <span class="ms-identity-value" [ngClass]="resistanceColor(identityProfile.changeResistance)">
+          {{ resistanceLabel(identityProfile.changeResistance) }}
+        </span>
+      </div>
+
+      <!-- Motivadores -->
+      <div class="ms-identity-item ms-identity-wide" *ngIf="parseJsonArray(identityProfile.motivators).length > 0">
+        <span class="ms-identity-label">Tus motivadores</span>
+        <div class="ms-tag-list">
+          <span *ngFor="let m of parseJsonArray(identityProfile.motivators)" class="ms-tag ms-tag-green">{{ m }}</span>
+        </div>
+      </div>
+
+      <!-- Patrones de evasión -->
+      <div class="ms-identity-item ms-identity-wide" *ngIf="parseJsonArray(identityProfile.evasionPatterns).length > 0">
+        <span class="ms-identity-label">Temas que sueles evitar</span>
+        <div class="ms-tag-list">
+          <span *ngFor="let e of parseJsonArray(identityProfile.evasionPatterns)" class="ms-tag ms-tag-amber">{{ e }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    <p class="ms-identity-footer">
+      Actualizado: {{ identityProfile.lastUpdated | date:'d MMM yyyy · HH:mm' }}
+    </p>
+  </section>
+
 </div>

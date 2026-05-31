@@ -1,8 +1,10 @@
 package com.integrityfamily.chat.controller;
 
 import com.integrityfamily.domain.ChatMessage;
+import com.integrityfamily.domain.ConversationSession;
 import com.integrityfamily.domain.repository.ChatMessageRepository;
 import com.integrityfamily.ai.service.AiService;
+import com.integrityfamily.ai.service.ConversationSessionService;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.Evaluation;
@@ -10,6 +12,7 @@ import com.integrityfamily.domain.repository.EvaluationRepository;
 import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.common.exception.NotFoundException;
 import com.integrityfamily.common.security.SecurityValidator;
+import lombok.Builder;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * SDD: ChatController (Protocolo Sentinel)
@@ -31,9 +35,10 @@ public class ChatController {
 
     private final ChatMessageRepository chatMessageRepository;
     private final FamilyRepository familyRepository;
-    private final EvaluationRepository evaluationRepository; // FIX: InyecciÃƒÂ³n aÃƒÂ±adida
+    private final EvaluationRepository evaluationRepository;
     private final AiService aiService;
     private final SecurityValidator securityValidator;
+    private final ConversationSessionService conversationSessionService;
 
     @GetMapping("/family/{familyId}")
     public ApiResponse<List<com.integrityfamily.domain.repository.ChatMessageSummary>> getHistory(@PathVariable Long familyId, Principal principal) {
@@ -61,21 +66,53 @@ public class ChatController {
         log.info("Ã°Å¸â€œÅ  [CHAT-CONTROLLER] Generating auto-report for evaluation: {}", evaluationId);
 
         Evaluation evaluation = evaluationRepository.findById(evaluationId)
-                .orElseThrow(() -> new NotFoundException("EvaluaciÃƒÂ³n no encontrada"));
+                .orElseThrow(() -> new NotFoundException("Evaluación no encontrada"));
 
-        String advice = aiService.generateDashboardInsight(
-                evaluation.getFamily(),
-                Map.of("Reconocimiento", 3.0), // Contexto simulado (SDD-MOCK)
-                "MEDIUM");
+        Map<String, Double> dimensions = evaluation.getDimensionScores().stream()
+                .collect(Collectors.toMap(
+                    ds -> ds.getDimensionName(),
+                    ds -> ds.getScore(),
+                    (v1, v2) -> v1));
+
+        String riskLevel = evaluation.getRiskLevel() != null ? evaluation.getRiskLevel() : "MEDIUM";
+
+        String advice = aiService.generateDashboardInsight(evaluation.getFamily(), dimensions, riskLevel);
 
         return ApiResponse.ok(advice);
+    }
+
+    @GetMapping("/session/active")
+    public ApiResponse<SessionContextResponse> getActiveSession(
+            @RequestParam Long familyId,
+            @RequestParam(required = false) Long memberId,
+            Principal principal) {
+        securityValidator.validateFamilyOwnership(familyId, principal);
+        ConversationSession session = conversationSessionService.getActiveSession(familyId, memberId);
+        if (session == null) return ApiResponse.ok(null);
+        return ApiResponse.ok(SessionContextResponse.builder()
+                .sessionId(session.getId())
+                .goal(session.getGoal())
+                .emotionalArc(session.getEmotionalState())
+                .turnCount(session.getTurnCount())
+                .startedAt(session.getStartedAt() != null ? session.getStartedAt().toString() : null)
+                .build());
+    }
+
+    @Data
+    @Builder
+    public static class SessionContextResponse {
+        private Long sessionId;
+        private String goal;
+        private String emotionalArc;
+        private int turnCount;
+        private String startedAt;
     }
 
     @Data
     public static class ChatRequest {
         private Long familyId;
         private String message;
-        private Long memberId;  // Fase 1: identidad del miembro activo
+        private Long memberId;
     }
 }
 

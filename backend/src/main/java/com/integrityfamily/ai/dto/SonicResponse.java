@@ -1,5 +1,5 @@
 package com.integrityfamily.ai.dto;
 
-public record SonicResponse(String transcript, String assistantReply) {}
+public record SonicResponse(String transcript, String assistantReply, String audioBase64) {}
 
 

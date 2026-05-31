@@ -316,8 +316,16 @@ export interface FamilyAlertDto {
 }
 
 // Chat
-export interface ChatRequest  { familyId: number; message: string; }
+export interface ChatRequest  { familyId: number; message: string; memberId?: number | null; }
 export interface ChatResponse { reply: string; familyCode: string; currentMilestone: string; }
+
+export interface SessionContext {
+  sessionId: number;
+  goal: string;           // GENERAL | SUPPORT | PLANNING | CRISIS_CONTAINMENT
+  emotionalArc: string;   // STABLE | MILD_TENSION | ESCALATING | ESCALATED | DE_ESCALATING
+  turnCount: number;
+  startedAt: string;
+}
 
 export interface DimensionResult {
   dimension: string;

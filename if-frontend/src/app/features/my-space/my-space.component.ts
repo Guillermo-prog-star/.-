@@ -2,7 +2,9 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { MySpaceService } from './services/my-space.service';
+import { FamilyStateService } from '../../core/services/family-state.service';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 
 @Component({
@@ -13,11 +15,14 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
   styleUrls: ['./my-space.component.css']
 })
 export class MySpaceComponent implements OnInit {
-  private mySpaceService = inject(MySpaceService);
+  private mySpaceService  = inject(MySpaceService);
+  private http            = inject(HttpClient);
+  private familyState     = inject(FamilyStateService);
 
   entries:  any[] = [];
   loading        = false;
   saving         = false;
+  identityProfile: any = null;
   errorMessage   = '';
   successMessage = '';
   pendingDeleteId: number | null = null;
@@ -47,6 +52,35 @@ export class MySpaceComponent implements OnInit {
 
   ngOnInit() {
     this.loadEntries();
+    this.loadIdentityProfile();
+  }
+
+  loadIdentityProfile() {
+    const memberId = this.familyState.currentMemberId();
+    if (!memberId) return;
+    this.http.get<any>(`/api/members/${memberId}/identity-profile`)
+      .subscribe({ next: (res) => { this.identityProfile = res?.data ?? null; } });
+  }
+
+  reflexivityLabel(level: number): string {
+    return ['', 'Muy impulsivo', 'Algo impulsivo', 'Equilibrado', 'Reflexivo', 'Muy reflexivo'][level] ?? '—';
+  }
+
+  sensitivityLabel(level: number): string {
+    return ['', 'Muy contenido', 'Algo contenido', 'Equilibrado', 'Sensible', 'Muy sensible'][level] ?? '—';
+  }
+
+  resistanceLabel(r: string): string {
+    return r === 'LOW' ? 'Baja' : r === 'HIGH' ? 'Alta' : 'Media';
+  }
+
+  resistanceColor(r: string): string {
+    return r === 'LOW' ? 'text-emerald-400' : r === 'HIGH' ? 'text-red-400' : 'text-amber-400';
+  }
+
+  parseJsonArray(json: string | null): string[] {
+    if (!json) return [];
+    try { return JSON.parse(json); } catch { return []; }
   }
 
   loadEntries() {

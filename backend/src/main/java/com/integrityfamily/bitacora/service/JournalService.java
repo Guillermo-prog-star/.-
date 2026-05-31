@@ -1,6 +1,9 @@
 package com.integrityfamily.bitacora.service;
 
 import com.integrityfamily.bitacora.dto.JournalDtos.*;
+import com.integrityfamily.common.event.EventPublisher;
+import com.integrityfamily.common.event.EventTopics;
+import com.integrityfamily.common.event.FamilyJournalEntryEvent;
 import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
@@ -28,6 +31,7 @@ public class JournalService {
     private final ReflectionRepository reflectionRepository;
     private final LearningEntryRepository learningEntryRepository;
     private final JournalEntryRepository journalEntryRepository;
+    private final EventPublisher eventPublisher;
 
     @Transactional
     public TaskEvidence uploadEvidence(Long taskId, EvidenceUploadRequest req) {
@@ -158,7 +162,52 @@ public class JournalService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        return journalEntryRepository.save(journal);
+        JournalEntry saved = journalEntryRepository.save(journal);
+
+        // ── BITÁCORA → RISK FEEDBACK (bucle causal cerrado) ─────────────────
+        // La bitácora no es solo texto libre — cada entrada modifica inferencias,
+        // riesgo, evolución y consistencia diagnóstica del sistema.
+        publishJournalEntryEvent(family, saved, req.origin(), req.riskDimension(),
+                req.emotion(), req.moodAfter(), req.complianceStatus());
+
+        return saved;
+    }
+
+    /**
+     * Publica FamilyJournalEntryEvent al Event Bus Familiar.
+     *
+     * Consumidores downstream:
+     *   - Motor Inferencial: revisa si el moodAfter bajo dispara re-evaluación de riesgo
+     *   - Consultor IA: actualiza contexto con nueva señal emocional
+     *   - Dashboard: actualiza estado familiar en tiempo real
+     *   - Analytics: registra evolución longitudinal del timeline emocional
+     */
+    private void publishJournalEntryEvent(Family family, JournalEntry entry,
+                                           String origin, String dimension,
+                                           String emotion, Integer moodAfter, String compliance) {
+        try {
+            FamilyJournalEntryEvent event = FamilyJournalEntryEvent.of(
+                    family.getId(), entry.getId(),
+                    origin, dimension, emotion, moodAfter, compliance);
+
+            eventPublisher.publish(event);
+
+            // Señal de deterioro emocional — loguear para alertar al Motor Inferencial
+            if (event.indicatesDeterioration()) {
+                log.warn("[JOURNAL→RISK] Deterioro emocional detectado en bitácora. " +
+                         "Familia: {} | Dimensión: {} | Mood: {}/5 — {} publicado",
+                        family.getId(), dimension, moodAfter, EventTopics.JOURNAL_ENTRY_ADDED);
+            } else if (event.indicatesImprovement()) {
+                log.info("[JOURNAL→RISK] Mejora emocional detectada. " +
+                         "Familia: {} | Dimensión: {} | Mood: {}/5 — {} publicado",
+                        family.getId(), dimension, moodAfter, EventTopics.EMOTIONAL_IMPROVEMENT);
+            } else {
+                log.info("[JOURNAL→RISK] Entrada de bitácora publicada al Event Bus. " +
+                         "Familia: {} | {} publicado", family.getId(), EventTopics.JOURNAL_ENTRY_ADDED);
+            }
+        } catch (Exception e) {
+            log.error("[JOURNAL→RISK] Error publicando evento de bitácora: {}", e.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)

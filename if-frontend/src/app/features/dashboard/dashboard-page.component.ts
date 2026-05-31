@@ -30,6 +30,10 @@ import { DimensionHistoryChartComponent } from './components/dimension-history-c
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 import { GuardianPanelComponent } from '../guardian/guardian-panel.component';
 import { ParticipationPulseComponent } from './components/participation-pulse/participation-pulse.component';
+import { EvolutionPathComponent } from './components/evolution-path/evolution-path.component';
+import { LongitudinalStateService } from '../../core/services/longitudinal-state.service';
+import { LongitudinalStateDTO, CausalInferenceDTO } from '../../core/models/dashboard.model';
+import { CausalRulesPanelComponent } from './components/causal-rules-panel/causal-rules-panel.component';
 
 /**
  * SDD: Dashboard Page Component
@@ -55,7 +59,9 @@ import { ParticipationPulseComponent } from './components/participation-pulse/pa
     DimensionHistoryChartComponent,
     NarrativeCompanionComponent,
     GuardianPanelComponent,
-    ParticipationPulseComponent
+    ParticipationPulseComponent,
+    EvolutionPathComponent,
+    CausalRulesPanelComponent
   ],
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.css'],
@@ -73,10 +79,17 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
   readonly whatsappError     = signal('');
 
   // [SDD] Inyección de Dependencias
+  /** Estado longitudinal — memoria estructural de la familia */
+  longitudinal$: Observable<LongitudinalStateDTO | null> = of(null);
+
+  /** Inferencia causal — Motor Inferencial R1-R7 */
+  causalInference$: Observable<CausalInferenceDTO | null> = of(null);
+
   constructor(
     public readonly dashboardService: DashboardDataService,
     private readonly familyState: FamilyStateService,
-    private readonly http: HttpClient
+    private readonly http: HttpClient,
+    private readonly longitudinalService: LongitudinalStateService
   ) {}
 
   /** * SDD: Stream Unificado. 
@@ -227,6 +240,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
 
             this.resolvedFamilyId$.next(familyId);
             this.dashboardService.fetchData(familyId).subscribe();
+            this.loadLongitudinalState(familyId);
 
             this.iocScore$ = this.emotionalService.getFamilyStats(familyId).pipe(
               map(stats => stats?.ioc ?? 50.0),
@@ -256,6 +270,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
       }
       this.resolvedFamilyId$.next(familyId);
       this.dashboardService.fetchData(familyId).subscribe();
+      this.loadLongitudinalState(familyId);
 
       this.iocScore$ = this.emotionalService.getFamilyStats(familyId).pipe(
         map(stats => stats?.ioc ?? 50.0),
@@ -269,6 +284,31 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  /** Carga el estado longitudinal completo y dispara el Motor Inferencial */
+  private loadLongitudinalState(familyId: number): void {
+    this.longitudinal$ = this.longitudinalService.getLongitudinalState(familyId).pipe(
+      shareReplay(1)
+    );
+
+    // Obtener inferencia causal para el panel de reglas
+    this.causalInference$ = this.longitudinalService.getCausalInference(familyId).pipe(
+      shareReplay(1)
+    );
+
+    // Disparar re-inferencia causal asíncrona para actualizar el Motor
+    this.longitudinalService.triggerCausalInference(familyId).subscribe({
+      next: result => {
+        if (result?.requiresImmediateIntervention) {
+          console.warn('⚠️ [CAUSAL-ENGINE] Intervención inmediata requerida. Reglas activas:', result.activeRules);
+        } else {
+          console.info('✅ [CAUSAL-ENGINE] Sistema en equilibrio. Sin reglas activas.');
+        }
+        // Actualizar el stream con el resultado fresco
+        this.causalInference$ = of(result).pipe(shareReplay(1));
+      }
+    });
   }
 
   /**

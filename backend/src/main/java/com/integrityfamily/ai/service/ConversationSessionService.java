@@ -81,6 +81,15 @@ public class ConversationSessionService {
         return ref[0];
     }
 
+    /** Devuelve la sesión activa del miembro si existe y no ha expirado, o null. */
+    public ConversationSession getActiveSession(Long familyId, Long memberId) {
+        if (familyId == null || memberId == null) return null;
+        LocalDateTime cutoff = LocalDateTime.now().minusHours(SESSION_IDLE_HOURS);
+        List<ConversationSession> active = sessionRepository.findActiveSessionsForMember(
+                familyId, memberId, cutoff, PageRequest.of(0, 1));
+        return active.isEmpty() ? null : active.get(0);
+    }
+
     /** Cierra una sesión con el outcome dado (COMPLETED | ABANDONED | ESCALATED). */
     @Transactional
     public void closeSession(Long sessionId, String outcome) {

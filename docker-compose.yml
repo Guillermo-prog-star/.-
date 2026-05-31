@@ -39,6 +39,7 @@ services:
   if-backend:
     build:
       context: ./backend
+    image: william195/if-backend:v1.0.0
     container_name: if-backend
     environment:
       DB_HOST: if-mysql
@@ -49,6 +50,9 @@ services:
       RABBITMQ_HOST: if-rabbitmq
       RABBITMQ_ENABLED: "true"
       CLAUDE_API_KEY: ${CLAUDE_API_KEY:-${ANTHROPIC_API_KEY:-}}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-haiku-4-5}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      APP_AI_VOICE_ENABLED: ${APP_AI_VOICE_ENABLED:-true}
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
     depends_on:
       if-mysql:

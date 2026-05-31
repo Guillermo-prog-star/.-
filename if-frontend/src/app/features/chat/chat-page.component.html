@@ -14,6 +14,19 @@
     </div>
   </header>
 
+  <!-- Session Context Strip -->
+  <div *ngIf="sessionContext" class="flex items-center gap-2 mb-4 px-1 shrink-0">
+    <span class="text-[9px] text-white/30 uppercase tracking-widest font-black">Sesión activa</span>
+    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-indigo-500/10 text-indigo-300 border-indigo-500/40">
+      {{ goalLabel(sessionContext.goal) }}
+    </span>
+    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-black/20"
+          [ngClass]="arcColor(sessionContext.emotionalArc)">
+      {{ arcLabel(sessionContext.emotionalArc) }}
+    </span>
+    <span class="text-[9px] text-white/20 ml-auto">{{ sessionContext.turnCount }} turnos</span>
+  </div>
+
   <!-- Messages Area -->
   <div class="chat-messages flex-1 overflow-y-auto mb-6 pr-4 space-y-6 custom-scrollbar">
     <div *ngFor="let msg of messages" 

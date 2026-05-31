@@ -479,7 +479,7 @@
                             style="border: 1px solid; padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
                       {{ mision.estado === 'Completada' ? 'Desmarcar' : (mision.backendTaskId ? 'Completar' : 'Comenzar') }}
                     </button>
-                    <button class="btn-evidencia" 
+                    <button class="btn-evidencia"
                             [disabled]="!mision.backendTaskId"
                             (click)="openMisionEvidence(mision)"
                             [style.opacity]="mision.backendTaskId ? 1 : 0.5"
@@ -487,6 +487,12 @@
                             style="background: rgba(168, 85, 247, 0.1); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; transition: all 0.2s;">
                       ✍️ Evidencia
                     </button>
+                    @if (mision.backendTaskId) {
+                      <a [routerLink]="['/plans/mission', mision.backendTaskId]"
+                         style="background: rgba(99,102,241,0.1); color: #818cf8; border: 1px solid rgba(99,102,241,0.3); padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; transition: all 0.2s;">
+                        🔍 Ver detalle
+                      </a>
+                    }
                   </div>
                 </div>
               }

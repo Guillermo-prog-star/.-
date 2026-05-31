@@ -149,6 +149,13 @@
       </div>
     </ng-container>
 
+    <!-- MOTOR INFERENCIAL CAUSAL — Explicabilidad de reglas R1-R7 -->
+    <app-causal-rules-panel
+      *ngIf="causalInference$ | async as inference"
+      [inference]="inference"
+      [showStableState]="false">
+    </app-causal-rules-panel>
+
     <!-- [SDD Spec] PROGRESS SNAPSHOT -->
     <section *ngIf="data.progress" class="glass-premium p-8 rounded-[2rem] border border-white/5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
       <div class="flex flex-col md:flex-row justify-between gap-8">
@@ -197,6 +204,31 @@
         </div>
       </div>
     </section>
+
+    <!-- TRAYECTO DE TRANSFORMACIÓN — RECONOCIMIENTO → AMOR → ENTREGA (GAP 4 resuelto) -->
+    <!-- Prioriza datos del endpoint /longitudinal-state; fallback al DashboardDTO -->
+    <ng-container *ngIf="longitudinal$ | async as ls; else evolutionFallback">
+      <app-evolution-path
+        [narrativeStage]="ls.narrativeStage || data.narrativeStage || 'RECONOCIMIENTO'"
+        [evolutionPhase]="ls.evolutionPhase || data.evolutionPhase || 'inconsciente'"
+        [icfDelta30d]="ls.icfDelta30d ?? data.icfDelta30d ?? 0"
+        [riskTrend]="ls.riskTrend || data.riskTrend || 'STABLE'"
+        [communicationCollapseActive]="ls.communicationCollapseActive || data.communicationCollapseActive || false"
+        [consecutiveDeteriorations]="ls.consecutiveDeteriorations ?? data.consecutiveDeteriorations ?? 0"
+        [inActiveCrisis]="ls.inActiveCrisis || data.inActiveCrisis || false">
+      </app-evolution-path>
+    </ng-container>
+    <ng-template #evolutionFallback>
+      <app-evolution-path
+        [narrativeStage]="data.narrativeStage || 'RECONOCIMIENTO'"
+        [evolutionPhase]="data.evolutionPhase || 'inconsciente'"
+        [icfDelta30d]="data.icfDelta30d || 0"
+        [riskTrend]="data.riskTrend || 'STABLE'"
+        [communicationCollapseActive]="data.communicationCollapseActive || false"
+        [consecutiveDeteriorations]="data.consecutiveDeteriorations || 0"
+        [inActiveCrisis]="data.inActiveCrisis || false">
+      </app-evolution-path>
+    </ng-template>
 
     <!-- [SDD Spec] LOGBOOK HIGHLIGHTS -->
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">

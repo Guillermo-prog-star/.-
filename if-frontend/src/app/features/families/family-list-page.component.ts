@@ -6,6 +6,7 @@ import { ApiService } from '../../core/services/api.service';
 import { ApiResponse } from '../../core/models/api-response.model';
 import { Family } from '../../core/models/models';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 
 @Component({
@@ -20,6 +21,7 @@ export class FamilyListPageComponent implements OnInit {
   private api = inject(ApiService); 
   private router = inject(Router);
   private familyState = inject(FamilyStateService);
+  private flow        = inject(TransformationFlowService);
   
   families: Family[] = []; 
   loading = false;
@@ -45,6 +47,8 @@ export class FamilyListPageComponent implements OnInit {
   select(f: Family) {
     this.familyState.setFamily(f);
     this.familyState.setMilestone(f.currentMilestone ?? 'inicio');
+    // Sincronizar estado de transformación desde el backend
+    this.flow.loadFromBackend(f.id);
     this.router.navigate(['/members']);
   }
   

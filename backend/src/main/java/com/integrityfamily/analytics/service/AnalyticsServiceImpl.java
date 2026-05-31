@@ -52,6 +52,8 @@ public class AnalyticsServiceImpl implements AnalyticsService {
     private final ImprovementPlanRepository planRepository;
     private final PlanTaskRepository planTaskRepository;
     private final RabbitTemplate rabbitTemplate;
+    private final com.integrityfamily.domain.repository.FamilyLongitudinalStateRepository longitudinalStateRepository;
+    private final com.integrityfamily.risk.service.FamilyCausalEngine causalEngine;
 
     // ── Nivel de consciencia (misma escala que RiskService: 1=mín → 5=máx) ──
     private static int deriveConsciousnessLevel(double icf) {
@@ -214,6 +216,20 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .planAiReport(planAiReport)
                 .openLogbookEntriesCount(openLogbookItems)
                 .latestFamilyAgreement(latestAgreement)
+                // ── GAP 1+2+3 RESUELTOS: Estado Longitudinal + Causal en el dashboard ──
+                .riskTrend(buildRiskTrend(familyId))
+                .activeCrisesCount(lastRisk != null && Boolean.TRUE.equals(lastRisk.getHasCrisis()) ? 1L : 0L)
+                .criticalDimension(buildCriticalDimension(familyId))
+                .evolutionPhase(buildEvolutionPhase(familyId))
+                .narrativeStage(buildNarrativeStage(familyId))
+                .icfDelta30d(buildIcfDelta30d(familyId))
+                .crisisCount30d(buildCrisisCount30d(familyId))
+                .consecutiveDeteriorations(buildConsecutiveDeteriorations(familyId))
+                .communicationCollapseActive(buildCommunicationCollapse(familyId))
+                .inActiveCrisis(buildInActiveCrisis(familyId))
+                .activeCausalRules(buildActiveCausalRules(familyId))
+                .causalExplanations(buildCausalExplanations(familyId))
+                .requiresImmediateIntervention(buildRequiresIntervention(familyId))
                 .build();
 
         // 14. Sincronizacion Asincrona via RabbitMQ
@@ -304,6 +320,86 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 "value", inicioValues
             )
         );
+    }
+
+    // ── Helpers para estado longitudinal y motor causal ──────────────────────
+
+    private String buildRiskTrend(Long familyId) {
+        return longitudinalStateRepository.findByFamilyId(familyId)
+                .map(s -> s.getRiskTrend() != null ? s.getRiskTrend() : "STABLE")
+                .orElse("STABLE");
+    }
+
+    private String buildCriticalDimension(Long familyId) {
+        return longitudinalStateRepository.findByFamilyId(familyId)
+                .map(s -> s.getCriticalDimension() != null ? s.getCriticalDimension() : "emociones")
+                .orElse("emociones");
+    }
+
+    private String buildEvolutionPhase(Long familyId) {
+        return longitudinalStateRepository.findByFamilyId(familyId)
+                .map(s -> s.getEvolutionPhase() != null ? s.getEvolutionPhase() : "inconsciente")
+                .orElse("inconsciente");
+    }
+
+    private String buildNarrativeStage(Long familyId) {
+        return longitudinalStateRepository.findByFamilyId(familyId)
+                .map(s -> s.getNarrativeStage() != null ? s.getNarrativeStage() : "RECONOCIMIENTO")
+                .orElse("RECONOCIMIENTO");
+    }
+
+    private Double buildIcfDelta30d(Long familyId) {
+        return longitudinalStateRepository.findByFamilyId(familyId)
+                .map(s -> s.icfDelta30d())
+                .orElse(0.0);
+    }
+
+    private Integer buildCrisisCount30d(Long familyId) {
+        return longitudinalStateRepository.findByFamilyId(familyId)
+                .map(s -> s.getCrisisCount30d() != null ? s.getCrisisCount30d() : 0)
+                .orElse(0);
+    }
+
+    private Integer buildConsecutiveDeteriorations(Long familyId) {
+        return longitudinalStateRepository.findByFamilyId(familyId)
+                .map(s -> s.getConsecutiveDeteriorations() != null ? s.getConsecutiveDeteriorations() : 0)
+                .orElse(0);
+    }
+
+    private Boolean buildCommunicationCollapse(Long familyId) {
+        return longitudinalStateRepository.findByFamilyId(familyId)
+                .map(s -> Boolean.TRUE.equals(s.getCommunicationCollapseActive()))
+                .orElse(false);
+    }
+
+    private Boolean buildInActiveCrisis(Long familyId) {
+        return longitudinalStateRepository.findByFamilyId(familyId)
+                .map(s -> s.isInActiveCrisis())
+                .orElse(false);
+    }
+
+    private java.util.List<String> buildActiveCausalRules(Long familyId) {
+        try {
+            return causalEngine.evaluate(familyId).activeRules();
+        } catch (Exception e) {
+            return java.util.List.of();
+        }
+    }
+
+    private java.util.List<String> buildCausalExplanations(Long familyId) {
+        try {
+            return causalEngine.evaluate(familyId).explanations();
+        } catch (Exception e) {
+            return java.util.List.of();
+        }
+    }
+
+    private Boolean buildRequiresIntervention(Long familyId) {
+        try {
+            return causalEngine.evaluate(familyId).requiresImmediateIntervention();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private Double getScoreForDimension(Evaluation eval, String key) {

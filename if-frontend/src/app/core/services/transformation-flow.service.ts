@@ -1,4 +1,6 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { catchError, of } from 'rxjs';
 import { FamilyStateService } from './family-state.service';
 
 /**
@@ -52,6 +54,7 @@ const DEFAULT_STATE: TransformationState = {
 @Injectable({ providedIn: 'root' })
 export class TransformationFlowService {
   private familyState = inject(FamilyStateService);
+  private http        = inject(HttpClient);
 
   // ── Estado privado ──────────────────────────────────────────────────────────
   private readonly _state = signal<TransformationState>(this.loadState());
@@ -155,7 +158,33 @@ export class TransformationFlowService {
     this.patch({ progressPercent: Math.min(100, Math.max(0, percent)) });
   }
 
-  /** Sincroniza el estado desde el backend tras cargar la familia */
+  /**
+   * Carga el estado desde el backend para la familia activa.
+   * Llamar cuando se selecciona/cambia la familia (ej. FamilyListPage).
+   */
+  loadFromBackend(familyId: number): void {
+    if (!familyId || familyId === 0) return;
+    this.http.get<any>(`/api/families/${familyId}/transformation`).pipe(
+      catchError(() => of(null))
+    ).subscribe(server => {
+      if (!server) return;
+      const mapped: Partial<TransformationState> = {};
+      if (server.onboardingStep) {
+        mapped.onboardingStep = server.onboardingStep.toLowerCase().replace('_', '-') as OnboardingStep;
+      }
+      if (server.currentPillar) {
+        mapped.currentPillar = server.currentPillar.toLowerCase() as TransformationState['currentPillar'];
+      }
+      if (server.currentMonth)       mapped.currentMonth        = server.currentMonth;
+      if (server.currentSprintNumber) mapped.currentSprintNumber = server.currentSprintNumber;
+      if (server.progressPercent !== undefined) mapped.progressPercent = server.progressPercent;
+      if (server.milestoneLabel)     mapped.currentMilestoneLabel = server.milestoneLabel;
+      if (server.activeMissionId)    mapped.activeMissionId     = String(server.activeMissionId);
+      this.patch(mapped);
+    });
+  }
+
+  /** Sincroniza el estado desde el backend (versión manual) */
   syncFromBackend(serverState: Partial<TransformationState>): void {
     this.patch(serverState);
   }

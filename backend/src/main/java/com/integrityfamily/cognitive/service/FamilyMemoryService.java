@@ -236,9 +236,10 @@ public class FamilyMemoryService {
         // Tomar los últimos 5 episodios para el análisis
         List<FamilyMemory> recent = episodes.subList(0, Math.min(5, episodes.size()));
 
-        // Detectar tendencia en evaluaciones
         if ("evaluation-result".equals(semanticKey)) {
             detectAndSaveEvaluationPattern(familyId, recent);
+        } else if ("conversation-session".equals(semanticKey)) {
+            detectAndSaveConversationPattern(familyId, recent);
         }
 
         log.debug("🔄 [MEMORY] Consolidación semántica ejecutada para familia {} / {}", familyId, semanticKey);
@@ -302,6 +303,66 @@ public class FamilyMemoryService {
 
         } catch (Exception e) {
             log.warn("⚠️ [MEMORY] Error consolidando patrón semántico: {}", e.getMessage());
+        }
+    }
+
+    private void detectAndSaveConversationPattern(Long familyId, List<FamilyMemory> recentEpisodes) {
+        try {
+            Map<String, Integer> goalCounts = new LinkedHashMap<>();
+            Map<String, Integer> arcCounts = new LinkedHashMap<>();
+            int totalTurns = 0;
+
+            for (FamilyMemory mem : recentEpisodes) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> data = objectMapper.readValue(mem.getContent(), Map.class);
+                String goal = (String) data.get("goal");
+                String arc  = (String) data.get("emotionalArc");
+                Object turns = data.get("turnCount");
+                if (goal != null) goalCounts.merge(goal, 1, Integer::sum);
+                if (arc  != null) arcCounts.merge(arc,  1, Integer::sum);
+                if (turns instanceof Number) totalTurns += ((Number) turns).intValue();
+            }
+
+            String dominantGoal = goalCounts.entrySet().stream()
+                    .max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse("GENERAL");
+            String dominantArc = arcCounts.entrySet().stream()
+                    .max(Map.Entry.comparingByValue()).map(Map.Entry::getKey).orElse("STABLE");
+            double avgTurns = recentEpisodes.isEmpty() ? 0 : (double) totalTurns / recentEpisodes.size();
+
+            Family family = familyRepository.getReferenceById(familyId);
+            Map<String, Object> patternContent = new LinkedHashMap<>();
+            patternContent.put("pattern", "conversation-engagement-trend");
+            patternContent.put("dominantGoal", dominantGoal);
+            patternContent.put("dominantEmotionalArc", dominantArc);
+            patternContent.put("averageTurnsPerSession", Math.round(avgTurns * 10.0) / 10.0);
+            patternContent.put("episodeCount", recentEpisodes.size());
+            patternContent.put("consolidatedAt", LocalDateTime.now().toString());
+
+            List<FamilyMemory> existing = memoryRepository
+                    .findByFamilyIdAndSemanticKeyOrderByCreatedAtDesc(familyId, "conversation-trend-pattern");
+
+            if (!existing.isEmpty()) {
+                FamilyMemory semantic = existing.get(0);
+                semantic.setContent(toJson(patternContent));
+                semantic.setUpdatedAt(LocalDateTime.now());
+                semantic.setImportanceScore(0.75);
+                memoryRepository.save(semantic);
+            } else {
+                memoryRepository.save(FamilyMemory.builder()
+                        .family(family)
+                        .memoryType(MemoryType.SEMANTIC)
+                        .semanticKey("conversation-trend-pattern")
+                        .content(toJson(patternContent))
+                        .importanceScore(0.75)
+                        .sourceType("AI_CONSOLIDATION")
+                        .build());
+            }
+
+            log.info("💬 [MEMORY] Patrón conversacional consolidado: goal={}, arc={}, avgTurns={}",
+                    dominantGoal, dominantArc, avgTurns);
+
+        } catch (Exception e) {
+            log.warn("⚠️ [MEMORY] Error consolidando patrón conversacional: {}", e.getMessage());
         }
     }
 

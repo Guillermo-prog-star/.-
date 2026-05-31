@@ -29,8 +29,12 @@ public class NotificationLog {
     @Column(columnDefinition = "TEXT")
     private String message;
 
-    private String type; // PLAN_ASSIGNED, CRISIS_ALERT, MILESTONE_UP
-    
+    private String type; // PLAN_ASSIGNED, CRISIS_ALERT, MILESTONE_UP, EVIDENCE_VALIDATED, EVIDENCE_REJECTED
+
+    private String title;
+
+    private boolean viewed = false;
+
     private LocalDateTime sentAt;
 
     @PrePersist

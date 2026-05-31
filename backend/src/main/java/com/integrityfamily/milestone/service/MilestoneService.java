@@ -9,6 +9,7 @@ import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.MilestoneRepository;
 import com.integrityfamily.domain.repository.PlanTaskRepository;
 import com.integrityfamily.common.exception.NotFoundException;
+import com.integrityfamily.common.service.UserNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -48,10 +49,11 @@ import java.util.*;
 @Slf4j
 public class MilestoneService {
 
-    private final MilestoneRepository    milestoneRepository;
-    private final FamilyRepository       familyRepository;
-    private final EvaluationRepository   evaluationRepository;
-    private final PlanTaskRepository     planTaskRepository;
+    private final MilestoneRepository       milestoneRepository;
+    private final FamilyRepository          familyRepository;
+    private final EvaluationRepository      evaluationRepository;
+    private final PlanTaskRepository        planTaskRepository;
+    private final UserNotificationService   userNotificationService;
 
     // ─── Umbrales de ICF mínimo por hito ────────────────────────────────────
     private static final Map<String, Double> ICF_MIN_BY_MILESTONE = Map.of(
@@ -298,6 +300,13 @@ public class MilestoneService {
 
         log.info("[MILESTONE] AVANCE CONFIRMADO — Familia '{}' (ID={}) :: {} → {}",
                 family.getName(), familyId, currentMilestone, next);
+        userNotificationService.push(
+            family, null,
+            "MILESTONE_UP",
+            "¡Nuevo hito alcanzado! 🎉",
+            String.format("La familia %s avanzó del hito %s al %s. ¡Sigan adelante!",
+                family.getName(), currentMilestone, next)
+        );
         return next;
     }
 

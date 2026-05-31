@@ -47,13 +47,12 @@ public class ChatController {
         return ApiResponse.ok(chatMessageRepository.findProjectedByFamilyIdOrderByCreatedAtAsc(familyId));
     }
 
-    @PostMapping("/send")
-    public ApiResponse<ChatMessage> sendMessage(@RequestBody ChatRequest request, Principal principal) {
+    /** @deprecated Usar /send (V2 con transformationContext). Mantenido por compatibilidad. */
+    @PostMapping("/send/legacy")
+    public ApiResponse<ChatMessage> sendMessageLegacy(@RequestBody ChatRequest request, Principal principal) {
         securityValidator.validateFamilyOwnership(request.getFamilyId(), principal);
-
         Family family = familyRepository.findById(request.getFamilyId())
                 .orElseThrow(() -> new NotFoundException("Familia no encontrada"));
-
         return ApiResponse.ok(aiService.chat(request.getMessage(), family, request.getMemberId()));
     }
 
@@ -108,11 +107,44 @@ public class ChatController {
         private String startedAt;
     }
 
+    @PostMapping("/send")
+    public ApiResponse<ChatMessage> sendMessageWithContext(
+            @RequestBody ChatRequestV2 request, Principal principal) {
+        securityValidator.validateFamilyOwnership(request.getFamilyId(), principal);
+        Family family = familyRepository.findById(request.getFamilyId())
+                .orElseThrow(() -> new NotFoundException("Familia no encontrada"));
+        return ApiResponse.ok(
+            aiService.chatWithTransformation(request.getMessage(), family,
+                request.getMemberId(), request.getTransformationContext())
+        );
+    }
+
     @Data
     public static class ChatRequest {
         private Long familyId;
         private String message;
         private Long memberId;
+    }
+
+    /** ChatRequest v2: incluye contexto de transformación del frontend */
+    @Data
+    public static class ChatRequestV2 {
+        private Long familyId;
+        private String message;
+        private Long memberId;
+        private TransformationContextDto transformationContext;
+
+        @Data
+        public static class TransformationContextDto {
+            private String currentPillar;
+            private Integer currentMonth;
+            private String milestoneLabel;
+            private String currentPhase;
+            private Integer sprintNumber;
+            private String activeMissionId;
+            private Integer progressPercent;
+            private Boolean onboardingCompleted;
+        }
     }
 }
 

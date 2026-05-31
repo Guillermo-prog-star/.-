@@ -9,8 +9,34 @@
         <p>Tu bitácora privada de evolución consciente. Solo tú puedes ver esto.</p>
       </div>
     </div>
-    <a routerLink="/dashboard" class="ms-back-btn">← Dashboard</a>
+    <div class="ms-header-right">
+    <a routerLink="/plans" class="ms-back-btn">← Volver al Plan</a>
+    <a routerLink="/logbook" [queryParams]="{tab:'SPRINT'}" class="ms-sprint-btn">📔 Sprint</a>
+  </div>
   </header>
+
+  <!-- ── Panel de Transformación Personal ── -->
+  <div class="ms-transformation-panel">
+    <div class="ms-tp-pillar">
+      <span class="ms-tp-icon">{{ flow.currentPillar() === 'reconocimiento' ? '💛' : flow.currentPillar() === 'amor' ? '❤️' : '💙' }}</span>
+      <div>
+        <div class="ms-tp-label">MI PILAR ACTIVO</div>
+        <div class="ms-tp-name">{{ flow.pillarLabel() }} · {{ flow.milestoneLabel() }}</div>
+        <div class="ms-tp-phase">{{ flow.currentPhaseLabel() }}</div>
+      </div>
+    </div>
+    <div class="ms-tp-bar-col">
+      <div class="ms-tp-bar-wrap">
+        <div class="ms-tp-bar" [style.width.%]="flow.progressPercent()"></div>
+      </div>
+      <span class="ms-tp-pct">{{ flow.progressPercent() }}% del viaje</span>
+    </div>
+    <div class="ms-tp-links">
+      <a routerLink="/transformation/route" class="ms-tp-btn">🗺️ Ruta</a>
+      <a routerLink="/transformation/error-protocol" class="ms-tp-btn">🔄 Errores</a>
+      <a routerLink="/legado" class="ms-tp-btn legacy">🏛️ Legado</a>
+    </div>
+  </div>
 
   <!-- Narrative Guidance Engine -->
   <app-narrative-companion module="my-space"></app-narrative-companion>

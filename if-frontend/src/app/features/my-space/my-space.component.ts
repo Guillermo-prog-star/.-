@@ -5,6 +5,7 @@ import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { MySpaceService } from './services/my-space.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 
 @Component({
@@ -18,6 +19,7 @@ export class MySpaceComponent implements OnInit {
   private mySpaceService  = inject(MySpaceService);
   private http            = inject(HttpClient);
   private familyState     = inject(FamilyStateService);
+  readonly flow           = inject(TransformationFlowService);
 
   entries:  any[] = [];
   loading        = false;

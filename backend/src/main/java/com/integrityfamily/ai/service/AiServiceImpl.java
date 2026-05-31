@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.integrityfamily.chat.controller.ChatController;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -35,6 +36,38 @@ public class AiServiceImpl implements AiService {
     private final ConversationGoalManager conversationGoalManager;
     private final EmotionalStateTracker emotionalStateTracker;
     private final PostSessionAnalyzer postSessionAnalyzer;
+
+    /**
+     * Chat enriquecido con contexto de transformación del frontend.
+     * Construye un bloque adicional en el prompt con el pilar, mes, sprint y misión activa,
+     * para que el Mentor IA responda de forma contextualizada al momento del viaje familiar.
+     */
+    @Override
+    @Transactional
+    public ChatMessage chatWithTransformation(String message, Family family, Long memberId,
+                                              Object rawContext) {
+        // Si hay contexto de transformación, prefijarlo al mensaje antes de procesarlo
+        if (rawContext instanceof ChatController.ChatRequestV2.TransformationContextDto tc) {
+            String enrichedMessage = buildTransformationPrefix(tc) + message;
+            return processInteractiveChat(enrichedMessage, family, memberId);
+        }
+        return processInteractiveChat(message, family, memberId);
+    }
+
+    private String buildTransformationPrefix(ChatController.ChatRequestV2.TransformationContextDto tc) {
+        if (tc == null) return "";
+        return String.format("""
+            [CONTEXTO_TRANSFORMACIÓN: pilar=%s, mes=%s, hito=%s, fase=%s, sprint=%s, misión_activa=%s, progreso=%s%%]
+            """,
+            tc.getCurrentPillar() != null ? tc.getCurrentPillar() : "reconocimiento",
+            tc.getCurrentMonth()  != null ? tc.getCurrentMonth()  : 1,
+            tc.getMilestoneLabel() != null ? tc.getMilestoneLabel() : "M1",
+            tc.getCurrentPhase()  != null ? tc.getCurrentPhase()  : "Estabilización",
+            tc.getSprintNumber()  != null ? tc.getSprintNumber()  : 1,
+            tc.getActiveMissionId() != null ? tc.getActiveMissionId() : "ninguna",
+            tc.getProgressPercent() != null ? tc.getProgressPercent() : 0
+        );
+    }
 
     @Override
     @Transactional

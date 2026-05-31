@@ -116,6 +116,7 @@ public class PromptGenerator {
                 + buildHistoryBlock(ctx)
                 + buildWelcomeBlock(ctx)
                 + buildSentimentBlock(ctx)
+                + TRANSFORMATION_MENTOR_RULES + "\n"
                 + RESPONSE_RULES + "\n"
                 + "<user_input>\n" + message + "\n</user_input>\n\n"
                 + "Responde directamente al Guardián. Comienza reconociendo su presencia y esfuerzo. Luego ofrece una perspectiva clara y una acción concreta de integración familiar.\n";
@@ -167,6 +168,7 @@ public class PromptGenerator {
                 + buildHistoryBlock(ctx)
                 + buildWelcomeBlock(ctx)
                 + buildSentimentBlock(ctx)
+                + TRANSFORMATION_MENTOR_RULES + "\n"
                 + RESPONSE_RULES + "\n"
                 + "<user_input>\n" + message + "\n</user_input>\n\n"
                 + "Responde de forma personal a " + memberName + ". Comienza validando su emoción o pregunta. Luego ofrece una microacción concreta adaptada a su rol de " + memberRole + ".\n";
@@ -209,6 +211,7 @@ public class PromptGenerator {
                 + buildHistoryBlock(ctx)
                 + buildWelcomeBlock(ctx)
                 + buildSentimentBlock(ctx)
+                + TRANSFORMATION_MENTOR_RULES + "\n"
                 + RESPONSE_RULES + "\n"
                 + "<user_input>\n" + message + "\n</user_input>\n\n"
                 + "Responde a la familia como unidad. Valida primero. Luego ofrece una perspectiva integradora y una microacción que todos puedan hacer juntos.\n";
@@ -431,7 +434,6 @@ public class PromptGenerator {
 
     private String buildFamilyStateJson(AiContext ctx) {
         try {
-            // Serializa solo los campos relevantes para el estado familiar (no el contexto completo)
             var compact = new java.util.LinkedHashMap<String, Object>();
             if (ctx.family() != null) {
                 compact.put("familia", ctx.family().name());
@@ -463,6 +465,28 @@ public class PromptGenerator {
             return "{}";
         }
     }
+
+    /**
+     * Bloque de transformación: pilar, mes, fase y sprint activos.
+     * Se inyecta en todos los prompts para que el Mentor IA responda
+     * contextualizado al momento exacto del viaje familiar de 36 meses.
+     * El mensaje lleva el prefijo [CONTEXTO_TRANSFORMACIÓN:…] insertado
+     * en AiServiceImpl.chatWithTransformation(); este bloque complementa
+     * con instrucciones de comportamiento.
+     */
+    public static final String TRANSFORMATION_MENTOR_RULES = """
+        <transformation_context_rules>
+        IMPORTANTE: El mensaje del usuario puede comenzar con [CONTEXTO_TRANSFORMACIÓN:…].
+        Ese bloque te indica en qué pilar, mes y sprint está la familia.
+        Usa esa información para:
+        - Adaptar tus sugerencias al pilar activo (Reconocimiento=estabilización, Amor=transformación, Entrega=legado)
+        - Mencionar el sprint activo cuando sea relevante para generar adherencia
+        - NO mencionar el contexto técnico tal cual; intégralo naturalmente en tu respuesta
+        - Si la familia está en Mes 1-6 (Reconocimiento): prioriza estabilidad emocional y rutinas básicas
+        - Si está en Mes 7-18 (Amor): prioriza transformación de hábitos y comunicación profunda
+        - Si está en Mes 19-36 (Entrega): prioriza legado, servicio y misión generacional
+        </transformation_context_rules>
+        """;
 
     // ─── Briefing diario del Guardián ────────────────────────────────────────
 

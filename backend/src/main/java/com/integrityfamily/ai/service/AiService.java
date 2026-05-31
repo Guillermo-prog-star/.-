@@ -19,6 +19,15 @@ public interface AiService {
         return processInteractiveChat(message, family, memberId);
     }
 
+    /**
+     * Chat con contexto de transformación inyectado desde el frontend.
+     * El contexto enriquece el sistema de IA con el pilar, mes, sprint y misión activa.
+     */
+    default ChatMessage chatWithTransformation(String message, Family family, Long memberId,
+                                               Object transformationContext) {
+        return processInteractiveChat(message, family, memberId);
+    }
+
     ChatMessage processInteractiveChat(String message, Family family, Long memberId);
 
     String processAnalyticInference(String prompt, Long familyId);

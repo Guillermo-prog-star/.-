@@ -138,6 +138,13 @@ export class MemberListPageComponent implements OnInit {
     this.pendingDeleteId = null;
   }
 
+  goToGuardian() {
+    const familyId = this.familyState.currentFamilyId();
+    if (familyId > 0) {
+      this.router.navigate(['/guardian', familyId, 'election']);
+    }
+  }
+
   goToEvaluation() {
     this.router.navigate(['/evaluations/start']);
   }

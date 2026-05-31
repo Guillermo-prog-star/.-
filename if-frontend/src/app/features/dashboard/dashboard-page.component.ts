@@ -9,6 +9,7 @@ import { map, shareReplay, catchError, switchMap, filter, takeUntil } from 'rxjs
 // Capa de Servicios
 import { DashboardDataService } from './services/dashboard-data.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { EmotionalEngineService } from '../../core/services/emotional-engine.service';
 import { ScannerService } from '../../core/services/scanner.service';
 
@@ -84,6 +85,8 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
 
   /** Inferencia causal — Motor Inferencial R1-R7 */
   causalInference$: Observable<CausalInferenceDTO | null> = of(null);
+
+  readonly flow = inject(TransformationFlowService);
 
   constructor(
     public readonly dashboardService: DashboardDataService,

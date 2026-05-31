@@ -359,3 +359,40 @@
   background: rgba(255, 255, 255, 0.02);
   color: rgba(255, 255, 255, 0.8);
 }
+
+/* ── Transformation Hero Card ────────────────────────────── */
+.transformation-hero-card {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 20px 28px;
+  background: linear-gradient(135deg,
+    rgba(99,102,241,0.1) 0%,
+    rgba(139,92,246,0.07) 50%,
+    rgba(99,102,241,0.05) 100%);
+  border: 1px solid rgba(99,102,241,0.28);
+  border-radius: 20px;
+  flex-wrap: wrap;
+}
+
+.th-left       { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+.th-pillar-icon{ font-size: 36px; }
+.th-eyebrow    { font-size: 8px; font-weight: 800; color: rgba(255,255,255,0.3); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 3px; }
+.th-pillar-name{ font-size: 18px; font-weight: 900; color: #fff; margin-bottom: 2px; }
+.th-phase      { font-size: 12px; color: rgba(255,255,255,0.45); }
+
+.th-center      { flex: 1; min-width: 180px; }
+.th-month-badge { font-size: 28px; font-weight: 900; color: #818cf8; margin-bottom: 8px; }
+.th-bar-wrap    { height: 6px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; margin-bottom: 4px; }
+.th-bar         { height: 100%; background: linear-gradient(90deg, #6366f1, #818cf8); border-radius: 3px; transition: width .5s; }
+.th-bar-label   { font-size: 11px; color: rgba(255,255,255,0.35); font-weight: 600; }
+
+.th-right   { display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
+.th-sprint  { display: flex; align-items: center; gap: 6px; }
+.th-sprint-icon  { font-size: 14px; }
+.th-sprint-label { font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.6); }
+.th-actions { display: flex; gap: 8px; }
+.th-btn     { font-size: 11px; font-weight: 700; padding: 7px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 9px; color: rgba(255,255,255,0.6); text-decoration: none; transition: all .2s; cursor: pointer; }
+.th-btn:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.2); }
+.th-btn.primary { background: rgba(99,102,241,0.18); border-color: rgba(99,102,241,0.4); color: #818cf8; }
+.th-btn.primary:hover { background: rgba(99,102,241,0.3); }

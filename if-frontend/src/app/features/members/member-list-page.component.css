@@ -208,3 +208,24 @@
   filter: brightness(1.1);
   box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.4);
 }
+
+.btn-guardian {
+  background: rgba(129,140,248,0.15);
+  color: #818cf8;
+  font-weight: 700;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1px solid rgba(129,140,248,0.35);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+}
+.btn-guardian:hover {
+  background: rgba(129,140,248,0.25);
+  border-color: rgba(129,140,248,0.55);
+  transform: translateY(-1px);
+}
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.5); }
+  50%       { box-shadow: 0 0 0 5px rgba(99,102,241,0); }
+}

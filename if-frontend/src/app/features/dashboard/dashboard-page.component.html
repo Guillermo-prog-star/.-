@@ -16,6 +16,45 @@
       <app-sentinel-alert [active]="data.isSentinelActive"></app-sentinel-alert>
     </header>
 
+    <!-- ── TARJETA DE TRANSFORMACIÓN — KPI principal del viaje ── -->
+    <section class="transformation-hero-card">
+
+      <!-- Pillar + progress -->
+      <div class="th-left">
+        <div class="th-pillar-icon">
+          {{ flow.currentPillar() === 'reconocimiento' ? '💛' : flow.currentPillar() === 'amor' ? '❤️' : '💙' }}
+        </div>
+        <div class="th-pillar-body">
+          <div class="th-eyebrow">VIAJE DE TRANSFORMACIÓN FAMILIAR</div>
+          <div class="th-pillar-name">{{ flow.pillarLabel() }}</div>
+          <div class="th-phase">{{ flow.currentPhaseLabel() }} · {{ flow.pillarMonthRange() }}</div>
+        </div>
+      </div>
+
+      <!-- Month + bar -->
+      <div class="th-center">
+        <div class="th-month-badge">{{ flow.milestoneLabel() }}</div>
+        <div class="th-bar-wrap">
+          <div class="th-bar" [style.width.%]="flow.progressPercent()"></div>
+        </div>
+        <div class="th-bar-label">{{ flow.progressPercent() }}% de 36 meses completado</div>
+      </div>
+
+      <!-- Sprint + actions -->
+      <div class="th-right">
+        <div class="th-sprint">
+          <span class="th-sprint-icon">⚡</span>
+          <span class="th-sprint-label">Sprint #{{ flow.currentSprintNumber() }}</span>
+        </div>
+        <div class="th-actions">
+          <a routerLink="/logbook" [queryParams]="{tab:'SPRINT'}" class="th-btn primary">📔 Daily</a>
+          <a routerLink="/transformation/route" class="th-btn">🗺️ Ruta</a>
+          <a routerLink="/evaluations/start" class="th-btn">◈ Diagnóstico</a>
+        </div>
+      </div>
+
+    </section>
+
     <!-- Narrative Guidance Engine -->
     <app-narrative-companion module="dashboard"></app-narrative-companion>
 

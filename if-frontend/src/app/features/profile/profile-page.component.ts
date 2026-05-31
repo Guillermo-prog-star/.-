@@ -1,8 +1,12 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../core/services/auth.service';
-import { catchError, of } from 'rxjs';
+import { FamilyStateService } from '../../core/services/family-state.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
+import { ApiService } from '../../core/services/api.service';
+import { catchError, of, forkJoin } from 'rxjs';
 
 interface UserProfile {
   id: number;
@@ -17,7 +21,7 @@ interface UserProfile {
   selector: 'app-profile-page',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   styles: [`
     :host { display: block; }
 
@@ -256,6 +260,40 @@ interface UserProfile {
     .skeleton-line.lg { height: 20px; width: 60%; }
     .skeleton-line.sm { height: 12px; width: 40%; }
 
+    /* Transformation journey */
+    .transform-journey { display: flex; flex-direction: column; gap: 14px; }
+    .tj-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .tj-pillar { display: flex; gap: 12px; align-items: flex-start; }
+    .tj-pillar-icon { font-size: 26px; flex-shrink: 0; }
+    .tj-pillar-label { font-size: 8px; font-weight: 800; color: rgba(255,255,255,0.3); letter-spacing: .12em; text-transform: uppercase; }
+    .tj-pillar-name { font-size: 14px; font-weight: 800; color: #fff; }
+    .tj-pillar-range { font-size: 11px; color: rgba(255,255,255,0.4); }
+    .tj-month-box { text-align: center; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25); border-radius: 10px; padding: 8px 14px; flex-shrink: 0; }
+    .tj-month-num { font-size: 20px; font-weight: 900; color: #818cf8; line-height: 1; }
+    .tj-month-label { font-size: 8px; font-weight: 700; color: rgba(255,255,255,0.3); text-transform: uppercase; }
+    .tj-phase { font-size: 12px; color: rgba(255,255,255,0.45); font-style: italic; }
+    .tj-bar-row { display: flex; align-items: center; gap: 10px; }
+    .tj-bar-wrap { flex: 1; height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; overflow: hidden; }
+    .tj-bar-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #818cf8); border-radius: 3px; transition: width .5s; }
+    .tj-bar-pct { font-size: 11px; font-weight: 700; color: #818cf8; flex-shrink: 0; }
+    .tj-sprint-row { display: flex; align-items: center; gap: 8px; }
+    .tj-sprint-icon { font-size: 14px; }
+    .tj-sprint-label { font-size: 12px; color: rgba(255,255,255,0.5); font-weight: 600; }
+    .tj-mission-badge { font-size: 10px; font-weight: 700; background: rgba(16,185,129,0.12); border: 1px solid rgba(16,185,129,0.25); color: #10b981; padding: 2px 8px; border-radius: 5px; }
+    .tj-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tj-badge { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 5px 10px; }
+    .tj-badge-icon { font-size: 14px; }
+    .tj-badge-name { font-size: 11px; color: rgba(255,255,255,0.6); font-weight: 600; }
+    .tj-badges-empty { font-size: 12px; color: rgba(255,255,255,0.25); font-style: italic; }
+    .tj-links { display: flex; gap: 8px; flex-wrap: wrap; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.05); }
+    .tj-link { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 5px 12px; text-decoration: none; transition: all .2s; }
+    .tj-link:hover { background: rgba(255,255,255,0.08); color: #fff; border-color: rgba(255,255,255,0.15); }
+    /* Stats grid */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px; text-align: center; }
+    .stat-num { font-size: 22px; font-weight: 900; color: #818cf8; }
+    .stat-lbl { font-size: 10px; color: rgba(255,255,255,0.35); font-weight: 600; text-transform: uppercase; letter-spacing: .05em; margin-top: 2px; }
+
     /* Error state */
     .error-note {
       font-size: 12px;
@@ -364,6 +402,97 @@ interface UserProfile {
           }
         </div>
 
+        <!-- Transformation Journey -->
+        <div class="glass-card">
+          <p class="section-title">Viaje de Transformación</p>
+          <div class="transform-journey">
+
+            <!-- Pillar + Month -->
+            <div class="tj-row">
+              <div class="tj-pillar">
+                <span class="tj-pillar-icon">
+                  {{ flow.currentPillar() === 'reconocimiento' ? '💛' : flow.currentPillar() === 'amor' ? '❤️' : '💙' }}
+                </span>
+                <div>
+                  <div class="tj-pillar-label">PILAR ACTIVO</div>
+                  <div class="tj-pillar-name">{{ flow.pillarLabel() }}</div>
+                  <div class="tj-pillar-range">{{ flow.pillarMonthRange() }}</div>
+                </div>
+              </div>
+              <div class="tj-month-box">
+                <div class="tj-month-num">{{ flow.milestoneLabel() }}</div>
+                <div class="tj-month-label">Hito</div>
+              </div>
+            </div>
+
+            <!-- Phase -->
+            <div class="tj-phase">{{ flow.currentPhaseLabel() }}</div>
+
+            <!-- Progress bar -->
+            <div class="tj-bar-row">
+              <div class="tj-bar-wrap">
+                <div class="tj-bar-fill" [style.width.%]="flow.progressPercent()"></div>
+              </div>
+              <span class="tj-bar-pct">{{ flow.progressPercent() }}% de 36 meses</span>
+            </div>
+
+            <!-- Sprint -->
+            <div class="tj-sprint-row">
+              <span class="tj-sprint-icon">⚡</span>
+              <span class="tj-sprint-label">Sprint #{{ flow.currentSprintNumber() }}</span>
+              @if (flow.activeMissionId()) {
+                <span class="tj-mission-badge">Misión activa</span>
+              }
+            </div>
+
+            <!-- Badges -->
+            <div class="tj-badges">
+              @for (badge of earnedBadges(); track badge.id) {
+                <div class="tj-badge" [title]="badge.description">
+                  <span class="tj-badge-icon">{{ badge.icon }}</span>
+                  <span class="tj-badge-name">{{ badge.name }}</span>
+                </div>
+              }
+              @if (earnedBadges().length === 0) {
+                <div class="tj-badges-empty">Completa misiones para ganar insignias</div>
+              }
+            </div>
+
+            <!-- Quick links -->
+            <div class="tj-links">
+              <a routerLink="/transformation/route" class="tj-link">🗺️ Ver ruta</a>
+              <a routerLink="/evaluations/start"    class="tj-link">◈ Diagnóstico</a>
+              <a routerLink="/legado"               class="tj-link">🏛️ Legado</a>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Stats card -->
+        @if (familyStats()) {
+          <div class="glass-card">
+            <p class="section-title">Estadísticas Familiares</p>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <div class="stat-num">{{ familyStats()!.totalEvaluations ?? 0 }}</div>
+                <div class="stat-lbl">Diagnósticos</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num">{{ familyStats()!.completedPlanTasks ?? 0 }}</div>
+                <div class="stat-lbl">Misiones completadas</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num">{{ familyStats()!.latestGlobalScore ?? 0 | number:'1.0-0' }}</div>
+                <div class="stat-lbl">ICF actual</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-num">{{ familyStats()!.activeCrisesCount ?? 0 }}</div>
+                <div class="stat-lbl">Crisis activas</div>
+              </div>
+            </div>
+          </div>
+        }
+
         <!-- Actions -->
         <div class="glass-card">
           <p class="section-title">Acciones de Cuenta</p>
@@ -387,18 +516,55 @@ interface UserProfile {
   `
 })
 export class ProfilePageComponent implements OnInit {
-  private auth = inject(AuthService);
-  private http = inject(HttpClient);
+  private auth        = inject(AuthService);
+  private http        = inject(HttpClient);
+  private api         = inject(ApiService);
+  private familyState = inject(FamilyStateService);
+  readonly flow       = inject(TransformationFlowService);
 
-  readonly profile = signal<UserProfile | null>(null);
-  readonly loading = signal(true);
+  readonly profile         = signal<UserProfile | null>(null);
+  readonly loading         = signal(true);
   readonly hasBackendError = signal(false);
+  readonly familyStats     = signal<any>(null);
 
-  // Data immediately available from AuthService signal (no HTTP needed)
   private readonly localUser = this.auth.user;
 
+  // ── Insignias ganadas basadas en el estado de transformación ──────────────
+  readonly earnedBadges = computed(() => {
+    const badges: Array<{id:string; icon:string; name:string; description:string}> = [];
+    const pct   = this.flow.progressPercent();
+    const month = this.flow.currentMonth();
+    const step  = this.flow.onboardingStep();
+    const stats = this.familyStats();
+
+    if (step === 'completed')         badges.push({ id:'setup',    icon:'🏠', name:'Nido Activo',       description:'Familia configurada' });
+    if (month >= 1)                   badges.push({ id:'m1',       icon:'🌱', name:'Primer Paso',       description:'Mes 1 iniciado' });
+    if (month >= 6)                   badges.push({ id:'pillar1',  icon:'💛', name:'Reconocimiento',    description:'Pilar 1 completado' });
+    if (month >= 18)                  badges.push({ id:'pillar2',  icon:'❤️', name:'Amor',              description:'Pilar 2 completado' });
+    if (month >= 36)                  badges.push({ id:'pillar3',  icon:'💙', name:'Entrega',           description:'Transformación completa' });
+    if (pct >= 25)                    badges.push({ id:'25pct',    icon:'⚡', name:'Primer Cuarto',     description:'25% del camino recorrido' });
+    if (pct >= 50)                    badges.push({ id:'50pct',    icon:'🔥', name:'Mitad del Camino',  description:'50% completado' });
+    if (pct >= 75)                    badges.push({ id:'75pct',    icon:'🌟', name:'Casi Llegamos',     description:'75% completado' });
+    if (pct >= 100)                   badges.push({ id:'100pct',   icon:'🏆', name:'Transformación',    description:'36 meses completados' });
+    if (stats?.totalEvaluations >= 1) badges.push({ id:'diag1',   icon:'◈',  name:'Autoconocimiento', description:'Primer diagnóstico realizado' });
+    if (stats?.totalEvaluations >= 5) badges.push({ id:'diag5',   icon:'🔬', name:'Analítico',         description:'5 diagnósticos realizados' });
+    if ((stats?.completedPlanTasks ?? 0) >= 5) badges.push({ id:'miss5', icon:'🎯', name:'Ejecutor',   description:'5 misiones completadas' });
+
+    return badges;
+  });
+
   ngOnInit(): void {
+    this.flow.loadFromBackend(this.familyState.currentFamilyId());
     this.loadProfile();
+    this.loadFamilyStats();
+  }
+
+  loadFamilyStats(): void {
+    const fid = this.familyState.currentFamilyId();
+    if (!fid) return;
+    this.http.get<any>(`${this.api.base}/analytics/dashboard/${fid}`)
+      .pipe(catchError(() => of(null)))
+      .subscribe(res => this.familyStats.set(res?.data ?? res));
   }
 
   loadProfile(): void {
@@ -411,16 +577,11 @@ export class ProfilePageComponent implements OnInit {
       if (data) {
         this.profile.set(data);
       } else {
-        // Backend unreachable: fallback to cached AuthService data
         const u = this.localUser();
         if (u) {
           this.profile.set({
-            id: 0,
-            email: u.email,
-            fullName: u.fullName,
-            role: u.role,
-            familyId: u.familyId ?? null,
-            familyName: u.familyName ?? null
+            id: 0, email: u.email, fullName: u.fullName,
+            role: u.role, familyId: u.familyId ?? null, familyName: u.familyName ?? null,
           });
         }
         this.hasBackendError.set(true);

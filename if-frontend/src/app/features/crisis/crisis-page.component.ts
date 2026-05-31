@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CrisisService } from '../../core/services/crisis.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 
 @Component({
@@ -118,6 +119,28 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
               <div class="quote-container-glass mb-24">
                 "Recuerden: La crisis es la grieta por donde entra la luz para la transformación familiar."
               </div>
+
+              <!-- BANNER MISIÓN PAUSADA -->
+              @if (pausedMissionId) {
+                <div style="margin-bottom:16px;padding:12px 16px;
+                            background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.25);
+                            border-radius:12px;display:flex;align-items:center;gap:12px;">
+                  <span style="font-size:20px;flex-shrink:0;">⏸️</span>
+                  <div style="flex:1;">
+                    <div style="font-size:12px;font-weight:800;color:#fbbf24;margin-bottom:2px;">
+                      Misión activa pausada
+                    </div>
+                    <div style="font-size:11px;color:rgba(255,255,255,0.45);">
+                      Tu misión fue pausada mientras atiendes esta crisis. Cuando estés listo, retómala.
+                    </div>
+                  </div>
+                  <button (click)="resumeMission()"
+                          style="padding:6px 12px;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.3);
+                                 color:#fbbf24;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;">
+                    Retomar misión
+                  </button>
+                </div>
+              }
 
               <!-- CHECKLIST DE CONTENCIÓN -->
               <div class="checklist-container">
@@ -644,12 +667,15 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
 })
 export class CrisisPageComponent implements OnInit {
   private crisisService = inject(CrisisService);
-  private familyState = inject(FamilyStateService);
+  private familyState   = inject(FamilyStateService);
+  private flow          = inject(TransformationFlowService);
 
   crisis = { category: 'Conflicto de Convivencia', emotion: '', description: '' };
   loading = false;
   lastResponse: any = null;
   history: any[] = [];
+  /** Misión que estaba activa antes de la crisis (para mostrar en el aviso de pausa) */
+  pausedMissionId: string | null = null;
 
   // EMOTION PRE-SETS
   emotionTags = ['Ira ⚡', 'Tristeza 💧', 'Frustración 🌀', 'Ansiedad 🌪️', 'Distanciamiento 🔇'];
@@ -708,6 +734,13 @@ export class CrisisPageComponent implements OnInit {
     const familyId = this.familyState.getSelectedFamilyId();
     if (!familyId) return;
 
+    // Pausar misión activa: guardar su ID y limpiarla del flujo
+    const activeMission = this.flow.activeMissionId();
+    if (activeMission) {
+      this.pausedMissionId = activeMission;
+      this.flow.setActiveMission(null);
+    }
+
     this.loading = true;
     const payload = { ...this.crisis, familyId };
 
@@ -721,6 +754,14 @@ export class CrisisPageComponent implements OnInit {
       },
       error: () => this.loading = false
     });
+  }
+
+  /** Retoma la misión pausada después de resolver la crisis */
+  resumeMission() {
+    if (this.pausedMissionId) {
+      this.flow.setActiveMission(this.pausedMissionId);
+      this.pausedMissionId = null;
+    }
   }
 
   formatAiResponse(text: string) {

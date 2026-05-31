@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { MarkdownPipe } from '../../shared/pipes/markdown.pipe';
 import { SessionContext } from '../../core/models/models';
 
@@ -15,8 +16,9 @@ import { SessionContext } from '../../core/models/models';
 })
 export class ChatPageComponent implements OnInit {
   @ViewChild('anchor') anchor!: ElementRef;
-  private http = inject(HttpClient);
+  private http        = inject(HttpClient);
   private familyState = inject(FamilyStateService);
+  private flow        = inject(TransformationFlowService);
 
   messages: any[] = [];
   inputText = '';
@@ -97,7 +99,24 @@ export class ChatPageComponent implements OnInit {
     this.loading = true;
     this.scroll();
 
-    this.http.post<any>(`/api/chat/send`, { familyId: this.familyId, message: text, memberId: this.memberId })
+    // Construir contexto de transformación para enriquecer la respuesta del IA
+    const transformationContext = {
+      currentPillar:       this.flow.currentPillar(),
+      currentMonth:        this.flow.currentMonth(),
+      milestoneLabel:      this.flow.milestoneLabel(),
+      currentPhase:        this.flow.currentPhaseLabel(),
+      sprintNumber:        this.flow.currentSprintNumber(),
+      activeMissionId:     this.flow.activeMissionId(),
+      progressPercent:     this.flow.progressPercent(),
+      onboardingCompleted: this.flow.isOnboardingDone(),
+    };
+
+    this.http.post<any>(`/api/chat/send`, {
+      familyId: this.familyId,
+      message:  text,
+      memberId: this.memberId,
+      transformationContext,
+    })
       .subscribe({
         next: (res: any) => {
           const msg = res.data;

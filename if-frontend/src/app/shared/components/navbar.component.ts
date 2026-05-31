@@ -5,6 +5,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { SentinelCoreService } from '../../core/services/sentinel-core.service';
 import { UserNotificationService } from '../../core/services/user-notification.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 
 /**
  * NavbarComponent: Barra de navegación con contexto familiar.
@@ -27,7 +28,11 @@ import { UserNotificationService } from '../../core/services/user-notification.s
     }
     .brand-context { display: flex; flex-direction: column; gap: 2px; }
     .title-context { font-size: 14px; font-weight: 700; color: var(--primary); letter-spacing: -0.01em; }
-    .f-context { font-size: 11px; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 4px; }
+    .f-context { font-size: 11px; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .nb-pillar-chip { background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.22); color: #818cf8; padding: 1px 7px; border-radius: 5px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+    .nb-sprint-chip { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #10b981; padding: 1px 7px; border-radius: 5px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+    .nb-progress-wrap { display: inline-flex; width: 48px; height: 3px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; vertical-align: middle; }
+    .nb-progress-bar { height: 100%; background: linear-gradient(90deg,#6366f1,#818cf8); border-radius: 2px; transition: width .4s; }
     
     .user-area { display: flex; align-items: center; gap: 12px; }
     .chip {
@@ -230,10 +235,32 @@ import { UserNotificationService } from '../../core/services/user-notification.s
     <div class="topbar">
       <div class="brand-context">
         <div class="title-context">Bienestar, autonomía y progreso familiar</div>
-        
+
         <div class="f-context">
           @if (familyName) {
-            <span style="color: var(--accent);">📍</span> Familia: {{ familyName }}
+            <!-- Familia -->
+            <span style="color: var(--accent);">📍</span>
+            <span>{{ familyName }}</span>
+
+            <!-- Separador -->
+            <span style="opacity:0.25">·</span>
+
+            <!-- Pilar activo -->
+            <span class="nb-pillar-chip">
+              {{ flow.currentPillar() === 'reconocimiento' ? '💛' : flow.currentPillar() === 'amor' ? '❤️' : '💙' }}
+              {{ flow.milestoneLabel() }}
+            </span>
+
+            <!-- Sprint badge (si hay misión activa) -->
+            @if (flow.activeMissionId()) {
+              <span class="nb-sprint-chip">⚡ Sprint #{{ flow.currentSprintNumber() }}</span>
+            }
+
+            <!-- Progreso -->
+            <span class="nb-progress-wrap" title="{{ flow.progressPercent() }}% del viaje de 36 meses">
+              <span class="nb-progress-bar" [style.width.%]="flow.progressPercent()"></span>
+            </span>
+            <span style="font-size:10px;color:rgba(255,255,255,0.3);font-weight:700;">{{ flow.progressPercent() }}%</span>
           } @else {
             <span style="font-style: italic; opacity: 0.7;">Selecciona una familia para comenzar</span>
           }
@@ -307,6 +334,7 @@ export class NavbarComponent {
   private router        = inject(Router);
   private sentinel      = inject(SentinelCoreService);
   protected notifSvc    = inject(UserNotificationService);
+  readonly flow         = inject(TransformationFlowService);
 
   readonly showLogoutConfirm  = signal(false);
   readonly showNotifDropdown  = signal(false);

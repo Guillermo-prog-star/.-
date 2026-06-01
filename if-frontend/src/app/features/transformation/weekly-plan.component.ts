@@ -1,10 +1,12 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { ApiService } from '../../core/services/api.service';
+import { SprintService } from '../family-logbook/sprint.service';
 import { catchError, of } from 'rxjs';
 
 interface WeeklyTask {
@@ -74,13 +76,28 @@ const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: st
         <div class="task-list">
           @for (task of phaseTasks(); track task.id) {
             <div class="task-row" [class.done]="task.done">
-              <input type="checkbox" [(ngModel)]="task.done" class="task-check" />
+              <input type="checkbox"
+                [ngModel]="task.done"
+                (ngModelChange)="updateTask(task.id, 'done', $event)"
+                class="task-check" />
               <div class="task-body">
-                <input class="task-desc" [(ngModel)]="task.description" placeholder="¿Qué hay que hacer?" />
+                <input class="task-desc"
+                  [ngModel]="task.description"
+                  (ngModelChange)="updateTask(task.id, 'description', $event)"
+                  placeholder="¿Qué hay que hacer?" />
                 <div class="task-meta">
-                  <input class="task-input" [(ngModel)]="task.responsible" placeholder="¿Quién lo hace?" />
-                  <input class="task-input" [(ngModel)]="task.when" placeholder="¿Cuándo?" />
-                  <input class="task-input" [(ngModel)]="task.indicator" placeholder="Indicador de éxito" />
+                  <input class="task-input"
+                    [ngModel]="task.responsible"
+                    (ngModelChange)="updateTask(task.id, 'responsible', $event)"
+                    placeholder="¿Quién lo hace?" />
+                  <input class="task-input"
+                    [ngModel]="task.when"
+                    (ngModelChange)="updateTask(task.id, 'when', $event)"
+                    placeholder="¿Cuándo?" />
+                  <input class="task-input"
+                    [ngModel]="task.indicator"
+                    (ngModelChange)="updateTask(task.id, 'indicator', $event)"
+                    placeholder="Indicador de éxito" />
                 </div>
               </div>
               <button class="btn-remove" (click)="removeTask(task.id)">✕</button>
@@ -102,12 +119,23 @@ const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: st
 
       <!-- Daily questions (always visible) -->
       <div class="daily-section">
-        <div class="daily-title">📔 Daily Familiar (2 min)</div>
+        <div class="daily-header">
+          <div class="daily-title">📔 Daily Familiar (2 min)</div>
+          @if (activeSprintId()) {
+            <button class="btn-goto-sprint" (click)="goToSprint()">Ver Sprint activo →</button>
+          }
+        </div>
         <div class="daily-grid">
-          <div class="daily-q" *ngFor="let q of dailyQuestions">
-            <div class="dq-label">{{ q }}</div>
-            <textarea class="dq-input" rows="2" [placeholder]="'Tu respuesta…'"></textarea>
-          </div>
+          @for (q of dailyQuestions; track q) {
+            <div class="daily-q">
+              <div class="dq-label">{{ q }}</div>
+              <textarea class="dq-input" rows="2"
+                placeholder="Tu respuesta…"
+                [value]="dailyAnswers()[q] ?? ''"
+                (input)="setDailyAnswer(q, $any($event.target).value)">
+              </textarea>
+            </div>
+          }
         </div>
         <button class="btn-save-daily" (click)="savePhase()">
           {{ saving() ? '⏳ Guardando…' : saved() ? '✓ Guardado' : '💾 Guardar fase en plan semanal' }}
@@ -161,7 +189,10 @@ const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: st
     .summary-pct  { font-weight: 700; color: #6366f1; }
 
     .daily-section { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 14px; padding: 20px; }
-    .daily-title   { font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 16px; }
+    .daily-header  { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .daily-title   { font-size: 15px; font-weight: 700; color: #fff; }
+    .btn-goto-sprint { font-size: 11px; font-weight: 600; padding: 5px 12px; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25); color: #818cf8; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+    .btn-goto-sprint:hover { background: rgba(99,102,241,0.2); }
     .daily-grid    { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 16px; }
     .daily-q       { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px; }
     .dq-label      { font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.6); margin-bottom: 6px; }
@@ -175,12 +206,16 @@ export class WeeklyPlanComponent implements OnInit {
   private flow          = inject(TransformationFlowService);
   private http          = inject(HttpClient);
   private api           = inject(ApiService);
+  private sprintService = inject(SprintService);
+  private router        = inject(Router);
 
-  readonly phases       = WEEK_PHASES;
-  readonly activePhase  = signal<WeekPhase>('prepare');
+  readonly phases        = WEEK_PHASES;
+  readonly activePhase   = signal<WeekPhase>('prepare');
   readonly currentSprint = signal(1);
-  readonly saving       = signal(false);
-  readonly saved        = signal(false);
+  readonly activeSprintId = signal<number | null>(null);
+  readonly saving        = signal(false);
+  readonly saved         = signal(false);
+  readonly loadingSprint = signal(true);
 
   readonly dailyQuestions = [
     '¿Qué logré hoy?', '¿Qué aprendí hoy?', '¿Qué dificultad encontré?',
@@ -188,7 +223,7 @@ export class WeeklyPlanComponent implements OnInit {
   ];
   readonly dailyAnswers = signal<Record<string, string>>({});
 
-  private tasks         = signal<WeeklyTask[]>([]);
+  private tasks = signal<WeeklyTask[]>([]);
 
   readonly currentPhase = computed(() => WEEK_PHASES.find(p => p.key === this.activePhase()));
   readonly phaseTasks   = computed(() => this.tasks().filter(t => t.phase === this.activePhase()));
@@ -202,8 +237,26 @@ export class WeeklyPlanComponent implements OnInit {
   get apiBase()  { return `${this.api.base}/families/${this.familyId}/weekly-plans`; }
 
   ngOnInit() {
-    this.currentSprint.set(this.flow.currentSprintNumber());
-    if (this.familyId > 0) this.loadAll();
+    const fallback = this.flow.currentSprintNumber();
+    this.currentSprint.set(fallback);
+
+    if (this.familyId > 0) {
+      this.sprintService.getActiveSprint(this.familyId)
+        .pipe(catchError(() => of(null)))
+        .subscribe(sprint => {
+          if (sprint) {
+            this.activeSprintId.set(sprint.id ?? null);
+          }
+          this.loadingSprint.set(false);
+          this.loadAll();
+        });
+    } else {
+      this.loadingSprint.set(false);
+    }
+  }
+
+  goToSprint() {
+    this.router.navigate(['/family-logbook']);
   }
 
   private loadAll() {
@@ -235,7 +288,7 @@ export class WeeklyPlanComponent implements OnInit {
       description: t.description, responsible: t.responsible,
       when: t.when, indicator: t.indicator, done: t.done, sortOrder: i,
     }));
-    const body = { sprintNumber: this.currentSprint(), phase, tasks };
+    const body = { sprintNumber: this.currentSprint(), phase, tasks, dailyAnswers: this.dailyAnswers() };
 
     this.saving.set(true);
     this.http.put<any>(`${this.apiBase}/${phase}`, body)
@@ -245,6 +298,14 @@ export class WeeklyPlanComponent implements OnInit {
         this.saved.set(true);
         setTimeout(() => this.saved.set(false), 2500);
       });
+  }
+
+  setDailyAnswer(question: string, value: string) {
+    this.dailyAnswers.update(answers => ({ ...answers, [question]: value }));
+  }
+
+  updateTask(id: string, field: keyof WeeklyTask, value: any) {
+    this.tasks.update(tasks => tasks.map(t => t.id === id ? { ...t, [field]: value } : t));
   }
 
   addTask() {

@@ -80,7 +80,10 @@ interface FamilyValue { id: string; icon: string; name: string; description: str
                 <label>Nombre de la familia</label>
                 <input [(ngModel)]="constitution.familyName" placeholder="Familia ___________" class="cd-input" />
               </div>
-              <div class="cd-date">Establecida en {{ constitution.year || currentYear }}</div>
+              <div class="cd-family-year">
+                <label>Año de Fundación</label>
+                <input [(ngModel)]="constitution.year" placeholder="Ej: 1988" type="number" class="cd-input" />
+              </div>
             </div>
 
             <div class="cd-section">
@@ -149,7 +152,10 @@ interface FamilyValue { id: string; icon: string; name: string; description: str
               </div>
             }
             @if (familyValues().length < 7) {
-              <button class="add-value-btn" (click)="addValue()">+ Agregar valor</button>
+              <button class="add-value-btn" (click)="addValue()">
+                <span style="font-size: 20px; margin-bottom: 2px;">➕</span>
+                <span>Agregar Valor</span>
+              </button>
             }
           </div>
           <button class="btn-save" (click)="save()" [disabled]="saving()">
@@ -211,9 +217,10 @@ interface FamilyValue { id: string; icon: string; name: string; description: str
     /* Constitution */
     .constitution-doc { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
     .cd-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
-    .cd-family-name label { font-size: 11px; color: rgba(255,255,255,0.4); display: block; margin-bottom: 4px; }
+    .cd-family-name { flex: 1; min-width: 200px; }
+    .cd-family-year { width: 140px; }
+    .cd-family-name label, .cd-family-year label { font-size: 11px; color: rgba(255,255,255,0.4); display: block; margin-bottom: 4px; }
     .cd-input { background: rgba(255,255,255,0.04); border: none; border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 16px; font-weight: 700; padding: 4px 0; outline: none; width: 100%; }
-    .cd-date  { font-size: 11px; color: rgba(255,255,255,0.3); }
     .cd-section { margin-bottom: 16px; }
     .cd-sec-title { font-size: 12px; font-weight: 700; color: #fbbf24; margin-bottom: 8px; letter-spacing: 0.04em; }
 
@@ -233,8 +240,28 @@ interface FamilyValue { id: string; icon: string; name: string; description: str
     .value-name-inp { background: none; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 14px; font-weight: 700; outline: none; width: 100%; margin-bottom: 8px; padding-bottom: 4px; }
     .btn-rm-val { position: absolute; top: 8px; right: 8px; background: none; border: none; color: rgba(255,255,255,0.2); cursor: pointer; font-size: 12px; }
     .btn-rm-val:hover { color: #ef4444; }
-    .add-value-btn { background: rgba(255,255,255,0.03); border: 2px dashed rgba(255,255,255,0.1); border-radius: 12px; color: rgba(255,255,255,0.3); font-size: 13px; font-weight: 700; cursor: pointer; padding: 20px; transition: all 0.2s; }
-    .add-value-btn:hover { border-color: rgba(251,191,36,0.3); color: #fbbf24; }
+    .add-value-btn { 
+      background: rgba(255,255,255,0.01); 
+      border: 2px dashed rgba(99,102,241,0.25); 
+      border-radius: 12px; 
+      color: rgba(129,140,248,0.7); 
+      font-size: 12px; 
+      font-weight: 700; 
+      cursor: pointer; 
+      padding: 24px; 
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.3s ease; 
+    }
+    .add-value-btn:hover { 
+      background: rgba(99,102,241,0.06); 
+      border-color: rgba(99,102,241,0.5); 
+      color: #818cf8; 
+      transform: translateY(-2px);
+    }
 
     /* Letter */
     .letter-meta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }

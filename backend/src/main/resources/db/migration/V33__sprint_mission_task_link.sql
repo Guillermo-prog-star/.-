@@ -7,3 +7,8 @@
 ALTER TABLE family_sprints
     ADD COLUMN mission_task_id BIGINT DEFAULT NULL
         COMMENT 'ID del plan_task (misión del plan de transformación) que auto-generó este sprint. NULL si fue creado manualmente.';
+
+ALTER TABLE family_sprints
+    ADD CONSTRAINT fk_sprint_mission_task
+    FOREIGN KEY (mission_task_id) REFERENCES plan_tasks(id)
+    ON DELETE SET NULL;

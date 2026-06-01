@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -7,7 +7,8 @@ import { FamilyStateService } from '../../core/services/family-state.service';
 import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { ApiService } from '../../core/services/api.service';
 import { SprintService } from '../family-logbook/sprint.service';
-import { catchError, of } from 'rxjs';
+import { catchError, of, Subject, debounceTime } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 interface WeeklyTask {
   id: string;
@@ -41,7 +42,11 @@ const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: st
         </div>
         <div class="wp-sprint">
           <span class="sprint-label">Sprint activo</span>
-          <span class="sprint-num">#{{ currentSprint() }}</span>
+          @if (loadingSprint()) {
+            <span class="sprint-loading">…</span>
+          } @else {
+            <span class="sprint-num">#{{ currentSprint() }}</span>
+          }
         </div>
       </div>
 
@@ -150,7 +155,9 @@ const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: st
     .wp-sub   { font-size: 13px; color: rgba(255,255,255,0.4); }
     .wp-sprint { text-align: right; }
     .sprint-label { display: block; font-size: 10px; color: rgba(255,255,255,0.35); letter-spacing: 0.06em; text-transform: uppercase; }
-    .sprint-num   { font-size: 28px; font-weight: 900; color: #6366f1; }
+    .sprint-num     { font-size: 28px; font-weight: 900; color: #6366f1; }
+    .sprint-loading { font-size: 20px; font-weight: 900; color: rgba(99,102,241,0.4); animation: pulse 1s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 0.4; } 50% { opacity: 1; } }
 
     .phases { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 24px; }
     .phase-card { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); cursor: pointer; text-align: left; color: rgba(255,255,255,0.5); transition: all 0.2s; }
@@ -208,6 +215,9 @@ export class WeeklyPlanComponent implements OnInit {
   private api           = inject(ApiService);
   private sprintService = inject(SprintService);
   private router        = inject(Router);
+  private destroyRef    = inject(DestroyRef);
+
+  private autoSave$ = new Subject<void>();
 
   readonly phases        = WEEK_PHASES;
   readonly activePhase   = signal<WeekPhase>('prepare');
@@ -237,6 +247,9 @@ export class WeeklyPlanComponent implements OnInit {
   get apiBase()  { return `${this.api.base}/families/${this.familyId}/weekly-plans`; }
 
   ngOnInit() {
+    this.autoSave$.pipe(debounceTime(1200), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.savePhase());
+
     const fallback = this.flow.currentSprintNumber();
     this.currentSprint.set(fallback);
 
@@ -263,6 +276,7 @@ export class WeeklyPlanComponent implements OnInit {
     this.http.get<any[]>(this.apiBase).pipe(catchError(() => of([]))).subscribe(plans => {
       if (!plans?.length) return;
       const allTasks: WeeklyTask[] = [];
+      const mergedAnswers: Record<string, string> = {};
       plans.forEach((plan: any) => {
         const phase = plan.phase?.toLowerCase() as WeekPhase;
         (plan.tasks ?? []).forEach((t: any, i: number) => {
@@ -276,8 +290,12 @@ export class WeeklyPlanComponent implements OnInit {
             phase,
           });
         });
+        if (plan.dailyAnswers && typeof plan.dailyAnswers === 'object') {
+          Object.assign(mergedAnswers, plan.dailyAnswers);
+        }
       });
       this.tasks.set(allTasks);
+      if (Object.keys(mergedAnswers).length) this.dailyAnswers.set(mergedAnswers);
     });
   }
 
@@ -306,6 +324,7 @@ export class WeeklyPlanComponent implements OnInit {
 
   updateTask(id: string, field: keyof WeeklyTask, value: any) {
     this.tasks.update(tasks => tasks.map(t => t.id === id ? { ...t, [field]: value } : t));
+    this.autoSave$.next();
   }
 
   addTask() {

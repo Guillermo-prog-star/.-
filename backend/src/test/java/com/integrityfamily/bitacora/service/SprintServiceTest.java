@@ -122,7 +122,7 @@ class SprintServiceTest {
         @DisplayName("Crea sprint con duración por defecto (7 días) cuando no se especifica")
         void shouldCreateSprintWithDefaultDuration() {
             CreateSprintRequest request = new CreateSprintRequest(
-                    "Objetivo test", "comunicacion", null, List.of());
+                    "Objetivo test", "comunicacion", null, List.of(), null);
 
             when(sprintRepository.findActiveSprintForFamily(1L)).thenReturn(Optional.empty());
             when(familyRepository.findById(1L)).thenReturn(Optional.of(family));
@@ -146,7 +146,7 @@ class SprintServiceTest {
         void shouldCreateSprintWith15DaysAndMissions() {
             List<String> missionDescs = List.of("Hablar 10 min por día", "Sin pantallas a las 9pm");
             CreateSprintRequest request = new CreateSprintRequest(
-                    "Mejorar hábitos", "habitos", 15, missionDescs);
+                    "Mejorar hábitos", "habitos", 15, missionDescs, null);
 
             when(sprintRepository.findActiveSprintForFamily(1L)).thenReturn(Optional.empty());
             when(familyRepository.findById(1L)).thenReturn(Optional.of(family));
@@ -184,7 +184,7 @@ class SprintServiceTest {
                     .thenReturn(Optional.of(activeSprint));
 
             CreateSprintRequest request = new CreateSprintRequest(
-                    "Otro objetivo", "emociones", 7, List.of());
+                    "Otro objetivo", "emociones", 7, List.of(), null);
 
             assertThatThrownBy(() -> service.createSprint(1L, request))
                     .isInstanceOf(BusinessException.class)
@@ -198,7 +198,7 @@ class SprintServiceTest {
             when(familyRepository.findById(99L)).thenReturn(Optional.empty());
 
             CreateSprintRequest request = new CreateSprintRequest(
-                    "Objetivo", "comunicacion", 7, List.of());
+                    "Objetivo", "comunicacion", 7, List.of(), null);
 
             assertThatThrownBy(() -> service.createSprint(99L, request))
                     .isInstanceOf(BusinessException.class)
@@ -212,7 +212,7 @@ class SprintServiceTest {
             when(familyRepository.findById(1L)).thenReturn(Optional.of(family));
 
             CreateSprintRequest request = new CreateSprintRequest(
-                    "Objetivo", "comunicacion", 10, List.of());
+                    "Objetivo", "comunicacion", 10, List.of(), null);
 
             assertThatThrownBy(() -> service.createSprint(1L, request))
                     .isInstanceOf(BusinessException.class)

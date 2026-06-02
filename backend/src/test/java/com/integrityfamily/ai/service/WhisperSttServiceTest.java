@@ -75,7 +75,7 @@ class WhisperSttServiceTest {
 
             assertThat(result)
                     .isNotBlank()
-                    .isEqualTo("¿Cuáles son mis misiones?");
+                    .isEqualTo("[AUDIO SIMULADO: Configura OPENAI_API_KEY en .env] ¿Cuáles son mis misiones?");
         }
 
         @Test
@@ -85,7 +85,17 @@ class WhisperSttServiceTest {
 
             String result = svc.transcribe(new byte[]{1, 2, 3}, "audio/wav");
 
-            assertThat(result).isEqualTo("¿Cuáles son mis misiones?");
+            assertThat(result).isEqualTo("[AUDIO SIMULADO: Configura OPENAI_API_KEY en .env] ¿Cuáles son mis misiones?");
+        }
+
+        @Test
+        @DisplayName("con clientTranscript y sin api-key → retorna transcripción de cliente formateada")
+        void shouldReturnClientTranscript_whenApiKeyIsBlankButClientTranscriptIsPresent() {
+            WhisperSttService svc = service(true, "");
+
+            String result = svc.transcribe(new byte[]{1, 2, 3}, "audio/wav", "Hola Mundo");
+
+            assertThat(result).isEqualTo("Hola Mundo");
         }
 
         @Test
@@ -95,7 +105,17 @@ class WhisperSttServiceTest {
 
             String result = svc.transcribe(new byte[]{1, 2, 3}, "audio/mp3");
 
-            assertThat(result).isEqualTo("¿Cuáles son mis misiones?");
+            assertThat(result).isEqualTo("[AUDIO SIMULADO: Configura OPENAI_API_KEY en .env] ¿Cuáles son mis misiones?");
+        }
+
+        @Test
+        @DisplayName("voice.enabled=true y api-key=your_openai_api_key_here → retorna transcripción simulada")
+        void shouldReturnSimulatedTranscription_whenApiKeyIsPlaceholder() {
+            WhisperSttService svc = service(true, "your_openai_api_key_here");
+
+            String result = svc.transcribe(new byte[]{1, 2, 3}, "audio/mp3");
+
+            assertThat(result).isEqualTo("[AUDIO SIMULADO: Configura OPENAI_API_KEY en .env] ¿Cuáles son mis misiones?");
         }
 
         @Test
@@ -105,7 +125,7 @@ class WhisperSttServiceTest {
 
             String result = svc.transcribe(new byte[]{0}, "audio/ogg");
 
-            assertThat(result).isEqualTo("¿Cuáles son mis misiones?");
+            assertThat(result).isEqualTo("[AUDIO SIMULADO: Configura OPENAI_API_KEY en .env] ¿Cuáles son mis misiones?");
         }
 
         @Test

@@ -37,16 +37,33 @@ public class SonicService {
                                           String mimeType,
                                           Family family,
                                           Long memberId) {
+        return processVoiceChat(audioBytes, mimeType, family, memberId, null, null);
+    }
+
+    public SonicResponse processVoiceChat(byte[] audioBytes,
+                                          String mimeType,
+                                          Family family,
+                                          Long memberId,
+                                          Object transformationContext) {
+        return processVoiceChat(audioBytes, mimeType, family, memberId, transformationContext, null);
+    }
+
+    public SonicResponse processVoiceChat(byte[] audioBytes,
+                                          String mimeType,
+                                          Family family,
+                                          Long memberId,
+                                          Object transformationContext,
+                                          String clientTranscript) {
         Objects.requireNonNull(family, "family no puede ser null");
 
         WhisperSttService sttService = stt.orElseThrow(() ->
                 new RuntimeException("STT no disponible"));
 
-        String transcription = sttService.transcribe(audioBytes, mimeType);
+        String transcription = sttService.transcribe(audioBytes, mimeType, clientTranscript);
 
         // Route through the full cognitive pipeline (Fases A-E): session, arc, identity, memory
         participationService.record(family.getId(), memberId, ParticipationEventType.VOICE_MESSAGE);
-        String aiText = aiService.processInteractiveChat(transcription, family, memberId).getContent();
+        String aiText = aiService.chatWithTransformation(transcription, family, memberId, transformationContext).getContent();
 
         String audioBase64 = null;
         if (tts.isPresent()) {

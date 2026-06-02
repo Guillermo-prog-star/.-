@@ -25,6 +25,9 @@ import com.integrityfamily.domain.Evaluation;
 import com.integrityfamily.domain.EvaluationStatus;
 import com.integrityfamily.domain.FamilyLongitudinalState;
 import com.integrityfamily.domain.repository.FamilyLongitudinalStateRepository;
+import com.integrityfamily.domain.FamilySprint;
+import com.integrityfamily.domain.SprintMission;
+import com.integrityfamily.domain.repository.FamilySprintRepository;
 import com.integrityfamily.participation.service.ParticipationService;
 import com.integrityfamily.scanner.domain.FamilyAlert;
 import com.integrityfamily.scanner.repository.FamilyAlertRepository;
@@ -60,6 +63,7 @@ public class ContextSynthesizer {
     private final MemberIdentityProfileService memberIdentityProfileService;
     private final ConversationSessionRepository conversationSessionRepository;
     private final FamilyLongitudinalStateRepository longitudinalStateRepository;
+    private final FamilySprintRepository sprintRepository;
     private final ObjectMapper objectMapper;
 
     private static final int MISSION_LIMIT = 5;
@@ -119,7 +123,8 @@ public class ContextSynthesizer {
             buildMemberIdentitySnapshot(memberId),
             buildEmotionalArcFromSession(sessionId),
             buildConversationGoalFromSession(sessionId),
-            buildLongitudinalContext(family.getId())   // ← arquitectura epistemológica
+            buildLongitudinalContext(family.getId()),   // ← arquitectura epistemológica
+            buildActiveSprintSnapshot(family.getId())  // ← sprint activo con misiones en curso
         );
     }
 
@@ -300,6 +305,45 @@ public class ContextSynthesizer {
 
         return new AiContext.ActivePlanSnapshot(
                 latestPlan.getId(), currentMilestone, pillar, nextMissions, completionRate);
+    }
+
+    // ─── Sprint Activo ────────────────────────────────────────────────────────
+
+    /**
+     * Retorna el sprint activo de la familia con sus misiones en curso.
+     * Null si no hay sprint activo — el prompt lo omite en ese caso.
+     */
+    private AiContext.ActiveSprintSnapshot buildActiveSprintSnapshot(Long familyId) {
+        try {
+            return sprintRepository.findActiveSprintForFamily(familyId)
+                .map(sprint -> {
+                    List<SprintMission> missions = sprint.getMissions();
+                    int total = missions.size();
+                    long completed = missions.stream()
+                            .filter(m -> "COMPLETED".equals(m.getStatus())).count();
+                    double progress = total > 0 ? (double) completed / total * 100.0 : 0.0;
+                    List<String> pending = missions.stream()
+                            .filter(m -> "PENDING".equals(m.getStatus()))
+                            .map(SprintMission::getDescription)
+                            .toList();
+                    return new AiContext.ActiveSprintSnapshot(
+                            sprint.getId(),
+                            sprint.getObjective(),
+                            sprint.getRiskDimension(),
+                            sprint.getDurationDays(),
+                            sprint.getStartDate().toString(),
+                            sprint.getEndDate().toString(),
+                            total,
+                            (int) completed,
+                            progress,
+                            pending
+                    );
+                })
+                .orElse(null);
+        } catch (Exception e) {
+            log.warn("[CONTEXT] No se pudo cargar sprint activo para familia {}: {}", familyId, e.getMessage());
+            return null;
+        }
     }
 
     // ─── Fase B: Perfil de Identidad del Miembro ─────────────────────────────

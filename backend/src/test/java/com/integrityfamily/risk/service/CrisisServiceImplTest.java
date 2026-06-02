@@ -5,6 +5,9 @@ import com.integrityfamily.ai.provider.AiProvider;
 import com.integrityfamily.ai.service.ContextSynthesizer;
 import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.common.service.WhatsAppService;
+import com.integrityfamily.common.event.EventPublisher;
+import com.integrityfamily.adaptive.AdaptivePlanService;
+import com.integrityfamily.domain.repository.RiskSnapshotRepository;
 import com.integrityfamily.domain.CriticalDay;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.FamilyMember;
@@ -44,9 +47,12 @@ class CrisisServiceImplTest {
 
     @Mock CriticalDayRepository  repository;
     @Mock FamilyRepository       familyRepository;
+    @Mock RiskSnapshotRepository riskSnapshotRepository;
     @Mock AiProvider             aiProvider;
     @Mock ContextSynthesizer     contextSynthesizer;
     @Mock WhatsAppService        whatsAppService;
+    @Mock EventPublisher         eventPublisher;
+    @Mock AdaptivePlanService    adaptivePlanService;
 
     @InjectMocks
     CrisisServiceImpl crisisService;

@@ -7,6 +7,8 @@ import { TransformationFlowService } from '../../core/services/transformation-fl
 import { MarkdownPipe } from '../../shared/pipes/markdown.pipe';
 import { SessionContext } from '../../core/models/models';
 
+const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
 @Component({
   selector: 'app-chat-page',
   standalone: true,
@@ -28,6 +30,11 @@ export class ChatPageComponent implements OnInit {
   sessionContext: SessionContext | null = null;
   private mediaRecorder: any;
   private audioChunks: any[] = [];
+  private recognition: any;
+  private clientTranscript = '';
+  private audioBlobReady = false;
+  private recognitionReady = false;
+  private recordedBlob: Blob | null = null;
 
   get familyId()   { return this.familyState.currentFamilyId(); }
   get familyName() { return this.familyState.currentFamilyName() || 'Familia'; }
@@ -148,10 +155,57 @@ export class ChatPageComponent implements OnInit {
       this.mediaRecorder.ondataavailable = (event: any) => this.audioChunks.push(event.data);
       this.mediaRecorder.onstop = () => {
         const audioBlob = new Blob(this.audioChunks, { type: 'audio/mpeg' });
-        this.sendVoice(audioBlob);
+        this.recordedBlob = audioBlob;
+        this.audioBlobReady = true;
+        this.maybeSendVoice();
       };
+      
       this.mediaRecorder.start();
       this.recording = true;
+
+      // Start client-side speech recognition if supported
+      this.clientTranscript = '';
+      this.audioBlobReady = false;
+      this.recognitionReady = !SpeechRecognition;
+      this.recordedBlob = null;
+
+      if (SpeechRecognition) {
+        try {
+          this.recognition = new SpeechRecognition();
+          this.recognition.lang = 'es-ES';
+          this.recognition.continuous = true;
+          this.recognition.interimResults = false;
+          
+          this.recognition.onresult = (event: any) => {
+            let chunkText = '';
+            for (let i = event.resultIndex; i < event.results.length; ++i) {
+              if (event.results[i].isFinal) {
+                chunkText += event.results[i][0].transcript;
+              }
+            }
+            if (chunkText) {
+              this.clientTranscript += (this.clientTranscript ? ' ' : '') + chunkText;
+            }
+          };
+
+          this.recognition.onerror = (event: any) => {
+            console.warn("SpeechRecognition error:", event.error);
+            this.recognitionReady = true;
+            this.maybeSendVoice();
+          };
+
+          this.recognition.onend = () => {
+            console.log("SpeechRecognition ended. Final transcript:", this.clientTranscript);
+            this.recognitionReady = true;
+            this.maybeSendVoice();
+          };
+
+          this.recognition.start();
+        } catch (e) {
+          console.error("SpeechRecognition startup failed", e);
+          this.recognitionReady = true;
+        }
+      }
     }).catch(err => {
       console.error("Mic access denied", err);
       this.micError = "Se requiere permiso de micrófono para esta función.";
@@ -162,8 +216,28 @@ export class ChatPageComponent implements OnInit {
   private stopRecording() {
     if (this.mediaRecorder) {
       this.mediaRecorder.stop();
+      if (this.recognition) {
+        try {
+          this.recognition.stop();
+        } catch (e) {
+          console.warn("Failed to stop recognition:", e);
+          this.recognitionReady = true;
+          this.maybeSendVoice();
+        }
+      }
       this.recording = false;
       this.loading = true; // Empieza a procesar
+    }
+  }
+
+  private maybeSendVoice() {
+    if (this.audioBlobReady && this.recognitionReady) {
+      if (this.recordedBlob) {
+        this.sendVoice(this.recordedBlob);
+      }
+      this.audioBlobReady = false;
+      this.recognitionReady = false;
+      this.recordedBlob = null;
     }
   }
 
@@ -171,12 +245,48 @@ export class ChatPageComponent implements OnInit {
     const formData = new FormData();
     formData.append('audio', blob, 'voice_message.mp3');
     if (this.memberId != null) formData.append('memberId', String(this.memberId));
+    if (this.clientTranscript) {
+      formData.append('clientTranscript', this.clientTranscript.trim());
+    }
+
+    // Append transformation context parameters to voice chat request
+    const currentPillar = this.flow.currentPillar();
+    if (currentPillar != null) formData.append('currentPillar', currentPillar);
+
+    const currentMonth = this.flow.currentMonth();
+    if (currentMonth != null) formData.append('currentMonth', String(currentMonth));
+
+    const milestoneLabel = this.flow.milestoneLabel();
+    if (milestoneLabel != null) formData.append('milestoneLabel', milestoneLabel);
+
+    const currentPhase = this.flow.currentPhaseLabel();
+    if (currentPhase != null) formData.append('currentPhase', currentPhase);
+
+    const sprintNumber = this.flow.currentSprintNumber();
+    if (sprintNumber != null) formData.append('sprintNumber', String(sprintNumber));
+
+    const activeMissionId = this.flow.activeMissionId();
+    if (activeMissionId != null) formData.append('activeMissionId', activeMissionId);
+
+    const progressPercent = this.flow.progressPercent();
+    if (progressPercent != null) formData.append('progressPercent', String(progressPercent));
+
+    const onboardingCompleted = this.flow.isOnboardingDone();
+    if (onboardingCompleted != null) formData.append('onboardingCompleted', String(onboardingCompleted));
+
+    // UI Optimista
+    const tempUserMsg = {
+      content: this.clientTranscript ? this.clientTranscript.trim() : '🎤 Procesando audio...',
+      isAi: false,
+      createdAt: new Date()
+    };
+    this.messages.push(tempUserMsg);
+    this.scroll();
 
     this.http.post<any>(`/api/chat/voice/${this.familyId}`, formData).subscribe({
       next: (res) => {
-        // FIX Bug #15: VoiceController returns SonicResponse (transcript/assistantReply),
-        // NOT VoiceChatResponse (transcription/aiResponseText). Use the correct field names.
-        this.messages.push({ content: res.transcript, isAi: false, createdAt: new Date() });
+        // Actualizar la transcripción real y agregar la respuesta del Mentor
+        tempUserMsg.content = res.transcript;
         this.messages.push({ content: res.assistantReply, isAi: true, createdAt: new Date() });
         this.loading = false;
         this.scroll();
@@ -187,7 +297,11 @@ export class ChatPageComponent implements OnInit {
       },
       error: () => {
         this.loading = false;
+        if (tempUserMsg.content === '🎤 Procesando audio...') {
+          tempUserMsg.content = '🎤 Error en grabación de voz';
+        }
         this.messages.push({ content: 'Error al procesar el audio.', isAi: true, createdAt: new Date() });
+        this.scroll();
       }
     });
   }

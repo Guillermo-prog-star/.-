@@ -1,11 +1,11 @@
-<div class="chat-container h-full flex flex-col p-6 max-w-5xl mx-auto">
+<div class="chat-container flex flex-col p-4 md:p-6 max-w-5xl mx-auto">
   <!-- Header -->
-  <header class="flex justify-between items-center mb-6 glass-premium p-6 rounded-3xl border border-white/10 shrink-0">
-    <div class="flex items-center gap-4">
-      <div class="w-12 h-12 bg-indigo-500 rounded-2xl flex items-center justify-center text-2xl shadow-[0_0_20px_rgba(99,102,241,0.4)]">🧞</div>
+  <header class="flex justify-between items-center mb-3 glass-premium p-4 rounded-2xl border border-white/10 shrink-0">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center text-xl shadow-[0_0_20px_rgba(99,102,241,0.4)]">🧞</div>
       <div>
-        <h2 class="text-white font-bold text-lg">Mentor de Integridad</h2>
-        <p class="text-[10px] text-teal-400 uppercase tracking-widest font-black animate-pulse">Consultoría Proactiva On-Line</p>
+        <h2 class="text-white font-bold text-base">Mentor de Integridad</h2>
+        <p class="text-[9px] text-teal-400 uppercase tracking-widest font-black animate-pulse">Consultoría Proactiva On-Line</p>
       </div>
     </div>
     <div class="hidden md:block text-right">
@@ -28,7 +28,7 @@
   </div>
 
   <!-- Messages Area -->
-  <div class="chat-messages flex-1 overflow-y-auto mb-6 pr-4 space-y-6 custom-scrollbar">
+  <div class="chat-messages overflow-y-auto mb-4 pr-2 space-y-4 custom-scrollbar">
     <div *ngFor="let msg of messages" 
          class="flex flex-col" 
          [ngClass]="msg.isAi ? 'items-start' : 'items-end'">
@@ -65,7 +65,7 @@
         (keydown.enter)="$event.preventDefault(); send()"
         [placeholder]="recording ? 'Grabando audio...' : 'Escribe tu duda familiar aquí...'"
         [disabled]="loading || recording"
-        class="w-full bg-transparent text-white p-6 outline-none resize-none h-24 text-sm placeholder:text-white/20"
+        class="w-full bg-transparent text-white p-4 outline-none resize-none h-16 text-sm placeholder:text-white/20"
       ></textarea>
       
       <div class="absolute bottom-4 right-4 flex gap-2">

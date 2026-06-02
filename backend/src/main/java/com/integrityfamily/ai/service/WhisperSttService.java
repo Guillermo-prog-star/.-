@@ -62,22 +62,21 @@ public class WhisperSttService {
                 .build();
     }
 
-    /**
-     * Transcribe audio bytes to text using OpenAI Whisper.
-     *
-     * @param audioBytes raw audio content (webm, mp3, wav, ogg, flac, m4a, mp4)
-     * @param mimeType   MIME type of the audio, e.g. {@code "audio/webm"}
-     * @return transcribed text, never null
-     * @throws RuntimeException if the Whisper API call fails (voice is enabled and key is present)
-     */
     public String transcribe(byte[] audioBytes, String mimeType) {
+        return transcribe(audioBytes, mimeType, null);
+    }
+
+    public String transcribe(byte[] audioBytes, String mimeType, String clientTranscript) {
         String key = openaiCfg.getApiKey();
-        boolean hasKey = key != null && !key.isBlank() && !"MOCK_KEY".equals(key);
+        boolean hasKey = key != null && !key.isBlank() && !"MOCK_KEY".equals(key) && !"your_openai_api_key_here".equals(key);
 
         if (!voiceCfg.isEnabled() || !hasKey) {
             log.info("🤖 [STT-SIMULATION] Retornando transcripción simulada (voice.enabled={}, key={})",
                     voiceCfg.isEnabled(), hasKey ? "present" : "absent");
-            return "¿Cuáles son mis misiones?";
+            if (clientTranscript != null && !clientTranscript.isBlank()) {
+                return clientTranscript.trim();
+            }
+            return "¿Cuáles son mis misiones actuales?";
         }
 
         AiProperties.Openai.Whisper cfg = openaiCfg.getWhisper();

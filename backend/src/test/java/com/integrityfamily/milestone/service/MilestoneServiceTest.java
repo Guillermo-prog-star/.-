@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.integrityfamily.common.service.UserNotificationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -40,6 +41,7 @@ class MilestoneServiceTest {
     @Mock FamilyRepository       familyRepository;
     @Mock EvaluationRepository   evaluationRepository;
     @Mock PlanTaskRepository     planTaskRepository;
+    @Mock UserNotificationService userNotificationService;
 
     @InjectMocks MilestoneService service;
 

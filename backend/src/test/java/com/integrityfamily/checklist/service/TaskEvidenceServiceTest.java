@@ -6,6 +6,7 @@ import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.PlanTaskRepository;
 import com.integrityfamily.domain.repository.TaskEvidenceRepository;
 import org.springframework.http.HttpStatus;
+import com.integrityfamily.participation.service.ParticipationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -42,6 +43,7 @@ class TaskEvidenceServiceTest {
     @Mock PlanTaskRepository     planTaskRepository;
     @Mock FamilyRepository       familyRepository;
     @Mock RabbitTemplate         rabbitTemplate;
+    @Mock ParticipationService   participationService;
 
     @InjectMocks TaskEvidenceService service;
 

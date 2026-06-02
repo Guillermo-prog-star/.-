@@ -14,6 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import com.integrityfamily.participation.service.ParticipationService;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,6 +48,7 @@ class PlanServiceTest {
     @Mock MilestoneRepository             milestoneRepository;
     @Mock QuestionRepository              questionRepository;
     @Mock RabbitTemplate                  rabbitTemplate;
+    @Mock ParticipationService            participationService;
 
     @InjectMocks
     PlanService planService;

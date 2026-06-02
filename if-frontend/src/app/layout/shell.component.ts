@@ -44,7 +44,7 @@ import { SentinelCoreService } from '../core/services/sentinel-core.service';
 
         <app-navbar />
         
-        <main class="p-6 md:p-10 flex-1 overflow-y-auto">
+        <main class="p-4 md:p-6 flex-1 overflow-hidden">
           <router-outlet />
         </main>
       </div>

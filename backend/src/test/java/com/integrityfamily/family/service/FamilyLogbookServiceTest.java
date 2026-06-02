@@ -9,6 +9,7 @@ import com.integrityfamily.dto.FamilyLogbookEntryResponse;
 import com.integrityfamily.dto.ResolveFamilyLogbookEntryRequest;
 import com.integrityfamily.domain.repository.FamilyLogbookEntryRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
+import com.integrityfamily.participation.service.ParticipationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,6 +40,9 @@ class FamilyLogbookServiceTest {
 
     @Mock
     private FamilyMemoryService familyMemoryService;
+
+    @Mock
+    private ParticipationService participationService;
 
     @InjectMocks
     private FamilyLogbookService logbookService;

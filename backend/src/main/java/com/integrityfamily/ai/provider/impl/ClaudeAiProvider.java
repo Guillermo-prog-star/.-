@@ -134,7 +134,9 @@ public class ClaudeAiProvider implements AiProvider {
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> content = (List<Map<String, Object>>) response.getBody().get("content");
                 if (content != null && !content.isEmpty()) {
-                    return (String) content.get(0).get("text");
+                    String text = (String) content.get(0).get("text");
+                    log.info("[CLAUDE] ✅ Respuesta recibida ({} chars)", text != null ? text.length() : 0);
+                    return text;
                 }
             }
 

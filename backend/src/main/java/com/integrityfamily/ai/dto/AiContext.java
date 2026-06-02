@@ -32,8 +32,24 @@ public record AiContext(
     String emotionalArc,      // STABLE | MILD_TENSION | ESCALATING | ESCALATED | DE_ESCALATING | null
     String conversationGoal,  // GENERAL | SUPPORT | REFLECTION | PLANNING | CRISIS_CONTAINMENT | null
     // ── Arquitectura Epistemológica: Estado Longitudinal ─────────────────────
-    LongitudinalContext longitudinal  // memoria estructural de la familia a lo largo del tiempo
+    LongitudinalContext longitudinal,  // memoria estructural de la familia a lo largo del tiempo
+    // ── Sprint Activo: Misión en curso ───────────────────────────────────────
+    ActiveSprintSnapshot activeSprint  // null si no hay sprint activo
 ) {
+    /** Sprint activo: objetivo, dimensión de riesgo, misiones en curso y avance. */
+    public record ActiveSprintSnapshot(
+        Long sprintId,
+        String objective,
+        String riskDimension,
+        int durationDays,
+        String startDate,
+        String endDate,
+        int totalMissions,
+        int completedMissions,
+        double progressPercent,
+        List<String> pendingMissions
+    ) {}
+
     public record FamilyMetadata(String name, String milestone, String lastUpdate) {}
     public record MemberNode(String firstName, String role) {}
     public record IntegrityMetrics(Double icf, String riskLevel, String consciousnessLabel) {}

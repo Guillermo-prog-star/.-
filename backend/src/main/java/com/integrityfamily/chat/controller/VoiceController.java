@@ -29,7 +29,16 @@ public class VoiceController {
     public ResponseEntity<SonicResponse> chat(
             @RequestParam("audio") MultipartFile audio,
             @PathVariable("familyId") Long familyId,
-            @RequestParam(value = "memberId", required = false) Long memberId) throws IOException {
+            @RequestParam(value = "memberId", required = false) Long memberId,
+            @RequestParam(value = "clientTranscript", required = false) String clientTranscript,
+            @RequestParam(value = "currentPillar", required = false) String currentPillar,
+            @RequestParam(value = "currentMonth", required = false) Integer currentMonth,
+            @RequestParam(value = "milestoneLabel", required = false) String milestoneLabel,
+            @RequestParam(value = "currentPhase", required = false) String currentPhase,
+            @RequestParam(value = "sprintNumber", required = false) Integer sprintNumber,
+            @RequestParam(value = "activeMissionId", required = false) String activeMissionId,
+            @RequestParam(value = "progressPercent", required = false) Integer progressPercent,
+            @RequestParam(value = "onboardingCompleted", required = false) Boolean onboardingCompleted) throws IOException {
 
         SonicService sonicService = sonicServiceProvider.getIfAvailable();
         if (sonicService == null) {
@@ -39,8 +48,22 @@ public class VoiceController {
         Family family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new NotFoundException("Familia no encontrada"));
 
+        ChatController.ChatRequestV2.TransformationContextDto context = null;
+        if (currentPillar != null || currentMonth != null || milestoneLabel != null || currentPhase != null ||
+            sprintNumber != null || activeMissionId != null || progressPercent != null || onboardingCompleted != null) {
+            context = new ChatController.ChatRequestV2.TransformationContextDto();
+            context.setCurrentPillar(currentPillar);
+            context.setCurrentMonth(currentMonth);
+            context.setMilestoneLabel(milestoneLabel);
+            context.setCurrentPhase(currentPhase);
+            context.setSprintNumber(sprintNumber);
+            context.setActiveMissionId(activeMissionId);
+            context.setProgressPercent(progressPercent);
+            context.setOnboardingCompleted(onboardingCompleted);
+        }
+
         SonicResponse response = sonicService.processVoiceChat(
-                audio.getBytes(), audio.getContentType(), family, memberId);
+                audio.getBytes(), audio.getContentType(), family, memberId, context, clientTranscript);
 
         return ResponseEntity.ok(response);
     }

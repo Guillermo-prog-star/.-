@@ -105,6 +105,7 @@ public class PromptGenerator {
                 + "</mode_context>\n\n"
                 + "<family_state>\n" + buildFamilyStateJson(ctx) + "\n</family_state>\n\n"
                 + buildPlanBlock(ctx)
+                + buildSprintBlock(ctx)
                 + buildCognitiveBlock(ctx)
                 + buildMemoryContextBlock(ctx)
                 + buildRelationalGraphBlock(ctx)
@@ -157,6 +158,7 @@ public class PromptGenerator {
                 + "</mode_context>\n\n"
                 + "<family_state>\n" + buildFamilyStateJson(ctx) + "\n</family_state>\n\n"
                 + buildPlanBlock(ctx)
+                + buildSprintBlock(ctx)
                 + buildCognitiveBlock(ctx)
                 + buildMemoryContextBlock(ctx)
                 + buildRelationalGraphBlock(ctx)
@@ -201,6 +203,7 @@ public class PromptGenerator {
                 + "</mode_context>\n\n"
                 + "<family_state>\n" + buildFamilyStateJson(ctx) + "\n</family_state>\n\n"
                 + buildPlanBlock(ctx)
+                + buildSprintBlock(ctx)
                 + buildCognitiveBlock(ctx)
                 + buildMemoryContextBlock(ctx)
                 + buildRelationalGraphBlock(ctx)
@@ -408,6 +411,35 @@ public class PromptGenerator {
                 plan.nextMissions().stream()
                     .map(m -> "• " + m.title())
                     .reduce("", (a, b) -> a + "\n" + b)
+            );
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private String buildSprintBlock(AiContext ctx) {
+        if (ctx.activeSprint() == null) return "";
+        try {
+            var sprint = ctx.activeSprint();
+            return String.format("""
+                <active_sprint>
+                Objetivo del sprint: %s | Dimensión de riesgo: %s
+                Misiones pendientes: %s
+                Progreso: %.1f%% (%d/%d misiones completadas)
+                Días de duración: %d (Inicio: %s | Fin: %s)
+                </active_sprint>
+                """,
+                sprint.objective(),
+                sprint.riskDimension(),
+                sprint.pendingMissions().stream()
+                    .map(m -> "• " + m)
+                    .reduce("", (a, b) -> a + "\n" + b),
+                sprint.progressPercent(),
+                sprint.completedMissions(),
+                sprint.totalMissions(),
+                sprint.durationDays(),
+                sprint.startDate(),
+                sprint.endDate()
             );
         } catch (Exception e) {
             return "";

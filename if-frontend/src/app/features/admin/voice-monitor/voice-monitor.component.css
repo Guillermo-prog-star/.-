@@ -3,7 +3,7 @@
   color: white;
   min-height: 100vh;
   background: 
-    radial-gradient(circle at top right, rgba(59, 130, 246, 0.15), transparent 40%),
+    radial-gradient(circle at top right, var(--if-system-soft), transparent 40%),
     radial-gradient(circle at bottom left, rgba(45, 212, 191, 0.1), transparent 40%);
 }
 
@@ -85,10 +85,10 @@
   }
   .wave-bar {
     width: 3px;
-    background: #3B82F6;
+    background: var(--if-system);
     border-radius: 10px;
     animation: wave 1s ease-in-out infinite;
-    box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 0 10px var(--if-system-glow);
   }
   .wave-bar:nth-child(1) { height: 8px; animation-delay: 0.1s; }
   .wave-bar:nth-child(2) { height: 16px; animation-delay: 0.2s; }
@@ -147,7 +147,7 @@
 }
 
 .activity-item:hover {
-  background: rgba(59, 130, 246, 0.08);
+  background: var(--if-system-faint);
   border-color: rgba(59, 130, 246, 0.2);
   transform: translateX(8px);
 }
@@ -194,6 +194,6 @@
 
 .badge-error {
   background: rgba(239, 68, 68, 0.1);
-  color: #ef4444;
+  color: var(--if-crisis);
   border: 1px solid rgba(239, 68, 68, 0.2);
 }

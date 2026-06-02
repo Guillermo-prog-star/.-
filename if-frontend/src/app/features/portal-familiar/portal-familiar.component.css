@@ -102,13 +102,13 @@
 }
 
 .error-toast {
-  background: rgba(239, 68, 68, 0.15);
+  background: var(--if-crisis-soft);
   border: 1px solid rgba(239, 68, 68, 0.3);
   color: #fca5a5;
 }
 
 .success-toast {
-  background: rgba(34, 197, 94, 0.15);
+  background: var(--if-evolution-soft);
   border: 1px solid rgba(34, 197, 94, 0.3);
   color: #86efac;
 }
@@ -192,8 +192,8 @@
 
 /* --- ANILLO DE PROGRESO — SINTONÍA DIARIA (Naranja Familiar) --- */
 .progress-card {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, rgba(212, 175, 55, 0.03) 100%);
-  border: 1px solid rgba(245, 158, 11, 0.20);
+  background: linear-gradient(135deg, var(--if-family-faint) 0%, rgba(212, 175, 55, 0.03) 100%);
+  border: 1px solid var(--if-family-border);
   border-radius: 24px;
   padding: 16px;
   display: flex;
@@ -220,7 +220,7 @@
 }
 
 .circle-progress {
-  stroke: #F59E0B; /* Naranja Familiar — acompañamiento, acción diaria */
+  stroke: var(--if-family); /* Naranja Familiar — acompañamiento, acción diaria */
   stroke-width: 8;
   stroke-linecap: round;
   fill: none;
@@ -252,7 +252,7 @@
   font-size: 6px;
   font-weight: 800;
   letter-spacing: 0.5px;
-  color: #F59E0B; /* Naranja Familiar — "HOY" */
+  color: var(--if-family); /* Naranja Familiar — "HOY" */
 }
 
 .progress-info h3 {
@@ -316,7 +316,7 @@ h2 {
 
 .checklist-item:hover {
   background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(99, 102, 241, 0.2);
+  border-color: var(--if-intel-muted);
 }
 
 .checkbox-circle {
@@ -604,7 +604,7 @@ h2 {
 .ivr-glass-card:hover {
   transform: translateY(-2px);
   border-color: rgba(99, 102, 241, 0.25);
-  box-shadow: 0 20px 48px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 20px 48px var(--if-intel-soft);
 }
 
 .ivr-card-header {
@@ -624,8 +624,8 @@ h2 {
 
 .btn-friction-trigger {
   padding: 8px 12px;
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: var(--if-crisis-soft);
+  border: 1px solid var(--if-crisis-border);
   border-radius: 12px;
   color: #fca5a5;
   font-size: 11px;
@@ -639,7 +639,7 @@ h2 {
 
 .btn-friction-trigger:hover {
   background: rgba(239, 68, 68, 0.22);
-  border-color: #ef4444;
+  border-color: var(--if-crisis);
   color: white;
   transform: scale(1.03);
 }
@@ -747,14 +747,14 @@ h2 {
 }
 
 .guideline-warning {
-  background: rgba(245, 158, 11, 0.05);
-  border: 1px solid rgba(245, 158, 11, 0.15);
+  background: var(--if-family-faint);
+  border: 1px solid var(--if-family-muted);
   color: #fde68a;
 }
 
 .guideline-danger {
   background: rgba(239, 68, 68, 0.05);
-  border: 1px solid rgba(239, 68, 68, 0.15);
+  border: 1px solid var(--if-crisis-soft);
   color: #fca5a5;
 }
 
@@ -811,7 +811,7 @@ h2 {
 }
 
 .node-dot.dot-danger {
-  background: #ef4444;
+  background: var(--if-crisis);
   box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
   animation: pulseDanger 2s infinite;
 }
@@ -996,8 +996,8 @@ h2 {
 }
 
 .glass-modal-danger .modal-icon {
-  background: rgba(239, 68, 68, 0.15);
-  border-color: rgba(239, 68, 68, 0.25);
+  background: var(--if-crisis-soft);
+  border-color: var(--if-crisis-border);
 }
 
 .modal-header h3 {
@@ -1066,7 +1066,7 @@ h2 {
 }
 
 .glass-modal-danger .modal-body textarea:focus {
-  border-color: #ef4444;
+  border-color: var(--if-crisis);
 }
 
 .modal-footer {
@@ -1114,13 +1114,13 @@ h2 {
 }
 
 .btn-friction-confirm {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  background: linear-gradient(135deg, var(--if-crisis) 0%, #dc2626 100%);
   box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3);
 }
 
 .btn-friction-confirm:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.4);
+  box-shadow: 0 6px 18px var(--if-crisis-glow);
 }
 
 .btn-modal-submit:disabled {
@@ -1161,7 +1161,7 @@ h2 {
 .active-severity.severity-lvl-2 { background: #34d399; border-color: #34d399; box-shadow: 0 0 12px rgba(52, 211, 153, 0.5); }
 .active-severity.severity-lvl-3 { background: #fbbf24; border-color: #fbbf24; box-shadow: 0 0 12px rgba(251, 191, 36, 0.5); }
 .active-severity.severity-lvl-4 { background: #f87171; border-color: #f87171; box-shadow: 0 0 12px rgba(248, 113, 113, 0.5); }
-.active-severity.severity-lvl-5 { background: #ef4444; border-color: #ef4444; box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); }
+.active-severity.severity-lvl-5 { background: var(--if-crisis); border-color: var(--if-crisis); box-shadow: 0 0 12px rgba(239, 68, 68, 0.6); }
 
 .severity-labels {
   display: flex;

@@ -12,8 +12,8 @@
 }
 
 .glass-card:hover {
-  border-color: rgba(59, 130, 246, 0.4);
-  box-shadow: 0 0 30px rgba(59, 130, 246, 0.15);
+  border-color: var(--if-system-glow);
+  box-shadow: 0 0 30px var(--if-system-soft);
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -31,7 +31,7 @@
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(59, 130, 246, 0.5);
+  background: var(--if-system-glow);
 }
 
 .stat-icon {

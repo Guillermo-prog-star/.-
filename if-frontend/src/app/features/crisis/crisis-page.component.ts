@@ -123,7 +123,7 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
               <!-- BANNER MISIÓN PAUSADA -->
               @if (pausedMissionId) {
                 <div style="margin-bottom:16px;padding:12px 16px;
-                            background:rgba(251,191,36,0.07);border:1px solid rgba(251,191,36,0.25);
+                            background:var(--if-legacy-faint);border:1px solid rgba(251,191,36,0.25);
                             border-radius:12px;display:flex;align-items:center;gap:12px;">
                   <span style="font-size:20px;flex-shrink:0;">⏸️</span>
                   <div style="flex:1;">
@@ -241,7 +241,7 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      background: rgba(239, 68, 68, 0.12);
+      background: var(--if-crisis-soft);
       border: 1px solid rgba(239, 68, 68, 0.3);
       color: #f87171;
       padding: 6px 16px;
@@ -256,12 +256,12 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
     .pulse-dot {
       width: 8px;
       height: 8px;
-      background-color: #ef4444;
+      background-color: var(--if-crisis);
       border-radius: 50%;
       display: inline-block;
     }
     @keyframes soft-pulse {
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      0% { box-shadow: 0 0 0 0 var(--if-crisis-glow); }
       70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
       100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
     }
@@ -273,8 +273,8 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
 
     /* INPUTS & FORM STYLES */
     .form-card-glow:hover {
-      box-shadow: 0 0 35px rgba(239, 68, 68, 0.12);
-      border-color: rgba(239, 68, 68, 0.25);
+      box-shadow: 0 0 35px var(--if-crisis-soft);
+      border-color: var(--if-crisis-border);
     }
     .glass-input-group {
       display: flex;
@@ -306,7 +306,7 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
     .glass-input:focus {
       outline: none !important;
       border-color: rgba(239, 68, 68, 0.5) !important;
-      box-shadow: 0 0 15px rgba(239, 68, 68, 0.25) !important;
+      box-shadow: 0 0 15px var(--if-crisis-border) !important;
       background: rgba(15, 23, 42, 0.75) !important;
     }
     select.glass-input option {
@@ -333,15 +333,15 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
       transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .emotion-pill:hover, .emotion-pill.active {
-      background: rgba(239, 68, 68, 0.12);
-      border-color: rgba(239, 68, 68, 0.4);
+      background: var(--if-crisis-soft);
+      border-color: var(--if-crisis-glow);
       color: #f87171;
       transform: translateY(-2px);
     }
 
     /* BTN SENTINEL */
     .btn-sentinel {
-      background: linear-gradient(135deg, #ef4444, #ec4899, #f43f5e);
+      background: linear-gradient(135deg, var(--if-crisis), #ec4899, #f43f5e);
       color: white;
       font-weight: 700;
       border: none;
@@ -721,11 +721,11 @@ export class CrisisPageComponent implements OnInit {
   getCategoryColor(category: string): string {
     switch (category) {
       case 'Emergencia Emocional':
-        return '#ef4444'; // Red
+        return 'var(--if-crisis)'; // Red
       case 'Crisis de Autoridad':
         return '#a855f7'; // Purple
       case 'Tensión Financiera':
-        return '#f59e0b'; // Amber
+        return 'var(--if-family)'; // Amber
       case 'Ruptura de Diálogo':
         return '#3b82f6'; // Blue
       case 'Conflicto de Convivencia':

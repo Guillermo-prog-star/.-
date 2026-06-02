@@ -240,7 +240,7 @@ interface FamilyValue { id: string; icon: string; name: string; description: str
     .value-icon-inp { background: none; border: none; font-size: 24px; color: #fff; outline: none; width: 36px; text-align: center; margin-bottom: 6px; }
     .value-name-inp { background: none; border: none; border-bottom: 1px solid rgba(255,255,255,0.1); color: #fff; font-size: 14px; font-weight: 700; outline: none; width: 100%; margin-bottom: 8px; padding-bottom: 4px; }
     .btn-rm-val { position: absolute; top: 8px; right: 8px; background: none; border: none; color: rgba(255,255,255,0.2); cursor: pointer; font-size: 12px; }
-    .btn-rm-val:hover { color: #ef4444; }
+    .btn-rm-val:hover { color: var(--if-crisis); }
     .add-value-btn { 
       background: rgba(255,255,255,0.01); 
       border: 2px dashed rgba(99,102,241,0.25); 

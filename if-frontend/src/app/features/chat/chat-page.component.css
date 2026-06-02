@@ -182,13 +182,13 @@
 }
 
 .btn-round.mic.recording {
-  background: #ef4444;
+  background: var(--if-crisis);
   color: white;
   animation: pulse 1.5s infinite;
 }
 
 @keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  0% { box-shadow: 0 0 0 0 var(--if-crisis-glow); }
   70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
   100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
@@ -214,7 +214,7 @@
 }
 .prose-ai li   { margin-bottom: 0.2rem; line-height: 1.5; }
 .prose-ai code {
-  background: rgba(139,92,246,0.15); color: #a5b4fc;
+  background: var(--if-intel-soft); color: #a5b4fc;
   padding: 1px 5px; border-radius: 4px; font-size: 0.82em;
   font-family: 'Courier New', monospace;
 }

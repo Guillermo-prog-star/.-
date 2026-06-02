@@ -20,7 +20,7 @@
 .page-header h1 {
   font-size: 26px;
   font-weight: 700;
-  background: linear-gradient(135deg, #F59E0B 0%, #FCD34D 100%);
+  background: linear-gradient(135deg, var(--if-family) 0%, var(--if-family-bright) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.5px;
@@ -39,7 +39,7 @@
 }
 
 .glass-card:hover {
-  border-color: rgba(245, 158, 11, 0.25);
+  border-color: var(--if-family-border);
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
 }
 
@@ -56,9 +56,9 @@
   font-size: 18px;
   padding: 6px 14px;
   border-radius: 8px;
-  background: rgba(245, 158, 11, 0.15);
-  border: 1px solid rgba(245, 158, 11, 0.35);
-  color: #FBB040;
+  background: var(--if-family-muted);
+  border: 1px solid var(--if-family-accent);
+  color: var(--if-family-bright);
 }
 
 .progress-track {
@@ -86,7 +86,7 @@
 .dimension-title {
   font-size: 16px;
   font-weight: 600;
-  color: #FBB040;
+  color: var(--if-family-bright);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -183,13 +183,13 @@
 }
 
 .check-circle:hover {
-  border-color: #3fb950;
+  border-color: var(--if-evolution-bright);
   background: rgba(63, 185, 80, 0.1);
 }
 
 .check-circle.active {
-  background: #3fb950;
-  border-color: #3fb950;
+  background: var(--if-evolution-bright);
+  border-color: var(--if-evolution-bright);
   color: #050811;
   transform: scale(1.1);
 }
@@ -241,7 +241,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid rgba(255, 255, 255, 0.05);
-  border-top: 3px solid #F59E0B;
+  border-top: 3px solid var(--if-family);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto;

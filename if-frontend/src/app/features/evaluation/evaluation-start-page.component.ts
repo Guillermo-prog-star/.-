@@ -184,7 +184,7 @@ interface PillarCard {
     .pending-banner {
       display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
       padding: 16px 20px; margin-bottom: 24px;
-      background: rgba(251,191,36,0.07); border: 1px solid rgba(251,191,36,0.25);
+      background: var(--if-legacy-faint); border: 1px solid rgba(251,191,36,0.25);
       border-radius: 14px;
     }
     .pb-icon  { font-size: 24px; }
@@ -294,7 +294,7 @@ export class EvaluationStartPageComponent implements OnInit {
     },
     {
       key: 'amor', icon: '❤️', name: 'Amor',
-      monthRange: 'Meses 7–18', color: '#ef4444',
+      monthRange: 'Meses 7–18', color: 'var(--if-crisis)',
       description: 'Transformar comportamientos. Consolidar hábitos e integridad familiar.',
       totalQuestions: 0, sessionsOf20: 0, isActive: false,
     },

@@ -21,12 +21,12 @@
 
 .evo-tag {
   font-size: 9px;
-  color: #22D3EE;
+  color: var(--if-diagnosis-bright);
   font-weight: 800;
-  background: rgba(99, 102, 241, 0.1);
+  background: var(--if-intel-soft);
   padding: 4px 12px;
   border-radius: 20px;
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  border: 1px solid var(--if-intel-muted);
   letter-spacing: 1px;
   display: inline-block;
   margin-bottom: 8px;
@@ -71,7 +71,7 @@
 }
 
 .btn-primary {
-  background: #06B6D4;
+  background: var(--if-diagnosis);
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #ffffff;
   font-size: 13px;
@@ -188,7 +188,7 @@
 }
 
 .text-purple {
-  color: #22D3EE;
+  color: var(--if-diagnosis-bright);
 }
 
 .text-amber {
@@ -324,7 +324,7 @@
 .dim-card:hover {
   transform: translateY(-4px);
   background: rgba(255, 255, 255, 0.04);
-  border-color: rgba(99, 102, 241, 0.2);
+  border-color: var(--if-intel-muted);
   box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
 }
 
@@ -433,7 +433,7 @@
   font-size: 14px;
   font-weight: 700;
   margin: 0 0 4px;
-  color: #22D3EE;
+  color: var(--if-diagnosis-bright);
 }
 
 .companion-content p {
@@ -461,13 +461,13 @@
 }
 
 .badge-moderado {
-  background: rgba(245, 158, 11, 0.12);
+  background: var(--if-family-soft);
   color: #fbbf24;
   border: 1px solid rgba(245, 158, 11, 0.2);
 }
 
 .badge-alto {
-  background: rgba(239, 68, 68, 0.12);
+  background: var(--if-crisis-soft);
   color: #f87171;
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
@@ -475,7 +475,7 @@
 .badge-critico {
   background: rgba(239, 68, 68, 0.18);
   color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  border: 1px solid var(--if-crisis-accent);
   animation: pulse-border 2s infinite;
 }
 
@@ -503,7 +503,7 @@
   width: 48px;
   height: 48px;
   border: 3px solid rgba(255, 255, 255, 0.05);
-  border-top-color: #22D3EE;
+  border-top-color: var(--if-diagnosis-bright);
   border-radius: 50%;
   animation: spin 1s infinite linear;
   margin-bottom: 16px;
@@ -549,8 +549,8 @@
 
 .state-critical {
   background: rgba(239, 68, 68, 0.18);
-  color: #ef4444;
-  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: var(--if-crisis);
+  border: 1px solid var(--if-crisis-accent);
   animation: pulse-border 1.5s infinite;
 }
 

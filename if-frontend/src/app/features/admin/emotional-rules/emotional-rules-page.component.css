@@ -19,7 +19,7 @@
 
 .eedsl-tag {
   font-size: 9px;
-  color: #60A5FA;
+  color: var(--if-system-bright);
   font-weight: 800;
   background: rgba(59, 130, 246, 0.1);
   padding: 4px 12px;
@@ -63,7 +63,7 @@
 .btn-back:hover { background: rgba(255,255,255,0.06); color: #fff; }
 
 .btn-primary {
-  background: #3B82F6;
+  background: var(--if-system);
   border: none;
   color: #fff;
   font-size: 13px;
@@ -89,7 +89,7 @@
 .btn-ghost:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.8); }
 
 .btn-save {
-  background: #3B82F6;
+  background: var(--if-system);
   border: none;
   color: #fff;
   font-size: 13px;
@@ -114,9 +114,9 @@
 .btn-edit:hover { background: rgba(255,255,255,0.08); }
 
 .btn-add-signal {
-  background: rgba(59,130,246,0.15);
-  border: 1px solid rgba(59,130,246,0.25);
-  color: #60A5FA;
+  background: var(--if-system-soft);
+  border: 1px solid var(--if-system-border);
+  color: var(--if-system-bright);
   font-size: 12px;
   font-weight: 700;
   padding: 8px 14px;
@@ -125,7 +125,7 @@
   white-space: nowrap;
   transition: background 0.2s;
 }
-.btn-add-signal:hover { background: rgba(59,130,246,0.25); }
+.btn-add-signal:hover { background: var(--if-system-border); }
 
 /* ── Glassmorphism ── */
 .glass {
@@ -187,7 +187,7 @@
 .pill.active {
   background: rgba(59,130,246,0.2);
   border-color: rgba(99,102,241,0.4);
-  color: #60A5FA;
+  color: var(--if-system-bright);
 }
 
 .filter-count {
@@ -210,7 +210,7 @@
 .rule-card:hover { background: rgba(255,255,255,0.04); }
 .rule-card.inactive { border-left-color: rgba(255,255,255,0.1); opacity: 0.65; }
 .rule-card.inactive:hover { opacity: 0.85; }
-.rule-card.editing { border-left-color: #3B82F6; background: rgba(99,102,241,0.04); }
+.rule-card.editing { border-left-color: var(--if-system); background: rgba(99,102,241,0.04); }
 
 .rule-card-header {
   display: flex;
@@ -228,11 +228,11 @@
   font-family: 'Courier New', monospace;
   font-size: 14px;
   font-weight: 700;
-  color: #60A5FA;
+  color: var(--if-system-bright);
   background: rgba(99,102,241,0.1);
   padding: 3px 8px;
   border-radius: 6px;
-  border: 1px solid rgba(59,130,246,0.15);
+  border: 1px solid var(--if-system-soft);
 }
 
 .version-badge {
@@ -252,7 +252,7 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-.by-algo     { background: rgba(99,102,241,0.1); color: #60A5FA; }
+.by-algo     { background: rgba(99,102,241,0.1); color: var(--if-system-bright); }
 .by-admin    { background: rgba(251,191,36,0.12); color: #fbbf24; }
 .by-clinician{ background: rgba(34,211,238,0.12); color: #22d3ee; }
 
@@ -365,9 +365,9 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  background: rgba(59,130,246,0.15);
-  color: #60A5FA;
-  border-color: rgba(59,130,246,0.25);
+  background: var(--if-system-soft);
+  color: var(--if-system-bright);
+  border-color: var(--if-system-border);
 }
 
 .chip-remove {
@@ -437,7 +437,7 @@
 .rule-form {
   margin-bottom: 20px;
   padding: 24px;
-  border-left: 3px solid #3B82F6;
+  border-left: 3px solid var(--if-system);
 }
 
 .form-header {
@@ -537,7 +537,7 @@
 .spinner {
   width: 44px; height: 44px;
   border: 3px solid rgba(255,255,255,0.05);
-  border-top-color: #60A5FA;
+  border-top-color: var(--if-system-bright);
   border-radius: 50%;
   animation: spin 1s infinite linear;
   margin-bottom: 14px;

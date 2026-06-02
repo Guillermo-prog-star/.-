@@ -29,8 +29,8 @@ interface ErrorRecord {
 }
 
 const STEPS: Array<{ key: ErrorStep; label: string; icon: string; question: string; color: string }> = [
-  { key: 'detect',    label: 'Detectar',   icon: '🔍', question: '¿Qué misión o compromiso no se cumplió?', color: '#ef4444' },
-  { key: 'feel',      label: 'Sentir',     icon: '💬', question: '¿Cómo se sintieron cuando ocurrió esto?', color: '#f59e0b' },
+  { key: 'detect',    label: 'Detectar',   icon: '🔍', question: '¿Qué misión o compromiso no se cumplió?', color: 'var(--if-crisis)' },
+  { key: 'feel',      label: 'Sentir',     icon: '💬', question: '¿Cómo se sintieron cuando ocurrió esto?', color: 'var(--if-family)' },
   { key: 'understand',label: 'Comprender', icon: '🧠', question: '¿Qué ocurrió realmente? ¿Por qué pasó?', color: '#6366f1' },
   { key: 'action',    label: 'Accionar',   icon: '⚡', question: '¿Qué podemos cambiar? ¿Quién ayudará?', color: '#10b981' },
   { key: 'agreement', label: 'Acordar',    icon: '🤝', question: 'Define el acuerdo familiar para superar esto.', color: '#818cf8' },

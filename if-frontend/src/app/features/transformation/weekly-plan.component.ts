@@ -24,7 +24,7 @@ type WeekPhase = 'prepare' | 'execute' | 'evaluate' | 'consolidate';
 
 const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: string; color: string }> = [
   { key: 'prepare',    label: 'Semana 1 — Preparar',    icon: '📋', desc: 'Definir qué hacer, quién lo hace, cuándo y el indicador de éxito.', color: '#6366f1' },
-  { key: 'execute',    label: 'Semana 2 — Ejecutar',    icon: '⚡', desc: 'Poner en marcha lo planeado. Registrar en la bitácora diariamente.', color: '#f59e0b' },
+  { key: 'execute',    label: 'Semana 2 — Ejecutar',    icon: '⚡', desc: 'Poner en marcha lo planeado. Registrar en la bitácora diariamente.', color: 'var(--if-family)' },
   { key: 'evaluate',   label: 'Semana 3 — Evaluar',     icon: '🔍', desc: 'Revisar qué funcionó, qué no y por qué. Recoger evidencias.', color: '#10b981' },
   { key: 'consolidate',label: 'Semana 4 — Consolidar',  icon: '🏆', desc: 'Cerrar el sprint, celebrar logros y definir el siguiente paso.', color: '#818cf8' },
 ];
@@ -188,7 +188,7 @@ const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: st
     .task-meta  { display: flex; gap: 8px; flex-wrap: wrap; }
     .task-input { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 6px; color: rgba(255,255,255,0.6); font-size: 11px; padding: 4px 8px; outline: none; min-width: 100px; }
     .btn-remove { color: rgba(255,255,255,0.2); background: none; border: none; cursor: pointer; font-size: 13px; padding: 0 4px; }
-    .btn-remove:hover { color: #ef4444; }
+    .btn-remove:hover { color: var(--if-crisis); }
 
     .task-summary { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.05); font-size: 12px; color: rgba(255,255,255,0.4); }
     .summary-bar  { flex: 1; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; }

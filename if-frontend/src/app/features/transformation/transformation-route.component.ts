@@ -242,7 +242,7 @@ export class TransformationRouteComponent {
 
       return {
         month, pillar, phase,
-        pillarColor: pillar === 'reconocimiento' ? '#fbbf24' : pillar === 'amor' ? '#ef4444' : '#3b82f6',
+        pillarColor: pillar === 'reconocimiento' ? '#fbbf24' : pillar === 'amor' ? 'var(--if-crisis)' : '#3b82f6',
         missionExample: mission,
         sprintDays: sprint,
         indicator,

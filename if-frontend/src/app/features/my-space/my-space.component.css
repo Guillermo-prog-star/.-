@@ -26,7 +26,7 @@
 
 .ms-lock-icon {
   font-size: 2.2rem;
-  filter: drop-shadow(0 0 10px rgba(212,175,55,0.5));
+  filter: drop-shadow(0 0 10px var(--if-legacy-glow));
 }
 
 .ms-header h1 {
@@ -49,16 +49,16 @@
   color: #6366f1;
   text-decoration: none;
   padding: 6px 14px;
-  border: 1px solid rgba(212,175,55,0.25);
+  border: 1px solid var(--if-legacy-border);
   border-radius: 8px;
   transition: all 0.2s;
   white-space: nowrap;
 }
 
 .ms-back-btn:hover {
-  background: rgba(212,175,55,0.08);
-  border-color: rgba(212,175,55,0.5);
-  color: #F0C84B;
+  background: var(--if-legacy-faint);
+  border-color: var(--if-legacy-glow);
+  color: var(--if-legacy-bright);
 }
 
 /* ── Toasts ── */
@@ -115,7 +115,7 @@
 /* ── Card base ── */
 .ms-card {
   background: rgba(15,23,42,0.6);
-  border: 1px solid rgba(212,175,55,0.15);
+  border: 1px solid var(--if-legacy-soft);
   border-radius: 20px;
   padding: 1.75rem;
 }
@@ -208,12 +208,12 @@
 }
 
 .emotion-btn:hover {
-  background: rgba(212,175,55,0.08);
-  border-color: rgba(212,175,55,0.25);
+  background: var(--if-legacy-faint);
+  border-color: var(--if-legacy-border);
 }
 
 .emotion-btn.emotion-selected {
-  background: rgba(212,175,55,0.15);
+  background: var(--if-legacy-soft);
   border-color: #6366f1;
   box-shadow: 0 0 10px rgba(212,175,55,0.2);
 }
@@ -227,7 +227,7 @@
   line-height: 1.2;
 }
 
-.emotion-btn.emotion-selected .emotion-label { color: #F0C84B; }
+.emotion-btn.emotion-selected .emotion-label { color: var(--if-legacy-bright); }
 
 /* Submit button */
 .ms-btn-submit {
@@ -278,9 +278,9 @@
 .ms-count {
   font-size: 0.72rem;
   font-weight: 800;
-  background: rgba(212,175,55,0.15);
-  border: 1px solid rgba(212,175,55,0.25);
-  color: #D4AF37;
+  background: var(--if-legacy-soft);
+  border: 1px solid var(--if-legacy-border);
+  color: var(--if-legacy);
   padding: 2px 9px;
   border-radius: 20px;
 }
@@ -307,7 +307,7 @@
   text-align: center;
   padding: 3rem 1rem;
   background: rgba(15,23,42,0.4);
-  border: 1px dashed rgba(212,175,55,0.15);
+  border: 1px dashed var(--if-legacy-soft);
   border-radius: 20px;
   color: #475569;
 }
@@ -388,7 +388,7 @@
   width: fit-content;
 }
 
-.cat-reflexion { background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.2); color: #F0C84B; }
+.cat-reflexion { background: var(--if-legacy-soft); border: 1px solid rgba(212,175,55,0.2); color: var(--if-legacy-bright); }
 .cat-emocion   { background: rgba(236,72,153,0.1);  border: 1px solid rgba(236,72,153,0.2); color: #f9a8d4; }
 .cat-logro     { background: rgba(52,211,153,0.1);  border: 1px solid rgba(52,211,153,0.2); color: #6ee7b7; }
 .cat-duda      { background: rgba(251,191,36,0.1);  border: 1px solid rgba(251,191,36,0.2); color: #fde68a; }
@@ -455,7 +455,7 @@
 /* ── Identity Profile ── */
 .ms-identity-card {
   background: rgba(15,23,42,0.5);
-  border: 1px solid rgba(212,175,55,0.15);
+  border: 1px solid var(--if-legacy-soft);
   border-left: 4px solid #6366f1;
   border-radius: 20px;
   padding: 1.75rem;
@@ -504,7 +504,7 @@
 }
 
 .ms-identity-primary {
-  color: #D4AF37;
+  color: var(--if-legacy);
   font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -530,7 +530,7 @@
   transition: width 0.8s ease;
 }
 
-.ms-bar-indigo { background: linear-gradient(90deg, #6366f1, #F0C84B); }
+.ms-bar-indigo { background: linear-gradient(90deg, #6366f1, var(--if-legacy-bright)); }
 .ms-bar-pink   { background: linear-gradient(90deg, #ec4899, #f9a8d4); }
 
 .ms-tag-list {
@@ -570,7 +570,7 @@
 .ms-header-right { display: flex; gap: 8px; align-items: center; }
 .ms-back-btn   { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.45); text-decoration: none; padding: 7px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; transition: all .2s; }
 .ms-back-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
-.ms-sprint-btn { font-size: 12px; font-weight: 700; color: #D4AF37; text-decoration: none; padding: 7px 12px; background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.25); border-radius: 8px; transition: all .2s; }
+.ms-sprint-btn { font-size: 12px; font-weight: 700; color: var(--if-legacy); text-decoration: none; padding: 7px 12px; background: var(--if-legacy-soft); border: 1px solid var(--if-legacy-border); border-radius: 8px; transition: all .2s; }
 .ms-sprint-btn:hover { background: rgba(99,102,241,0.22); }
 
 /* ── Transformation panel ────────────────────────────────── */
@@ -587,9 +587,9 @@
 .ms-tp-phase  { font-size: 11px; color: rgba(255,255,255,0.4); }
 .ms-tp-bar-col { flex: 1; min-width: 120px; }
 .ms-tp-bar-wrap { height: 4px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; margin-bottom: 3px; }
-.ms-tp-bar    { height: 100%; background: linear-gradient(90deg,#6366f1,#D4AF37); border-radius: 2px; transition: width .5s; }
-.ms-tp-pct    { font-size: 10px; font-weight: 700; color: #D4AF37; }
+.ms-tp-bar    { height: 100%; background: linear-gradient(90deg,#6366f1,var(--if-legacy)); border-radius: 2px; transition: width .5s; }
+.ms-tp-pct    { font-size: 10px; font-weight: 700; color: var(--if-legacy); }
 .ms-tp-links  { display: flex; gap: 8px; }
 .ms-tp-btn    { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5); text-decoration: none; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; transition: all .2s; }
 .ms-tp-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
-.ms-tp-btn.legacy { color: #fbbf24; background: rgba(251,191,36,0.07); border-color: rgba(251,191,36,0.2); }
+.ms-tp-btn.legacy { color: #fbbf24; background: var(--if-legacy-faint); border-color: rgba(251,191,36,0.2); }

@@ -24,54 +24,84 @@
 
   /* ── SEMÁNTICA DE MÓDULOS ─────────────────────────────────────────── */
 
-  /* SISTEMA — Azul Profundo: estructura, confianza, infraestructura     */
-  /* Uso: Configuración, Dashboard, Administración, navegación global    */
-  --if-system:        #3B82F6;
-  --if-system-deep:   #1E3A8A;
-  --if-system-soft:   rgba(59, 130, 246, 0.12);
-  --if-system-border: rgba(59, 130, 246, 0.25);
-  --if-system-glow:   rgba(59, 130, 246, 0.4);
+  /* ── Escala de opacidades por módulo ────────────────────────────────
+   * faint  (5-8%)  — tinte apenas visible, fondos sutiles
+   * soft   (12%)   — fondo de card o badge suave
+   * muted  (20%)   — borde muted o acento suave
+   * border (25%)   — borde estándar
+   * accent (35%)   — borde fuerte / hover highlight
+   * glow   (40%)   — sombra, glow, énfasis
+   * ─────────────────────────────────────────────────────────────────── */
 
-  /* FAMILIA — Naranja: unión, acción, acompañamiento, cercanía          */
-  /* Uso: Transformación Diaria, Misiones, Guardián, Participación       */
-  --if-family:        #F59E0B;
-  --if-family-soft:   rgba(245, 158, 11, 0.12);
-  --if-family-border: rgba(245, 158, 11, 0.30);
-  --if-family-glow:   rgba(245, 158, 11, 0.40);
+  /* SISTEMA — Azul Profundo                                             */
+  --if-system:         #3B82F6;
+  --if-system-bright:  #60A5FA;
+  --if-system-deep:    #1E3A8A;
+  --if-system-faint:   rgba(59, 130, 246, 0.08);
+  --if-system-soft:    rgba(59, 130, 246, 0.12);
+  --if-system-muted:   rgba(59, 130, 246, 0.20);
+  --if-system-border:  rgba(59, 130, 246, 0.25);
+  --if-system-accent:  rgba(59, 130, 246, 0.35);
+  --if-system-glow:    rgba(59, 130, 246, 0.40);
 
-  /* EVOLUCIÓN — Verde: logro, crecimiento, progreso                     */
-  /* Uso: Plan Familiar, Ruta de 36 Meses, metas cumplidas              */
+  /* FAMILIA — Naranja                                                   */
+  --if-family:         #F59E0B;
+  --if-family-bright:  #FBB040;
+  --if-family-faint:   rgba(245, 158, 11, 0.06);
+  --if-family-soft:    rgba(245, 158, 11, 0.12);
+  --if-family-muted:   rgba(245, 158, 11, 0.15);
+  --if-family-border:  rgba(245, 158, 11, 0.25);
+  --if-family-accent:  rgba(245, 158, 11, 0.35);
+  --if-family-glow:    rgba(245, 158, 11, 0.40);
+
+  /* EVOLUCIÓN — Verde                                                   */
   --if-evolution:        #22C55E;
+  --if-evolution-bright: #4ADE80;
+  --if-evolution-faint:  rgba(34, 197, 94, 0.06);
   --if-evolution-soft:   rgba(34, 197, 94, 0.12);
+  --if-evolution-muted:  rgba(34, 197, 94, 0.20);
   --if-evolution-border: rgba(34, 197, 94, 0.25);
+  --if-evolution-accent: rgba(34, 197, 94, 0.35);
   --if-evolution-glow:   rgba(34, 197, 94, 0.40);
 
-  /* CRISIS — Rojo Sentinel: riesgo, deterioro, emergencia               */
-  /* Uso: SOLO Crisis Familiar y alertas Sentinel. NUNCA decorativo.     */
-  --if-crisis:        #EF4444;
-  --if-crisis-soft:   rgba(239, 68, 68, 0.12);
-  --if-crisis-border: rgba(239, 68, 68, 0.25);
-  --if-crisis-glow:   rgba(239, 68, 68, 0.40);
+  /* CRISIS — Rojo Sentinel                                              */
+  --if-crisis:         #EF4444;
+  --if-crisis-bright:  #F87171;
+  --if-crisis-faint:   rgba(239, 68, 68, 0.08);
+  --if-crisis-soft:    rgba(239, 68, 68, 0.12);
+  --if-crisis-muted:   rgba(239, 68, 68, 0.20);
+  --if-crisis-border:  rgba(239, 68, 68, 0.25);
+  --if-crisis-accent:  rgba(239, 68, 68, 0.35);
+  --if-crisis-glow:    rgba(239, 68, 68, 0.40);
 
-  /* LEGADO — Dorado: trascendencia, constitución, historia familiar     */
-  /* Uso: Gratitud Familiar, Carta del Legado, Hitos generacionales      */
-  --if-legacy:        #D4AF37;
-  --if-legacy-soft:   rgba(212, 175, 55, 0.12);
-  --if-legacy-border: rgba(212, 175, 55, 0.25);
-  --if-legacy-glow:   rgba(212, 175, 55, 0.40);
+  /* LEGADO — Dorado                                                     */
+  --if-legacy:         #D4AF37;
+  --if-legacy-bright:  #F0C84B;
+  --if-legacy-faint:   rgba(212, 175, 55, 0.07);
+  --if-legacy-soft:    rgba(212, 175, 55, 0.12);
+  --if-legacy-muted:   rgba(212, 175, 55, 0.20);
+  --if-legacy-border:  rgba(212, 175, 55, 0.25);
+  --if-legacy-accent:  rgba(212, 175, 55, 0.35);
+  --if-legacy-glow:    rgba(212, 175, 55, 0.40);
 
-  /* INTELIGENCIA — Violeta: IA, cognición, análisis                     */
-  /* Uso: Consultor IA, Sistema Cognitivo                                */
-  --if-intel:        #8B5CF6;
-  --if-intel-soft:   rgba(139, 92, 246, 0.12);
-  --if-intel-border: rgba(139, 92, 246, 0.25);
-  --if-intel-glow:   rgba(139, 92, 246, 0.40);
+  /* INTELIGENCIA — Violeta                                              */
+  --if-intel:         #8B5CF6;
+  --if-intel-bright:  #A78BFA;
+  --if-intel-faint:   rgba(139, 92, 246, 0.08);
+  --if-intel-soft:    rgba(139, 92, 246, 0.12);
+  --if-intel-muted:   rgba(139, 92, 246, 0.20);
+  --if-intel-border:  rgba(139, 92, 246, 0.25);
+  --if-intel-accent:  rgba(139, 92, 246, 0.35);
+  --if-intel-glow:    rgba(139, 92, 246, 0.40);
 
-  /* DIAGNÓSTICO — Turquesa: observación, medición, análisis clínico     */
-  /* Uso: Evaluaciones, Panel Clínico, Evolución                         */
+  /* DIAGNÓSTICO — Turquesa                                              */
   --if-diagnosis:        #06B6D4;
+  --if-diagnosis-bright: #22D3EE;
+  --if-diagnosis-faint:  rgba(6, 182, 212, 0.08);
   --if-diagnosis-soft:   rgba(6, 182, 212, 0.12);
+  --if-diagnosis-muted:  rgba(6, 182, 212, 0.20);
   --if-diagnosis-border: rgba(6, 182, 212, 0.25);
+  --if-diagnosis-accent: rgba(6, 182, 212, 0.35);
   --if-diagnosis-glow:   rgba(6, 182, 212, 0.40);
 
   /* ── DEEP NIGHT THEME ────────────────────────────────────────────── */

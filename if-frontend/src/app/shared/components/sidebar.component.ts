@@ -213,13 +213,13 @@ import { filter } from 'rxjs/operators';
 
     /* Evolution card — naranja (vida familiar activa) + barra verde (progreso) */
     .evolution-card { margin: 0 16px 12px; padding: 10px 14px; background: linear-gradient(135deg, rgba(245,158,11,0.07), rgba(212,175,55,0.04)); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; }
-    .ev-code  { font-size: 9px; color: #FBB040; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+    .ev-code  { font-size: 9px; color: var(--if-family-bright); font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
     .ev-pillar { font-size: 12px; font-weight: 700; color: #fff; margin: 3px 0 2px; }
     .ev-meta  { display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
     .ev-month { font-size: 10px; color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; }
     .ev-phase { font-size: 10px; color: rgba(255,255,255,0.4); }
     .ev-bar-wrap { height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; margin-bottom: 3px; }
-    .ev-bar  { height: 100%; background: linear-gradient(90deg, #22C55E, #4ADE80); border-radius: 2px; transition: width 0.4s ease; }
+    .ev-bar  { height: 100%; background: linear-gradient(90deg, var(--if-evolution), var(--if-evolution-bright)); border-radius: 2px; transition: width 0.4s ease; }
     .ev-pct  { font-size: 9px; color: rgba(255,255,255,0.3); text-align: right; }
 
     nav { flex: 1; padding: 0 12px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.2) transparent; }
@@ -250,56 +250,56 @@ import { filter } from 'rxjs/operators';
     .divider { height: 1px; background: rgba(255,255,255,0.04); margin: 8px 12px; }
 
     /* ── SISTEMA — Azul: Configuración, Dashboard, Admin ─────────── */
-    .nav-section--system .section-label { color: #60A5FA; }
-    .nav-section--system .nav-item.active { background: rgba(59,130,246,0.12) !important; color: #60A5FA !important; border-color: rgba(59,130,246,0.25) !important; }
+    .nav-section--system .section-label { color: var(--if-system-bright); }
+    .nav-section--system .nav-item.active { background: var(--if-system-soft) !important; color: var(--if-system-bright) !important; border-color: var(--if-system-border) !important; }
     .nav-section--system .nav-item:hover { color: #93C5FD; }
-    .nav-section--system .step-dot.done { background: rgba(59,130,246,0.2); border-color: #3B82F6; color: #60A5FA; }
-    .nav-section--system .guardian-nav { border-color: rgba(59,130,246,0.15); }
-    .nav-section--system .guardian-nav:hover { border-color: rgba(59,130,246,0.35); }
-    .nav-section--system .guardian-nav.active { border-color: rgba(59,130,246,0.35) !important; }
+    .nav-section--system .step-dot.done { background: rgba(59,130,246,0.2); border-color: var(--if-system); color: var(--if-system-bright); }
+    .nav-section--system .guardian-nav { border-color: var(--if-system-soft); }
+    .nav-section--system .guardian-nav:hover { border-color: var(--if-system-accent); }
+    .nav-section--system .guardian-nav.active { border-color: var(--if-system-accent) !important; }
 
     /* ── DIAGNÓSTICO — Turquesa: observación, medición ───────────── */
-    .nav-section--diagnosis .section-label { color: #22D3EE; }
-    .nav-section--diagnosis .nav-item.active { background: rgba(6,182,212,0.12) !important; color: #22D3EE !important; border-color: rgba(6,182,212,0.25) !important; }
+    .nav-section--diagnosis .section-label { color: var(--if-diagnosis-bright); }
+    .nav-section--diagnosis .nav-item.active { background: var(--if-diagnosis-soft) !important; color: var(--if-diagnosis-bright) !important; border-color: var(--if-diagnosis-border) !important; }
     .nav-section--diagnosis .nav-item:hover { color: #67E8F9; }
-    .nav-section--diagnosis .step-dot.done { background: rgba(6,182,212,0.2); border-color: #06B6D4; color: #22D3EE; }
-    .nav-section--diagnosis .chevron.rotated { color: #22D3EE; }
-    .nav-section--diagnosis .group-active .group-header { color: #22D3EE !important; }
-    .nav-section--diagnosis .nav-sub.active { background: rgba(6,182,212,0.08) !important; color: #22D3EE !important; border-color: rgba(6,182,212,0.2) !important; }
+    .nav-section--diagnosis .step-dot.done { background: rgba(6,182,212,0.2); border-color: var(--if-diagnosis); color: var(--if-diagnosis-bright); }
+    .nav-section--diagnosis .chevron.rotated { color: var(--if-diagnosis-bright); }
+    .nav-section--diagnosis .group-active .group-header { color: var(--if-diagnosis-bright) !important; }
+    .nav-section--diagnosis .nav-sub.active { background: rgba(6,182,212,0.08) !important; color: var(--if-diagnosis-bright) !important; border-color: rgba(6,182,212,0.2) !important; }
 
     /* ── EVOLUCIÓN — Verde: Plan, Ruta, Crecimiento ──────────────── */
-    .nav-section--evolution .section-label { color: #4ADE80; }
-    .nav-section--evolution .nav-item.active { background: rgba(34,197,94,0.12) !important; color: #4ADE80 !important; border-color: rgba(34,197,94,0.25) !important; }
+    .nav-section--evolution .section-label { color: var(--if-evolution-bright); }
+    .nav-section--evolution .nav-item.active { background: rgba(34,197,94,0.12) !important; color: var(--if-evolution-bright) !important; border-color: rgba(34,197,94,0.25) !important; }
     .nav-section--evolution .nav-item:hover { color: #86EFAC; }
-    .nav-section--evolution .step-dot.done { background: rgba(34,197,94,0.2); border-color: #22C55E; color: #4ADE80; }
-    .nav-section--evolution .badge-auto { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #4ADE80; }
+    .nav-section--evolution .step-dot.done { background: rgba(34,197,94,0.2); border-color: var(--if-evolution); color: var(--if-evolution-bright); }
+    .nav-section--evolution .badge-auto { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: var(--if-evolution-bright); }
 
     /* ── FAMILIA — Naranja: Transformación, Misiones, Acción ─────── */
-    .nav-section--family .section-label { color: #FBB040; }
-    .nav-section--family .nav-item.active { background: rgba(245,158,11,0.12) !important; color: #FBB040 !important; border-color: rgba(245,158,11,0.25) !important; }
-    .nav-section--family .nav-item:hover { color: #FCD34D; background: rgba(245,158,11,0.06); }
+    .nav-section--family .section-label { color: var(--if-family-bright); }
+    .nav-section--family .nav-item.active { background: rgba(245,158,11,0.12) !important; color: var(--if-family-bright) !important; border-color: rgba(245,158,11,0.25) !important; }
+    .nav-section--family .nav-item:hover { color: var(--if-family-bright); background: rgba(245,158,11,0.06); }
 
     /* ── APOYO — semántica por sub-módulo ───────────────────────── */
     .nav-section--support .section-label { color: rgba(255,255,255,0.3); }
     /* Crisis: solo rojo */
     .nav-crisis { color: rgba(239,68,68,0.7) !important; }
-    .nav-crisis:hover { color: #EF4444 !important; background: rgba(239,68,68,0.08) !important; }
-    .nav-crisis.active { background: rgba(239,68,68,0.12) !important; color: #F87171 !important; border-color: rgba(239,68,68,0.25) !important; }
+    .nav-crisis:hover { color: var(--if-crisis) !important; background: rgba(239,68,68,0.08) !important; }
+    .nav-crisis.active { background: rgba(239,68,68,0.12) !important; color: var(--if-crisis-bright) !important; border-color: rgba(239,68,68,0.25) !important; }
     /* Inteligencia: violeta */
     .nav-intel { color: rgba(139,92,246,0.75) !important; }
-    .nav-intel:hover { color: #A78BFA !important; background: rgba(139,92,246,0.08) !important; }
-    .nav-intel.active { background: rgba(139,92,246,0.12) !important; color: #A78BFA !important; border-color: rgba(139,92,246,0.25) !important; }
+    .nav-intel:hover { color: var(--if-intel-bright) !important; background: var(--if-intel-faint) !important; }
+    .nav-intel.active { background: var(--if-intel-soft) !important; color: var(--if-intel-bright) !important; border-color: var(--if-intel-border) !important; }
 
     /* ── LEGADO — Dorado: Gratitud, Constitución, Historia ──────── */
-    .nav-section--legacy .section-label { color: #D4AF37; }
+    .nav-section--legacy .section-label { color: var(--if-legacy); }
     .nav-section--legacy .nav-item { color: rgba(212,175,55,0.65); }
-    .nav-section--legacy .nav-item:hover { color: #D4AF37; background: rgba(212,175,55,0.07); }
-    .nav-section--legacy .nav-item.active { background: rgba(212,175,55,0.12) !important; color: #D4AF37 !important; border-color: rgba(212,175,55,0.25) !important; }
+    .nav-section--legacy .nav-item:hover { color: var(--if-legacy); background: rgba(212,175,55,0.07); }
+    .nav-section--legacy .nav-item.active { background: var(--if-legacy-soft) !important; color: var(--if-legacy) !important; border-color: var(--if-legacy-border) !important; }
 
     /* ── ADMINISTRACIÓN — Azul (sistema técnico) ─────────────────── */
-    .nav-section--admin .section-label { color: #60A5FA; }
+    .nav-section--admin .section-label { color: var(--if-system-bright); }
     .nav-section--admin .nav-item { font-size: 12px; color: rgba(96,165,250,0.6); border: 1px dashed rgba(59,130,246,0.2); }
-    .nav-section--admin .nav-item.active { background: rgba(59,130,246,0.1) !important; color: #60A5FA !important; border-color: rgba(59,130,246,0.3) !important; }
+    .nav-section--admin .nav-item.active { background: rgba(59,130,246,0.1) !important; color: var(--if-system-bright) !important; border-color: rgba(59,130,246,0.3) !important; }
 
     .family-box { margin: 12px 16px 0; padding: 12px 14px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
     .f-name  { color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

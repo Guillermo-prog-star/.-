@@ -46,7 +46,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
 
-    @Transactional
+    @Transactional(noRollbackFor = Exception.class)
     public LoginResponse login(LoginRequest request, String ip, String ua) {
         log.info("[AUTH] Intento de login para: {}", request.email());
         try {

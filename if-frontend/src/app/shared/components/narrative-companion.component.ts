@@ -79,8 +79,8 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
     }
 
     .avatar-cercania {
-      background: radial-gradient(circle at 30% 30%, #c084fc 0%, #7c3aed 80%);
-      --avatar-glow: rgba(192, 132, 252, 0.4);
+      background: radial-gradient(circle at 30% 30%, #f59e0b 0%, #d97706 80%);
+      --avatar-glow: rgba(245, 158, 11, 0.4);
     }
 
     .message-container {
@@ -128,9 +128,9 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
     }
 
     .badge-cercania {
-      background: rgba(168, 85, 247, 0.1);
-      color: #c084fc;
-      border: 1px solid rgba(168, 85, 247, 0.2);
+      background: rgba(245, 158, 11, 0.1);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.2);
     }
 
     .context-label {
@@ -242,9 +242,9 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
     }
 
     .pill-btn.active.color-cercania {
-      background: rgba(168, 85, 247, 0.15);
-      border-color: rgba(168, 85, 247, 0.4);
-      color: #c084fc;
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
     }
 
     @keyframes pulse-avatar {
@@ -355,9 +355,9 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
     }
 
     .companion-card.light-theme .pill-btn.active.color-cercania {
-      background: rgba(168, 85, 247, 0.12);
-      border-color: rgba(168, 85, 247, 0.4);
-      color: #7c3aed;
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #d97706;
     }
   `],
   template: `

@@ -3,6 +3,11 @@ spring:
     allow-bean-definition-overriding: true
   application:
     name: integrity-family
+
+  # ── Encoding UTF-8 global ────────────────────────────────────────
+  # Fuerza UTF-8 en todos los requests/responses HTTP y en el servidor.
+  # Evita que StringHttpMessageConverter use ISO-8859-1 por defecto.
+  mandatory-file-encoding: UTF-8
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/${DB_NAME:integrity_family}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota&connectTimeout=10000&useUnicode=true&characterEncoding=UTF-8}
     username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:root}}
@@ -49,6 +54,13 @@ spring:
 server:
   port: 8080
   address: 0.0.0.0
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true          # Fuerza UTF-8 en request Y response
+      force-request: true
+      force-response: true
   error:
     include-message: ${SERVER_ERROR_INCLUDE_MESSAGE:always}
     include-binding-errors: ${SERVER_ERROR_INCLUDE_BINDING_ERRORS:always}

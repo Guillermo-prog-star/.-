@@ -214,11 +214,11 @@
 }
 .prose-ai li   { margin-bottom: 0.2rem; line-height: 1.5; }
 .prose-ai code {
-  background: rgba(99,102,241,0.15); color: #a5b4fc;
+  background: rgba(139,92,246,0.15); color: #a5b4fc;
   padding: 1px 5px; border-radius: 4px; font-size: 0.82em;
   font-family: 'Courier New', monospace;
 }
-.prose-ai hr   { border: none; border-top: 1px solid rgba(99,102,241,0.2); margin: 0.5rem 0; }
+.prose-ai hr   { border: none; border-top: 1px solid rgba(139,92,246,0.2); margin: 0.5rem 0; }
 .prose-ai strong { color: #e0e7ff; font-weight: 700; }
 .prose-ai em   { color: #a5b4fc; }
 .prose-ai br   { display: block; content: ''; margin-top: 0.25rem; }

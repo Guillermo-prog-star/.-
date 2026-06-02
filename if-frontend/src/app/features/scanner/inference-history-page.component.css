@@ -19,12 +19,12 @@
 
 .scan-tag {
   font-size: 9px;
-  color: #818cf8;
+  color: #22D3EE;
   font-weight: 800;
-  background: rgba(99, 102, 241, 0.1);
+  background: rgba(6, 182, 212, 0.1);
   padding: 4px 12px;
   border-radius: 20px;
-  border: 1px solid rgba(99, 102, 241, 0.2);
+  border: 1px solid rgba(6, 182, 212, 0.2);
   letter-spacing: 1px;
   display: inline-block;
   margin-bottom: 8px;
@@ -81,7 +81,7 @@
 .btn-export:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .btn-primary {
-  background: #6366f1;
+  background: #06B6D4;
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #fff;
   font-size: 13px;
@@ -184,7 +184,7 @@
   margin-left: 2px;
 }
 
-.text-purple { color: #818cf8; }
+.text-purple { color: #22D3EE; }
 .text-ree    { color: #a78bfa; }
 
 /* ── IF-REE badge ── */
@@ -331,7 +331,7 @@
   top: 0;
   bottom: 0;
   width: 2px;
-  background: linear-gradient(to bottom, #6366f1, rgba(99,102,241,0.05));
+  background: linear-gradient(to bottom, #06B6D4, rgba(6,182,212,0.05));
 }
 
 .timeline-item {
@@ -477,11 +477,11 @@
 .hash-code {
   font-family: 'Courier New', monospace;
   font-size: 12px;
-  color: #818cf8;
-  background: rgba(99,102,241,0.08);
+  color: #22D3EE;
+  background: rgba(6,182,212,0.08);
   padding: 6px 12px;
   border-radius: 8px;
-  border: 1px solid rgba(99,102,241,0.15);
+  border: 1px solid rgba(6,182,212,0.15);
   word-break: break-all;
   display: block;
   margin-top: 2px;
@@ -515,7 +515,7 @@
   display: inline-block;
 }
 
-.ep-inferred   { background: rgba(99,102,241,0.15); color: #818cf8; border: 1px solid rgba(99,102,241,0.25); }
+.ep-inferred   { background: rgba(6,182,212,0.15); color: #22D3EE; border: 1px solid rgba(6,182,212,0.25); }
 .ep-stabilized { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.2); }
 .ep-revised    { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
 .ep-deprecated { background: rgba(100,116,139,0.12); color: #64748b; border: 1px solid rgba(100,116,139,0.2); }
@@ -584,7 +584,7 @@
   width: 48px;
   height: 48px;
   border: 3px solid rgba(255,255,255,0.05);
-  border-top-color: #818cf8;
+  border-top-color: #22D3EE;
   border-radius: 50%;
   animation: spin 1s infinite linear;
   margin-bottom: 16px;

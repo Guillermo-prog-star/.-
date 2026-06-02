@@ -30,7 +30,7 @@
 
 .vis-tag {
   font-size: 9px;
-  color: #818cf8;
+  color: #22D3EE;
   font-weight: 800;
   background: rgba(99,102,241,0.1);
   padding: 4px 12px;
@@ -94,7 +94,7 @@
 .spinner {
   width: 36px; height: 36px;
   border: 3px solid rgba(255,255,255,0.08);
-  border-top-color: #818cf8;
+  border-top-color: #22D3EE;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -352,7 +352,7 @@
 .rule-bar-fill {
   height: 100%;
   border-radius: 4px;
-  background: linear-gradient(to right, #6366f1, #a78bfa);
+  background: linear-gradient(to right, #06B6D4, #a78bfa);
   transition: width 0.7s ease;
 }
 
@@ -397,7 +397,7 @@
 .btn-primary {
   padding: 12px 28px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #6366f1, #818cf8);
+  background: linear-gradient(135deg, #06B6D4, #22D3EE);
   color: #fff;
   text-decoration: none;
   font-size: 14px;

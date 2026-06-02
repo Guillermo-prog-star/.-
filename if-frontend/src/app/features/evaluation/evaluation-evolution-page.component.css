@@ -21,7 +21,7 @@
 
 .evo-tag {
   font-size: 9px;
-  color: #818cf8;
+  color: #22D3EE;
   font-weight: 800;
   background: rgba(99, 102, 241, 0.1);
   padding: 4px 12px;
@@ -71,7 +71,7 @@
 }
 
 .btn-primary {
-  background: #6366f1;
+  background: #06B6D4;
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #ffffff;
   font-size: 13px;
@@ -188,7 +188,7 @@
 }
 
 .text-purple {
-  color: #818cf8;
+  color: #22D3EE;
 }
 
 .text-amber {
@@ -433,7 +433,7 @@
   font-size: 14px;
   font-weight: 700;
   margin: 0 0 4px;
-  color: #818cf8;
+  color: #22D3EE;
 }
 
 .companion-content p {
@@ -503,7 +503,7 @@
   width: 48px;
   height: 48px;
   border: 3px solid rgba(255, 255, 255, 0.05);
-  border-top-color: #818cf8;
+  border-top-color: #22D3EE;
   border-radius: 50%;
   animation: spin 1s infinite linear;
   margin-bottom: 16px;

@@ -26,7 +26,7 @@
 
 .ms-lock-icon {
   font-size: 2.2rem;
-  filter: drop-shadow(0 0 10px rgba(99,102,241,0.5));
+  filter: drop-shadow(0 0 10px rgba(212,175,55,0.5));
 }
 
 .ms-header h1 {
@@ -49,16 +49,16 @@
   color: #6366f1;
   text-decoration: none;
   padding: 6px 14px;
-  border: 1px solid rgba(99,102,241,0.25);
+  border: 1px solid rgba(212,175,55,0.25);
   border-radius: 8px;
   transition: all 0.2s;
   white-space: nowrap;
 }
 
 .ms-back-btn:hover {
-  background: rgba(99,102,241,0.08);
-  border-color: rgba(99,102,241,0.5);
-  color: #a5b4fc;
+  background: rgba(212,175,55,0.08);
+  border-color: rgba(212,175,55,0.5);
+  color: #F0C84B;
 }
 
 /* ── Toasts ── */
@@ -115,7 +115,7 @@
 /* ── Card base ── */
 .ms-card {
   background: rgba(15,23,42,0.6);
-  border: 1px solid rgba(99,102,241,0.15);
+  border: 1px solid rgba(212,175,55,0.15);
   border-radius: 20px;
   padding: 1.75rem;
 }
@@ -208,14 +208,14 @@
 }
 
 .emotion-btn:hover {
-  background: rgba(99,102,241,0.08);
-  border-color: rgba(99,102,241,0.25);
+  background: rgba(212,175,55,0.08);
+  border-color: rgba(212,175,55,0.25);
 }
 
 .emotion-btn.emotion-selected {
-  background: rgba(99,102,241,0.15);
+  background: rgba(212,175,55,0.15);
   border-color: #6366f1;
-  box-shadow: 0 0 10px rgba(99,102,241,0.2);
+  box-shadow: 0 0 10px rgba(212,175,55,0.2);
 }
 
 .emotion-icon  { font-size: 1.3rem; }
@@ -227,7 +227,7 @@
   line-height: 1.2;
 }
 
-.emotion-btn.emotion-selected .emotion-label { color: #a5b4fc; }
+.emotion-btn.emotion-selected .emotion-label { color: #F0C84B; }
 
 /* Submit button */
 .ms-btn-submit {
@@ -241,12 +241,12 @@
   font-weight: 700;
   cursor: pointer;
   transition: opacity 0.2s, transform 0.15s;
-  box-shadow: 0 4px 14px rgba(99,102,241,0.3);
+  box-shadow: 0 4px 14px rgba(212,175,55,0.3);
 }
 
 .ms-btn-submit:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(99,102,241,0.4);
+  box-shadow: 0 6px 18px rgba(212,175,55,0.4);
 }
 
 .ms-btn-submit:disabled {
@@ -278,9 +278,9 @@
 .ms-count {
   font-size: 0.72rem;
   font-weight: 800;
-  background: rgba(99,102,241,0.15);
-  border: 1px solid rgba(99,102,241,0.25);
-  color: #818cf8;
+  background: rgba(212,175,55,0.15);
+  border: 1px solid rgba(212,175,55,0.25);
+  color: #D4AF37;
   padding: 2px 9px;
   border-radius: 20px;
 }
@@ -307,7 +307,7 @@
   text-align: center;
   padding: 3rem 1rem;
   background: rgba(15,23,42,0.4);
-  border: 1px dashed rgba(99,102,241,0.15);
+  border: 1px dashed rgba(212,175,55,0.15);
   border-radius: 20px;
   color: #475569;
 }
@@ -340,7 +340,7 @@
 }
 
 .ms-entry-card:hover {
-  border-color: rgba(99,102,241,0.2);
+  border-color: rgba(212,175,55,0.2);
   background: rgba(15,23,42,0.7);
   transform: translateX(3px);
 }
@@ -388,7 +388,7 @@
   width: fit-content;
 }
 
-.cat-reflexion { background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.2); color: #a5b4fc; }
+.cat-reflexion { background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.2); color: #F0C84B; }
 .cat-emocion   { background: rgba(236,72,153,0.1);  border: 1px solid rgba(236,72,153,0.2); color: #f9a8d4; }
 .cat-logro     { background: rgba(52,211,153,0.1);  border: 1px solid rgba(52,211,153,0.2); color: #6ee7b7; }
 .cat-duda      { background: rgba(251,191,36,0.1);  border: 1px solid rgba(251,191,36,0.2); color: #fde68a; }
@@ -455,7 +455,7 @@
 /* ── Identity Profile ── */
 .ms-identity-card {
   background: rgba(15,23,42,0.5);
-  border: 1px solid rgba(99,102,241,0.15);
+  border: 1px solid rgba(212,175,55,0.15);
   border-left: 4px solid #6366f1;
   border-radius: 20px;
   padding: 1.75rem;
@@ -504,7 +504,7 @@
 }
 
 .ms-identity-primary {
-  color: #818cf8;
+  color: #D4AF37;
   font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -530,7 +530,7 @@
   transition: width 0.8s ease;
 }
 
-.ms-bar-indigo { background: linear-gradient(90deg, #6366f1, #a5b4fc); }
+.ms-bar-indigo { background: linear-gradient(90deg, #6366f1, #F0C84B); }
 .ms-bar-pink   { background: linear-gradient(90deg, #ec4899, #f9a8d4); }
 
 .ms-tag-list {
@@ -570,7 +570,7 @@
 .ms-header-right { display: flex; gap: 8px; align-items: center; }
 .ms-back-btn   { font-size: 12px; font-weight: 700; color: rgba(255,255,255,0.45); text-decoration: none; padding: 7px 12px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; transition: all .2s; }
 .ms-back-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }
-.ms-sprint-btn { font-size: 12px; font-weight: 700; color: #818cf8; text-decoration: none; padding: 7px 12px; background: rgba(99,102,241,0.12); border: 1px solid rgba(99,102,241,0.25); border-radius: 8px; transition: all .2s; }
+.ms-sprint-btn { font-size: 12px; font-weight: 700; color: #D4AF37; text-decoration: none; padding: 7px 12px; background: rgba(212,175,55,0.12); border: 1px solid rgba(212,175,55,0.25); border-radius: 8px; transition: all .2s; }
 .ms-sprint-btn:hover { background: rgba(99,102,241,0.22); }
 
 /* ── Transformation panel ────────────────────────────────── */
@@ -578,7 +578,7 @@
   display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
   padding: 14px 18px; margin-bottom: 20px;
   background: linear-gradient(135deg, rgba(99,102,241,0.07), rgba(139,92,246,0.05));
-  border: 1px solid rgba(99,102,241,0.2); border-radius: 14px;
+  border: 1px solid rgba(212,175,55,0.2); border-radius: 14px;
 }
 .ms-tp-pillar { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .ms-tp-icon   { font-size: 24px; }
@@ -587,8 +587,8 @@
 .ms-tp-phase  { font-size: 11px; color: rgba(255,255,255,0.4); }
 .ms-tp-bar-col { flex: 1; min-width: 120px; }
 .ms-tp-bar-wrap { height: 4px; background: rgba(255,255,255,0.07); border-radius: 2px; overflow: hidden; margin-bottom: 3px; }
-.ms-tp-bar    { height: 100%; background: linear-gradient(90deg,#6366f1,#818cf8); border-radius: 2px; transition: width .5s; }
-.ms-tp-pct    { font-size: 10px; font-weight: 700; color: #818cf8; }
+.ms-tp-bar    { height: 100%; background: linear-gradient(90deg,#6366f1,#D4AF37); border-radius: 2px; transition: width .5s; }
+.ms-tp-pct    { font-size: 10px; font-weight: 700; color: #D4AF37; }
 .ms-tp-links  { display: flex; gap: 8px; }
 .ms-tp-btn    { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.5); text-decoration: none; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; transition: all .2s; }
 .ms-tp-btn:hover { color: #fff; background: rgba(255,255,255,0.08); }

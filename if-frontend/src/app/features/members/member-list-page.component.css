@@ -211,7 +211,7 @@
 
 .btn-guardian {
   background: rgba(129,140,248,0.15);
-  color: #818cf8;
+  color: #60A5FA;
   font-weight: 700;
   padding: 12px 20px;
   border-radius: 12px;
@@ -226,6 +226,6 @@
   transform: translateY(-1px);
 }
 @keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.5); }
-  50%       { box-shadow: 0 0 0 5px rgba(99,102,241,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.5); }
+  50%       { box-shadow: 0 0 0 5px rgba(59,130,246,0); }
 }

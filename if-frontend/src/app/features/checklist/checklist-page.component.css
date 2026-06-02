@@ -20,7 +20,7 @@
 .page-header h1 {
   font-size: 26px;
   font-weight: 700;
-  background: linear-gradient(135deg, #ab7df6 0%, #58a6ff 100%);
+  background: linear-gradient(135deg, #F59E0B 0%, #FCD34D 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.5px;
@@ -39,7 +39,7 @@
 }
 
 .glass-card:hover {
-  border-color: rgba(171, 125, 246, 0.25);
+  border-color: rgba(245, 158, 11, 0.25);
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
 }
 
@@ -56,9 +56,9 @@
   font-size: 18px;
   padding: 6px 14px;
   border-radius: 8px;
-  background: rgba(168, 85, 247, 0.15);
-  border: 1px solid rgba(168, 85, 247, 0.3);
-  color: #c084fc;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  color: #FBB040;
 }
 
 .progress-track {
@@ -86,7 +86,7 @@
 .dimension-title {
   font-size: 16px;
   font-weight: 600;
-  color: #ab7df6;
+  color: #FBB040;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
@@ -241,7 +241,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid rgba(255, 255, 255, 0.05);
-  border-top: 3px solid #ab7df6;
+  border-top: 3px solid #F59E0B;
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin: 0 auto;

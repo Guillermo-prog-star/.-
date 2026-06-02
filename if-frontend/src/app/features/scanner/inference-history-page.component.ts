@@ -5,6 +5,7 @@ import { catchError, of } from 'rxjs';
 import { ScannerService } from '../../core/services/scanner.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { InferenceRecordDto, OperationalStateDto, FamilyAlertDto } from '../../core/models/models';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 @Component({
   selector: 'app-inference-history-page',
@@ -17,6 +18,7 @@ export class InferenceHistoryPageComponent implements OnInit {
   private scannerService = inject(ScannerService);
   private familyState    = inject(FamilyStateService);
   private router         = inject(Router);
+  private scrollPolicy   = inject(ScrollPolicyService);
 
   readonly inferences     = signal<InferenceRecordDto[]>([]);
   readonly currentState   = signal<OperationalStateDto | null>(null);
@@ -36,6 +38,7 @@ export class InferenceHistoryPageComponent implements OnInit {
   );
 
   ngOnInit(): void {
+    this.scrollPolicy.set('scroll-to-new');
     if (!this.familyId) {
       this.router.navigate(['/families']);
       return;

@@ -7,6 +7,7 @@ import { ApiService } from '../../core/services/api.service';
 import { Member } from '../../core/models/models';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 @Component({
   selector: 'app-member-list-page',
@@ -20,7 +21,8 @@ export class MemberListPageComponent implements OnInit {
   private api = inject(ApiService);
   private familyState = inject(FamilyStateService);
   private router = inject(Router);
-  private auth = inject(AuthService);
+  private auth         = inject(AuthService);
+  private scrollPolicy = inject(ScrollPolicyService);
 
   members: Member[] = [];
   fullName = ''; role = 'PADRE'; age = 30; aut = 70; resp = 70;
@@ -34,6 +36,7 @@ export class MemberListPageComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.scrollPolicy.set('scroll-to-new');
     if (!this.familyId) {
       this.router.navigate(['/families']);
       return;

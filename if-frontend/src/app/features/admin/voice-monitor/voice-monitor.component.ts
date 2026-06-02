@@ -3,17 +3,20 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { NgxEchartsDirective, provideEcharts } from 'ngx-echarts';
 import { EChartsOption } from 'echarts';
+import { ScrollPolicyDirective } from '../../../shared/directives/scroll-policy.directive';
+import { ScrollPolicyService } from '../../../shared/directives/scroll-policy.service';
 
 @Component({
   selector: 'app-voice-monitor',
   standalone: true,
-  imports: [CommonModule, NgxEchartsDirective],
+  imports: [CommonModule, NgxEchartsDirective, ScrollPolicyDirective],
   providers: [provideEcharts()],
   templateUrl: './voice-monitor.component.html',
   styleUrls: ['./voice-monitor.component.css']
 })
 export class VoiceMonitorComponent implements OnInit, OnDestroy {
-  private http = inject(HttpClient);
+  private http         = inject(HttpClient);
+  private scrollPolicy = inject(ScrollPolicyService);
 
   stats = { totalMessages: 0, successRate: 0, activeFamilies: 0, totalDuration: 0 };
   recentInteractions: any[] = [];
@@ -24,6 +27,7 @@ export class VoiceMonitorComponent implements OnInit, OnDestroy {
   private refreshInterval: any;
 
   ngOnInit() {
+    this.scrollPolicy.set('auto-bottom');
     this.loadAllData();
     // Iniciar auto-refresco cada 30 segundos para monitoreo en tiempo real
     this.refreshInterval = setInterval(() => this.loadAllData(), 30000);

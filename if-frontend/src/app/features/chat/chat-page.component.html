@@ -28,7 +28,7 @@
   </div>
 
   <!-- Messages Area -->
-  <div class="chat-messages overflow-y-auto mb-4 pr-2 space-y-4 custom-scrollbar">
+  <div class="chat-messages overflow-y-auto mb-4 pr-2 space-y-4 custom-scrollbar" scrollPolicy="auto-bottom">
     <div *ngFor="let msg of messages" 
          class="flex flex-col" 
          [ngClass]="msg.isAi ? 'items-start' : 'items-end'">

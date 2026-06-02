@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { CreateFamilyGratitudeRequest, FamilyGratitude } from './family-gratitude.model';
 import { FamilyGratitudeService } from './family-gratitude.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 @Component({
   selector: 'app-family-gratitude',
@@ -14,7 +15,8 @@ import { AuthService } from '../../core/services/auth.service';
   styleUrl: './family-gratitude.component.css'
 })
 export class FamilyGratitudeComponent implements OnInit {
-  private router = inject(Router);
+  private router       = inject(Router);
+  private scrollPolicy = inject(ScrollPolicyService);
 
   familyId = 0;
   entries: FamilyGratitude[] = [];
@@ -38,6 +40,7 @@ export class FamilyGratitudeComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.scrollPolicy.set('scroll-to-new');
     // Detectar si viene del cierre de un sprint (queryParam o navigation state)
     const nav = window.history.state;
     if (nav?.sprintCompleted) this.sprintJustCompleted = true;

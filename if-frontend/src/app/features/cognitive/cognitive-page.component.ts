@@ -11,6 +11,7 @@ import {
   NarrativeChapter, DyadDto, NarrativePhase,
   EffectivenessLevel, AbandonmentLevel
 } from '../../core/models/cognitive.model';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 @Component({
   selector: 'app-cognitive-page',
@@ -449,6 +450,7 @@ import {
 export class CognitivePageComponent implements OnInit {
   private readonly cognitiveService = inject(CognitiveService);
   private readonly familyState     = inject(FamilyStateService);
+  private readonly scrollPolicy    = inject(ScrollPolicyService);
 
   // ─── State ──────────────────────────────────────────────────────────────
   loading    = signal(true);
@@ -512,6 +514,7 @@ export class CognitivePageComponent implements OnInit {
 
   // ─── Lifecycle ───────────────────────────────────────────────────────────
   ngOnInit(): void {
+    this.scrollPolicy.set('scroll-to-new');
     const familyId = this.familyState.getSelectedFamilyId();
     if (!familyId) { this.loading.set(false); return; }
 

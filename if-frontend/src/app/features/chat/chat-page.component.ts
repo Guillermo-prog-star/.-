@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -6,18 +6,18 @@ import { FamilyStateService } from '../../core/services/family-state.service';
 import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { MarkdownPipe } from '../../shared/pipes/markdown.pipe';
 import { SessionContext } from '../../core/models/models';
+import { ScrollPolicyDirective } from '../../shared/directives/scroll-policy.directive';
 
 const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
 @Component({
   selector: 'app-chat-page',
   standalone: true,
-  imports: [CommonModule, FormsModule, MarkdownPipe],
+  imports: [CommonModule, FormsModule, MarkdownPipe, ScrollPolicyDirective],
   templateUrl: './chat-page.component.html',
   styleUrls: ['./chat-page.component.css']
 })
 export class ChatPageComponent implements OnInit {
-  @ViewChild('anchor') anchor!: ElementRef;
   private http        = inject(HttpClient);
   private familyState = inject(FamilyStateService);
   private flow        = inject(TransformationFlowService);
@@ -58,7 +58,7 @@ export class ChatPageComponent implements OnInit {
             createdAt: new Date()
           });
         }
-        this.scroll();
+
       }
     });
   }
@@ -104,7 +104,6 @@ export class ChatPageComponent implements OnInit {
     this.messages.push({ content: text, isAi: false, createdAt: new Date() });
     this.inputText = '';
     this.loading = true;
-    this.scroll();
 
     // Construir contexto de transformación para enriquecer la respuesta del IA
     const transformationContext = {
@@ -129,13 +128,13 @@ export class ChatPageComponent implements OnInit {
           const msg = res.data;
           this.messages.push({ ...msg, isAi: msg?.ai ?? msg?.isAi ?? false });
           this.loading = false;
-          this.scroll();
+  
           this.loadSessionContext();
         },
         error: () => {
           this.messages.push({ content: 'Disculpen, hay una interferencia en la red neuronal. Inténtenlo de nuevo en un momento.', isAi: true, createdAt: new Date() });
           this.loading = false;
-          this.scroll();
+  
         }
       });
   }
@@ -281,7 +280,6 @@ export class ChatPageComponent implements OnInit {
       createdAt: new Date()
     };
     this.messages.push(tempUserMsg);
-    this.scroll();
 
     this.http.post<any>(`/api/chat/voice/${this.familyId}`, formData).subscribe({
       next: (res) => {
@@ -289,7 +287,7 @@ export class ChatPageComponent implements OnInit {
         tempUserMsg.content = res.transcript;
         this.messages.push({ content: res.assistantReply, isAi: true, createdAt: new Date() });
         this.loading = false;
-        this.scroll();
+
         this.loadSessionContext();
         if (res.audioBase64) {
           this.playAudio(res.audioBase64);
@@ -301,7 +299,7 @@ export class ChatPageComponent implements OnInit {
           tempUserMsg.content = '🎤 Error en grabación de voz';
         }
         this.messages.push({ content: 'Error al procesar el audio.', isAi: true, createdAt: new Date() });
-        this.scroll();
+
       }
     });
   }
@@ -311,12 +309,4 @@ export class ChatPageComponent implements OnInit {
     audio.play().catch(err => console.error("Error playing audio", err));
   }
 
-  scroll() {
-    setTimeout(() => {
-      const chatContainer = document.querySelector('.chat-messages');
-      if (chatContainer) {
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-      }
-    }, 100);
-  }
 }

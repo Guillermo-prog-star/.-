@@ -5,6 +5,7 @@ import { catchError, of } from 'rxjs';
 import { AssessmentService } from '../../core/services/assessment.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { EvaluationHistory, TimelineEntryDto } from '../../core/models/models';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 @Component({
   selector: 'app-evaluation-history-page',
@@ -17,6 +18,7 @@ export class EvaluationHistoryPageComponent implements OnInit {
   private assessmentService = inject(AssessmentService);
   private familyState       = inject(FamilyStateService);
   private router            = inject(Router);
+  private scrollPolicy      = inject(ScrollPolicyService);
 
   readonly history  = signal<EvaluationHistory[]>([]);
   readonly timeline = signal<TimelineEntryDto[]>([]);
@@ -56,6 +58,7 @@ export class EvaluationHistoryPageComponent implements OnInit {
   });
 
   ngOnInit(): void {
+    this.scrollPolicy.set('scroll-to-new');
     if (!this.familyId) {
       this.router.navigate(['/families']);
       return;

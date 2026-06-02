@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { catchError, of } from 'rxjs';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 type LegadoTab = 'history' | 'constitution' | 'mission' | 'values' | 'letter';
 
@@ -275,7 +276,8 @@ interface FamilyValue { id: string; icon: string; name: string; description: str
 export class LegadoComponent implements OnInit {
   private http        = inject(HttpClient);
   private api         = inject(ApiService);
-  private familyState = inject(FamilyStateService);
+  private familyState  = inject(FamilyStateService);
+  private scrollPolicy = inject(ScrollPolicyService);
 
   readonly activeTab   = signal<LegadoTab>('history');
   readonly saving      = signal(false);
@@ -298,6 +300,7 @@ export class LegadoComponent implements OnInit {
   ]);
 
   ngOnInit() {
+    this.scrollPolicy.set('scroll-to-new');
     if (this.familyId > 0) this.load();
   }
 

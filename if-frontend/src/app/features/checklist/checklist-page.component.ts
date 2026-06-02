@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { ApiService } from '../../core/services/api.service';
 import { ChecklistItem, Plan } from '../../core/models/models';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 @Component({
   selector: 'app-checklist-page', 
@@ -16,7 +17,8 @@ import { FamilyStateService } from '../../core/services/family-state.service';
 export class ChecklistPageComponent implements OnInit {
   private http = inject(HttpClient); 
   private api = inject(ApiService);
-  private familyState = inject(FamilyStateService);
+  private familyState  = inject(FamilyStateService);
+  private scrollPolicy = inject(ScrollPolicyService);
 
   items: any[] = []; 
   resolvedEvidences: any[] = []; // Archivo permanente de evidencias (Victorias de todos los hitos)
@@ -39,9 +41,10 @@ export class ChecklistPageComponent implements OnInit {
     return Object.entries(groups).filter(([_, items]) => items.length > 0);
   }
   
-  ngOnInit() { 
+  ngOnInit() {
+    this.scrollPolicy.set('scroll-to-new');
     if (this.familyId) {
-      this.load(); 
+      this.load();
     }
   }
   

@@ -11,6 +11,7 @@ import { TelemetryService } from '../../core/services/telemetry.service';
 import { PlanTransformacion, Mision } from '../../core/models/plan-transformacion.model';
 import { PLANES_MOCK } from '../../data/planes-transformacion.mock';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 @Component({
   selector: 'app-plan-list-page', 
@@ -25,7 +26,8 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
   private familyState = inject(FamilyStateService);
   private flow        = inject(TransformationFlowService);
   private router = inject(Router);
-  private telemetry = inject(TelemetryService);
+  private telemetry    = inject(TelemetryService);
+  private scrollPolicy = inject(ScrollPolicyService);
 
   plans: Plan[] = []; 
   planes: PlanTransformacion[] = []; 
@@ -152,7 +154,8 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnInit() { 
+  ngOnInit() {
+    this.scrollPolicy.set('scroll-to-new');
     if (this.familyId) {
       this.load(false); // Carga inicial
       this.loadMilestones();

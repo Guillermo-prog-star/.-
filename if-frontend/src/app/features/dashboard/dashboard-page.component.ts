@@ -35,6 +35,7 @@ import { EvolutionPathComponent } from './components/evolution-path/evolution-pa
 import { LongitudinalStateService } from '../../core/services/longitudinal-state.service';
 import { LongitudinalStateDTO, CausalInferenceDTO } from '../../core/models/dashboard.model';
 import { CausalRulesPanelComponent } from './components/causal-rules-panel/causal-rules-panel.component';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 /**
  * SDD: Dashboard Page Component
@@ -87,6 +88,8 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
   causalInference$: Observable<CausalInferenceDTO | null> = of(null);
 
   readonly flow = inject(TransformationFlowService);
+
+  private readonly scrollPolicy = inject(ScrollPolicyService);
 
   constructor(
     public readonly dashboardService: DashboardDataService,
@@ -219,6 +222,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.scrollPolicy.set('critical-alert');
     // Suscripción reactiva: cuando se resuelve el familyId, carga las alertas IF-ALT.
     this.resolvedFamilyId$.pipe(
       filter(id => id > 0),

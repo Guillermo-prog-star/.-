@@ -14,6 +14,7 @@ import { GuardianPanelComponent } from '../guardian/guardian-panel.component';
 import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { SprintService } from '../family-logbook/sprint.service';
 import { SprintResponse } from '../family-logbook/sprint.model';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
@@ -34,6 +35,7 @@ export class PortalFamiliarComponent implements OnInit, OnDestroy {
   private readonly router           = inject(Router);
   readonly flow                     = inject(TransformationFlowService);
   private readonly sprintService    = inject(SprintService);
+  private readonly scrollPolicy     = inject(ScrollPolicyService);
 
   // ── Identidad ─────────────────────────────────────────────────────────────
   familyId     = 0;
@@ -108,6 +110,7 @@ export class PortalFamiliarComponent implements OnInit, OnDestroy {
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
+    this.scrollPolicy.set('critical-alert');
     this.updateClock();
     this.clockInterval = setInterval(() => this.updateClock(), 60_000);
 

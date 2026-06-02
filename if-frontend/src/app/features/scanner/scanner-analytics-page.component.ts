@@ -6,6 +6,7 @@ import { ScannerService } from '../../core/services/scanner.service';
 import { AssessmentService } from '../../core/services/assessment.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { InferenceRecordDto, TimelineEntryDto } from '../../core/models/models';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 // ── Chart data types ──────────────────────────────────────────────────────
 
@@ -45,7 +46,8 @@ export class ScannerAnalyticsPageComponent implements OnInit {
   private scanner     = inject(ScannerService);
   private assessment  = inject(AssessmentService);
   private familyState = inject(FamilyStateService);
-  private router      = inject(Router);
+  private router       = inject(Router);
+  private scrollPolicy = inject(ScrollPolicyService);
 
   // ── State signals ─────────────────────────────────────────────────────────
 
@@ -267,6 +269,7 @@ export class ScannerAnalyticsPageComponent implements OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
+    this.scrollPolicy.set('scroll-to-new');
     if (!this.familyId) { this.router.navigate(['/families']); return; }
     forkJoin({
       timeline:   this.assessment.getTimeline(this.familyId).pipe(catchError(() => of([]))),

@@ -25,6 +25,7 @@ import {
   CreateDailyCheckinRequest,
   CloseSprintRequest
 } from './sprint.model';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 type TabMode = 'LOGBOOK' | 'SPRINT' | 'HISTORY';
 type FilterMode = 'ALL' | LogbookStatus;
@@ -1207,6 +1208,7 @@ export class FamilyLogbookComponent implements OnInit {
   private readonly http            = inject(HttpClient);
   private readonly api             = inject(ApiService);
   private readonly router          = inject(Router);
+  private readonly scrollPolicy    = inject(ScrollPolicyService);
 
   // ─── State ──────────────────────────────────────────────────────────────────
   private familyId = 0;
@@ -1281,6 +1283,7 @@ export class FamilyLogbookComponent implements OnInit {
 
   // ─── Init ───────────────────────────────────────────────────────────────────
   ngOnInit(): void {
+    this.scrollPolicy.set('scroll-to-new');
     const user = this.authService.user();
     if (user?.familyId) {
       this.familyId   = user.familyId;

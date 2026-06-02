@@ -44,128 +44,137 @@ import { filter } from 'rxjs/operators';
 
       <nav>
 
-        <!-- ── BLOQUE 1: CONFIGURACIÓN INICIAL ──── -->
-        <div class="section-label">CONFIGURACIÓN</div>
-
-        <a routerLink="/families" class="nav-item" routerLinkActive="active">
-          <span class="step-dot" [class.done]="isSetupDone('family')">{{ isSetupDone('family') ? '✓' : '1' }}</span>
-          <span class="nav-text">Familia</span>
-        </a>
-        <a routerLink="/members" class="nav-item" routerLinkActive="active">
-          <span class="step-dot" [class.done]="isSetupDone('members')">{{ isSetupDone('members') ? '✓' : '2' }}</span>
-          <span class="nav-text">Miembros</span>
-        </a>
-        <a [routerLink]="guardianRoute()" class="nav-item guardian-nav" routerLinkActive="active">
-          <span class="step-dot" [class.done]="isSetupDone('guardian')">{{ isSetupDone('guardian') ? '✓' : '3' }}</span>
-          <span class="nav-text">Guardián Familiar</span>
-        </a>
-
-        <div class="divider"></div>
-
-        <!-- ── BLOQUE 2: DIAGNÓSTICO ─────────────── -->
-        <div class="section-label">DIAGNÓSTICO</div>
-
-        <div class="nav-group" [class.expanded]="diagExpanded" [class.group-active]="isDiagActive()">
-          <button type="button" class="nav-item group-header" (click)="toggleDiag($event)">
-            <span class="step-dot" [class.done]="isSetupDone('diagnosis')">{{ isSetupDone('diagnosis') ? '✓' : '4' }}</span>
-            <span class="nav-text">Diagnóstico Familiar</span>
-            <span class="chevron" [class.rotated]="diagExpanded">▶</span>
-          </button>
-          @if (diagExpanded) {
-            <div class="sub-menu">
-              <a routerLink="/evaluations/start"     class="nav-sub" routerLinkActive="active">🔍 Iniciar evaluación</a>
-              <a routerLink="/evaluations/history"   class="nav-sub" routerLinkActive="active">📋 Historial</a>
-              <a routerLink="/evaluations/evolution" class="nav-sub" routerLinkActive="active">📈 Evolución</a>
-              <a routerLink="/evaluations/analytics" class="nav-sub" routerLinkActive="active">🧪 Panel Clínico</a>
-            </div>
-          }
+        <!-- ── BLOQUE 1: CONFIGURACIÓN — Azul (infraestructura) ──── -->
+        <div class="nav-section nav-section--system">
+          <div class="section-label">CONFIGURACIÓN</div>
+          <a routerLink="/families" class="nav-item" routerLinkActive="active">
+            <span class="step-dot" [class.done]="isSetupDone('family')">{{ isSetupDone('family') ? '✓' : '1' }}</span>
+            <span class="nav-text">Familia</span>
+          </a>
+          <a routerLink="/members" class="nav-item" routerLinkActive="active">
+            <span class="step-dot" [class.done]="isSetupDone('members')">{{ isSetupDone('members') ? '✓' : '2' }}</span>
+            <span class="nav-text">Miembros</span>
+          </a>
+          <a [routerLink]="guardianRoute()" class="nav-item guardian-nav" routerLinkActive="active">
+            <span class="step-dot" [class.done]="isSetupDone('guardian')">{{ isSetupDone('guardian') ? '✓' : '3' }}</span>
+            <span class="nav-text">Guardián Familiar</span>
+          </a>
         </div>
 
         <div class="divider"></div>
 
-        <!-- ── BLOQUE 3: PLAN AUTO-GENERADO ─────── -->
-        <div class="section-label">PLAN &amp; RUTA</div>
-
-        <a routerLink="/plans" class="nav-item" routerLinkActive="active">
-          <span class="step-dot" [class.done]="isSetupDone('plan')">{{ isSetupDone('plan') ? '✓' : '5' }}</span>
-          <span class="nav-text">Plan Familiar</span>
-          <span class="badge-auto">AUTO</span>
-        </a>
-        <a routerLink="/transformation/route" class="nav-item" routerLinkActive="active">
-          <span class="step-dot neutral">◈</span>
-          <span class="nav-text">Ruta de 36 Meses</span>
-        </a>
-
-        <div class="divider"></div>
-
-        <!-- ── BLOQUE 4: TRANSFORMACIÓN DIARIA ──── -->
-        <div class="section-label">TRANSFORMACIÓN DIARIA</div>
-
-        <a routerLink="/logbook"                     class="nav-item" routerLinkActive="active">
-          <span class="nav-icon">📔</span><span class="nav-text">Bitácora &amp; Daily</span>
-        </a>
-        <a routerLink="/transformation/weekly-plan"  class="nav-item" routerLinkActive="active">
-          <span class="nav-icon">📅</span><span class="nav-text">Planeación Semanal</span>
-        </a>
-        <a routerLink="/checklist"                   class="nav-item" routerLinkActive="active">
-          <span class="nav-icon">📸</span><span class="nav-text">Evidencias</span>
-        </a>
-        <a routerLink="/transformation/error-protocol" class="nav-item" routerLinkActive="active">
-          <span class="nav-icon">🔄</span><span class="nav-text">Gestión de Errores</span>
-        </a>
+        <!-- ── BLOQUE 2: DIAGNÓSTICO — Turquesa (observación) ─────── -->
+        <div class="nav-section nav-section--diagnosis">
+          <div class="section-label">DIAGNÓSTICO</div>
+          <div class="nav-group" [class.expanded]="diagExpanded" [class.group-active]="isDiagActive()">
+            <button type="button" class="nav-item group-header" (click)="toggleDiag($event)">
+              <span class="step-dot" [class.done]="isSetupDone('diagnosis')">{{ isSetupDone('diagnosis') ? '✓' : '4' }}</span>
+              <span class="nav-text">Diagnóstico Familiar</span>
+              <span class="chevron" [class.rotated]="diagExpanded">▶</span>
+            </button>
+            @if (diagExpanded) {
+              <div class="sub-menu">
+                <a routerLink="/evaluations/start"     class="nav-sub" routerLinkActive="active">🔍 Iniciar evaluación</a>
+                <a routerLink="/evaluations/history"   class="nav-sub" routerLinkActive="active">📋 Historial</a>
+                <a routerLink="/evaluations/evolution" class="nav-sub" routerLinkActive="active">📈 Evolución</a>
+                <a routerLink="/evaluations/analytics" class="nav-sub" routerLinkActive="active">🧪 Panel Clínico</a>
+              </div>
+            }
+          </div>
+        </div>
 
         <div class="divider"></div>
 
-        <!-- ── BLOQUE 5: APOYO Y CRISIS ──────────── -->
-        <div class="section-label">APOYO</div>
-
-        <a routerLink="/crisis"    class="nav-item crisis-btn" routerLinkActive="active">
-          <span class="nav-icon">🆘</span><span class="nav-text">Crisis Familiar</span>
-        </a>
-        <a routerLink="/chat"      class="nav-item" routerLinkActive="active">
-          <span class="nav-icon">✨</span><span class="nav-text">Consultor IA</span>
-        </a>
-        <a routerLink="/cognitive" class="nav-item" routerLinkActive="active">
-          <span class="nav-icon">🧠</span><span class="nav-text">Sistema Cognitivo</span>
-        </a>
-
-        <div class="divider"></div>
-
-        <!-- ── BLOQUE 6: LEGADO ───────────────────── -->
-        <div class="section-label">LEGADO</div>
-
-        <a routerLink="/gratitude" class="nav-item" routerLinkActive="active">
-          <span class="nav-icon">💖</span><span class="nav-text">Gratitud Familiar</span>
-        </a>
-        <a routerLink="/my-space"  class="nav-item" routerLinkActive="active">
-          <span class="nav-icon">🔒</span><span class="nav-text">Mi Espacio</span>
-        </a>
-        <a routerLink="/legado"    class="nav-item legacy-btn" routerLinkActive="active">
-          <span class="nav-icon">🏛️</span><span class="nav-text">Legado Familiar</span>
-        </a>
+        <!-- ── BLOQUE 3: PLAN & RUTA — Verde (crecimiento) ─────── -->
+        <div class="nav-section nav-section--evolution">
+          <div class="section-label">PLAN &amp; RUTA</div>
+          <a routerLink="/plans" class="nav-item" routerLinkActive="active">
+            <span class="step-dot" [class.done]="isSetupDone('plan')">{{ isSetupDone('plan') ? '✓' : '5' }}</span>
+            <span class="nav-text">Plan Familiar</span>
+            <span class="badge-auto">AUTO</span>
+          </a>
+          <a routerLink="/transformation/route" class="nav-item" routerLinkActive="active">
+            <span class="step-dot neutral">◈</span>
+            <span class="nav-text">Ruta de 36 Meses</span>
+          </a>
+        </div>
 
         <div class="divider"></div>
 
-        <!-- ── BLOQUE 7: SISTEMA ─────────────────── -->
-        <div class="section-label">SISTEMA</div>
+        <!-- ── BLOQUE 4: TRANSFORMACIÓN DIARIA — Naranja (acción) ── -->
+        <div class="nav-section nav-section--family">
+          <div class="section-label">TRANSFORMACIÓN DIARIA</div>
+          <a routerLink="/logbook"                     class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">📔</span><span class="nav-text">Bitácora &amp; Daily</span>
+          </a>
+          <a routerLink="/transformation/weekly-plan"  class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">📅</span><span class="nav-text">Planeación Semanal</span>
+          </a>
+          <a routerLink="/checklist"                   class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">📸</span><span class="nav-text">Evidencias</span>
+          </a>
+          <a routerLink="/transformation/error-protocol" class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">🔄</span><span class="nav-text">Gestión de Errores</span>
+          </a>
+        </div>
 
-        <a routerLink="/dashboard" class="nav-item" routerLinkActive="active">
-          <span class="nav-icon">📊</span><span class="nav-text">Panel Analítico</span>
-        </a>
-        <a routerLink="/portal"    class="nav-item" routerLinkActive="active">
-          <span class="nav-icon">📱</span><span class="nav-text">Portal Móvil</span>
-        </a>
-        <a routerLink="/profile"   class="nav-item" routerLinkActive="active">
-          <span class="nav-icon">👤</span><span class="nav-text">Mi Perfil</span>
-        </a>
+        <div class="divider"></div>
+
+        <!-- ── BLOQUE 5: APOYO — semántica por sub-módulo ────────── -->
+        <div class="nav-section nav-section--support">
+          <div class="section-label">APOYO</div>
+          <a routerLink="/crisis"    class="nav-item nav-crisis" routerLinkActive="active">
+            <span class="nav-icon">🆘</span><span class="nav-text">Crisis Familiar</span>
+          </a>
+          <a routerLink="/chat"      class="nav-item nav-intel" routerLinkActive="active">
+            <span class="nav-icon">✨</span><span class="nav-text">Consultor IA</span>
+          </a>
+          <a routerLink="/cognitive" class="nav-item nav-intel" routerLinkActive="active">
+            <span class="nav-icon">🧠</span><span class="nav-text">Sistema Cognitivo</span>
+          </a>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- ── BLOQUE 6: LEGADO — Dorado (trascendencia) ─────────── -->
+        <div class="nav-section nav-section--legacy">
+          <div class="section-label">LEGADO</div>
+          <a routerLink="/gratitude" class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">💖</span><span class="nav-text">Gratitud Familiar</span>
+          </a>
+          <a routerLink="/my-space"  class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">🔒</span><span class="nav-text">Mi Espacio</span>
+          </a>
+          <a routerLink="/legado"    class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">🏛️</span><span class="nav-text">Legado Familiar</span>
+          </a>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- ── BLOQUE 7: SISTEMA — Azul (infraestructura) ────────── -->
+        <div class="nav-section nav-section--system">
+          <div class="section-label">SISTEMA</div>
+          <a routerLink="/dashboard" class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">📊</span><span class="nav-text">Panel Analítico</span>
+          </a>
+          <a routerLink="/portal"    class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">📱</span><span class="nav-text">Portal Móvil</span>
+          </a>
+          <a routerLink="/profile"   class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">👤</span><span class="nav-text">Mi Perfil</span>
+          </a>
+        </div>
 
         @if (user()?.role === 'ADMIN') {
           <div class="divider"></div>
-          <div class="section-label">ADMINISTRACIÓN</div>
-          <a routerLink="/admin/stats"        class="nav-item admin-item" routerLinkActive="active"><span class="nav-icon">⚙️</span> Estadísticas</a>
-          <a routerLink="/admin/eedsl"        class="nav-item admin-item" routerLinkActive="active"><span class="nav-icon">🔧</span> Reglas EEDSL</a>
-          <a routerLink="/admin/sandbox"      class="nav-item admin-item" routerLinkActive="active"><span class="nav-icon">🧪</span> Sandbox</a>
-          <a routerLink="/admin/voice-monitor" class="nav-item admin-item" routerLinkActive="active"><span class="nav-icon">🎙️</span> Monitor Voz</a>
+          <div class="nav-section nav-section--admin">
+            <div class="section-label">ADMINISTRACIÓN</div>
+            <a routerLink="/admin/stats"         class="nav-item" routerLinkActive="active"><span class="nav-icon">⚙️</span><span class="nav-text">Estadísticas</span></a>
+            <a routerLink="/admin/eedsl"         class="nav-item" routerLinkActive="active"><span class="nav-icon">🔧</span><span class="nav-text">Reglas EEDSL</span></a>
+            <a routerLink="/admin/sandbox"       class="nav-item" routerLinkActive="active"><span class="nav-icon">🧪</span><span class="nav-text">Sandbox</span></a>
+            <a routerLink="/admin/voice-monitor" class="nav-item" routerLinkActive="active"><span class="nav-icon">🎙️</span><span class="nav-text">Monitor Voz</span></a>
+          </div>
         }
 
       </nav>
@@ -202,53 +211,95 @@ import { filter } from 'rxjs/operators';
     .sidebar-logo { width: 100%; height: 100%; object-fit: cover; }
     .version-tag { font-size: 7px; color: #818cf8; font-weight: 800; background: rgba(99,102,241,0.12); padding: 3px 10px; border-radius: 20px; margin-top: 8px; border: 1px solid rgba(99,102,241,0.2); letter-spacing: 0.06em; text-transform: uppercase; }
 
-    .evolution-card { margin: 0 16px 12px; padding: 10px 14px; background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.06)); border: 1px solid rgba(99,102,241,0.18); border-radius: 10px; }
-    .ev-code  { font-size: 9px; color: #818cf8; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+    /* Evolution card — naranja (vida familiar activa) + barra verde (progreso) */
+    .evolution-card { margin: 0 16px 12px; padding: 10px 14px; background: linear-gradient(135deg, rgba(245,158,11,0.07), rgba(212,175,55,0.04)); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; }
+    .ev-code  { font-size: 9px; color: #FBB040; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
     .ev-pillar { font-size: 12px; font-weight: 700; color: #fff; margin: 3px 0 2px; }
     .ev-meta  { display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
     .ev-month { font-size: 10px; color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 4px; }
     .ev-phase { font-size: 10px; color: rgba(255,255,255,0.4); }
     .ev-bar-wrap { height: 3px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; margin-bottom: 3px; }
-    .ev-bar  { height: 100%; background: linear-gradient(90deg, #6366f1, #818cf8); border-radius: 2px; transition: width 0.4s ease; }
+    .ev-bar  { height: 100%; background: linear-gradient(90deg, #22C55E, #4ADE80); border-radius: 2px; transition: width 0.4s ease; }
     .ev-pct  { font-size: 9px; color: rgba(255,255,255,0.3); text-align: right; }
 
     nav { flex: 1; padding: 0 12px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.2) transparent; }
     nav::-webkit-scrollbar { width: 3px; }
     nav::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.2); border-radius: 3px; }
 
-    .section-label { font-size: 8px; font-weight: 800; color: rgba(255,255,255,0.2); letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 8px 3px; margin-top: 4px; }
+    /* ── BASE nav-item (default) ─────────────────────────────────── */
+    .section-label { font-size: 8px; font-weight: 800; color: rgba(255,255,255,0.18); letter-spacing: 0.12em; text-transform: uppercase; padding: 6px 8px 3px; margin-top: 4px; }
 
-    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 9px; color: rgba(255,255,255,0.5); font-size: 13px; transition: all 0.2s; text-decoration: none; margin-bottom: 2px; cursor: pointer; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 9px; color: rgba(255,255,255,0.5); font-size: 13px; transition: all 0.2s; text-decoration: none; margin-bottom: 2px; cursor: pointer; border: 1px solid transparent; }
     .nav-item:hover { color: #fff; background: rgba(255,255,255,0.05); transform: translateX(3px); }
-    .nav-item.active { background: rgba(99,102,241,0.12) !important; color: #818cf8 !important; border: 1px solid rgba(99,102,241,0.2); }
 
     .nav-text { flex: 1; font-weight: 500; }
     .nav-icon { font-size: 15px; width: 20px; text-align: center; flex-shrink: 0; }
 
     .step-dot { width: 20px; height: 20px; border-radius: 50%; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); font-size: 9px; font-weight: 800; color: rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.3s; }
-    .step-dot.done { background: rgba(99,102,241,0.25); border-color: #6366f1; color: #818cf8; }
     .step-dot.neutral { background: transparent; border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.25); font-size: 11px; }
 
-    .badge-auto { font-size: 7px; font-weight: 900; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #10b981; padding: 1px 5px; border-radius: 4px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .badge-auto { font-size: 7px; font-weight: 900; padding: 1px 5px; border-radius: 4px; letter-spacing: 0.06em; text-transform: uppercase; }
 
     .group-header { background: none; border: none; width: 100%; text-align: left; cursor: pointer; font-family: inherit; }
     .chevron { font-size: 9px; transition: transform 0.25s; color: rgba(255,255,255,0.25); margin-left: auto; }
-    .chevron.rotated { transform: rotate(90deg); color: #818cf8; }
-    .group-active .group-header { color: #818cf8 !important; }
+    .chevron.rotated { transform: rotate(90deg); }
     .sub-menu { margin: 2px 0 6px 30px; padding-left: 10px; border-left: 1px dashed rgba(255,255,255,0.07); display: flex; flex-direction: column; gap: 1px; }
-    .nav-sub { padding: 7px 10px; font-size: 12px; color: rgba(255,255,255,0.45); border-radius: 6px; display: flex; align-items: center; gap: 6px; text-decoration: none; transition: all 0.2s; }
+    .nav-sub { padding: 7px 10px; font-size: 12px; color: rgba(255,255,255,0.45); border-radius: 6px; display: flex; align-items: center; gap: 6px; text-decoration: none; transition: all 0.2s; border: 1px solid transparent; }
     .nav-sub:hover { color: #fff; background: rgba(255,255,255,0.04); }
-    .nav-sub.active { background: rgba(99,102,241,0.08) !important; color: #818cf8 !important; border: 1px solid rgba(99,102,241,0.15); }
 
     .divider { height: 1px; background: rgba(255,255,255,0.04); margin: 8px 12px; }
-    .guardian-nav { border: 1px solid rgba(129,140,248,0.12); }
-    .guardian-nav:hover { border-color: rgba(129,140,248,0.35); }
-    .guardian-nav.active { border-color: rgba(129,140,248,0.35) !important; }
-    .crisis-btn { color: rgba(255,68,68,0.65); }
-    .crisis-btn:hover { color: #ff4444; background: rgba(255,68,68,0.08); }
-    .legacy-btn { color: rgba(251,191,36,0.65); }
-    .legacy-btn:hover { color: #fbbf24; background: rgba(251,191,36,0.06); }
-    .admin-item { font-size: 12px; color: rgba(99,102,241,0.6); border: 1px dashed rgba(99,102,241,0.2); }
+
+    /* ── SISTEMA — Azul: Configuración, Dashboard, Admin ─────────── */
+    .nav-section--system .section-label { color: #60A5FA; }
+    .nav-section--system .nav-item.active { background: rgba(59,130,246,0.12) !important; color: #60A5FA !important; border-color: rgba(59,130,246,0.25) !important; }
+    .nav-section--system .nav-item:hover { color: #93C5FD; }
+    .nav-section--system .step-dot.done { background: rgba(59,130,246,0.2); border-color: #3B82F6; color: #60A5FA; }
+    .nav-section--system .guardian-nav { border-color: rgba(59,130,246,0.15); }
+    .nav-section--system .guardian-nav:hover { border-color: rgba(59,130,246,0.35); }
+    .nav-section--system .guardian-nav.active { border-color: rgba(59,130,246,0.35) !important; }
+
+    /* ── DIAGNÓSTICO — Turquesa: observación, medición ───────────── */
+    .nav-section--diagnosis .section-label { color: #22D3EE; }
+    .nav-section--diagnosis .nav-item.active { background: rgba(6,182,212,0.12) !important; color: #22D3EE !important; border-color: rgba(6,182,212,0.25) !important; }
+    .nav-section--diagnosis .nav-item:hover { color: #67E8F9; }
+    .nav-section--diagnosis .step-dot.done { background: rgba(6,182,212,0.2); border-color: #06B6D4; color: #22D3EE; }
+    .nav-section--diagnosis .chevron.rotated { color: #22D3EE; }
+    .nav-section--diagnosis .group-active .group-header { color: #22D3EE !important; }
+    .nav-section--diagnosis .nav-sub.active { background: rgba(6,182,212,0.08) !important; color: #22D3EE !important; border-color: rgba(6,182,212,0.2) !important; }
+
+    /* ── EVOLUCIÓN — Verde: Plan, Ruta, Crecimiento ──────────────── */
+    .nav-section--evolution .section-label { color: #4ADE80; }
+    .nav-section--evolution .nav-item.active { background: rgba(34,197,94,0.12) !important; color: #4ADE80 !important; border-color: rgba(34,197,94,0.25) !important; }
+    .nav-section--evolution .nav-item:hover { color: #86EFAC; }
+    .nav-section--evolution .step-dot.done { background: rgba(34,197,94,0.2); border-color: #22C55E; color: #4ADE80; }
+    .nav-section--evolution .badge-auto { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); color: #4ADE80; }
+
+    /* ── FAMILIA — Naranja: Transformación, Misiones, Acción ─────── */
+    .nav-section--family .section-label { color: #FBB040; }
+    .nav-section--family .nav-item.active { background: rgba(245,158,11,0.12) !important; color: #FBB040 !important; border-color: rgba(245,158,11,0.25) !important; }
+    .nav-section--family .nav-item:hover { color: #FCD34D; background: rgba(245,158,11,0.06); }
+
+    /* ── APOYO — semántica por sub-módulo ───────────────────────── */
+    .nav-section--support .section-label { color: rgba(255,255,255,0.3); }
+    /* Crisis: solo rojo */
+    .nav-crisis { color: rgba(239,68,68,0.7) !important; }
+    .nav-crisis:hover { color: #EF4444 !important; background: rgba(239,68,68,0.08) !important; }
+    .nav-crisis.active { background: rgba(239,68,68,0.12) !important; color: #F87171 !important; border-color: rgba(239,68,68,0.25) !important; }
+    /* Inteligencia: violeta */
+    .nav-intel { color: rgba(139,92,246,0.75) !important; }
+    .nav-intel:hover { color: #A78BFA !important; background: rgba(139,92,246,0.08) !important; }
+    .nav-intel.active { background: rgba(139,92,246,0.12) !important; color: #A78BFA !important; border-color: rgba(139,92,246,0.25) !important; }
+
+    /* ── LEGADO — Dorado: Gratitud, Constitución, Historia ──────── */
+    .nav-section--legacy .section-label { color: #D4AF37; }
+    .nav-section--legacy .nav-item { color: rgba(212,175,55,0.65); }
+    .nav-section--legacy .nav-item:hover { color: #D4AF37; background: rgba(212,175,55,0.07); }
+    .nav-section--legacy .nav-item.active { background: rgba(212,175,55,0.12) !important; color: #D4AF37 !important; border-color: rgba(212,175,55,0.25) !important; }
+
+    /* ── ADMINISTRACIÓN — Azul (sistema técnico) ─────────────────── */
+    .nav-section--admin .section-label { color: #60A5FA; }
+    .nav-section--admin .nav-item { font-size: 12px; color: rgba(96,165,250,0.6); border: 1px dashed rgba(59,130,246,0.2); }
+    .nav-section--admin .nav-item.active { background: rgba(59,130,246,0.1) !important; color: #60A5FA !important; border-color: rgba(59,130,246,0.3) !important; }
 
     .family-box { margin: 12px 16px 0; padding: 12px 14px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
     .f-name  { color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

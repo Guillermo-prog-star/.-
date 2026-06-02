@@ -190,10 +190,10 @@
   margin: 2px 0 0;
 }
 
-/* --- ANILLO DE PROGRESO DE HARMONY --- */
+/* --- ANILLO DE PROGRESO — SINTONÍA DIARIA (Naranja Familiar) --- */
 .progress-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, rgba(212, 175, 55, 0.03) 100%);
+  border: 1px solid rgba(245, 158, 11, 0.20);
   border-radius: 24px;
   padding: 16px;
   display: flex;
@@ -220,7 +220,7 @@
 }
 
 .circle-progress {
-  stroke: #6366f1; /* Indigo progress */
+  stroke: #F59E0B; /* Naranja Familiar — acompañamiento, acción diaria */
   stroke-width: 8;
   stroke-linecap: round;
   fill: none;
@@ -228,6 +228,7 @@
   transform: rotate(-90deg);
   transform-origin: 50% 50%;
   stroke-dasharray: 251.2;
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.5));
 }
 
 .circle-label {
@@ -251,7 +252,7 @@
   font-size: 6px;
   font-weight: 800;
   letter-spacing: 0.5px;
-  color: rgba(255, 255, 255, 0.4);
+  color: #F59E0B; /* Naranja Familiar — "HOY" */
 }
 
 .progress-info h3 {

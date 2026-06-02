@@ -7,7 +7,13 @@
 
 /* 3. ESPECIFICACIÓN DE VARIABLES (Design Tokens) */
 :root {
-  /* Premium Palette - Integrity Family Blue & Transformation Indigo */
+  /* ─────────────────────────────────────────────────────────────────────
+   * INTEGRITY FAMILY — SISTEMA OPERATIVO FAMILIAR
+   * Manual de Diseño Definitivo v2.0
+   * Semántica operacional: cada color tiene significado funcional único.
+   * ─────────────────────────────────────────────────────────────────── */
+
+  /* LEGACY — mantener compatibilidad con componentes existentes */
   --primary: #6366f1;
   --primary-glow: rgba(99, 102, 241, 0.4);
   --secondary: #0ea5e9;
@@ -16,25 +22,85 @@
   --warning: #f59e0b;
   --danger: #ef4444;
 
-  /* Deep Night Theme Tokens */
+  /* ── SEMÁNTICA DE MÓDULOS ─────────────────────────────────────────── */
+
+  /* SISTEMA — Azul Profundo: estructura, confianza, infraestructura     */
+  /* Uso: Configuración, Dashboard, Administración, navegación global    */
+  --if-system:        #3B82F6;
+  --if-system-deep:   #1E3A8A;
+  --if-system-soft:   rgba(59, 130, 246, 0.12);
+  --if-system-border: rgba(59, 130, 246, 0.25);
+  --if-system-glow:   rgba(59, 130, 246, 0.4);
+
+  /* FAMILIA — Naranja: unión, acción, acompañamiento, cercanía          */
+  /* Uso: Transformación Diaria, Misiones, Guardián, Participación       */
+  --if-family:        #F59E0B;
+  --if-family-soft:   rgba(245, 158, 11, 0.12);
+  --if-family-border: rgba(245, 158, 11, 0.30);
+  --if-family-glow:   rgba(245, 158, 11, 0.40);
+
+  /* EVOLUCIÓN — Verde: logro, crecimiento, progreso                     */
+  /* Uso: Plan Familiar, Ruta de 36 Meses, metas cumplidas              */
+  --if-evolution:        #22C55E;
+  --if-evolution-soft:   rgba(34, 197, 94, 0.12);
+  --if-evolution-border: rgba(34, 197, 94, 0.25);
+  --if-evolution-glow:   rgba(34, 197, 94, 0.40);
+
+  /* CRISIS — Rojo Sentinel: riesgo, deterioro, emergencia               */
+  /* Uso: SOLO Crisis Familiar y alertas Sentinel. NUNCA decorativo.     */
+  --if-crisis:        #EF4444;
+  --if-crisis-soft:   rgba(239, 68, 68, 0.12);
+  --if-crisis-border: rgba(239, 68, 68, 0.25);
+  --if-crisis-glow:   rgba(239, 68, 68, 0.40);
+
+  /* LEGADO — Dorado: trascendencia, constitución, historia familiar     */
+  /* Uso: Gratitud Familiar, Carta del Legado, Hitos generacionales      */
+  --if-legacy:        #D4AF37;
+  --if-legacy-soft:   rgba(212, 175, 55, 0.12);
+  --if-legacy-border: rgba(212, 175, 55, 0.25);
+  --if-legacy-glow:   rgba(212, 175, 55, 0.40);
+
+  /* INTELIGENCIA — Violeta: IA, cognición, análisis                     */
+  /* Uso: Consultor IA, Sistema Cognitivo                                */
+  --if-intel:        #8B5CF6;
+  --if-intel-soft:   rgba(139, 92, 246, 0.12);
+  --if-intel-border: rgba(139, 92, 246, 0.25);
+  --if-intel-glow:   rgba(139, 92, 246, 0.40);
+
+  /* DIAGNÓSTICO — Turquesa: observación, medición, análisis clínico     */
+  /* Uso: Evaluaciones, Panel Clínico, Evolución                         */
+  --if-diagnosis:        #06B6D4;
+  --if-diagnosis-soft:   rgba(6, 182, 212, 0.12);
+  --if-diagnosis-border: rgba(6, 182, 212, 0.25);
+  --if-diagnosis-glow:   rgba(6, 182, 212, 0.40);
+
+  /* ── DEEP NIGHT THEME ────────────────────────────────────────────── */
   --bg-deep: #020617;
   --bg-surface: rgba(15, 23, 42, 0.8);
   --text-bright: #f8fafc;
   --text-dim: #94a3b8;
+  --text-muted: rgba(255, 255, 255, 0.4);
+  --text-main: #e2e8f0;
+  --surface: rgba(255, 255, 255, 0.03);
+  --border: rgba(255, 255, 255, 0.08);
+  --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  --surface-alt: rgba(15, 23, 42, 0.6);
+  --accent-glow: rgba(139, 92, 246, 0.3);
 
-  /* Dimension Colors */
+  /* ── DIMENSION COLORS ────────────────────────────────────────────── */
   --dim-emotions: #fb7185;
   --dim-communication: #38bdf8;
   --dim-habits: #fbbf24;
   --dim-times: #a78bfa;
 
-  /* Glassmorphism Tokens */
+  /* ── GLASSMORPHISM ───────────────────────────────────────────────── */
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
   --glass-blur: blur(12px);
 
   --radius: 20px;
+  --radius-sm: 10px;
   --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 

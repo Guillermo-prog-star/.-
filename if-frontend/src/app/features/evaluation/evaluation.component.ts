@@ -108,8 +108,13 @@ export class EvaluationComponent implements OnInit {
       if (firstUnanswered > 0) {
         this.currentIndex = firstUnanswered;
         console.log(`[ASSESSMENT] Reanudando desde pregunta ${firstUnanswered + 1} (${progress.answered} ya respondidas).`);
+        this.scrollToTop();
       }
     });
+  }
+
+  private scrollToTop(): void {
+    document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   selectAnswer(score: number): void {
@@ -139,6 +144,7 @@ export class EvaluationComponent implements OnInit {
       if (this.currentIndex < this.questions.length - 1) {
         this.currentIndex++;
         this.isTransitioning = false;
+        this.scrollToTop();
       } else {
         this.isTransitioning = false;
         this.sendResults();
@@ -152,6 +158,7 @@ export class EvaluationComponent implements OnInit {
       setTimeout(() => {
         this.currentIndex--;
         this.isTransitioning = false;
+        this.scrollToTop();
       }, 200);
     }
   }
@@ -208,6 +215,7 @@ export class EvaluationComponent implements OnInit {
     this.isLoadingResults = false;
     this.incrementalSaveFailed = false;
     this.loadQuestions();
+    this.scrollToTop();
   }
 
   // ── Helpers de Taxonomía y Diseño Premium ──────────────────────────────────

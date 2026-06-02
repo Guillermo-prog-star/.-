@@ -709,8 +709,13 @@ export class CrisisPageComponent implements OnInit {
   selectHistoryItem(item: any) {
     this.lastResponse = item;
     this.resetChecklist();
-    // Scroll window smoothly to response area
-    window.scrollTo({ top: 120, behavior: 'smooth' });
+    // Scroll smoothly to response area
+    const mainContainer = document.querySelector('main');
+    if (mainContainer) {
+      mainContainer.scrollTo({ top: 120, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 120, behavior: 'smooth' });
+    }
   }
 
   getCategoryColor(category: string): string {

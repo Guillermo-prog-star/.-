@@ -37,7 +37,7 @@ const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: st
     <div class="wp-page">
       <div class="wp-header">
         <div>
-          <div class="wp-title">Planeación Semanal Familiar</div>
+          <div class="wp-title">Planeación Mensual Familiar</div>
           <div class="wp-sub">4 fases · Preparar → Ejecutar → Evaluar → Consolidar</div>
         </div>
         <div class="wp-sprint">
@@ -143,7 +143,7 @@ const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: st
           }
         </div>
         <button class="btn-save-daily" (click)="savePhase()">
-          {{ saving() ? '⏳ Guardando…' : saved() ? '✓ Guardado' : '💾 Guardar fase en plan semanal' }}
+          {{ saving() ? '⏳ Guardando…' : saved() ? '✓ Guardado' : '💾 Guardar fase en plan mensual' }}
         </button>
       </div>
     </div>

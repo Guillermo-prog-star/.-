@@ -93,10 +93,19 @@ export const routes: Routes = [
       },
 
       // Rutas Transversales
+      { path: 'family-dna', title: 'ADN Familiar', loadComponent: () => import('./features/family-dna/family-dna.component').then(m => m.FamilyDnaComponent) },
+      { path: 'family-timeline', title: 'Historia Familiar', loadComponent: () => import('./features/family-timeline/family-timeline.component').then(m => m.FamilyTimelineComponent) },
       { path: 'members', loadComponent: () => import('./features/members/member-list-page.component').then(m => m.MemberListPageComponent) },
       { path: 'plans', loadComponent: () => import('./features/plans/plan-list-page.component').then(m => m.PlanListPageComponent) },
       { path: 'plans/mission/:taskId', loadComponent: () => import('./features/plans/mission-detail-page.component').then(m => m.MissionDetailPageComponent) },
       { path: 'checklist', loadComponent: () => import('./features/checklist/checklist-page.component').then(m => m.ChecklistPageComponent) },
+      { path: 'evidence/capture', title: 'Cápsula Familiar', loadComponent: () => import('./features/evidence-capture/evidence-capture.component').then(m => m.EvidenceCaptureComponent) },
+      { path: 'rituals', title: 'Motor de Rituales', loadComponent: () => import('./features/ritual-engine/ritual-engine.component').then(m => m.RitualEngineComponent) },
+      { path: 'family-tree', title: 'Árbol Generacional', loadComponent: () => import('./features/family-tree/family-tree.component').then(m => m.FamilyTreeComponent) },
+      { path: 'family-pulse',   title: 'Pulso Familiar',   loadComponent: () => import('./features/family-pulse/family-pulse.component').then(m => m.FamilyPulseComponent) },
+      { path: 'family-council', title: 'Consejo Familiar', loadComponent: () => import('./features/family-council/family-council.component').then(m => m.FamilyCouncilComponent) },
+      { path: 'family-movie',   title: 'Película Familiar',    loadComponent: () => import('./features/family-movie/family-movie.component').then(m => m.FamilyMovieComponent) },
+      { path: 'digital-twin',   title: 'Gemelo Digital',       loadComponent: () => import('./features/digital-twin/digital-twin.component').then(m => m.DigitalTwinComponent) },
       { path: 'chat', loadComponent: () => import('./features/chat/chat-page.component').then(m => m.ChatPageComponent) },
       { path: 'crisis', loadComponent: () => import('./features/crisis/crisis-page.component').then(m => m.CrisisPageComponent) },
       { path: 'logbook', title: 'Bitácora Familiar', loadComponent: () => import('./features/family-logbook/family-logbook.component').then(m => m.FamilyLogbookComponent) },
@@ -124,7 +133,7 @@ export const routes: Routes = [
           },
           {
             path: 'weekly-plan',
-            title: 'Planeación Semanal Familiar',
+            title: 'Planeación Mensual Familiar',
             loadComponent: () => import('./features/transformation/weekly-plan.component')
               .then(m => m.WeeklyPlanComponent)
           },

@@ -59,6 +59,9 @@ import { filter } from 'rxjs/operators';
             <span class="step-dot" [class.done]="isSetupDone('guardian')">{{ isSetupDone('guardian') ? '✓' : '3' }}</span>
             <span class="nav-text">Guardián Familiar</span>
           </a>
+          <a routerLink="/family-dna" class="nav-item nav-dna" routerLinkActive="active">
+            <span class="nav-icon">🧬</span><span class="nav-text">ADN Familiar</span>
+          </a>
         </div>
 
         <div class="divider"></div>
@@ -108,10 +111,13 @@ import { filter } from 'rxjs/operators';
             <span class="nav-icon">📔</span><span class="nav-text">Bitácora &amp; Daily</span>
           </a>
           <a routerLink="/transformation/weekly-plan"  class="nav-item" routerLinkActive="active">
-            <span class="nav-icon">📅</span><span class="nav-text">Planeación Semanal</span>
+            <span class="nav-icon">📅</span><span class="nav-text">Planeación Mensual</span>
           </a>
-          <a routerLink="/checklist"                   class="nav-item" routerLinkActive="active">
+          <a routerLink="/checklist"         class="nav-item" routerLinkActive="active">
             <span class="nav-icon">📸</span><span class="nav-text">Evidencias</span>
+          </a>
+          <a routerLink="/evidence/capture" class="nav-item nav-capsule" routerLinkActive="active">
+            <span class="nav-icon">🎴</span><span class="nav-text">Cápsula Familiar</span>
           </a>
           <a routerLink="/transformation/error-protocol" class="nav-item" routerLinkActive="active">
             <span class="nav-icon">🔄</span><span class="nav-text">Gestión de Errores</span>
@@ -139,14 +145,26 @@ import { filter } from 'rxjs/operators';
         <!-- ── BLOQUE 6: LEGADO — Dorado (trascendencia) ─────────── -->
         <div class="nav-section nav-section--legacy">
           <div class="section-label">LEGADO</div>
+          <a routerLink="/rituals"   class="nav-item nav-ritual" routerLinkActive="active">
+            <span class="nav-icon">🕯️</span><span class="nav-text">Motor de Rituales</span>
+          </a>
           <a routerLink="/gratitude" class="nav-item" routerLinkActive="active">
             <span class="nav-icon">💖</span><span class="nav-text">Gratitud Familiar</span>
           </a>
           <a routerLink="/my-space"  class="nav-item" routerLinkActive="active">
             <span class="nav-icon">🔒</span><span class="nav-text">Mi Espacio</span>
           </a>
-          <a routerLink="/legado"    class="nav-item" routerLinkActive="active">
+          <a routerLink="/legado"          class="nav-item" routerLinkActive="active">
             <span class="nav-icon">🏛️</span><span class="nav-text">Legado Familiar</span>
+          </a>
+          <a routerLink="/family-movie"   class="nav-item nav-movie" routerLinkActive="active">
+            <span class="nav-icon">🎬</span><span class="nav-text">Película Familiar</span>
+          </a>
+          <a routerLink="/family-timeline" class="nav-item nav-timeline" routerLinkActive="active">
+            <span class="nav-icon">📜</span><span class="nav-text">Historia Familiar</span>
+          </a>
+          <a routerLink="/family-tree"    class="nav-item nav-tree" routerLinkActive="active">
+            <span class="nav-icon">🌳</span><span class="nav-text">Árbol Generacional</span>
           </a>
         </div>
 
@@ -155,6 +173,15 @@ import { filter } from 'rxjs/operators';
         <!-- ── BLOQUE 7: SISTEMA — Azul (infraestructura) ────────── -->
         <div class="nav-section nav-section--system">
           <div class="section-label">SISTEMA</div>
+          <a routerLink="/digital-twin"  class="nav-item nav-twin" routerLinkActive="active">
+            <span class="nav-icon">🪞</span><span class="nav-text">Gemelo Digital</span>
+          </a>
+          <a routerLink="/family-council" class="nav-item nav-council" routerLinkActive="active">
+            <span class="nav-icon">⚜️</span><span class="nav-text">Consejo Familiar</span>
+          </a>
+          <a routerLink="/family-pulse" class="nav-item nav-pulse" routerLinkActive="active">
+            <span class="nav-icon">💓</span><span class="nav-text">Pulso Familiar</span>
+          </a>
           <a routerLink="/dashboard" class="nav-item" routerLinkActive="active">
             <span class="nav-icon">📊</span><span class="nav-text">Panel Analítico</span>
           </a>
@@ -285,6 +312,42 @@ import { filter } from 'rxjs/operators';
     .nav-crisis { color: rgba(239,68,68,0.7) !important; }
     .nav-crisis:hover { color: var(--if-crisis) !important; background: rgba(239,68,68,0.08) !important; }
     .nav-crisis.active { background: rgba(239,68,68,0.12) !important; color: var(--if-crisis-bright) !important; border-color: rgba(239,68,68,0.25) !important; }
+    /* Gemelo Digital: índigo profundo */
+    .nav-twin { color: rgba(129,140,248,0.85) !important; }
+    .nav-twin:hover { color: #a5b4fc !important; background: rgba(99,102,241,0.1) !important; }
+    .nav-twin.active { background: rgba(99,102,241,0.16) !important; color: #c7d2fe !important; border-color: rgba(99,102,241,0.35) !important; }
+    /* Consejo Familiar: dorado ceremonial */
+    .nav-council { color: rgba(251,191,36,0.85) !important; }
+    .nav-council:hover { color: #fcd34d !important; background: rgba(245,158,11,0.1) !important; }
+    .nav-council.active { background: rgba(245,158,11,0.15) !important; color: #fef3c7 !important; border-color: rgba(245,158,11,0.35) !important; }
+    /* Pulso Familiar: rojo-rosa vital */
+    .nav-pulse { color: rgba(244,114,182,0.85) !important; }
+    .nav-pulse:hover { color: #f9a8d4 !important; background: rgba(236,72,153,0.09) !important; }
+    .nav-pulse.active { background: rgba(236,72,153,0.14) !important; color: #fbcfe8 !important; border-color: rgba(236,72,153,0.3) !important; }
+    /* Árbol Generacional: verde naturaleza */
+    .nav-tree { color: rgba(74,222,128,0.8) !important; }
+    .nav-tree:hover { color: #86efac !important; background: rgba(34,197,94,0.08) !important; }
+    .nav-tree.active { background: rgba(34,197,94,0.12) !important; color: #bbf7d0 !important; border-color: rgba(34,197,94,0.3) !important; }
+    /* Motor de Rituales: índigo cálido */
+    .nav-ritual { color: rgba(165,180,252,0.8) !important; }
+    .nav-ritual:hover { color: #c7d2fe !important; background: rgba(99,102,241,0.09) !important; }
+    .nav-ritual.active { background: rgba(99,102,241,0.15) !important; color: #e0e7ff !important; border-color: rgba(99,102,241,0.3) !important; }
+    /* Cápsula Familiar: verde esmeralda */
+    .nav-capsule { color: rgba(16,185,129,0.8) !important; }
+    .nav-capsule:hover { color: #6ee7b7 !important; background: rgba(16,185,129,0.08) !important; }
+    .nav-capsule.active { background: rgba(16,185,129,0.12) !important; color: #a7f3d0 !important; border-color: rgba(16,185,129,0.3) !important; }
+    /* Película Familiar: violeta cinematográfico */
+    .nav-movie { color: rgba(196,181,253,0.85) !important; }
+    .nav-movie:hover { color: #ddd6fe !important; background: rgba(124,58,237,0.09) !important; }
+    .nav-movie.active { background: rgba(124,58,237,0.15) !important; color: #ede9fe !important; border-color: rgba(124,58,237,0.3) !important; }
+    /* Historia Familiar: dorado-ámbar */
+    .nav-timeline { color: rgba(245,158,11,0.8) !important; }
+    .nav-timeline:hover { color: #fcd34d !important; background: rgba(245,158,11,0.08) !important; }
+    .nav-timeline.active { background: rgba(245,158,11,0.12) !important; color: #fde68a !important; border-color: rgba(245,158,11,0.3) !important; }
+    /* ADN Familiar: violeta-índigo */
+    .nav-dna { color: rgba(167,139,250,0.8) !important; }
+    .nav-dna:hover { color: #c4b5fd !important; background: rgba(139,92,246,0.1) !important; }
+    .nav-dna.active { background: rgba(139,92,246,0.15) !important; color: #ddd6fe !important; border-color: rgba(139,92,246,0.3) !important; }
     /* Inteligencia: violeta */
     .nav-intel { color: rgba(139,92,246,0.75) !important; }
     .nav-intel:hover { color: var(--if-intel-bright) !important; background: var(--if-intel-faint) !important; }

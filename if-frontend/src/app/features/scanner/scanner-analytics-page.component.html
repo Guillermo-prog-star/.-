@@ -163,13 +163,13 @@
       </ng-template>
     </div>
 
-    <!-- ── Fila central: Radar + Trayectoria IF-TOS ── -->
+    <!-- ── Fila central: Radar + Diagnóstico de Dimensión ── -->
     <div class="mid-row">
 
-      <!-- Radar de Dimensiones -->
+      <!-- Radar de Dimensiones (Columna Izquierda) -->
       <div class="chart-card glass radar-card">
         <div class="chart-title">Radar de Dimensiones</div>
-        <div class="chart-subtitle">Última evaluación (azul) · anterior (gris punteado)</div>
+        <div class="chart-subtitle">Última evaluación (azul) · anterior (gris punteado). Selecciona para ver detalles.</div>
 
         <ng-container *ngIf="radarChart() as radar; else noRadar">
           <svg viewBox="0 0 220 220" class="radar-svg">
@@ -186,31 +186,60 @@
                   [attr.x2]="ax.x2"   [attr.y2]="ax.y2"
                   stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
 
+            <!-- Etiquetas fijas alrededor de los extremos del radar para claridad instantánea -->
+            <text *ngFor="let d of DIMS"
+                  [attr.x]="d.tx" [attr.y]="d.ty"
+                  [attr.text-anchor]="d.textAnchor"
+                  font-size="8" font-weight="800"
+                  [attr.fill]="activeDimension() === d.key ? '#818cf8' : 'rgba(255,255,255,0.35)'"
+                  class="radar-label"
+                  (mouseenter)="selectDimension(d.key)"
+                  (click)="selectDimension(d.key)"
+                  style="cursor: pointer; transition: fill 0.2s; letter-spacing: 0.2px; text-transform: uppercase;">
+              {{ d.label }}
+            </text>
+
             <!-- Evaluación anterior (fantasma) -->
             <polygon *ngIf="radar.prevPoints"
                      [attr.points]="radar.prevPoints"
                      fill="none" stroke="rgba(255,255,255,0.18)"
                      stroke-width="1.5" stroke-dasharray="4,3"/>
 
-            <!-- Evaluación actual -->
+            <!-- Evaluación actual (polígono principal) -->
             <polygon [attr.points]="radar.dataPoints"
-                     fill="rgba(99,102,241,0.22)" stroke="#818cf8" stroke-width="2.5"/>
+                     fill="rgba(99,102,241,0.2)" stroke="#818cf8" stroke-width="2.5"
+                     style="transition: all 0.3s;"/>
+
+            <!-- Vértices interactivos para mostrar puntuaciones específicas -->
+            <circle *ngFor="let v of radar.vertices"
+                    [attr.cx]="v.cx" [attr.cy]="v.cy" r="5.5"
+                    [attr.fill]="v.color"
+                    [attr.stroke]="activeDimension() === v.key ? '#ffffff' : '#0f172a'"
+                    [attr.stroke-width]="activeDimension() === v.key ? 2 : 1"
+                    (mouseenter)="selectDimension(v.key)"
+                    (click)="selectDimension(v.key)"
+                    class="radar-vertex"
+                    style="cursor: pointer; transition: all 0.2s;"/>
 
             <!-- Centro -->
-            <circle [attr.cx]="radar.cx" [attr.cy]="radar.cy" r="3" fill="#6366f1"/>
+            <circle [attr.cx]="radar.cx" [attr.cy]="radar.cy" r="3.5" fill="#6366f1"/>
 
           </svg>
 
           <!-- Puntuaciones por dimensión -->
           <div class="dim-list">
-            <div class="dim-row" *ngFor="let d of radar.dims; trackBy: trackByKey">
+            <div class="dim-row" *ngFor="let d of radar.dims; trackBy: trackByKey"
+                 [class.active-row]="activeDimension() === d.key"
+                 (mouseenter)="selectDimension(d.key)"
+                 (click)="selectDimension(d.key)"
+                 style="cursor: pointer; padding: 6px 8px; border-radius: 8px; transition: background 0.2s;">
               <span class="dim-label">{{ d.label }}</span>
               <div class="dim-bar-track">
                 <div class="dim-bar-fill"
-                     [style.width]="(+d.value / 5 * 100).toFixed(0) + '%'"
+                     [style.width]="d.value + '%'"
                      [style.background]="d.color"></div>
               </div>
-              <span class="dim-val" [style.color]="d.color">{{ d.value }}</span>
+              <span class="dim-val" [style.color]="d.color">{{ d.value }}%</span>
             </div>
           </div>
         </ng-container>
@@ -220,39 +249,79 @@
         </ng-template>
       </div>
 
-      <!-- Trayectoria IF-TOS -->
-      <div class="chart-card glass tos-card">
-        <div class="chart-title">Trayectoria IF-TOS</div>
-        <div class="chart-subtitle">
-          Últimas {{ tosHistory().length }} transiciones de estado operacional familiar
+      <!-- Diagnóstico Dinámico Clínico (Columna Derecha) -->
+      <div class="chart-card glass interpretation-card" *ngIf="activeDetails() as details"
+           [style.border-left-color]="details.color"
+           style="border-left: 4px solid; transition: all 0.3s; display: flex; flex-direction: column; height: 100%;">
+        <div class="chart-title">Diagnóstico de Dimensión</div>
+        <div class="chart-subtitle">Análisis clínico detallado y sugerencias de acción</div>
+
+        <div class="ib-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">{{ details.icon }}</span>
+            <strong style="font-size: 14px; color: #fff; text-transform: uppercase; letter-spacing: 0.3px;">{{ details.label }}</strong>
+          </div>
+          <span class="badge-status" [style.background]="details.color + '22'" [style.color]="details.color"
+                style="font-size: 9.5px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+            {{ details.statusLabel }}
+          </span>
         </div>
 
-        <div class="tos-timeline" *ngIf="tosHistory().length > 0; else noTos">
-          <div class="tos-entry" *ngFor="let t of tosHistory(); let last = last">
-            <div class="tos-dot-col">
-              <div class="tos-dot"
-                   [style.background]="stateColor(t.state)"
-                   [style.box-shadow]="'0 0 8px ' + stateColor(t.state) + '55'"></div>
-              <div class="tos-connector" *ngIf="!last"></div>
-            </div>
-            <div class="tos-info">
-              <span class="tos-state-name" [ngClass]="stateClass(t.state)">
-                {{ stateGlyph(t.state) }} {{ stateLabel(t.state) }}
-              </span>
-              <div class="tos-meta">
-                <span>Eval #{{ t.evalId }}</span>
-                <span>ICF {{ t.icf | number:'1.0-1' }}</span>
-                <span>{{ formatDateShort(t.date) }}</span>
-              </div>
+        <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: rgba(255,255,255,0.45);">
+          🎯 Significado Clínico:
+        </div>
+        <p class="ib-desc" style="font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.6; margin: 0 0 16px 0; flex-grow: 1;">
+          {{ details.definition }}
+        </p>
+
+        <div class="ib-rec" [style.background]="details.color + '0a'"
+             style="padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); margin-top: auto;">
+          <div style="font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: rgba(255,255,255,0.45);">
+            👉 Recomendación de Acción:
+          </div>
+          <p style="font-size: 11.5px; color: #fff; line-height: 1.5; margin: 0;">
+            {{ details.recommendation }}
+          </p>
+        </div>
+
+        <div *ngIf="details.isAutoSelected" style="font-size: 8.5px; color: rgba(255,255,255,0.25); text-align: right; margin-top: 10px; font-style: italic;">
+          * Mostrando dimensión de mayor riesgo automáticamente
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Trayectoria IF-TOS ── -->
+    <div class="chart-card glass tos-card-horizontal">
+      <div class="chart-title">Trayectoria IF-TOS</div>
+      <div class="chart-subtitle">
+        Últimas {{ tosHistory().length }} transiciones de estado operacional familiar
+      </div>
+
+      <div class="tos-timeline-horizontal" *ngIf="tosHistory().length > 0; else noTos">
+        <div class="tos-entry-horizontal" *ngFor="let t of tosHistory(); let last = last">
+          <div class="tos-node-wrapper">
+            <div class="tos-dot"
+                 [style.background]="stateColor(t.state)"
+                 [style.box-shadow]="'0 0 8px ' + stateColor(t.state) + '55'"></div>
+            <div class="tos-connector-horizontal" *ngIf="!last"></div>
+          </div>
+          <div class="tos-info-horizontal">
+            <span class="tos-state-name" [ngClass]="stateClass(t.state)">
+              {{ stateGlyph(t.state) }} {{ stateLabel(t.state) }}
+            </span>
+            <div class="tos-meta">
+              <span>Eval #{{ t.evalId }}</span>
+              <span>ICF {{ t.icf | number:'1.0-1' }}</span>
+              <span>{{ formatDateShort(t.date) }}</span>
             </div>
           </div>
         </div>
-
-        <ng-template #noTos>
-          <p class="empty-chart">Sin historial de estados IF-TOS aún.</p>
-        </ng-template>
       </div>
 
+      <ng-template #noTos>
+        <p class="empty-chart">Sin historial de estados IF-TOS aún.</p>
+      </ng-template>
     </div>
 
     <!-- ── Reglas EEDSL activadas (IF-REE) ── -->

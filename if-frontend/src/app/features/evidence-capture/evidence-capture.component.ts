@@ -90,7 +90,7 @@ const EMOTIONS = [
           <div class="cap-nav">
             <button class="btn-back" (click)="mode.set('menu')">← Volver</button>
             @if (photoPreview()) {
-              <button class="btn-next" (click)="mode.set('preview')">Continuar →</button>
+              <button class="btn-next" (click)="goToPreview()">Continuar →</button>
             }
           </div>
         </div>
@@ -129,7 +129,7 @@ const EMOTIONS = [
           <div class="cap-nav">
             <button class="btn-back" (click)="mode.set('menu')">← Volver</button>
             @if (audioBlob()) {
-              <button class="btn-next" (click)="mode.set('preview')">Continuar →</button>
+              <button class="btn-next" (click)="goToPreview()">Continuar →</button>
             }
           </div>
         </div>
@@ -150,7 +150,7 @@ const EMOTIONS = [
           <div class="cap-nav">
             <button class="btn-back" (click)="mode.set('menu')">← Volver</button>
             @if (textContent.trim()) {
-              <button class="btn-next" (click)="mode.set('preview')">Continuar →</button>
+              <button class="btn-next" (click)="goToPreview()">Continuar →</button>
             }
           </div>
         </div>
@@ -180,43 +180,15 @@ const EMOTIONS = [
           <div class="cap-nav">
             <button class="btn-back" (click)="mode.set('menu')">← Volver</button>
             @if (latitude()) {
-              <button class="btn-next" (click)="mode.set('preview')">Continuar →</button>
+              <button class="btn-next" (click)="goToPreview()">Continuar →</button>
             }
           </div>
         </div>
       }
 
       <!-- ── Vista previa + emoción + envío ─────────────── -->
-      @if (mode() === 'preview') {
+      @if (mode() === 'preview' && !submitted()) {
         <div class="ec-preview">
-
-          <div class="cap-title">¿Cómo se sintieron?</div>
-
-          <!-- Selector de emoción -->
-          <div class="emotion-grid">
-            @for (em of emotions; track em.key) {
-              <button
-                class="em-btn"
-                [class.selected]="selectedEmotion() === em.key"
-                (click)="selectedEmotion.set(em.key)"
-              >
-                <span class="em-emoji">{{ em.emoji }}</span>
-                <span class="em-label">{{ em.label }}</span>
-              </button>
-            }
-          </div>
-
-          <!-- Quién capturó -->
-          <div class="field-group">
-            <label class="field-label">¿Quién lo captura?</label>
-            <input class="field-input" [(ngModel)]="memberName" placeholder="Tu nombre" maxlength="80" />
-          </div>
-
-          <!-- Título -->
-          <div class="field-group">
-            <label class="field-label">Título del momento</label>
-            <input class="field-input" [(ngModel)]="title" placeholder="Ej: Cena sin celulares" maxlength="120" />
-          </div>
 
           <!-- Vista previa del contenido capturado -->
           @if (photoPreview()) {
@@ -231,6 +203,34 @@ const EMOTIONS = [
           @if (latitude()) {
             <div class="prev-location">📍 {{ latitude()!.toFixed(4) }}, {{ longitude()!.toFixed(4) }}</div>
           }
+
+          <!-- Título -->
+          <div class="field-group">
+            <label class="field-label">Título del momento</label>
+            <input class="field-input" [(ngModel)]="title" placeholder="Ej: Cena sin celulares" maxlength="120" />
+          </div>
+
+          <!-- Quién capturó -->
+          <div class="field-group">
+            <label class="field-label">¿Quién lo captura?</label>
+            <input class="field-input" [(ngModel)]="memberName" placeholder="Tu nombre" maxlength="80" />
+          </div>
+
+          <div class="cap-title" style="margin-top: 8px;">¿Cómo se sintieron? (Opcional)</div>
+
+          <!-- Selector de emoción -->
+          <div class="emotion-grid">
+            @for (em of emotions; track em.key) {
+              <button
+                class="em-btn"
+                [class.selected]="selectedEmotion() === em.key"
+                (click)="selectedEmotion.set(em.key)"
+              >
+                <span class="em-emoji">{{ em.emoji }}</span>
+                <span class="em-label">{{ em.label }}</span>
+              </button>
+            }
+          </div>
 
           <!-- Selección de tarea (misión) -->
           @if (tasks().length) {
@@ -424,7 +424,7 @@ const EMOTIONS = [
     select.field-input { cursor: pointer; }
 
     /* Vista previa de contenido */
-    .prev-photo  { max-width: 100%; border-radius: 12px; object-fit: cover; }
+    .prev-photo  { max-width: 100%; max-height: 180px; border-radius: 12px; object-fit: cover; }
     .prev-audio  { width: 100%; border-radius: 10px; }
     .prev-text   { background: rgba(255,255,255,0.04); border-radius: 10px; padding: 14px; font-size: 14px; line-height: 1.6; color: var(--if-text-secondary, #ccc); }
     .prev-location { font-size: 13px; color: #6ee7b7; }
@@ -531,6 +531,21 @@ export class EvidenceCaptureComponent implements OnInit, OnDestroy {
     this.stopRecording();
     clearInterval(this.recordTimer);
     if (this.audioUrl()) URL.revokeObjectURL(this.audioUrl()!);
+  }
+
+  goToPreview(): void {
+    if (!this.title.trim()) {
+      if (this.selectedTaskId) {
+        const selectedTask = this.tasks().find(t => t.id === this.selectedTaskId);
+        this.title = selectedTask ? selectedTask.title : 'Momento familiar';
+      } else {
+        this.title = this.photoBase64 ? 'Foto familiar'
+                   : this.audioBlob() ? 'Audio familiar'
+                   : this.latitude()  ? 'Ubicación familiar'
+                   : 'Reflexión familiar';
+      }
+    }
+    this.mode.set('preview');
   }
 
   private loadTasks(): void {

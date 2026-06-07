@@ -488,7 +488,8 @@ export class HogarVivoComponent {
 
   // ── Color de cada habitación según score ──────────
 
-  roomColor(dim: HogarDimension): string {
+  roomColor(dim: HogarDimension | undefined): string {
+    if (!dim) return '#6b7280';
     const s = dim.score;
     if (s <= 1) return '#6b7280';
     if (s === 2) return '#f97316';

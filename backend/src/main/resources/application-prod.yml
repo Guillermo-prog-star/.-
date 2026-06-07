@@ -1,0 +1,57 @@
+# Production profile configuration
+# This file is automatically loaded when the Spring profile 'prod' is active.
+# It overrides the generic settings in application.yml with production values.
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      initialization-fail-timeout: 60000
+      connection-timeout: 30000
+      validation-timeout: 5000
+      leak-detection-threshold: 2000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: false
+  rabbitmq:
+    host: ${SPRING_RABBITMQ_HOST}
+    port: ${SPRING_RABBITMQ_PORT}
+    username: ${SPRING_RABBITMQ_USERNAME}
+    password: ${SPRING_RABBITMQ_PASSWORD}
+    listener:
+      simple:
+        auto-startup: true
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 2000ms
+          max-attempts: 3
+          max-interval: 10000ms
+          multiplier: 2.0
+    template:
+      retry:
+        enabled: false
+
+app:
+  cors:
+    allowed-origins: https://if-full1.vercel.app,https://if-full1-git-main-guillermo-prog-stars-projects.vercel.app,http://localhost:4200
+
+# Disable Swagger UI and API docs in production
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+# Logging – write to a dedicated prod log file
+logging:
+  file:
+    name: ./logs/backend-prod.log
+  level:
+    com.integrityfamily: INFO
+    org.hibernate.SQL: WARN

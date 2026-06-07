@@ -3,27 +3,6 @@
   "outputDirectory": "dist/integrity-family-frontend/browser",
   "installCommand": "npm ci",
   "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://if-backend-v1-0-0.onrender.com/api/:path*"
-    },
-    {
-      "source": "/((?!api/).*)",
-      "destination": "/index.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)\\.(js|css|woff2|woff|ttf|otf|svg|png|jpg|jpeg|gif|webp|ico)",
-      "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
-      ]
-    },
-    {
-      "source": "/index.html",
-      "headers": [
-        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
-      ]
-    }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

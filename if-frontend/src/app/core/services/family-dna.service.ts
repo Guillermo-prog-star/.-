@@ -26,7 +26,7 @@ export interface FamilyDnaDto {
 @Injectable({ providedIn: 'root' })
 export class FamilyDnaService {
   private readonly http = inject(HttpClient);
-  private readonly base = environment.apiUrl;
+  private readonly base = environment.apiBaseUrl;
 
   get(familyId: number): Observable<FamilyDnaDto> {
     return this.http.get<FamilyDnaDto>(`${this.base}/families/${familyId}/dna`);

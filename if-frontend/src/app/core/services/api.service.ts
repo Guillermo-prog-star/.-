@@ -4,5 +4,5 @@ import { environment } from '../../../environments/environment';
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   // ELIMINAMOS el 'localhost' manual para usar la variable del entorno
-  readonly base = environment.apiUrl + environment.apiBaseUrl;
+  readonly base = environment.apiBaseUrl;
 }

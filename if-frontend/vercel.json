@@ -1,34 +1,29 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist/integrity-family-frontend/browser",
   "installCommand": "npm ci",
-  "framework": "angular",
-  "env": {
-    "BACKEND_URL": "https://if-backend-v1-0-0.onrender.com"
-  },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/api/(.*)",
-      "dest": "https://if-backend-v1-0-0.onrender.com/api/$1"
+      "source": "/api/:path*",
+      "destination": "https://if-backend-v1-0-0.onrender.com/api/:path*"
     },
     {
-      "src": "/(.*)\\.(js|css|woff2|woff|ttf|otf|svg|png|jpg|jpeg|gif|webp|ico)",
-      "headers": { "Cache-Control": "public, max-age=31536000, immutable" },
-      "dest": "/$1.$2"
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)\\.(js|css|woff2|woff|ttf|otf|svg|png|jpg|jpeg|gif|webp|ico)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
     },
     {
-      "src": "/index.html",
-      "headers": { "Cache-Control": "no-cache, no-store, must-revalidate" },
-      "dest": "/index.html"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
     }
   ]
 }

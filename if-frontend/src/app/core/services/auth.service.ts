@@ -26,7 +26,7 @@ export class AuthService {
 
 
   // Sincronización de URL según especificación del entorno
-  private readonly authUrl = `${environment.apiUrl}${environment.apiBaseUrl}/auth`;
+  private readonly authUrl = `${environment.apiBaseUrl}/auth`;
 
   // 1. Estado reactivo tipado mediante Signals
   private _user = signal<AuthUser | null>(this.loadUserFromStorage());

@@ -13,7 +13,7 @@
   align-items: center;
   justify-content: center;
   padding: clamp(12px, 4vw, 48px);
-  overflow: hidden;
+  overflow-y: auto;
   background: linear-gradient(145deg, #1a1654 0%, #2f2b83 50%, #1e1b4b 100%);
   font-family: 'Inter', sans-serif;
   box-sizing: border-box;

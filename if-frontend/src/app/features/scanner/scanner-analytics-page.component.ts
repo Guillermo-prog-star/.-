@@ -94,12 +94,89 @@ export class ScannerAnalyticsPageComponent implements OnInit {
 
   // ── Chart computeds ───────────────────────────────────────────────────────
 
-  private readonly DIMS = [
-    { key: 'emociones',    angle: -Math.PI / 2, label: 'Emociones' },
-    { key: 'comunicacion', angle: 0,             label: 'Comunicación' },
-    { key: 'habitos',      angle: Math.PI / 2,   label: 'Hábitos' },
-    { key: 'tiempos',      angle: Math.PI,       label: 'Tiempos' },
+  readonly DIMS = [
+    { key: 'emociones',    angle: -Math.PI / 2, label: 'Emociones',     textAnchor: 'middle', tx: 110, ty: 16 },
+    { key: 'comunicacion', angle: 0,             label: 'Comunicación',  textAnchor: 'start',  tx: 202, ty: 114 },
+    { key: 'habitos',      angle: Math.PI / 2,   label: 'Hábitos',      textAnchor: 'middle', tx: 110, ty: 212 },
+    { key: 'tiempos',      angle: Math.PI,       label: 'Tiempos',      textAnchor: 'end',    tx: 18,  ty: 114 },
   ];
+
+  readonly selectedDimension = signal<string | null>(null);
+
+  readonly criticalDimension = computed(() => {
+    const history = this.dimensionHistory();
+    if (!history.length) return null;
+    const latest = history[history.length - 1]?.dimensions as Record<string, number> | null;
+    if (!latest) return null;
+    let minKey: string | null = null;
+    let minVal = Infinity;
+    this.DIMS.forEach(d => {
+      const val = latest[d.key] ?? 100.0;
+      if (val < minVal) {
+        minVal = val;
+        minKey = d.key;
+      }
+    });
+    return minKey;
+  });
+
+  readonly activeDimension = computed(() => this.selectedDimension() || this.criticalDimension());
+
+  readonly DIMENSION_DETAILS: Record<string, { definition: string; recommendation: string; status: (s: number) => string; icon: string }> = {
+    emociones: {
+      definition: 'Mide la contención afectiva, la gestión compartida de crisis y la madurez emocional colectiva frente a tensiones del día a día.',
+      recommendation: 'Activa o prioriza tareas enfocadas en la contención emocional. Fomenta el uso de la Bitácora Familiar para dar visibilidad al sentir de cada miembro.',
+      status: (s) => s >= 70 ? 'Riesgo Bajo (Estabilidad)' : s >= 40 ? 'Riesgo Moderado (Alerta Temprana)' : s >= 20 ? 'Riesgo Alto (Requiere Atención)' : 'Riesgo Crítico (Intervención)',
+      icon: '🧠'
+    },
+    comunicacion: {
+      definition: 'Evalúa la claridad del diálogo, la resolución asertiva de conflictos y la capacidad de expresar disconformidad sin violencia.',
+      recommendation: 'Inicia diálogos de sintonía familiar periódicos o reuniones del Consejo Familiar basadas en la Constitución Familiar.',
+      status: (s) => s >= 70 ? 'Riesgo Bajo (Fluidez)' : s >= 40 ? 'Riesgo Moderado (Alerta Temprana)' : s >= 20 ? 'Riesgo Alto (Falta de Sintonía)' : 'Riesgo Crítico (Bloqueo)',
+      icon: '💬'
+    },
+    habitos: {
+      definition: 'Monitorea la consistencia de las rutinas diarias, los roles compartidos y el compromiso con rituales que dan estructura y sentido de pertenencia.',
+      recommendation: 'Fomenta el seguimiento del Checklist de tareas diarias y programa una actividad innegociable a través del Motor de Rituales.',
+      status: (s) => s >= 70 ? 'Riesgo Bajo (Consistencia)' : s >= 40 ? 'Riesgo Moderado (Inconsistencias)' : s >= 20 ? 'Riesgo Alto (Desorganización)' : 'Riesgo Crítico (Ruptura)',
+      icon: '📅'
+    },
+    tiempos: {
+      definition: 'Mide la disponibilidad real de tiempo compartido libre de pantallas y distracciones frente a las demandas individuales de trabajo o estudio.',
+      recommendation: 'Planifica al menos una salida familiar breve o un almuerzo compartido sin celulares para reconectar en el presente.',
+      status: (s) => s >= 70 ? 'Riesgo Bajo (Disponibilidad)' : s >= 40 ? 'Riesgo Moderado (Aislamiento Leve)' : s >= 20 ? 'Riesgo Alto (Desconexión)' : 'Riesgo Crítico (Ausencia)',
+      icon: '⏳'
+    }
+  };
+
+  readonly activeDetails = computed(() => {
+    const key = this.activeDimension();
+    if (!key) return null;
+    const history = this.dimensionHistory();
+    if (!history.length) return null;
+    const latest = history[history.length - 1]?.dimensions as Record<string, number> | null;
+    if (!latest) return null;
+
+    const val = latest[key] ?? 0;
+    const info = this.DIMENSION_DETAILS[key];
+    if (!info) return null;
+
+    return {
+      key,
+      label: key === 'emociones' ? 'Emociones' : key === 'comunicacion' ? 'Comunicación' : key === 'habitos' ? 'Hábitos' : 'Tiempos',
+      score: val.toFixed(1),
+      color: this.dimensionColor(val),
+      icon: info.icon,
+      statusLabel: info.status(val),
+      definition: info.definition,
+      recommendation: info.recommendation,
+      isAutoSelected: !this.selectedDimension()
+    };
+  });
+
+  selectDimension(key: string | null): void {
+    this.selectedDimension.set(key);
+  }
 
   readonly icfChart = computed((): IcfChartData | null => {
     const pts = [...this.timeline()].reverse();  // chronological
@@ -154,7 +231,7 @@ export class ScannerAnalyticsPageComponent implements OnInit {
     return { W, H, PL, PT, UH, UW, bands, coords, linePath, areaPath, uncertaintyPath, yLabels, gridPath };
   });
 
-  readonly radarChart = computed((): RadarData | null => {
+  readonly radarChart = computed(() => {
     const history = this.dimensionHistory();
     if (!history.length) return null;
 
@@ -175,9 +252,22 @@ export class ScannerAnalyticsPageComponent implements OnInit {
 
     const toPoints = (dims: Record<string, number>) =>
       this.DIMS.map(d => {
-        const val = Math.min(5, Math.max(0, dims[d.key] ?? 2.5)) / 5;
+        const val = Math.min(100, Math.max(0, dims[d.key] ?? 50.0)) / 100;
         return `${(cx + val * r * Math.cos(d.angle)).toFixed(1)},${(cy + val * r * Math.sin(d.angle)).toFixed(1)}`;
       }).join(' ');
+
+    const getVertices = (dims: Record<string, number>) =>
+      this.DIMS.map(d => {
+        const val = Math.min(100, Math.max(0, dims[d.key] ?? 50.0)) / 100;
+        return {
+          key: d.key,
+          label: d.label,
+          valText: (dims[d.key] ?? 0).toFixed(1),
+          color: this.dimensionColor(dims[d.key] ?? 0),
+          cx: cx + val * r * Math.cos(d.angle),
+          cy: cy + val * r * Math.sin(d.angle)
+        };
+      });
 
     const latest = history[history.length - 1]?.dimensions as Record<string, number> | null;
     const prev   = history.length > 1 ? history[history.length - 2]?.dimensions as Record<string, number> : null;
@@ -193,6 +283,7 @@ export class ScannerAnalyticsPageComponent implements OnInit {
       dataPoints: latest ? toPoints(latest) : '',
       prevPoints: prev   ? toPoints(prev)   : null,
       dims,
+      vertices: latest ? getVertices(latest) : []
     };
   });
 
@@ -329,9 +420,9 @@ export class ScannerAnalyticsPageComponent implements OnInit {
   }
 
   dimensionColor(score: number): string {
-    if (score >= 4.0) return '#34d399';
-    if (score >= 3.0) return '#60a5fa';
-    if (score >= 2.0) return '#fbbf24';
+    if (score >= 70.0) return '#34d399';
+    if (score >= 40.0) return '#fbbf24';
+    if (score >= 20.0) return '#f97316';
     return '#f87171';
   }
 

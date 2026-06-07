@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterOutlet, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { SidebarComponent } from '../shared/components/sidebar.component';
@@ -7,6 +7,8 @@ import { FeedbackDialogComponent } from '../shared/components/feedback-dialog/fe
 import { SentinelCoreService } from '../core/services/sentinel-core.service';
 import { ScrollPolicyDirective } from '../shared/directives/scroll-policy.directive';
 import { ScrollPolicyService } from '../shared/directives/scroll-policy.service';
+import { ExperienceEngineService } from '../core/services/experience-engine.service';
+import { FamilyStateService } from '../core/services/family-state.service';
 
 /**
  * SDD: Shell Sentinel Core
@@ -58,9 +60,19 @@ import { ScrollPolicyService } from '../shared/directives/scroll-policy.service'
     </div>
   `
 })
-export class ShellComponent {
+export class ShellComponent implements OnInit {
   constructor(
     public sentinel:     SentinelCoreService,
     public scrollPolicy: ScrollPolicyService,
+    private expEngine:   ExperienceEngineService,
+    private familySvc:   FamilyStateService,
   ) {}
+
+  ngOnInit(): void {
+    // Carga el contexto familiar al entrar al shell para que
+    // la clase CSS del body se aplique antes de que renderice el dashboard
+    if (this.familySvc.getSelectedFamilyId()) {
+      this.expEngine.load();
+    }
+  }
 }

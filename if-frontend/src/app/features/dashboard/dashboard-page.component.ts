@@ -35,6 +35,8 @@ import { EvolutionPathComponent } from './components/evolution-path/evolution-pa
 import { LongitudinalStateService } from '../../core/services/longitudinal-state.service';
 import { LongitudinalStateDTO, CausalInferenceDTO } from '../../core/models/dashboard.model';
 import { CausalRulesPanelComponent } from './components/causal-rules-panel/causal-rules-panel.component';
+import { ExperienceBannerComponent } from './components/experience-banner/experience-banner.component';
+import { HogarVivoComponent } from './components/hogar-vivo/hogar-vivo.component';
 import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 /**
@@ -63,7 +65,9 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
     GuardianPanelComponent,
     ParticipationPulseComponent,
     EvolutionPathComponent,
-    CausalRulesPanelComponent
+    CausalRulesPanelComponent,
+    ExperienceBannerComponent,
+    HogarVivoComponent
   ],
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.css'],

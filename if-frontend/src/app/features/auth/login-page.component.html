@@ -1,75 +1,134 @@
 <div class="login-page">
+
+  <!-- Fondo ilustrado sutil -->
+  <div class="bg-illustration" aria-hidden="true">
+    <div class="bg-circle bg-c1"></div>
+    <div class="bg-circle bg-c2"></div>
+    <div class="bg-circle bg-c3"></div>
+    <div class="bg-family-silhouette"></div>
+  </div>
+
   <div class="login-card">
-    <img src="assets/logo.svg" alt="Integrity Family" class="login-logo" />
-    <p class="sub">Fortaleciendo familias</p>
 
-    <!-- Narrative Guidance Engine -->
-    <app-narrative-companion class="login-support-card" module="login"></app-narrative-companion>
-
-    <form class="login-form" (ngSubmit)="submit()">
-      <div class="form-group">
-        <label>Email</label>
-        <input
-          [(ngModel)]="email"
-          name="email"
-          type="email"
-          placeholder="tu@correo.com"
-          required
-        />
+    <!-- ── Logo + Marca ─────────────────────────────── -->
+    <div class="brand">
+      <img src="assets/logo.svg" alt="Integrity Family" class="login-logo" />
+      <div class="brand-text">
+        <h1 class="brand-name">Integrity Family</h1>
+        <p class="brand-tagline">Preservando historias · Transformando generaciones</p>
       </div>
+    </div>
 
-      <div class="form-group">
-        <label class="password-label">
-          Contraseña
-          <button type="button" class="toggle-password" (click)="togglePassword()">
-            {{ showPassword ? 'Ocultar' : 'Ver' }}
-          </button>
-        </label>
-        <input
-          [(ngModel)]="password"
-          name="password"
-          [type]="showPassword ? 'text' : 'password'"
-          placeholder="••••••••"
-          required
-        />
+    <!-- ── Propuesta de valor (solo primera visita) ── -->
+    @if (isNewVisitor) {
+      <div class="value-prop">
+        <p class="vp-question">¿Y si tu familia pudiera crecer antes de que los problemas crezcan?</p>
+        <div class="vp-pillars">
+          <span class="vp-pill">❤️ Emociones</span>
+          <span class="vp-pill">🗣️ Comunicación</span>
+          <span class="vp-pill">📅 Tiempo juntos</span>
+          <span class="vp-pill">🌱 Hábitos</span>
+        </div>
       </div>
+    }
 
-      <div class="form-actions">
-        <label class="remember-me">
-          <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" />
-          <span>Recordar mis datos</span>
-        </label>
-        <a routerLink="/auth/forgot-password" class="forgot-link">¿Olvidaste tu contraseña?</a>
+    <!-- ══ BIFURCACIÓN ════════════════════════════════ -->
+
+    <!-- ── Zona NUEVO usuario ─────────────────────── -->
+    @if (mode === 'new' || isNewVisitor) {
+      <div class="zone zone-new" [class.highlight]="mode === 'new'">
+        <div class="zone-badge badge-new">🌱 PRIMERA VEZ AQUÍ</div>
+        <h2 class="zone-title">Crea tu familia</h2>
+        <p class="zone-desc">Comienza el diagnóstico y construye la ruta de evolución de tu familia.</p>
+        <a routerLink="/auth/register" class="btn-create-family">
+          Crear mi familia →
+        </a>
       </div>
+    }
 
-      @if (error) {
-        <div class="err">{{ error }}</div>
+    <!-- ── Separador visual ───────────────────────── -->
+    <div class="bifurcation-sep">
+      <span class="sep-line"></span>
+      <span class="sep-text">{{ isNewVisitor ? 'o si ya tienes cuenta' : '' }}</span>
+      <span class="sep-line"></span>
+    </div>
+
+    <!-- ── Zona USUARIO RECURRENTE ────────────────── -->
+    <div class="zone zone-returning" [class.highlight]="mode === 'returning'">
+
+      <!-- Badge emocional naranja -->
+      <div class="zone-badge badge-returning">🟠 JUNTOS HOY</div>
+
+      @if (isNewVisitor) {
+        <h2 class="zone-title">Ya tengo cuenta</h2>
+      } @else {
+        <div class="returning-welcome">
+          <p class="rw-greeting">Hola 👋 Qué bueno volver a encontrarnos.</p>
+          <p class="rw-message">Hoy no tienen que hacerlo perfecto.<br>Solo den el siguiente paso.</p>
+        </div>
       }
 
-      <button
-        type="submit"
-        class="btn-primary"
-        [disabled]="loading"
-      >
-        {{ loading ? 'Ingresando...' : 'Iniciar sesión' }}
-      </button>
+      <!-- Formulario de login -->
+      <form class="login-form" (ngSubmit)="submit()">
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input
+            [(ngModel)]="email"
+            name="email"
+            type="email"
+            placeholder="tu@correo.com"
+            autocomplete="email"
+            required
+          />
+        </div>
 
+        <div class="form-group">
+          <label class="password-label">
+            Contraseña
+            <button type="button" class="toggle-password" (click)="togglePassword()">
+              {{ showPassword ? 'Ocultar' : 'Ver' }}
+            </button>
+          </label>
+          <input
+            [(ngModel)]="password"
+            name="password"
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="••••••••"
+            autocomplete="current-password"
+            required
+          />
+        </div>
 
-    </form>
+        <div class="form-actions">
+          <label class="remember-me">
+            <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" />
+            <span>Recordar mis datos</span>
+          </label>
+          <a routerLink="/auth/forgot-password" class="forgot-link">¿Olvidaste tu contraseña?</a>
+        </div>
 
-    <div class="secure-info">
-      🔒 Tu información está protegida.
+        @if (error) {
+          <div class="err">{{ error }}</div>
+        }
+
+        <button type="submit" class="btn-login" [disabled]="loading">
+          {{ loading ? 'Ingresando...' : 'Continuar nuestro proceso' }}
+        </button>
+      </form>
+
     </div>
 
-    <div class="divider"></div>
+    <!-- ── Frase de impacto ───────────────────────── -->
+    <p class="impact-phrase">
+      "Lo que una generación aprende, la siguiente no tiene que volver a sufrirlo."
+    </p>
 
-    <div class="footer">
-      ¿Eres nuevo? <a routerLink="/auth/register">Crea tu cuenta familiar</a>
-    </div>
-
+    <!-- ── Footer ────────────────────────────────── -->
     <div class="footer-legal">
-      <a href="#" (click)="$event.preventDefault()">Privacidad</a> · 
-      <a href="#" (click)="$event.preventDefault()">Términos de uso</a>
+      <a href="#" (click)="$event.preventDefault()">Privacidad</a> ·
+      <a href="#" (click)="$event.preventDefault()">Términos de uso</a> ·
+      <span>🔒 Tu información está protegida</span>
     </div>
+
   </div>
 </div>

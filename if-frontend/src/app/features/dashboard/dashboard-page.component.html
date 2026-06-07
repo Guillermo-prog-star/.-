@@ -1,6 +1,9 @@
 <ng-container *ngIf="state$ | async as data; else loadingTemplate">
   <div class="dashboard-root min-h-screen p-6 lg:p-12 space-y-12">
-    
+
+    <!-- ── MOTOR DE EXPERIENCIA: Banner contextual adaptativo ── -->
+    <app-experience-banner></app-experience-banner>
+
     <!-- HEADER & SENTINEL ALERT -->
     <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
       <div>
@@ -54,6 +57,16 @@
       </div>
 
     </section>
+
+    <!-- ── EL HOGAR VIVO — Visualización emocional del estado familiar ── -->
+    <app-hogar-vivo
+      [scores]="{
+        comunicacion: data.dimensionScores?.comunicacion ?? 3,
+        habitos:      data.dimensionScores?.habitos      ?? 2,
+        tiempos:      data.dimensionScores?.tiempos      ?? 4,
+        emociones:    data.dimensionScores?.emociones    ?? 2
+      }">
+    </app-hogar-vivo>
 
     <!-- Narrative Guidance Engine -->
     <app-narrative-companion module="dashboard"></app-narrative-companion>
@@ -348,6 +361,82 @@
       <app-cognitive-preview></app-cognitive-preview>
       <app-icf-trend-chart></app-icf-trend-chart>
       <app-dimension-history-chart></app-dimension-history-chart>
+    </section>
+
+    <!-- ACCESOS RÁPIDOS: ADN FAMILIAR + HISTORIA -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-600">
+      <a routerLink="/family-tree" class="glass-premium p-6 rounded-[1.5rem] border-white/5 flex items-center gap-5 group hover:border-green-500/30 transition-all cursor-pointer no-underline">
+        <div class="w-14 h-14 rounded-2xl bg-green-500/10 flex items-center justify-center text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">🌳</div>
+        <div>
+          <div class="text-[10px] text-white/30 uppercase tracking-widest font-black mb-1">Legado vivo</div>
+          <div class="text-white/90 font-bold text-base">Árbol Generacional</div>
+          <div class="text-white/40 text-xs mt-1">Herencia · Mensajes · Vínculos entre generaciones</div>
+        </div>
+        <span class="ml-auto text-white/20 group-hover:text-green-400 text-xl transition-colors">→</span>
+      </a>
+      <a routerLink="/family-dna" class="glass-premium p-6 rounded-[1.5rem] border-white/5 flex items-center gap-5 group hover:border-violet-500/30 transition-all cursor-pointer no-underline">
+        <div class="w-14 h-14 rounded-2xl bg-violet-500/10 flex items-center justify-center text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">🧬</div>
+        <div>
+          <div class="text-[10px] text-white/30 uppercase tracking-widest font-black mb-1">Identidad evolutiva</div>
+          <div class="text-white/90 font-bold text-base">ADN Familiar</div>
+          <div class="text-white/40 text-xs mt-1">Valores · Fortalezas · Patrones · Potencial</div>
+        </div>
+        <span class="ml-auto text-white/20 group-hover:text-violet-400 text-xl transition-colors">→</span>
+      </a>
+      <a routerLink="/digital-twin" class="glass-premium p-6 rounded-[1.5rem] border-white/5 flex items-center gap-5 group hover:border-indigo-500/30 transition-all cursor-pointer no-underline">
+        <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">🪞</div>
+        <div>
+          <div class="text-[10px] text-white/30 uppercase tracking-widest font-black mb-1">Inteligencia predictiva</div>
+          <div class="text-white/90 font-bold text-base">Gemelo Digital</div>
+          <div class="text-white/40 text-xs mt-1">Patrones · Correlaciones · Predicciones</div>
+        </div>
+        <span class="ml-auto text-white/20 group-hover:text-indigo-400 text-xl transition-colors">→</span>
+      </a>
+      <a routerLink="/family-movie" class="glass-premium p-6 rounded-[1.5rem] border-white/5 flex items-center gap-5 group hover:border-purple-500/30 transition-all cursor-pointer no-underline">
+        <div class="w-14 h-14 rounded-2xl bg-purple-500/10 flex items-center justify-center text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">🎬</div>
+        <div>
+          <div class="text-[10px] text-white/30 uppercase tracking-widest font-black mb-1">Tu historia en imágenes</div>
+          <div class="text-white/90 font-bold text-base">Película Familiar</div>
+          <div class="text-white/40 text-xs mt-1">Resumen trimestral generado por IA</div>
+        </div>
+        <span class="ml-auto text-white/20 group-hover:text-purple-400 text-xl transition-colors">→</span>
+      </a>
+      <a routerLink="/family-council" class="glass-premium p-6 rounded-[1.5rem] border-white/5 flex items-center gap-5 group hover:border-amber-500/30 transition-all cursor-pointer no-underline">
+        <div class="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">⚜️</div>
+        <div>
+          <div class="text-[10px] text-white/30 uppercase tracking-widest font-black mb-1">Voz de tu familia</div>
+          <div class="text-white/90 font-bold text-base">Consejo Familiar</div>
+          <div class="text-white/40 text-xs mt-1">Responde desde tu constitución, valores e historia</div>
+        </div>
+        <span class="ml-auto text-white/20 group-hover:text-amber-400 text-xl transition-colors">→</span>
+      </a>
+      <a routerLink="/family-pulse" class="glass-premium p-6 rounded-[1.5rem] border-white/5 flex items-center gap-5 group hover:border-pink-500/30 transition-all cursor-pointer no-underline">
+        <div class="w-14 h-14 rounded-2xl bg-pink-500/10 flex items-center justify-center text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">💓</div>
+        <div>
+          <div class="text-[10px] text-white/30 uppercase tracking-widest font-black mb-1">Estado en tiempo real</div>
+          <div class="text-white/90 font-bold text-base">Pulso Familiar</div>
+          <div class="text-white/40 text-xs mt-1">Conexión · Estrés · Comunicación · Racha</div>
+        </div>
+        <span class="ml-auto text-white/20 group-hover:text-pink-400 text-xl transition-colors">→</span>
+      </a>
+      <a routerLink="/rituals" class="glass-premium p-6 rounded-[1.5rem] border-white/5 flex items-center gap-5 group hover:border-indigo-500/30 transition-all cursor-pointer no-underline">
+        <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">🕯️</div>
+        <div>
+          <div class="text-[10px] text-white/30 uppercase tracking-widest font-black mb-1">Experiencias especiales</div>
+          <div class="text-white/90 font-bold text-base">Motor de Rituales</div>
+          <div class="text-white/40 text-xs mt-1">Cumpleaños · Aniversarios · Logros · Rachas</div>
+        </div>
+        <span class="ml-auto text-white/20 group-hover:text-indigo-400 text-xl transition-colors">→</span>
+      </a>
+      <a routerLink="/family-timeline" class="glass-premium p-6 rounded-[1.5rem] border-white/5 flex items-center gap-5 group hover:border-amber-500/30 transition-all cursor-pointer no-underline">
+        <div class="w-14 h-14 rounded-2xl bg-amber-500/10 flex items-center justify-center text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">📜</div>
+        <div>
+          <div class="text-[10px] text-white/30 uppercase tracking-widest font-black mb-1">Memoria viva</div>
+          <div class="text-white/90 font-bold text-base">Historia Familiar</div>
+          <div class="text-white/40 text-xs mt-1">Cada momento que han vivido juntos</div>
+        </div>
+        <span class="ml-auto text-white/20 group-hover:text-amber-400 text-xl transition-colors">→</span>
+      </a>
     </section>
 
     <!-- FOOTER -->

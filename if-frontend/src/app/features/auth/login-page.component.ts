@@ -16,6 +16,12 @@ export class LoginPageComponent {
   email = ''; password = '';
   showPassword = false; rememberMe = true;
   loading = false; error = '';
+
+  // ── Bifurcación psicológica ──────────────────────
+  /** true = nunca ha iniciado sesión en este dispositivo */
+  readonly isNewVisitor = !localStorage.getItem('if_returning');
+  /** 'new' | 'returning' — fuerza una zona específica */
+  mode: 'new' | 'returning' | null = null;
   
   togglePassword() {
     this.showPassword = !this.showPassword;
@@ -23,11 +29,12 @@ export class LoginPageComponent {
   submit() {
     this.loading = true; this.error = '';
     this.auth.login({ email: this.email.trim().toLowerCase(), password: this.password }).subscribe({
-      next: (res) => { 
-        this.loading = false; 
+      next: (res) => {
+        this.loading = false;
+        localStorage.setItem('if_returning', '1'); // marca como usuario recurrente
         const user = this.auth.user();
         if (user && user.familyId) {
-          this.router.navigate(['/dashboard']); 
+          this.router.navigate(['/dashboard']);
         } else {
           this.router.navigate(['/families/create']);
         }

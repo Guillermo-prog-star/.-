@@ -14,10 +14,10 @@ export const adminGuard: CanActivateFn = (route, state) => {
   const user = authService.currentUserValue;
 
   // 2. Definir privilegios (Criterio de éxito: William o Rango ADMIN)
-  const isAuthorized = user?.role === 'ADMIN' || user?.email === 'william_lopezb@soy.sena.edu.co';
+  const isAuthorized = user && (user.role === 'ADMIN' || user.email === 'william_lopezb@soy.sena.edu.co');
 
   if (authService.isAuthenticated() && isAuthorized) {
-    console.log(`SENTINEL: Acceso validado para nodo administrativo: ${user?.email}`);
+    console.log(`SENTINEL: Acceso validado para nodo administrativo: ${user && user.email}`);
     return true;
   }
 

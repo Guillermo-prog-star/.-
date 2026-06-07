@@ -10,7 +10,7 @@ import { AuthService } from '../services/auth.service';
  */
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
-  const token = authService.currentUserValue?.token;
+  const token = authService.currentUserValue ? authService.currentUserValue.token : null;
 
   // 1. Inyección de Identidad: Clonación inmutable para adjuntar el Bearer Token
   const authReq = token

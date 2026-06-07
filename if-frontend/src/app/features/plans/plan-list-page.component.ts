@@ -49,6 +49,12 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
     entrega: { completed: 0, total: 0, percentage: 0 }
   };
 
+  // Lightbox Contemplation Modal State
+  activeContemplation: any | null = null;
+  activeInlineEvidenceId: number | null = null;
+  private mapInstance: any = null;
+  private inlineMapInstances: { [key: number]: any } = {};
+
   // Modal State Properties
   isEvidenceModalOpen = false;
   activeModalTask: any = null;
@@ -185,6 +191,10 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearLoadingInterval();
+    this.closeContemplation();
+    Object.keys(this.inlineMapInstances).forEach(id => {
+      this.closeInlineContemplation(Number(id));
+    });
   }
 
   private clearLoadingInterval(): void {
@@ -245,6 +255,189 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
 
   getTaskEvidence(taskId: number) {
     return this.evidences.find(e => e.task?.id === taskId);
+  }
+
+  getEmotionDetails(emotionKey: string | null | undefined) {
+    const emotionsMap: { [key: string]: { label: string; emoji: string; color: string; glow: string } } = {
+      alegria:   { label: 'Alegría',     emoji: '😊', color: '#ffb300', glow: 'rgba(255, 179, 0, 0.2)' },
+      gratitud:  { label: 'Gratitud',    emoji: '🙏', color: '#a78bfa', glow: 'rgba(167, 139, 250, 0.2)' },
+      amor:      { label: 'Amor',        emoji: '❤️', color: '#fb7185', glow: 'rgba(251, 113, 133, 0.2)' },
+      orgullo:   { label: 'Orgullo',     emoji: '🌟', color: '#fbbf24', glow: 'rgba(251, 191, 36, 0.2)' },
+      calma:     { label: 'Calma',       emoji: '😌', color: '#2dd4bf', glow: 'rgba(45, 212, 191, 0.2)' },
+      esperanza: { label: 'Esperanza',   emoji: '🌱', color: '#34d399', glow: 'rgba(52, 211, 153, 0.2)' },
+      tristeza:  { label: 'Tristeza',    emoji: '😢', color: '#60a5fa', glow: 'rgba(96, 165, 250, 0.2)' },
+      tension:   { label: 'Tensión',     emoji: '😤', color: '#f87171', glow: 'rgba(248, 113, 113, 0.2)' },
+    };
+    return emotionsMap[emotionKey || ''] || { label: 'Reflexión', emoji: '📸', color: '#58a6ff', glow: 'rgba(88, 166, 255, 0.15)' };
+  }
+
+  openContemplation(ev: any) {
+    this.activeContemplation = ev;
+    if (ev.latitude && ev.longitude) {
+      this.initMap(ev.latitude, ev.longitude);
+    }
+  }
+
+  closeContemplation() {
+    if (this.mapInstance) {
+      try {
+        this.mapInstance.remove();
+      } catch (e) {
+        console.error('Error removing map instance:', e);
+      }
+      this.mapInstance = null;
+    }
+    this.activeContemplation = null;
+  }
+
+  private initMap(lat: number, lng: number) {
+    // Cargar CSS de Leaflet si no existe
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+
+    // Cargar JS de Leaflet si no existe, luego instanciar
+    if (typeof (window as any).L === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => this.setupLeafletMap(lat, lng);
+      document.head.appendChild(script);
+    } else {
+      setTimeout(() => this.setupLeafletMap(lat, lng), 100);
+    }
+  }
+
+  private setupLeafletMap(lat: number, lng: number) {
+    if (!this.activeContemplation) return;
+
+    if (this.mapInstance) {
+      try {
+        this.mapInstance.remove();
+      } catch {}
+      this.mapInstance = null;
+    }
+
+    setTimeout(() => {
+      const container = document.getElementById('contemplation-map');
+      if (!container) return;
+
+      try {
+        const L = (window as any).L;
+        this.mapInstance = L.map('contemplation-map', {
+          zoomControl: false,
+          attributionControl: false
+        }).setView([lat, lng], 13);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 20
+        }).addTo(this.mapInstance);
+
+        const customIcon = L.divIcon({
+          className: 'leaflet-custom-marker',
+          html: `<div style="background-color: ${this.getEmotionDetails(this.activeContemplation.emotion).color}; width: 14px; height: 14px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10]
+        });
+
+        L.marker([lat, lng], { icon: customIcon }).addTo(this.mapInstance);
+      } catch (e) {
+        console.error('Error setting up Leaflet map:', e);
+      }
+    }, 150);
+  }
+
+  toggleInlineContemplation(ev: any) {
+    if (this.activeInlineEvidenceId === ev.id) {
+      this.closeInlineContemplation(ev.id);
+      this.activeInlineEvidenceId = null;
+    } else {
+      if (this.activeInlineEvidenceId !== null) {
+        this.closeInlineContemplation(this.activeInlineEvidenceId);
+      }
+      this.activeInlineEvidenceId = ev.id;
+      if (ev.latitude && ev.longitude) {
+        this.initInlineMap(ev.id, ev.latitude, ev.longitude);
+      }
+    }
+  }
+
+  private closeInlineContemplation(id: number) {
+    const map = this.inlineMapInstances[id];
+    if (map) {
+      try {
+        map.remove();
+      } catch (e) {
+        console.error('Error removing inline map:', e);
+      }
+      delete this.inlineMapInstances[id];
+    }
+  }
+
+  private initInlineMap(id: number, lat: number, lng: number) {
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+
+    if (typeof (window as any).L === 'undefined') {
+      const script = document.createElement('script');
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      script.onload = () => this.setupInlineMap(id, lat, lng);
+      document.head.appendChild(script);
+    } else {
+      setTimeout(() => this.setupInlineMap(id, lat, lng), 150);
+    }
+  }
+
+  private setupInlineMap(id: number, lat: number, lng: number) {
+    if (this.activeInlineEvidenceId !== id) return;
+
+    this.closeInlineContemplation(id);
+
+    setTimeout(() => {
+      const mapId = `contemplation-map-inline-${id}`;
+      const container = document.getElementById(mapId);
+      if (!container) return;
+
+      try {
+        const L = (window as any).L;
+        const map = L.map(mapId, {
+          zoomControl: false,
+          attributionControl: false
+        }).setView([lat, lng], 13);
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          maxZoom: 20
+        }).addTo(map);
+
+        const ev = this.evidences.find((e: any) => e.id === id);
+        const emotion = ev ? ev.emotion : null;
+        const color = this.getEmotionDetails(emotion).color;
+
+        const customIcon = L.divIcon({
+          className: 'leaflet-custom-marker',
+          html: `<div style="background-color: ${color}; width: 14px; height: 14px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>`,
+          iconSize: [20, 20],
+          iconAnchor: [10, 10]
+        });
+
+        L.marker([lat, lng], { icon: customIcon }).addTo(map);
+        this.inlineMapInstances[id] = map;
+
+        setTimeout(() => {
+          map.invalidateSize();
+        }, 300);
+      } catch (e) {
+        console.error('Error setting up inline Leaflet map:', e);
+      }
+    }, 150);
   }
 
   openEvidenceModal(task: any, type: string) {
@@ -1162,5 +1355,19 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
           this.scrollToBottom();
         }
       });
+  }
+
+  onAudioLoaded(event: Event): void {
+    const audio = event.target as HTMLAudioElement;
+    if (audio) {
+      if (audio.duration === Infinity || isNaN(audio.duration) || audio.duration === 0) {
+        audio.currentTime = 1e101;
+        const onTimeUpdate = () => {
+          audio.currentTime = 0;
+          audio.removeEventListener('timeupdate', onTimeUpdate);
+        };
+        audio.addEventListener('timeupdate', onTimeUpdate);
+      }
+    }
   }
 }

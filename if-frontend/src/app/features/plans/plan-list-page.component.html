@@ -468,31 +468,186 @@
 
                   <!-- CLOSED-LOOP EVIDENCE CARD -->
                   @if (mision.backendTaskId && getTaskEvidence(mision.backendTaskId); as evidence) {
-                    <div style="margin-top: 8px; margin-bottom: 16px; padding: 12px; background: rgba(168, 85, 247, 0.05); border: 1px solid rgba(168, 85, 247, 0.15); border-radius: 8px;">
-                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                        <span style="font-size: 10px; font-weight: bold; color: #c084fc; text-transform: uppercase; letter-spacing: 0.5px;">📝 Evidencia Registrada</span>
-                        <span style="font-size: 9.5px; padding: 2px 6px; border-radius: 4px; font-weight: 600;" 
-                              [ngClass]="{
-                                'bg-success-subtle text-success border border-success-subtle': evidence.status === 'VALIDATED',
-                                'bg-warning-subtle text-warning border border-warning-subtle': evidence.status === 'PENDING'
-                              }">
-                          {{ evidence.status === 'VALIDATED' ? '✓ Validada' : '⏳ En Análisis' }}
+                    <div (click)="toggleInlineContemplation(evidence)"
+                         style="margin-top: 12px; margin-bottom: 16px; padding: 16px; border-radius: 12px; position: relative; overflow: hidden; transition: all 0.3s ease; border: 1px solid rgba(255,255,255,0.08); cursor: pointer;"
+                         [style.borderLeft]="'4px solid ' + (evidence.status === 'VALIDATED' ? getEmotionDetails(evidence.emotion).color : '#ab7df6')"
+                         [style.background]="evidence.status === 'VALIDATED' ? 'linear-gradient(135deg, rgba(13, 17, 28, 0.95) 0%, ' + getEmotionDetails(evidence.emotion).glow + ' 100%)' : 'rgba(168, 85, 247, 0.04)'"
+                         [style.boxShadow]="evidence.status === 'VALIDATED' ? '0 8px 24px rgba(0,0,0,0.35), 0 0 15px ' + getEmotionDetails(evidence.emotion).glow : 'none'">
+                      
+                      <!-- Decorative Top Bar -->
+                      @if (evidence.status === 'VALIDATED') {
+                        <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; opacity: 0.5;" [style.background]="getEmotionDetails(evidence.emotion).color"></div>
+                      }
+
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+                        <span style="font-size: 10px; font-weight: bold; color: #fff; text-transform: uppercase; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px;">
+                          <span>📝</span> Evidencia Registrada
                         </span>
+                        
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                          <!-- Emotion Chip -->
+                          @if (evidence.status === 'VALIDATED' && evidence.emotion) {
+                            <span [style.background]="getEmotionDetails(evidence.emotion).glow" 
+                                  [style.color]="getEmotionDetails(evidence.emotion).color"
+                                  [style.borderColor]="getEmotionDetails(evidence.emotion).color"
+                                  style="font-size: 9px; padding: 2px 6px; border-radius: 4px; border: 1px solid; font-weight: bold; text-transform: uppercase; letter-spacing: 0.3px;">
+                              {{ getEmotionDetails(evidence.emotion).emoji }} {{ getEmotionDetails(evidence.emotion).label }}
+                            </span>
+                          }
+                          
+                          <span style="font-size: 9.5px; padding: 2px 6px; border-radius: 4px; font-weight: 600;" 
+                                [ngClass]="{
+                                  'bg-success-subtle text-success border border-success-subtle': evidence.status === 'VALIDATED',
+                                  'bg-warning-subtle text-warning border border-warning-subtle': evidence.status === 'PENDING'
+                                }">
+                            {{ evidence.status === 'VALIDATED' ? '✓ Validada' : '⏳ En Análisis' }}
+                          </span>
+                        </div>
                       </div>
-                      <p style="margin: 0 0 4px 0; font-size: 12.5px; color: #fff; font-weight: 600;">
+
+                      <!-- Thumbnail preview of the photo inside the plans card -->
+                      @if (evidence.mediaData && evidence.mediaMime && evidence.mediaMime.startsWith('image/')) {
+                        <div style="margin-bottom: 12px; display: flex; justify-content: center; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
+                          <div class="polaroid-wrapper" style="background: #ffffff; padding: 6px 6px 16px 6px; border-radius: 3px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); transform: rotate(-1deg); max-width: 140px;">
+                            <img [src]="'data:' + evidence.mediaMime + ';base64,' + evidence.mediaData" 
+                                 style="width: 120px; height: 100px; object-fit: cover; border: 1px solid #e0e0e0; display: block;" alt="Foto Miniatura" />
+                          </div>
+                        </div>
+                      } @else if (evidence.mediaData && evidence.mediaMime && evidence.mediaMime.startsWith('video/')) {
+                        <div style="margin-bottom: 12px; display: flex; justify-content: center; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
+                          <div class="polaroid-wrapper" style="background: #ffffff; padding: 6px 6px 16px 6px; border-radius: 3px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); transform: rotate(-1deg); max-width: 140px;">
+                            <video [src]="'data:' + evidence.mediaMime + ';base64,' + evidence.mediaData" controls
+                                 style="width: 120px; height: 100px; object-fit: cover; border: 1px solid #e0e0e0; display: block; background: #000;"></video>
+                          </div>
+                        </div>
+                      } @else if (evidence.mediaData && evidence.mediaMime && evidence.mediaMime.startsWith('audio/')) {
+                        <div style="margin-bottom: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;">
+                          <span style="font-size: 11px; color: #8b949e; display: flex; align-items: center; gap: 4px; margin-bottom: 4px;">
+                            🎙️ Grabación de voz
+                          </span>
+                          <audio [src]="'data:' + evidence.mediaMime + ';base64,' + evidence.mediaData" controls style="width: 100%; height: 32px; border-radius: 4px;" (loadedmetadata)="onAudioLoaded($event)"></audio>
+                        </div>
+                      }
+
+                      <p style="margin: 0 0 6px 0; font-size: 13px; color: #fff; font-weight: 600; line-height: 1.4;">
                         {{ evidence.title }}
                       </p>
+                      
                       @if (evidence.textContent) {
-                        <p style="margin: 0 0 8px 0; font-size: 12px; color: #8b949e; font-style: italic; line-height: 1.4;">
+                        <p style="margin: 0 0 10px 0; font-size: 12px; color: #cbd5e1; font-style: italic; line-height: 1.4; padding: 8px 10px; background: rgba(0,0,0,0.15); border-radius: 6px; border: 1px solid rgba(255,255,255,0.02);">
                           "{{ evidence.textContent }}"
                         </p>
                       }
-                      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #6e7681; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 6px; margin-top: 4px;">
+
+                      <!-- AI feedback snippet on the plans dashboard card itself! -->
+                      @if (evidence.status === 'VALIDATED' && evidence.description) {
+                        <div style="margin-top: 8px; margin-bottom: 10px; padding: 10px; background: rgba(255,255,255,0.02); border-left: 2.5px solid; border-radius: 4px; font-size: 11.5px; line-height: 1.4; color: #e2e8f0;"
+                             [style.borderLeftColor]="getEmotionDetails(evidence.emotion).color">
+                          <strong [style.color]="getEmotionDetails(evidence.emotion).color" style="display: block; font-size: 10px; text-transform: uppercase; margin-bottom: 2px; letter-spacing: 0.5px;">🧠 Diagnóstico Sentinel AI:</strong>
+                          {{ (evidence.description.length > 180) ? (evidence.description | slice:0:180) + '...' : evidence.description }}
+                        </div>
+                      }
+
+                      <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #8b949e; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; margin-top: 6px;">
                         <span>Enviado por: <strong style="color: #c9d1d9;">{{ evidence.submittedBy }}</strong></span>
                         @if (evidence.status === 'VALIDATED') {
-                          <span style="color: #3fb950; font-weight: 600;">Calidad: {{ evidence.humanScore || evidence.aiScore || 90 | number:'1.0-0' }}%</span>
+                          <span [style.color]="getEmotionDetails(evidence.emotion).color" style="font-weight: bold;">Puntaje: {{ evidence.humanScore || evidence.aiScore || 90 | number:'1.0-0' }}%</span>
                         }
                       </div>
+
+                      <!-- PORTAL DE CONTEMPLACIÓN INLINE -->
+                      @if (activeInlineEvidenceId === evidence.id) {
+                        <div class="contemplation-inline-container mt-16 p-20"
+                             [style.--emotion-color]="getEmotionDetails(evidence.emotion).color"
+                             [style.--emotion-glow]="getEmotionDetails(evidence.emotion).glow"
+                             (click)="$event.stopPropagation()">
+                          
+                          <div style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 8px; margin-bottom: 16px;">
+                            <h3 style="margin: 0; font-size: 13px; color: #fff; display: flex; align-items: center; gap: 8px; font-weight: 700;">
+                              <span>✨</span> Portal de Contemplación
+                            </h3>
+                          </div>
+
+                          <div class="contemplation-grid-body">
+                            <!-- Left Pane: Polaroid & Audio -->
+                            <div class="contemplation-left-pane">
+                              @if (evidence.mediaData && evidence.mediaMime && evidence.mediaMime.startsWith('image/')) {
+                                <div class="polaroid-large-wrapper" style="max-width: 200px; padding: 8px 8px 18px 8px; margin-bottom: 10px;">
+                                  <img [src]="'data:' + evidence.mediaMime + ';base64,' + evidence.mediaData" style="max-width: 180px; height: 140px; object-fit: cover; border: 1px solid #e0e0e0; display: block;" alt="Foto Polaroid" />
+                                  <div class="polaroid-large-tape" style="width: 40px; height: 14px; top: -8px;"></div>
+                                </div>
+                              } @else if (evidence.mediaData && evidence.mediaMime && evidence.mediaMime.startsWith('video/')) {
+                                <div class="polaroid-large-wrapper" style="max-width: 200px; padding: 8px 8px 18px 8px; margin-bottom: 10px;">
+                                  <video [src]="'data:' + evidence.mediaMime + ';base64,' + evidence.mediaData" controls style="max-width: 180px; height: 140px; object-fit: cover; border: 1px solid #e0e0e0; display: block; background: #000;"></video>
+                                  <div class="polaroid-large-tape" style="width: 40px; height: 14px; top: -8px;"></div>
+                                </div>
+                              } @else {
+                                <div class="memory-artwork-placeholder" [style.color]="getEmotionDetails(evidence.emotion).color" style="max-width: 200px; height: 140px; border-radius: 10px; border: 2px dashed rgba(255,255,255,0.06); width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                                  <span class="artwork-emoji" style="font-size: 36px; display: block; text-shadow: 0 0 10px var(--emotion-glow);">{{ getEmotionDetails(evidence.emotion).emoji }}</span>
+                                  <span style="font-size: 10px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 6px; color: #8b949e;">Acuerdo Sellado</span>
+                                </div>
+                              }
+
+                              @if (evidence.mediaData && evidence.mediaMime && evidence.mediaMime.startsWith('audio/')) {
+                                <div class="retro-audio-card" style="max-width: 200px; padding: 10px; background: linear-gradient(135deg, #1f2937 0%, #111827 100%); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; margin-top: 8px;">
+                                  <div class="cassette-decor" style="display: flex; justify-content: center; gap: 16px; margin-bottom: 6px; opacity: 0.15;">
+                                    <span class="cassette-reel" style="font-size: 16px;">⚙️</span>
+                                    <span class="cassette-reel" style="font-size: 16px;">⚙️</span>
+                                  </div>
+                                  <audio [src]="'data:' + evidence.mediaMime + ';base64,' + evidence.mediaData" controls style="width: 100%; border-radius: 4px; height: 26px;" (loadedmetadata)="onAudioLoaded($event)"></audio>
+                                </div>
+                              }
+                            </div>
+
+                            <!-- Right Pane: Written Note, Map, Sentinel AI -->
+                            <div class="contemplation-right-pane">
+                              <div class="handwritten-note">
+                                <div class="handwritten-paper" style="padding: 12px;">
+                                  <div class="handwritten-lines" style="font-size: 15px; line-height: 1.4;">
+                                    <span class="note-quote" [style.color]="getEmotionDetails(evidence.emotion).color" style="font-size: 24px;">“</span>
+                                    <p style="margin: 0; display: inline; font-style: italic;">
+                                      {{ evidence.textContent || 'Vivimos un momento de unión, conexión y reflexión conjunta que fortalece los cimientos y hábitos de nuestro núcleo familiar.' }}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              @if (evidence.latitude && evidence.longitude) {
+                                <div class="contemplation-map-box" style="padding: 8px;">
+                                  <div class="map-label" style="font-size: 10px;">
+                                    <span>📍 Ubicación Geográfica</span>
+                                    <small class="text-muted">Coords: {{ evidence.latitude.toFixed(4) }}, {{ evidence.longitude.toFixed(4) }}</small>
+                                  </div>
+                                  <div [id]="'contemplation-map-inline-' + evidence.id" class="leaflet-map-element" style="height: 100px; margin-top: 4px;"></div>
+                                </div>
+                              }
+
+                              @if (evidence.description) {
+                                <div class="contemplation-seal-card" [style.borderLeftColor]="getEmotionDetails(evidence.emotion).color" style="padding: 10px; margin-top: 4px;">
+                                  <div style="display: flex; gap: 8px; align-items: start;">
+                                    <div class="sentinel-wax-seal" [style.background]="getEmotionDetails(evidence.emotion).color" [style.boxShadow]="'0 0 6px ' + getEmotionDetails(evidence.emotion).glow" style="width: 22px; height: 22px; font-size: 11px;">
+                                      🧠
+                                    </div>
+                                    <div style="flex: 1;">
+                                      <h4 style="margin: 0 0 2px 0; color: #fff; font-size: 9.5px; font-weight: 700; text-transform: uppercase;">Sentinel AI seal</h4>
+                                      <p style="margin: 0; font-size: 9.5px; color: #cbd5e1; line-height: 1.3; opacity: 0.85;">{{ evidence.description }}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                              }
+                            </div>
+                          </div>
+
+                          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                            <button (click)="openContemplation(evidence)" class="btn-dim" style="background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25); color: #c4b5fd; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; cursor: pointer;">
+                              🔍 Pantalla Completa
+                            </button>
+                            <button (click)="toggleInlineContemplation(evidence)" class="btn-dim" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #ccc; padding: 4px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; cursor: pointer;">
+                              ✖ Ocultar
+                            </button>
+                          </div>
+                        </div>
+                      }
                     </div>
                   }
 
@@ -780,3 +935,128 @@
     </div>
   </div>
 }
+
+<!-- PORTAL DE CONTEMPLACIÓN FAMILIAR (LIGHTBOX MODAL) -->
+@if (activeContemplation) {
+  <div class="contemplation-backdrop" (click)="closeContemplation()">
+    <div class="contemplation-modal glass-card" (click)="$event.stopPropagation()"
+         [style.--emotion-color]="getEmotionDetails(activeContemplation.emotion).color"
+         [style.--emotion-glow]="getEmotionDetails(activeContemplation.emotion).glow">
+      
+      <!-- Close Button -->
+      <button class="contemplation-close-btn" (click)="closeContemplation()">&times;</button>
+      
+      <!-- Modal Header -->
+      <div class="contemplation-header">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span class="emotion-badge-pill" 
+                [style.background]="getEmotionDetails(activeContemplation.emotion).glow" 
+                [style.borderColor]="getEmotionDetails(activeContemplation.emotion).color" 
+                [style.color]="getEmotionDetails(activeContemplation.emotion).color" 
+                style="display: inline-flex; align-items: center; gap: 6px; font-size: 11px; padding: 4px 12px; border-radius: 20px; border: 1px solid; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px;">
+            <span>{{ getEmotionDetails(activeContemplation.emotion).emoji }}</span>
+            <span>{{ getEmotionDetails(activeContemplation.emotion).label }}</span>
+          </span>
+          <h2 class="contemplation-title text-white m-0" style="font-size: 20px; font-weight: 700; color: #fff;">{{ activeContemplation.title }}</h2>
+        </div>
+        <p class="text-muted small m-0 mt-8" style="color: #8b949e; font-size: 12px; margin-top: 8px;">
+          Liderado por <strong style="color: #c9d1d9;">{{ activeContemplation.submittedBy }}</strong> el {{ activeContemplation.createdAt | date:'medium' }}
+        </p>
+      </div>
+
+      <!-- Responsive Grid Layout -->
+      <div class="contemplation-grid-body">
+        
+        <!-- Left Side: Polaroid Photo & Audio Cassette -->
+        <div class="contemplation-left-pane">
+          @if (activeContemplation.mediaData && activeContemplation.mediaMime && activeContemplation.mediaMime.startsWith('image/')) {
+            <div class="polaroid-large">
+              <div class="polaroid-large-wrapper">
+                <img [src]="'data:' + activeContemplation.mediaMime + ';base64,' + activeContemplation.mediaData" class="polaroid-large-image" alt="Foto Familiar Ampliada" />
+                <div class="polaroid-large-tape"></div>
+              </div>
+              <div class="polaroid-large-caption">{{ activeContemplation.title }}</div>
+            </div>
+          } @else if (activeContemplation.mediaData && activeContemplation.mediaMime && activeContemplation.mediaMime.startsWith('video/')) {
+            <div class="polaroid-large">
+              <div class="polaroid-large-wrapper">
+                <video [src]="'data:' + activeContemplation.mediaMime + ';base64,' + activeContemplation.mediaData" controls class="polaroid-large-image" style="background:#000;"></video>
+                <div class="polaroid-large-tape"></div>
+              </div>
+              <div class="polaroid-large-caption">{{ activeContemplation.title }}</div>
+            </div>
+          } @else {
+            <!-- Placeholder memory artwork if no image -->
+            <div class="memory-artwork-placeholder" [style.color]="getEmotionDetails(activeContemplation.emotion).color">
+              <span class="artwork-emoji" style="font-size: 72px; display: block; margin-bottom: 12px; text-shadow: 0 0 20px var(--emotion-glow);">{{ getEmotionDetails(activeContemplation.emotion).emoji }}</span>
+              <span class="artwork-lbl" style="font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">Victoria Familiar</span>
+            </div>
+          }
+
+          <!-- Audio playback custom widget -->
+          @if (activeContemplation.mediaData && activeContemplation.mediaMime && activeContemplation.mediaMime.startsWith('audio/')) {
+            <div class="retro-audio-card">
+              <div class="cassette-decor">
+                <span class="cassette-reel">⚙️</span>
+                <span class="cassette-reel">⚙️</span>
+              </div>
+              <audio [src]="'data:' + activeContemplation.mediaMime + ';base64,' + activeContemplation.mediaData" controls style="width: 100%; border-radius: 8px;" (loadedmetadata)="onAudioLoaded($event)"></audio>
+            </div>
+          }
+        </div>
+
+        <!-- Right Side: Handwritten Note, Leaflet Map & Sentinel Seal -->
+        <div class="contemplation-right-pane">
+          <!-- Handwritten Note -->
+          <div class="handwritten-note">
+            <div class="handwritten-paper">
+              <div class="handwritten-lines">
+                <span class="note-quote" [style.color]="getEmotionDetails(activeContemplation.emotion).color">“</span>
+                <p class="note-text">
+                  {{ activeContemplation.textContent || 'Vivimos un momento de unión, conexión y reflexión conjunta que fortalece los cimientos y hábitos de nuestro núcleo familiar.' }}
+                </p>
+                <div style="text-align: right; font-weight: 700; margin-top: 16px; font-size: 13.5px; opacity: 0.85;">
+                  — Firma: {{ activeContemplation.submittedBy }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Leaflet Map Container if lat/lng is available -->
+          @if (activeContemplation.latitude && activeContemplation.longitude) {
+            <div class="contemplation-map-box">
+              <div class="map-label">
+                <span>📍 Ubicación Geográfica</span>
+                <small class="text-muted">Coords: {{ activeContemplation.latitude.toFixed(4) }}, {{ activeContemplation.longitude.toFixed(4) }}</small>
+              </div>
+              <div id="contemplation-map" class="leaflet-map-element"></div>
+            </div>
+          } @else {
+            <div class="no-map-placeholder">
+              <span style="font-size: 24px;">📍</span>
+              <span style="font-size: 12px; color: #8b949e;">Sin ubicación guardada</span>
+            </div>
+          }
+
+          <!-- Sentinel AI Certification Stamp -->
+          @if (activeContemplation.description) {
+            <div class="contemplation-seal-card" [style.borderLeftColor]="getEmotionDetails(activeContemplation.emotion).color">
+              <div style="display: flex; gap: 14px; align-items: start;">
+                <div class="sentinel-wax-seal" [style.background]="getEmotionDetails(activeContemplation.emotion).color" [style.boxShadow]="'0 0 15px ' + getEmotionDetails(activeContemplation.emotion).glow">
+                  <span>🧠</span>
+                </div>
+                <div style="flex: 1;">
+                  <h4 style="margin: 0 0 4px 0; color: #fff; font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">Certificación Sentinel AI</h4>
+                  <p style="margin: 0; font-size: 12.5px; color: #cbd5e1; line-height: 1.4; opacity: 0.9;">{{ activeContemplation.description }}</p>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+}
+

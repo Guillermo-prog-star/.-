@@ -110,9 +110,9 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
     }
 
     .badge-calma {
-      background: rgba(52, 211, 153, 0.1);
-      color: #34d399;
-      border: 1px solid rgba(52, 211, 153, 0.2);
+      background: rgba(249, 115, 22, 0.12);
+      color: #fb923c;
+      border: 1px solid rgba(249, 115, 22, 0.3);
     }
 
     .badge-estres {
@@ -224,9 +224,9 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
     }
 
     .pill-btn.active.color-calma {
-      background: rgba(52, 211, 153, 0.15);
-      border-color: rgba(52, 211, 153, 0.4);
-      color: #34d399;
+      background: rgba(249, 115, 22, 0.15);
+      border-color: rgba(249, 115, 22, 0.4);
+      color: #fb923c;
     }
 
     .pill-btn.active.color-estres {

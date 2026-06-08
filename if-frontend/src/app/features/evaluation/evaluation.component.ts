@@ -68,8 +68,12 @@ export class EvaluationComponent implements OnInit {
     // Leer el pilar seleccionado desde query params
     this.activePillar = this.route.snapshot.queryParamMap.get('pillar') ?? '';
 
+    // ── Carga local INMEDIATA — sin importar si familyId está disponible ──
+    // El usuario ve las preguntas al instante; el backend se resuelve en paralelo.
+    this.questions = getFallbackQuestions(this.activePillar);
+
     if (this.familyId === 0) {
-      // Recuperar la familia desde el backend si el estado no está cargado en memoria
+      // Recuperar familia en segundo plano (no bloquea la pantalla)
       this.http.get<any>(`${environment.apiBaseUrl}/families/mine`).subscribe({
         next: res => {
           const family = res?.data ?? res;
@@ -77,12 +81,11 @@ export class EvaluationComponent implements OnInit {
             this.familyState.setFamily(family);
             this.familyId   = family.id;
             this.familyName = family.name || 'la familia';
-            this.loadQuestions();
-          } else {
-            this.router.navigate(['/families/create']);
+            this.loadQuestions(); // actualiza con preguntas reales del backend
           }
+          // Si no hay familia: dejamos las preguntas locales — no redirigimos
         },
-        error: () => this.router.navigate(['/families/create'])
+        error: () => { /* silencioso — preguntas locales ya están activas */ }
       });
       return;
     }

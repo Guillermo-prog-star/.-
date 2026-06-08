@@ -2,6 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, map, tap, catchError, of, forkJoin } from 'rxjs';
 import { DashboardDTO } from '../../../core/models/dashboard.model';
+import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class DashboardDataService {
@@ -18,20 +19,21 @@ export class DashboardDataService {
 
   fetchData(familyId?: number): Observable<DashboardDTO | null> {
     const id = familyId;
+    const base = environment.apiBaseUrl;
     if (!id) return of(null);
     return forkJoin({
-      dashboard: this.http.get<any>(`/api/analytics/dashboard/family/${id}`),
-      advanceStatus: this.http.get<any>(`/api/milestones/family/${id}/advancement-status`).pipe(
+      dashboard: this.http.get<any>(`${base}/analytics/dashboard/family/${id}`).pipe(catchError(() => of(null))),
+      advanceStatus: this.http.get<any>(`${base}/milestones/family/${id}/advancement-status`).pipe(
         map(res => res?.data?.canAdvance ?? false),
         catchError(() => of(false))
       ),
-      progress: this.http.get<any>(`/api/analytics/family/${id}/progress`).pipe(
-        map(res => res.data),
+      progress: this.http.get<any>(`${base}/analytics/family/${id}/progress`).pipe(
+        map(res => res?.data ?? null),
         catchError(() => of(null))
       )
     }).pipe(
       map(({ dashboard, advanceStatus, progress }) => {
-        const rawData = dashboard.data;
+        const rawData = dashboard?.data ?? {};
         return {
           ...rawData,
           readyToAdvance: advanceStatus,
@@ -42,23 +44,27 @@ export class DashboardDataService {
       }),
       tap(data => {
         this.dashboardState$.next(data);
-        this.dashboardStateSignal.set(data); // Sincronizar señal
+        this.dashboardStateSignal.set(data);
       }),
-      catchError(() => of(null))
+      catchError(() => {
+        // Si falla todo, emitir objeto vacío para que el dashboard cargue sin spinner infinito
+        const empty = {} as DashboardDTO;
+        this.dashboardState$.next(empty);
+        this.dashboardStateSignal.set(empty);
+        return of(empty);
+      })
     );
   }
 
   // FIX TS2339: Implementación requerida por evolution-radar.component.ts
   getRadarData$(): Observable<any[]> {
-    return this.http.get<any>('/api/analytics/radar').pipe(
+    return this.http.get<any>(`${environment.apiBaseUrl}/analytics/radar`).pipe(
       map(res => res && res.data ? (Array.isArray(res.data) ? res.data : [res.data]) : []),
       catchError(() => of([]))
     );
   }
 
-  // FIX TS2339: Implementación requerida por ai-plan-timeline.component.ts
   completeTask(taskId: string, completed: boolean = true): Observable<void> {
-    // PUT /api/plans/tasks/{id}/complete  ← PlanController (requiere body { completed: boolean })
-    return this.http.put<void>(`/api/plans/tasks/${taskId}/complete`, { completed });
+    return this.http.put<void>(`${environment.apiBaseUrl}/plans/tasks/${taskId}/complete`, { completed });
   }
 }

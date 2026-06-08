@@ -16,6 +16,7 @@ import { ScannerService } from '../../core/services/scanner.service';
 // Capa de Modelos (SDD: Single Source of Truth)
 import { DashboardDTO, DimensionScore } from '../../core/models/dashboard.model';
 import { OperationalStateDto, FamilyAlertDto } from '../../core/models/models';
+import { environment } from '../../../environments/environment';
 
 // Componentes de Presentación
 import { IcfStatCardComponent } from './components/icf-stat-card/icf-stat-card.component';
@@ -191,12 +192,12 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
     this.savingWhatsapp.set(true);
     this.whatsappError.set('');
 
-    this.http.get<any>(`/api/families/${familyId}`).subscribe({
+    this.http.get<any>(`${environment.apiBaseUrl}/families/${familyId}`).subscribe({
       next: (res) => {
         const familyData = res?.data ?? res;
         familyData.whatsapp = num;
 
-        this.http.put<any>(`/api/families/${familyId}`, familyData).subscribe({
+        this.http.put<any>(`${environment.apiBaseUrl}/families/${familyId}`, familyData).subscribe({
           next: (updateRes) => {
             const updatedFamily = updateRes?.data ?? updateRes;
             this.familyState.setFamily(updatedFamily);
@@ -378,7 +379,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
     const familyId = this.familyState.getSelectedFamilyId();
     if (!familyId) return;
 
-    this.http.post<any>(`/api/milestones/family/${familyId}/advance`, {}).subscribe({
+    this.http.post<any>(`${environment.apiBaseUrl}/milestones/family/${familyId}/advance`, {}).subscribe({
       next: () => {
         console.log('🚀 [MILESTONE-EVOLVED] Nodo evolucionado.');
         this.dashboardService.fetchData(familyId).subscribe();

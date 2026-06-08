@@ -777,21 +777,35 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Llama al backend para avanzar el hito/pilar automáticamente. */
+  /** Llama al backend para avanzar el hito/pilar y genera la Película Familiar automáticamente. */
   private avanzarPilar() {
-    this.http.post<any>(`${this.api.base}/milestones/family/${this.familyId}/advance`, {}).subscribe({
-      next: (res) => {
-        const nuevoHito = res?.data?.newMilestone ?? res?.newMilestone ?? 'siguiente';
-        this.terminalLogs.push(`🌟 ¡PILAR COMPLETADO! Tu familia avanza al hito: ${nuevoHito}`);
-        this.scrollToBottom();
-        this.load();
-        this.loadDashboard();
-      },
-      error: () => {
-        this.terminalLogs.push(`ℹ️ Los criterios de avance están en evaluación. El sistema avanzará automáticamente esta noche.`);
-        this.scrollToBottom();
-      }
-    });
+    this.terminalLogs.push(`🎬 Generando Película Familiar del pilar completado...`);
+    this.scrollToBottom();
+
+    // 1. Avanzar hito (puede fallar si criterios no cumplen — no bloquea el flujo)
+    this.http.post<any>(`${this.api.base}/milestones/family/${this.familyId}/advance`, {})
+      .subscribe({ error: () => {} }); // silencioso
+
+    // 2. Generar Película Familiar (el gran hito del pilar)
+    this.http.post<any>(`${this.api.base}/families/${this.familyId}/movies/generate/quarter`, {})
+      .subscribe({
+        next: () => {
+          this.terminalLogs.push(`🌟 ¡PILAR COMPLETADO! Tu Película Familiar está lista.`);
+          this.scrollToBottom();
+          this.load();
+          this.loadDashboard();
+          // Navegar a la Película Familiar tras un momento de celebración
+          setTimeout(() => this.router.navigate(['/family-movie'], { queryParams: { autoGenerate: '1' } }), 2000);
+        },
+        error: () => {
+          // Si la generación falla (sin API key, etc.), igual navegar a la página de película
+          this.terminalLogs.push(`🌟 ¡PILAR COMPLETADO! Revisa tu Película Familiar.`);
+          this.scrollToBottom();
+          this.load();
+          this.loadDashboard();
+          setTimeout(() => this.router.navigate(['/family-movie'], { queryParams: { autoGenerate: '1' } }), 1500);
+        }
+      });
   }
 
   openMisionEvidence(mision: Mision) {

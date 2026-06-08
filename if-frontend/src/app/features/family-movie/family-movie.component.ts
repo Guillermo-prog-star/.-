@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute } from '@angular/router';
 import { FamilyMovieService, FamilyMovieDto } from '../../core/services/family-movie.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { catchError, of } from 'rxjs';
@@ -357,6 +358,7 @@ import { catchError, of } from 'rxjs';
 export class FamilyMovieComponent implements OnInit {
   private readonly movieSvc    = inject(FamilyMovieService);
   private readonly familyState = inject(FamilyStateService);
+  private readonly route       = inject(ActivatedRoute);
 
   readonly familyId   = this.familyState.currentFamilyId;
   readonly movie      = signal<FamilyMovieDto | null>(null);
@@ -370,7 +372,13 @@ export class FamilyMovieComponent implements OnInit {
   ngOnInit(): void {
     const id = this.familyId();
     if (!id) return;
-    this.load(id);
+    const autoGenerate = this.route.snapshot.queryParamMap.get('autoGenerate') === '1';
+    if (autoGenerate) {
+      // Vino de pilar completado — generar directamente sin esperar lista
+      this.generate();
+    } else {
+      this.load(id);
+    }
   }
 
   private load(id: number): void {

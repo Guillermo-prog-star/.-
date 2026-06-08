@@ -598,7 +598,17 @@ const EMOTIONS = [
 
             </div>
 
-            <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px;">
+            <!-- CTA Película Familiar -->
+            <div style="margin-top: 20px; padding: 16px; background: linear-gradient(135deg, rgba(139,92,246,0.15), rgba(236,72,153,0.1)); border: 1px solid rgba(139,92,246,0.3); border-radius: 14px; text-align: center;">
+              <div style="font-size: 28px; margin-bottom: 6px;">🎬</div>
+              <p style="font-size: 13px; color: #c084fc; font-weight: 700; margin: 0 0 4px 0;">Esta cápsula forma parte de tu Película Familiar</p>
+              <p style="font-size: 11.5px; color: #8b949e; margin: 0 0 12px 0;">Cada momento que capturas se teje en el documental de tu familia</p>
+              <a href="/family-movie" style="display: inline-block; padding: 10px 22px; background: linear-gradient(135deg, #7c3aed, #db2777); border-radius: 10px; color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; letter-spacing: 0.3px;">
+                🎬 Ver Película Familiar →
+              </a>
+            </div>
+
+            <div style="display: flex; gap: 12px; justify-content: center; margin-top: 16px;">
               <button class="btn-new" (click)="reset()">+ Nueva cápsula</button>
               <a href="/checklist" class="btn-back" style="text-decoration: none; padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; border: 1px solid rgba(255,255,255,0.1); color: #8b949e; background: transparent; transition: all 0.2s;">
                 Ir a Bitácora

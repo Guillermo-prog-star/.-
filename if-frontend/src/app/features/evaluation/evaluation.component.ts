@@ -7,6 +7,7 @@ import { Question, SaveAnswerRequest, FinalizeRequest } from '../../core/models/
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { getFallbackQuestions } from '../../core/data/fallback-questions';
+import { catchError, EMPTY } from 'rxjs';
 import { PRESENCE_SCALE } from '../../../domain/constants/presenceScaleDomain';
 import { environment } from '../../../environments/environment';
 

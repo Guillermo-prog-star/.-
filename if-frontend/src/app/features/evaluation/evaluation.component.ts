@@ -6,7 +6,7 @@ import { AssessmentService } from '../../core/services/assessment.service';
 import { Question, SaveAnswerRequest, FinalizeRequest } from '../../core/models/question.model';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 import { FamilyStateService } from '../../core/services/family-state.service';
-import { catchError, EMPTY } from 'rxjs';
+import { catchError, EMPTY, retry, timer } from 'rxjs';
 import { PRESENCE_SCALE } from '../../../domain/constants/presenceScaleDomain';
 import { environment } from '../../../environments/environment';
 
@@ -32,7 +32,9 @@ export class EvaluationComponent implements OnInit {
   isFinished: boolean = false;
   isTransitioning: boolean = false;
   isLoadingResults: boolean = false;
-  loadError: string = '';   // ← error visible si no cargan las preguntas
+  loadError: string = '';
+  loadingMessage: string = 'Preparando tu diagnóstico personalizado...';
+  private retryCount = 0;
   familyId: number = 0;
   familyName: string = '';
 
@@ -95,31 +97,43 @@ export class EvaluationComponent implements OnInit {
     // Pasar el pilar para filtrar preguntas específicas del pilar activo
     const pillar = this.activePillar || undefined;
 
-    this.assessmentService.getRandomQuestions(this.familyId, milestone, pillar).subscribe({
-      next: (data: Question[]) => {
-        if (!data || data.length === 0) {
-          this.loadError = 'No se encontraron preguntas para este pilar. Por favor intenta de nuevo o selecciona otro pilar.';
-          return;
-        }
-        this.questions = data;
-        this.loadError = '';
-        // Tras cargar las preguntas, intentar recuperar el progreso guardado
-        if (this.evaluationId > 0) {
-          this.restoreProgress();
-        }
-      },
-      error: (err: any) => {
-        console.error('[ASSESSMENT] Error cargando preguntas:', err);
-        const status = err?.status;
-        if (status === 403) {
-          this.loadError = 'No tienes permiso para acceder a este diagnóstico. Vuelve al Dashboard e intenta de nuevo.';
-        } else if (status === 0 || status === 502 || status === 503) {
-          this.loadError = 'El servidor no responde. Espera un momento y recarga la página (el servidor puede estar despertando).';
-        } else {
-          this.loadError = `Error al cargar las preguntas (código ${status}). Recarga la página e intenta de nuevo.`;
-        }
+    const MESSAGES = [
+      'Preparando tu diagnóstico personalizado...',
+      'Calibrando preguntas para tu familia...',
+      'Casi listo, un momento más...',
+    ];
+
+    this.retryCount = 0;
+    this.loadError  = '';
+    this.loadingMessage = MESSAGES[0];
+
+    const attempt = () => {
+      this.assessmentService.getRandomQuestions(this.familyId, milestone, pillar).subscribe({
+        next: (data: Question[]) => {
+          if (!data || data.length === 0) {
+            scheduleRetry();
+            return;
+          }
+          this.questions = data;
+          this.loadError  = '';
+          if (this.evaluationId > 0) this.restoreProgress();
+        },
+        error: () => scheduleRetry()
+      });
+    };
+
+    const scheduleRetry = () => {
+      if (this.retryCount < 4) {
+        this.retryCount++;
+        this.loadingMessage = MESSAGES[Math.min(this.retryCount, MESSAGES.length - 1)];
+        setTimeout(attempt, 3000);   // reintenta silenciosamente cada 3 s
+      } else {
+        // Después de 4 intentos (~12 s) muestra mensaje amigable (no técnico)
+        this.loadError = 'El sistema tardó más de lo esperado. Intenta de nuevo.';
       }
-    });
+    };
+
+    attempt();
   }
 
   /** Reanuda el cuestionario: restaura las respuestas ya guardadas en el servidor. */

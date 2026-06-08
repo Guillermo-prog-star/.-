@@ -42,7 +42,8 @@ public class Question {
     @Builder.Default
     private boolean active = true;
 
-    private int vertice;
+    @Builder.Default
+    private int vertice = 0;   // primitivo → DEFAULT 0 para evitar NPE con NULLs de BD
 
     @Builder.Default
     private int weight = 1;

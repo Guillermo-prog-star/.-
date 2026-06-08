@@ -33,7 +33,7 @@ export interface HogarDimension {
 
   <!-- Casa SVG interactiva -->
   <div class="casa-wrap">
-    <svg class="casa-svg" viewBox="0 0 520 380" xmlns="http://www.w3.org/2000/svg">
+    <svg class="casa-svg" viewBox="0 0 520 430" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <!-- Filtros de resplandor por habitación -->
         @for (dim of dimensions; track dim.key) {
@@ -81,7 +81,7 @@ export interface HogarDimension {
       }
 
       <!-- Suelo -->
-      <rect x="0" y="310" width="520" height="70" fill="url(#ground)"/>
+      <rect x="0" y="310" width="520" height="120" fill="url(#ground)"/>
 
       <!-- Jardín (si tiempos score es alto) -->
       @if (getScore('tiempos') >= 3) {
@@ -234,8 +234,80 @@ export interface HogarDimension {
       <line x1="98" y1="225" x2="422" y2="225" stroke="rgba(255,255,255,0.06)" stroke-width="1.5"/>
 
       <!-- Número de la casa -->
-      <text x="260" y="340" text-anchor="middle" font-size="10" font-weight="700"
+      <text x="260" y="325" text-anchor="middle" font-size="10" font-weight="700"
             fill="rgba(255,255,255,0.2)" font-family="sans-serif" letter-spacing="2">FAMILIA</text>
+
+      <!-- ── FAMILIA JUGANDO EN CÍRCULO ──────────────── -->
+      <!-- Pasto del jardín delantero -->
+      <ellipse cx="260" cy="382" rx="108" ry="13" fill="#14532d" opacity="0.55"/>
+
+      <!-- Líneas de conexión entre personas (tomados de la mano) -->
+      <line x1="222" y1="368" x2="243" y2="350" stroke="rgba(255,220,80,0.28)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="243" y1="350" x2="277" y2="350" stroke="rgba(255,220,80,0.28)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="277" y1="350" x2="298" y2="368" stroke="rgba(255,220,80,0.28)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="298" y1="368" x2="282" y2="387" stroke="rgba(255,220,80,0.28)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="282" y1="387" x2="238" y2="387" stroke="rgba(255,220,80,0.28)" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="238" y1="387" x2="222" y2="368" stroke="rgba(255,220,80,0.28)" stroke-width="2.5" stroke-linecap="round"/>
+
+      <!-- ── Papá (izquierda) ── -->
+      <g class="fam-member fam-p1">
+        <circle cx="213" cy="358" r="9" fill="#fbbf24" stroke="#f59e0b" stroke-width="1"/>
+        <ellipse cx="213" cy="374" rx="7" ry="11" fill="#3b82f6"/>
+        <line x1="206" y1="369" x2="196" y2="358" stroke="#2563eb" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="220" y1="369" x2="228" y2="357" stroke="#2563eb" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="208" y1="384" x2="204" y2="395" stroke="#1d4ed8" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="218" y1="384" x2="222" y2="395" stroke="#1d4ed8" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="210" cy="356" r="1.5" fill="#92400e"/>
+        <circle cx="216" cy="356" r="1.5" fill="#92400e"/>
+        <path d="M209,360 Q213,364 217,360" fill="none" stroke="#92400e" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+
+      <!-- ── Mamá (derecha) ── -->
+      <g class="fam-member fam-p2">
+        <circle cx="307" cy="358" r="9" fill="#fbcfe8" stroke="#f472b6" stroke-width="1"/>
+        <ellipse cx="307" cy="374" rx="8" ry="11" fill="#ec4899"/>
+        <line x1="299" y1="369" x2="292" y2="358" stroke="#db2777" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="315" y1="369" x2="324" y2="358" stroke="#db2777" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="302" y1="384" x2="298" y2="395" stroke="#9d174d" stroke-width="3.5" stroke-linecap="round"/>
+        <line x1="312" y1="384" x2="316" y2="395" stroke="#9d174d" stroke-width="3.5" stroke-linecap="round"/>
+        <circle cx="304" cy="356" r="1.5" fill="#9d174d"/>
+        <circle cx="310" cy="356" r="1.5" fill="#9d174d"/>
+        <path d="M303,360 Q307,364 311,360" fill="none" stroke="#9d174d" stroke-width="1.5" stroke-linecap="round"/>
+      </g>
+
+      <!-- ── Hijo (arriba izquierda del círculo) ── -->
+      <g class="fam-member fam-p3">
+        <circle cx="243" cy="342" r="8" fill="#86efac" stroke="#4ade80" stroke-width="1"/>
+        <ellipse cx="243" cy="357" rx="6" ry="9" fill="#22c55e"/>
+        <line x1="237" y1="352" x2="229" y2="342" stroke="#16a34a" stroke-width="3" stroke-linecap="round"/>
+        <line x1="249" y1="352" x2="255" y2="342" stroke="#16a34a" stroke-width="3" stroke-linecap="round"/>
+        <line x1="239" y1="365" x2="235" y2="375" stroke="#15803d" stroke-width="3" stroke-linecap="round"/>
+        <line x1="247" y1="365" x2="251" y2="375" stroke="#15803d" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="240" cy="340" r="1.2" fill="#166534"/>
+        <circle cx="246" cy="340" r="1.2" fill="#166534"/>
+        <path d="M240,344 Q243,347 246,344" fill="none" stroke="#166534" stroke-width="1.2" stroke-linecap="round"/>
+      </g>
+
+      <!-- ── Hija (arriba derecha del círculo) ── -->
+      <g class="fam-member fam-p4">
+        <circle cx="277" cy="342" r="8" fill="#c4b5fd" stroke="#a78bfa" stroke-width="1"/>
+        <ellipse cx="277" cy="357" rx="7" ry="9" fill="#8b5cf6"/>
+        <line x1="270" y1="352" x2="264" y2="342" stroke="#7c3aed" stroke-width="3" stroke-linecap="round"/>
+        <line x1="284" y1="352" x2="291" y2="342" stroke="#7c3aed" stroke-width="3" stroke-linecap="round"/>
+        <line x1="273" y1="365" x2="269" y2="375" stroke="#6d28d9" stroke-width="3" stroke-linecap="round"/>
+        <line x1="281" y1="365" x2="285" y2="375" stroke="#6d28d9" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="274" cy="340" r="1.2" fill="#4c1d95"/>
+        <circle cx="280" cy="340" r="1.2" fill="#4c1d95"/>
+        <path d="M274,344 Q277,347 280,344" fill="none" stroke="#4c1d95" stroke-width="1.2" stroke-linecap="round"/>
+      </g>
+
+      <!-- Corazones y emojis flotantes de alegría -->
+      <text class="flt-h flt-1" x="260" y="328" text-anchor="middle" font-size="12">❤️</text>
+      <text class="flt-h flt-2" x="196" y="348" text-anchor="middle" font-size="10">✨</text>
+      <text class="flt-h flt-3" x="325" y="346" text-anchor="middle" font-size="10">💛</text>
+      <text class="flt-h flt-4" x="246" y="404" text-anchor="middle" font-size="9">🎵</text>
+      <text class="flt-h flt-5" x="274" y="406" text-anchor="middle" font-size="9">🌟</text>
+      <text class="flt-h flt-6" x="260" y="416" text-anchor="middle" font-size="8">🎉</text>
 
     </svg>
   </div>
@@ -373,6 +445,40 @@ export interface HogarDimension {
       height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden;
     }
     .dc-bar-fill { height: 100%; border-radius: 2px; transition: width 0.8s ease; }
+
+    /* ── Familia en círculo ─────────────────────────── */
+    .fam-member {
+      transform-box: fill-box;
+      transform-origin: center bottom;
+      animation: famBounce 1.9s ease-in-out infinite;
+    }
+    .fam-p1 { animation-delay: 0s; }
+    .fam-p2 { animation-delay: 0.47s; }
+    .fam-p3 { animation-delay: 0.94s; }
+    .fam-p4 { animation-delay: 1.42s; }
+
+    @keyframes famBounce {
+      0%, 100% { transform: translateY(0px) rotate(-4deg); }
+      30%       { transform: translateY(-8px) rotate(4deg); }
+      60%       { transform: translateY(-4px) rotate(-2deg); }
+    }
+
+    .flt-h {
+      transform-box: fill-box;
+      transform-origin: center;
+      animation: floatHeart 2.6s ease-in-out infinite;
+    }
+    .flt-1 { animation-delay: 0s;    animation-duration: 2.2s; }
+    .flt-2 { animation-delay: 0.5s;  animation-duration: 2.9s; }
+    .flt-3 { animation-delay: 1.1s;  animation-duration: 2.5s; }
+    .flt-4 { animation-delay: 0.3s;  animation-duration: 3.1s; }
+    .flt-5 { animation-delay: 0.8s;  animation-duration: 2.4s; }
+    .flt-6 { animation-delay: 1.5s;  animation-duration: 2.7s; }
+
+    @keyframes floatHeart {
+      0%, 100% { transform: translateY(0) scale(1);    opacity: 0.75; }
+      50%       { transform: translateY(-13px) scale(1.25); opacity: 1; }
+    }
   `]
 })
 export class HogarVivoComponent {

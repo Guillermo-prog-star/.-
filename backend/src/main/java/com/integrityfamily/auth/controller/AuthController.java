@@ -108,8 +108,11 @@ public class AuthController {
         @ApiResponse(responseCode = "401", description = "No autorizado o token expirado")
     })
     @GetMapping("/me")
-    public UserResponse me(Authentication authentication) {
-        return authService.me(authentication.getName());
+    public ResponseEntity<UserResponse> me(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(authService.me(authentication.getName()));
     }
 
     @Operation(summary = "Cerrar sesión", description = "Invalida la sesión actual del usuario y elimina los tokens de refresco en persistencia.")

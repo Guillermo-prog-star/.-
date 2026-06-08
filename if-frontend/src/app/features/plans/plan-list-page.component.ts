@@ -225,8 +225,23 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
           // Re-adaptar misiones IA-2 al hito real una vez que llega el dashboard
           this.adaptIaMissionsToDiagnostic();
         },
-        error: (err) => console.error('Error fetching dashboard summary:', err)
+        error: () => {
+          // Dashboard falla → usar hito local desde localStorage si está disponible
+          const cached = localStorage.getItem('if_family_dashboard');
+          if (cached) { try { this.familyDashboard = JSON.parse(cached); } catch (_) {} }
+          this.terminalLogs.push(`ℹ️ Dashboard en modo local — continuando con hito ${this.activePillar}`);
+          this.scrollToBottom();
+        }
       });
+  }
+
+  /** Etiqueta legible del hito actual con su mes de progresión */
+  get currentMilestoneLabel(): string {
+    const code = this.familyDashboard?.currentMilestone || 'W1';
+    const ms = this.milestones.find(m => m.code === code);
+    const label = ms?.label || code;
+    const pilar = this.activePillar;
+    return `${code} · ${label} · Pilar ${pilar}`;
   }
 
   loadMembers() {
@@ -507,9 +522,30 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
                 // Avanzar automáticamente a la siguiente misión
                 setTimeout(() => this.avanzarSiguienteMision(taskId), 600);
               },
-              error: () => {
-                this.load(true);
-                this.loadDashboard();
+              error: (err) => {
+                // Completar falló — aun así intentar avanzar (evidencia ya quedó registrada)
+                const msg = err?.error?.message || err?.message || 'Error del servidor';
+                this.terminalLogs.push(`⚠️ Evidencia guardada pero no se pudo marcar completa: ${msg}. Reintentando...`);
+                this.scrollToBottom();
+                // Reintento único tras 2s
+                setTimeout(() => {
+                  this.http.put<any>(`${this.api.base}/plans/tasks/${taskId}/complete`, { completed: true })
+                    .subscribe({
+                      next: () => {
+                        this.terminalLogs.push(`✅ Misión marcada completa. Avanzando...`);
+                        this.scrollToBottom();
+                        this.load(true);
+                        this.loadDashboard();
+                        setTimeout(() => this.avanzarSiguienteMision(taskId), 600);
+                      },
+                      error: () => {
+                        this.terminalLogs.push(`ℹ️ La misión se registró. Continúa con la siguiente cuando quieras.`);
+                        this.scrollToBottom();
+                        this.load(true);
+                        this.loadDashboard();
+                      }
+                    });
+                }, 2000);
               }
             });
         },
@@ -784,7 +820,22 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
 
     // 1. Avanzar hito (puede fallar si criterios no cumplen — no bloquea el flujo)
     this.http.post<any>(`${this.api.base}/milestones/family/${this.familyId}/advance`, {})
-      .subscribe({ error: () => {} }); // silencioso
+      .subscribe({
+        next: (res) => {
+          const nuevo = res?.data?.newMilestone ?? res?.newMilestone;
+          if (nuevo) this.terminalLogs.push(`📈 Hito avanzado: ${nuevo} — ${this.milestones.find(m => m.code === nuevo)?.label || ''}`);
+        },
+        error: (err) => {
+          const msg = err?.error?.message || '';
+          // Los criterios (tiempo, ICF, tareas) pueden no cumplirse aún — es normal
+          if (msg.toLowerCase().includes('criteria') || msg.toLowerCase().includes('criterio') || msg.toLowerCase().includes('not met')) {
+            this.terminalLogs.push(`ℹ️ El hito avanzará automáticamente al cumplir los 3 criterios (tiempo · ICF · tareas).`);
+          } else {
+            this.terminalLogs.push(`ℹ️ Avance de hito en evaluación. El sistema lo procesará esta noche.`);
+          }
+          this.scrollToBottom();
+        }
+      });
 
     // 2. Generar Película Familiar (el gran hito del pilar)
     this.http.post<any>(`${this.api.base}/families/${this.familyId}/movies/generate/quarter`, {})

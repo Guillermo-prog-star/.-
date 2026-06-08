@@ -18,8 +18,22 @@ export class LoginPageComponent {
   loading = false; error = '';
 
   // ── Bifurcación psicológica ──────────────────────
-  /** true = nunca ha iniciado sesión en este dispositivo */
-  readonly isNewVisitor = !localStorage.getItem('if_returning');
+  /**
+   * true = no hay sesión activa en este dispositivo ahora mismo.
+   * Se basa en si existe un token JWT guardado, no en un flag de visita,
+   * para que cualquier persona nueva que llegue al dispositivo vea la opción
+   * "Crear mi familia" aunque alguien más haya usado la app antes.
+   */
+  readonly isNewVisitor = (() => {
+    try {
+      const saved = localStorage.getItem('auth_user');
+      if (!saved) return true;
+      const user = JSON.parse(saved);
+      return !user?.token; // hay sesión activa → usuario recurrente
+    } catch {
+      return true;
+    }
+  })();
   /** 'new' | 'returning' — fuerza una zona específica */
   mode: 'new' | 'returning' | null = null;
   
@@ -31,7 +45,7 @@ export class LoginPageComponent {
     this.auth.login({ email: this.email.trim().toLowerCase(), password: this.password }).subscribe({
       next: (res) => {
         this.loading = false;
-        localStorage.setItem('if_returning', '1'); // marca como usuario recurrente
+        // El token JWT ya queda guardado por AuthService — no se necesita flag adicional
         const user = this.auth.user();
         if (user && user.familyId) {
           this.router.navigate(['/dashboard']);

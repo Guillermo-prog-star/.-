@@ -39,14 +39,15 @@ public class Question {
     @Builder.Default
     private String version = "1.0"; // Versión del reactivo
 
+    // Wrapper types (no primitivos) → evitan NPE de Hibernate cuando la BD tiene NULL
     @Builder.Default
-    private boolean active = true;
+    private Boolean active = true;
 
     @Builder.Default
-    private int vertice = 0;   // primitivo → DEFAULT 0 para evitar NPE con NULLs de BD
+    private Integer vertice = 0;
 
     @Builder.Default
-    private int weight = 1;
+    private Integer weight = 1;
 
     private Integer sortOrder;
 
@@ -64,13 +65,13 @@ public class Question {
     private Double severityWeight; // Ponderación de severidad clínica
 
     @Builder.Default
-    private boolean detectsRelapse = false;   // Detecta recaída
+    private Boolean detectsRelapse = false;   // Detecta recaída
 
     @Builder.Default
-    private boolean requiresEvidence = false; // Requiere adjuntar evidencia física/conductual
+    private Boolean requiresEvidence = false; // Requiere adjuntar evidencia física/conductual
 
     @Builder.Default
-    private boolean reverseQuestion = false;  // Pregunta espejo / invertida para detectar simulación
+    private Boolean reverseQuestion = false;  // Pregunta espejo / invertida para detectar simulación
 
     @Column(length = 100)
     private String category; // escucha, regulacion emocional, orden, etc.

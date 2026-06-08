@@ -488,22 +488,30 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
 
     this.http.post<any>(`${this.api.base}/evidences/submit`, payload)
       .subscribe({
-        next: (res) => {
+        next: () => {
           this.submittingEvidence = false;
-          this.closeEvidenceModal();
-          this.load(true); // Recargar evidencias de manera silenciosa
-          this.loadDashboard();
-          
-          this.terminalLogs.push(`📥 Evidencia "${payload.title}" enviada exitosamente para análisis cognitivo.`);
-          this.terminalLogs.push(`🤖 Sentinel AI ha recibido la evidencia. Iniciando análisis en segundo plano...`);
+          this.terminalLogs.push(`📥 Evidencia registrada. Completando misión...`);
           this.scrollToBottom();
 
-          // Esperar y refrescar de nuevo de forma asíncrona para cargar la validación de la IA
-          setTimeout(() => {
-            this.loadFamilyEvidences();
-            this.terminalLogs.push(`🔄 Sentinel AI ha finalizado el análisis de la evidencia. Revisa la tarjeta de la misión.`);
-            this.scrollToBottom();
-          }, 3500);
+          const taskId = this.activeModalTask.id;
+          this.closeEvidenceModal();
+
+          // Auto-completar la misión inmediatamente tras enviar evidencia
+          this.http.put<any>(`${this.api.base}/plans/tasks/${taskId}/complete`, { completed: true })
+            .subscribe({
+              next: () => {
+                this.terminalLogs.push(`✅ Misión completada. Buscando siguiente misión...`);
+                this.scrollToBottom();
+                this.load(true);
+                this.loadDashboard();
+                // Avanzar automáticamente a la siguiente misión
+                setTimeout(() => this.avanzarSiguienteMision(taskId), 600);
+              },
+              error: () => {
+                this.load(true);
+                this.loadDashboard();
+              }
+            });
         },
         error: (err) => {
           this.submittingEvidence = false;
@@ -682,49 +690,108 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
   }
 
   comenzarMision(plan: PlanTransformacion, mision: Mision) {
+    if (mision.estado === 'Completada') return; // ya completada, no hacer nada
+
     if (mision.backendTaskId) {
-      const completada = mision.estado === 'Completada';
-      this.toggle(mision.backendTaskId, !completada);
-    } else {
-      if (!this.plans || this.plans.length === 0) {
-        this.terminalLogs.push(`❌ ERROR: No hay plan clínico activo para asociar esta misión.`);
+      // Ya tiene task en backend → abrir Sprint-Daily directamente
+      this.openEvidenceModal({ id: mision.backendTaskId, title: mision.titulo }, 'BITACORA');
+      return;
+    }
+
+    if (!this.plans || this.plans.length === 0) {
+      this.terminalLogs.push(`❌ ERROR: No hay plan clínico activo para asociar esta misión.`);
+      this.scrollToBottom();
+      return;
+    }
+
+    this.terminalLogs.push(`⚡ Iniciando misión "${mision.titulo}"...`);
+    this.scrollToBottom();
+
+    const payload = {
+      title: mision.titulo,
+      description: mision.descripcionGeneral,
+      dimension: plan.pilar.toUpperCase(),
+      fase: this.activePillar,
+      riesgoAsociado: 'BAJO',
+      objetivo: plan.visionFamiliar,
+      accionConcreta: mision.microacciones[0]?.descripcion || '',
+      indicadorCumplimiento: mision.microacciones[1]?.descripcion || '',
+      evidenciaRequerida: mision.microacciones[2]?.descripcion || '',
+      impactoIcf: 15,
+      completed: false,
+      plan: { id: this.plans[0].id }
+    };
+
+    this.http.post<any>(`${this.api.base}/plans/tasks`, payload).subscribe({
+      next: (res) => {
+        const taskId = res?.data?.id ?? res?.id;
+        this.load(true);
+        this.loadDashboard();
+        // Abrir Sprint-Daily inmediatamente tras crear la tarea
+        if (taskId) {
+          setTimeout(() => this.openEvidenceModal({ id: taskId, title: mision.titulo }, 'BITACORA'), 400);
+        }
+      },
+      error: (err) => {
+        this.terminalLogs.push(`❌ ERROR al iniciar misión: ${err.message || 'Error del servidor'}`);
         this.scrollToBottom();
-        return;
+      }
+    });
+  }
+
+  /** Después de completar una misión, avanza automáticamente a la siguiente. */
+  private avanzarSiguienteMision(taskIdCompletado: number) {
+    // Buscar en qué plan y en qué posición está la misión recién completada
+    for (const plan of this.planes) {
+      const idx = plan.misiones.findIndex((m: any) => m.backendTaskId === taskIdCompletado);
+      if (idx === -1) continue;
+
+      // ¿Hay siguiente misión incompleta en este plan?
+      for (let i = idx + 1; i < plan.misiones.length; i++) {
+        const siguiente = plan.misiones[i];
+        if (siguiente.estado !== 'Completada') {
+          this.terminalLogs.push(`➡️ Avanzando a la siguiente misión: "${siguiente.titulo}"`);
+          this.scrollToBottom();
+          setTimeout(() => this.comenzarMision(plan, siguiente), 900);
+          return;
+        }
       }
 
-      this.terminalLogs.push(`⚡ [CONECTOR]: Instanciando misión "${mision.titulo}" en el pilar ${plan.pilar}...`);
+      // ¿Hay otra dimensión (plan) con misiones pendientes?
+      for (const otroPlan of this.planes) {
+        if (otroPlan.pilar === plan.pilar) continue;
+        const pendiente = otroPlan.misiones.find((m: any) => m.estado !== 'Completada');
+        if (pendiente) {
+          this.terminalLogs.push(`🔀 Pasando a la dimensión "${otroPlan.pilar}": misión "${pendiente.titulo}"`);
+          this.scrollToBottom();
+          setTimeout(() => this.comenzarMision(otroPlan, pendiente), 900);
+          return;
+        }
+      }
+
+      // Todas las misiones completadas → avanzar al siguiente pilar
+      this.terminalLogs.push(`🏆 ¡Todas las misiones del pilar completadas! Avanzando al siguiente pilar...`);
       this.scrollToBottom();
-
-      const payload = {
-        title: mision.titulo,
-        description: mision.descripcionGeneral,
-        dimension: plan.pilar.toUpperCase(),
-        fase: this.activePillar,
-        riesgoAsociado: 'BAJO',
-        objetivo: plan.visionFamiliar,
-        accionConcreta: mision.microacciones[0]?.descripcion || '',
-        indicadorCumplimiento: mision.microacciones[1]?.descripcion || '',
-        evidenciaRequerida: mision.microacciones[2]?.descripcion || '',
-        impactoIcf: 15,
-        completed: false,
-        plan: { id: this.plans[0].id }
-      };
-
-      this.http.post<any>(`${this.api.base}/plans/tasks`, payload)
-        .subscribe({
-          next: () => {
-            this.terminalLogs.push(`✅ ÉXITO: Misión "${mision.titulo}" activada e inyectada en la base de datos.`);
-            this.scrollToBottom();
-            this.load(true);
-            this.loadDashboard();
-          },
-          error: (err) => {
-            console.error('Error al instanciar misión:', err);
-            this.terminalLogs.push(`❌ ERROR: No se pudo instanciar la misión en el backend: ${err.message || 'Error del servidor'}`);
-            this.scrollToBottom();
-          }
-        });
+      setTimeout(() => this.avanzarPilar(), 1200);
+      return;
     }
+  }
+
+  /** Llama al backend para avanzar el hito/pilar automáticamente. */
+  private avanzarPilar() {
+    this.http.post<any>(`${this.api.base}/milestones/family/${this.familyId}/advance`, {}).subscribe({
+      next: (res) => {
+        const nuevoHito = res?.data?.newMilestone ?? res?.newMilestone ?? 'siguiente';
+        this.terminalLogs.push(`🌟 ¡PILAR COMPLETADO! Tu familia avanza al hito: ${nuevoHito}`);
+        this.scrollToBottom();
+        this.load();
+        this.loadDashboard();
+      },
+      error: () => {
+        this.terminalLogs.push(`ℹ️ Los criterios de avance están en evaluación. El sistema avanzará automáticamente esta noche.`);
+        this.scrollToBottom();
+      }
+    });
   }
 
   openMisionEvidence(mision: Mision) {

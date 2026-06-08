@@ -76,7 +76,7 @@ public class WhisperSttService {
             if (clientTranscript != null && !clientTranscript.isBlank()) {
                 return clientTranscript.trim();
             }
-            return "¿Cuáles son mis misiones actuales?";
+            return "[AUDIO SIMULADO: Configura OPENAI_API_KEY en .env] ¿Cuáles son mis misiones?";
         }
 
         AiProperties.Openai.Whisper cfg = openaiCfg.getWhisper();

@@ -106,6 +106,11 @@ public class PromptGenerator {
                 + "<family_state>\n" + buildFamilyStateJson(ctx) + "\n</family_state>\n\n"
                 + buildPlanBlock(ctx)
                 + buildSprintBlock(ctx)
+                + buildFamilyDnaBlock(ctx)
+                + buildActiveRitualsBlock(ctx)
+                + buildGenerationalTreeBlock(ctx)
+                + buildFamilyContextBlock(ctx)
+                + buildDigitalTwinBlock(ctx)
                 + buildCognitiveBlock(ctx)
                 + buildMemoryContextBlock(ctx)
                 + buildRelationalGraphBlock(ctx)
@@ -159,6 +164,11 @@ public class PromptGenerator {
                 + "<family_state>\n" + buildFamilyStateJson(ctx) + "\n</family_state>\n\n"
                 + buildPlanBlock(ctx)
                 + buildSprintBlock(ctx)
+                + buildFamilyDnaBlock(ctx)
+                + buildActiveRitualsBlock(ctx)
+                + buildGenerationalTreeBlock(ctx)
+                + buildFamilyContextBlock(ctx)
+                + buildDigitalTwinBlock(ctx)
                 + buildCognitiveBlock(ctx)
                 + buildMemoryContextBlock(ctx)
                 + buildRelationalGraphBlock(ctx)
@@ -204,6 +214,11 @@ public class PromptGenerator {
                 + "<family_state>\n" + buildFamilyStateJson(ctx) + "\n</family_state>\n\n"
                 + buildPlanBlock(ctx)
                 + buildSprintBlock(ctx)
+                + buildFamilyDnaBlock(ctx)
+                + buildActiveRitualsBlock(ctx)
+                + buildGenerationalTreeBlock(ctx)
+                + buildFamilyContextBlock(ctx)
+                + buildDigitalTwinBlock(ctx)
                 + buildCognitiveBlock(ctx)
                 + buildMemoryContextBlock(ctx)
                 + buildRelationalGraphBlock(ctx)
@@ -444,6 +459,31 @@ public class PromptGenerator {
         } catch (Exception e) {
             return "";
         }
+    }
+
+    private String buildFamilyDnaBlock(AiContext ctx) {
+        if (ctx.familyDna() == null) return "";
+        return String.format("<family_dna>\n%s\n</family_dna>\n", ctx.familyDna());
+    }
+
+    private String buildDigitalTwinBlock(AiContext ctx) {
+        if (ctx.digitalTwin() == null) return "";
+        return String.format("<digital_twin>\n%s\n</digital_twin>\n", ctx.digitalTwin());
+    }
+
+    private String buildFamilyContextBlock(AiContext ctx) {
+        if (ctx.familyContext() == null) return "";
+        return String.format("<family_context_now>\n%s\n</family_context_now>\n", ctx.familyContext());
+    }
+
+    private String buildGenerationalTreeBlock(AiContext ctx) {
+        if (ctx.generationalTree() == null) return "";
+        return String.format("<generational_tree>\n%s\n</generational_tree>\n", ctx.generationalTree());
+    }
+
+    private String buildActiveRitualsBlock(AiContext ctx) {
+        if (ctx.activeRituals() == null) return "";
+        return String.format("<active_rituals>\n%s\nSi es relevante, guía a la familia a vivir estos rituales.\n</active_rituals>\n", ctx.activeRituals());
     }
 
     private String buildCognitiveBlock(AiContext ctx) {

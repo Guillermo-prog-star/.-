@@ -1,33 +1,33 @@
-# ==========================================
-# ETAPA 1: Construcción (Maven)
-# ==========================================
-FROM maven:3.9.6-eclipse-temurin-21-alpine AS build
+FROM maven:3.9-eclipse-temurin-21 AS builder
+
 WORKDIR /app
 
-# Optimización de caché de dependencias (Pom Layer)
 COPY pom.xml .
-RUN mvn package -Dmaven.test.skip=true -Dmaven.main.skip || true
 
-# Copia de código fuente y empaquetado del artefacto
+RUN mvn -B dependency:go-offline
+
 COPY src ./src
-RUN mvn package -Dmaven.test.skip=true
 
-# ==========================================
-# ETAPA 2: Ejecución (JRE)
-# ==========================================
-FROM eclipse-temurin:21-jre-alpine
+RUN mvn -B clean package -DskipTests
+
+FROM eclipse-temurin:21-jre AS runtime
+
 WORKDIR /app
 
-# Corrección del Warning LegacyKeyValueFormat usando sintaxis KEY=VALUE
-ENV LANG=C.UTF-8
+RUN groupadd -r appgroup \
+    && useradd -r -g appgroup appuser \
+    && mkdir -p /app/logs \
+    && chown -R appuser:appgroup /app
 
-# Instalación de utilidades esenciales del sistema
-RUN apk add --no-cache curl bash
+COPY --from=builder /app/target/*.jar app.jar
 
-# Transferencia del artefacto desde la etapa de compilación
-COPY --from=build /app/target/*.jar app.jar
+RUN chown appuser:appgroup /app/app.jar
+
+ENV SPRING_PROFILES_ACTIVE=prod
+ENV LOGGING_FILE_NAME=/app/logs/backend-prod.log
 
 EXPOSE 8080
 
-# Parámetros de ejecución de la JVM optimizados
-ENTRYPOINT ["java", "-Xmx512m", "-Dfile.encoding=UTF-8", "-Dstdout.encoding=UTF-8", "-Dstderr.encoding=UTF-8", "-jar", "app.jar"]
+USER appuser
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

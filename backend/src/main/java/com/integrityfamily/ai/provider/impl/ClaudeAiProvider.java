@@ -57,6 +57,16 @@ public class ClaudeAiProvider implements AiProvider {
                 """;
             }
             
+            if (userMessage.contains("Sentinel AI") || userMessage.contains("coherence")) {
+                return """
+                {
+                  "score": 92.5,
+                  "coherence": true,
+                  "feedback": "Excelente asimilación conductual de la dinámica familiar. Se observa coherencia y alineación con los acuerdos."
+                }
+                """;
+            }
+
             if (userMessage.contains("JSON")) {
                 return """
                 [
@@ -443,6 +453,15 @@ public class ClaudeAiProvider implements AiProvider {
                        "* **Dimensión Crítica:** EMOCIONES (Reactividad latente).\n" +
                        "* **Análisis de Impacto:** Las variaciones en la sintonía del nodo provocan desconexiones silenciosas momentáneas.\n" +
                        "* **Acción de Contención:** Fomentar el uso de la 'Cámara de Descompresión' diaria y velar por el cumplimiento de cenas libres de móviles.";
+            } else if (userMessage != null && (userMessage.contains("Sentinel AI") || userMessage.contains("coherence"))) {
+                log.info("🧠 [MITIGACIÓN AI] Solicitud de análisis de evidencia detectada. Retornando validación.");
+                return """
+                {
+                  "score": 92.5,
+                  "coherence": true,
+                  "feedback": "Excelente asimilación conductual de la dinámica familiar. Se observa coherencia y alineación con los acuerdos."
+                }
+                """;
             } else if (userMessage != null && userMessage.contains("JSON")) {
                 log.info("🧠 [MITIGACIÓN AI] Solicitud de JSON estructurado en contingencia detectada. Retornando array de misiones.");
                 return """

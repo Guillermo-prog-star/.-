@@ -20,7 +20,14 @@ public class TaskEvidenceDtos {
         String description,
         String fileUrl,
         String textContent,
-        @NotBlank String submittedBy
+        @NotBlank String submittedBy,
+        // Campos multimodales opcionales
+        String emotion,
+        Double latitude,
+        Double longitude,
+        String memberName,
+        String mediaData,  // base64 para foto / audio
+        String mediaMime   // image/jpeg | audio/webm | video/mp4
     ) {}
 
     public record ValidateRequest(
@@ -51,7 +58,14 @@ public class TaskEvidenceDtos {
         Double humanScore,
         boolean validated,
         LocalDateTime createdAt,
-        LocalDateTime validatedAt
+        LocalDateTime validatedAt,
+        // Campos multimodales
+        String emotion,
+        Double latitude,
+        Double longitude,
+        String memberName,
+        String mediaData,
+        String mediaMime
     ) {
         public static TaskEvidenceResponse fromEntity(TaskEvidence entity) {
             if (entity == null) return null;
@@ -70,7 +84,13 @@ public class TaskEvidenceDtos {
                 entity.getHumanScore(),
                 entity.isValidated(),
                 entity.getCreatedAt(),
-                entity.getValidatedAt()
+                entity.getValidatedAt(),
+                entity.getEmotion(),
+                entity.getLatitude(),
+                entity.getLongitude(),
+                entity.getMemberName(),
+                entity.getMediaData(),
+                entity.getMediaMime()
             );
         }
     }

@@ -2,6 +2,7 @@ package com.integrityfamily.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,6 +50,9 @@ public class FamilyMember {
     private String role;
 
     private Integer age;
+
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
 
     @Builder.Default
     @Column(nullable = false)

@@ -1,0 +1,2 @@
+ALTER TABLE critical_days
+ADD COLUMN category VARCHAR(255) NULL;

@@ -57,6 +57,29 @@ public class TaskEvidence {
     @Column(name = "submitted_by")
     private String submittedBy;
 
+    // ── Campos Multimodales ──────────────────────────────────────────────────
+    /** Emoción reportada por el miembro al subir la evidencia. */
+    @Column(length = 80)
+    private String emotion;
+
+    /** Latitud GPS si la familia comparte ubicación. */
+    private Double latitude;
+
+    /** Longitud GPS. */
+    private Double longitude;
+
+    /** Nombre del miembro que capturó la evidencia (texto libre). */
+    @Column(name = "member_name", length = 150)
+    private String memberName;
+
+    /** Datos base64 para foto o audio (cuando no hay cloud storage). */
+    @Column(name = "media_data", columnDefinition = "LONGTEXT")
+    private String mediaData;
+
+    /** Tipo MIME del mediaData (image/jpeg, audio/webm, video/mp4…). */
+    @Column(name = "media_mime", length = 80)
+    private String mediaMime;
+
     @Column(name = "ai_score")
     private Double aiScore;
 
@@ -130,4 +153,22 @@ public class TaskEvidence {
 
     public LocalDateTime getValidatedAt() { return this.validatedAt; }
     public void setValidatedAt(LocalDateTime validatedAt) { this.validatedAt = validatedAt; }
+
+    public String getEmotion() { return this.emotion; }
+    public void setEmotion(String emotion) { this.emotion = emotion; }
+
+    public Double getLatitude() { return this.latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+
+    public Double getLongitude() { return this.longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
+
+    public String getMemberName() { return this.memberName; }
+    public void setMemberName(String memberName) { this.memberName = memberName; }
+
+    public String getMediaData() { return this.mediaData; }
+    public void setMediaData(String mediaData) { this.mediaData = mediaData; }
+
+    public String getMediaMime() { return this.mediaMime; }
+    public void setMediaMime(String mediaMime) { this.mediaMime = mediaMime; }
 }

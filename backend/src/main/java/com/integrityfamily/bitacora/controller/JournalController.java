@@ -42,7 +42,7 @@ public class JournalController {
         return ApiResponse.ok(journalService.createJournal(request));
     }
 
-    @GetMapping("/families/{familyId}/timeline")
+    @GetMapping("/families/{familyId}/legacy-timeline")
     @Operation(summary = "Obtener línea de tiempo longitudinal", description = "Devuelve el historial evolutivo completo ordenado por fecha (evidencias, reflexiones, aprendizajes y bitácoras).")
     public ApiResponse<List<TimelineEntryDto>> getTimeline(@PathVariable Long familyId) {
         return ApiResponse.ok(journalService.getTimeline(familyId));

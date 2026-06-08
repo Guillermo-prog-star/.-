@@ -37,7 +37,13 @@ import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
         "com.integrityfamily.errorprotocol.domain",
         "com.integrityfamily.legado.domain",
         "com.integrityfamily.transformation.domain",
-        "com.integrityfamily.weeklyplan.domain"
+        "com.integrityfamily.weeklyplan.domain",
+        "com.integrityfamily.dna.domain",
+        "com.integrityfamily.ritual.domain",
+        "com.integrityfamily.tree.domain",
+        "com.integrityfamily.twin.domain",
+        "com.integrityfamily.context.domain",
+        "com.integrityfamily.movie.domain"
 })
 public class IntegrityFamilyApplication {
 

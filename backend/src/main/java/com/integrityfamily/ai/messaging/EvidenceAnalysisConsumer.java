@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * SDD SPEC 6.9: Consumidor de Eventos para el Análisis Cognitivo Asíncrono de Evidencias.
@@ -30,6 +31,7 @@ public class EvidenceAnalysisConsumer {
     private final UserNotificationService userNotificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    @Transactional
     @RabbitListener(queues = RabbitConfig.EVIDENCE_ANALYSIS_QUEUE)
     public void onEvidenceSubmitted(SystemEvent event) {
         log.info("🤖 [SENTINEL-AI] Iniciando análisis cognitivo asíncrono para evento de evidencia de la familia: {}", event.familyId());
@@ -81,7 +83,10 @@ public class EvidenceAnalysisConsumer {
                 - Título del Envío: %s
                 - Descripción: %s
                 - Contenido de Texto / Reflexión: %s
-                
+                - Emoción reportada: %s
+                - Ubicación: %s
+                - Capturado por: %s
+
                 Por favor, realiza un análisis conductual riguroso enfocado en la asimilación real de la dinámica de cambio familiar.
                 Determina si lo enviado demuestra de forma creíble que se ha ejecutado la acción concreta y se cumple con el indicador solicitado.
                 
@@ -100,7 +105,12 @@ public class EvidenceAnalysisConsumer {
                 evidence.getEvidenceType().name(),
                 evidence.getTitle() != null ? evidence.getTitle() : "Sin título",
                 evidence.getDescription() != null ? evidence.getDescription() : "Sin descripción",
-                evidence.getTextContent() != null ? evidence.getTextContent() : "Sin contenido de texto"
+                evidence.getTextContent() != null ? evidence.getTextContent() : "Sin contenido de texto",
+                evidence.getEmotion() != null ? evidence.getEmotion() : "No especificada",
+                (evidence.getLatitude() != null && evidence.getLongitude() != null)
+                        ? String.format("%.4f, %.4f", evidence.getLatitude(), evidence.getLongitude())
+                        : "No compartida",
+                evidence.getMemberName() != null ? evidence.getMemberName() : evidence.getSubmittedBy()
             );
 
             // 4. Invocar a Claude de forma síncrona dentro de este hilo asíncrono

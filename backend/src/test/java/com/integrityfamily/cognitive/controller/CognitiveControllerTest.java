@@ -38,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @DisplayName("CognitiveController — Seguridad y Contratos de Respuesta")
+@SuppressWarnings("deprecation")
 public class CognitiveControllerTest {
 
     @Autowired MockMvc mockMvc;

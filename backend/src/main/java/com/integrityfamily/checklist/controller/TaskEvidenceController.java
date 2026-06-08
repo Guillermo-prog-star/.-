@@ -48,7 +48,13 @@ public class TaskEvidenceController {
                 request.description(),
                 request.fileUrl(),
                 request.textContent(),
-                request.submittedBy()
+                request.submittedBy(),
+                request.emotion(),
+                request.latitude(),
+                request.longitude(),
+                request.memberName(),
+                request.mediaData(),
+                request.mediaMime()
         );
         return ApiResponse.ok(TaskEvidenceDtos.TaskEvidenceResponse.fromEntity(evidence));
     }

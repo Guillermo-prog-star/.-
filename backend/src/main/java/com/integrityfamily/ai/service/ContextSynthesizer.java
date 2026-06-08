@@ -28,6 +28,11 @@ import com.integrityfamily.domain.repository.FamilyLongitudinalStateRepository;
 import com.integrityfamily.domain.FamilySprint;
 import com.integrityfamily.domain.SprintMission;
 import com.integrityfamily.domain.repository.FamilySprintRepository;
+import com.integrityfamily.dna.service.FamilyDnaService;
+import com.integrityfamily.ritual.service.RitualEngineService;
+import com.integrityfamily.tree.service.FamilyTreeService;
+import com.integrityfamily.context.service.FamilyContextEngine;
+import com.integrityfamily.twin.service.DigitalTwinService;
 import com.integrityfamily.participation.service.ParticipationService;
 import com.integrityfamily.scanner.domain.FamilyAlert;
 import com.integrityfamily.scanner.repository.FamilyAlertRepository;
@@ -64,6 +69,11 @@ public class ContextSynthesizer {
     private final ConversationSessionRepository conversationSessionRepository;
     private final FamilyLongitudinalStateRepository longitudinalStateRepository;
     private final FamilySprintRepository sprintRepository;
+    private final FamilyDnaService familyDnaService;
+    private final RitualEngineService ritualEngineService;
+    private final FamilyTreeService familyTreeService;
+    private final FamilyContextEngine familyContextEngine;
+    private final DigitalTwinService  digitalTwinService;
     private final ObjectMapper objectMapper;
 
     private static final int MISSION_LIMIT = 5;
@@ -124,7 +134,12 @@ public class ContextSynthesizer {
             buildEmotionalArcFromSession(sessionId),
             buildConversationGoalFromSession(sessionId),
             buildLongitudinalContext(family.getId()),   // ← arquitectura epistemológica
-            buildActiveSprintSnapshot(family.getId())  // ← sprint activo con misiones en curso
+            buildActiveSprintSnapshot(family.getId()), // ← sprint activo con misiones en curso
+            familyDnaService.buildDnaContextBlock(family.getId()),    // ← ADN Familiar
+            ritualEngineService.buildRitualContextBlock(family.getId()), // ← Rituales activos
+            familyTreeService.buildTreeContextBlock(family.getId()),     // ← Árbol Generacional
+            familyContextEngine.buildContextBlock(family.getId()),       // ← Motor de Contexto
+            digitalTwinService.buildTwinContextBlock(family.getId())    // ← Gemelo Digital
         );
     }
 

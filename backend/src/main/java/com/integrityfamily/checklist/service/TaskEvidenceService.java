@@ -20,6 +20,8 @@ import com.integrityfamily.common.config.RabbitConfig;
 import com.integrityfamily.common.event.SystemEvent;
 import com.integrityfamily.common.exception.BusinessException;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -47,9 +49,18 @@ public class TaskEvidenceService {
     }
 
     @Transactional
-    public TaskEvidence submitEvidence(Long taskId, Long familyId, EvidenceType type, String title, 
+    public TaskEvidence submitEvidence(Long taskId, Long familyId, EvidenceType type, String title,
                                         String description, String fileUrl, String textContent, String submittedBy) {
-        
+        return submitEvidence(taskId, familyId, type, title, description, fileUrl, textContent, submittedBy,
+                null, null, null, null, null, null);
+    }
+
+    @Transactional
+    public TaskEvidence submitEvidence(Long taskId, Long familyId, EvidenceType type, String title,
+                                        String description, String fileUrl, String textContent, String submittedBy,
+                                        String emotion, Double latitude, Double longitude,
+                                        String memberName, String mediaData, String mediaMime) {
+
         PlanTask task = planTaskRepository.findById(taskId)
                 .orElseThrow(() -> new BusinessException("Tarea no encontrada", "TASK_NOT_FOUND", HttpStatus.NOT_FOUND));
 
@@ -66,6 +77,12 @@ public class TaskEvidenceService {
                 .fileUrl(fileUrl)
                 .textContent(textContent)
                 .submittedBy(submittedBy)
+                .emotion(emotion)
+                .latitude(latitude)
+                .longitude(longitude)
+                .memberName(memberName)
+                .mediaData(mediaData)
+                .mediaMime(mediaMime)
                 .createdAt(LocalDateTime.now())
                 .validated(false)
                 .build();
@@ -79,13 +96,28 @@ public class TaskEvidenceService {
 
         participationService.record(familyId, null, ParticipationEventType.EVIDENCE_SUBMITTED);
 
-        // Publicar evento en RabbitMQ para disparar el procesamiento asíncrono cognitivo con Claude
-        try {
-            SystemEvent event = SystemEvent.of("evidence.submitted", familyId, saved.getId(), submittedBy);
-            rabbitTemplate.convertAndSend(RabbitConfig.EXCHANGE_NAME, "evidence.submitted", event);
-            log.info("📢 [EVIDENCE-EVENT] Evento 'evidence.submitted' publicado para Evidencia ID '{}'", saved.getId());
-        } catch (Exception e) {
-            log.error("⚠️ [EVIDENCE-EVENT] Error al publicar evento de evidencia para ID {}: {}", saved.getId(), e.getMessage());
+        // Publicar evento en RabbitMQ para disparar el procesamiento asíncrono cognitivo con Claude tras commit
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        SystemEvent event = SystemEvent.of("evidence.submitted", familyId, saved.getId(), submittedBy);
+                        rabbitTemplate.convertAndSend(RabbitConfig.EXCHANGE_NAME, "evidence.submitted", event);
+                        log.info("📢 [EVIDENCE-EVENT] Evento 'evidence.submitted' publicado para Evidencia ID '{}' tras commit", saved.getId());
+                    } catch (Exception e) {
+                        log.error("⚠️ [EVIDENCE-EVENT] Error al publicar evento de evidencia para ID {}: {}", saved.getId(), e.getMessage());
+                    }
+                }
+            });
+        } else {
+            try {
+                SystemEvent event = SystemEvent.of("evidence.submitted", familyId, saved.getId(), submittedBy);
+                rabbitTemplate.convertAndSend(RabbitConfig.EXCHANGE_NAME, "evidence.submitted", event);
+                log.info("📢 [EVIDENCE-EVENT] Evento 'evidence.submitted' publicado para Evidencia ID '{}' de inmediato", saved.getId());
+            } catch (Exception e) {
+                log.error("⚠️ [EVIDENCE-EVENT] Error al publicar evento de evidencia para ID {}: {}", saved.getId(), e.getMessage());
+            }
         }
 
         return saved;

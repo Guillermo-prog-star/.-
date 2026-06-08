@@ -34,7 +34,17 @@ public record AiContext(
     // ── Arquitectura Epistemológica: Estado Longitudinal ─────────────────────
     LongitudinalContext longitudinal,  // memoria estructural de la familia a lo largo del tiempo
     // ── Sprint Activo: Misión en curso ───────────────────────────────────────
-    ActiveSprintSnapshot activeSprint  // null si no hay sprint activo
+    ActiveSprintSnapshot activeSprint,  // null si no hay sprint activo
+    // ── ADN Familiar: Identidad evolutiva persistente ────────────────────────
+    String familyDna,    // bloque textual de valores, fortalezas, sombras y patrones; null si sin datos
+    // ── Motor de Rituales: rituales activos ───────────────────────────────────
+    String activeRituals,   // bloque textual de rituales pendientes; null si no hay rituales activos
+    // ── Árbol Generacional ────────────────────────────────────────────────────
+    String generationalTree,  // contexto del árbol: ancestros y descendientes; null si sin vínculos
+    // ── Motor de Contexto: estado familiar unificado ──────────────────────────
+    String familyContext,     // estado en tiempo real: conexión, estrés, mood, racha; null si sin datos
+    // ── Gemelo Digital: firma conductual y predicciones ───────────────────────
+    String digitalTwin        // firma conductual + predicciones activas; null si sin datos
 ) {
     /** Sprint activo: objetivo, dimensión de riesgo, misiones en curso y avance. */
     public record ActiveSprintSnapshot(

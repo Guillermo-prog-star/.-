@@ -1,0 +1,7 @@
+target
+.idea
+*.iml
+build_log.txt
+.git
+.gitignore
+.DS_Store

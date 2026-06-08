@@ -1,4 +1,4 @@
 -- Archivo limpiado por SDD para evitar conflictos con MasterDataInitializer
-SET FOREIGN_KEY_CHECKS = 0;
+SET REFERENTIAL_INTEGRITY FALSE;
 -- Los datos maestros se gestionan ahora desde MasterDataInitializer.java
-SET FOREIGN_KEY_CHECKS = 1;
+SET REFERENTIAL_INTEGRITY TRUE;

@@ -6,7 +6,7 @@ import { AssessmentService } from '../../core/services/assessment.service';
 import { Question, SaveAnswerRequest, FinalizeRequest } from '../../core/models/question.model';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 import { FamilyStateService } from '../../core/services/family-state.service';
-import { catchError, EMPTY, retry, timer } from 'rxjs';
+import { getFallbackQuestions } from '../../core/data/fallback-questions';
 import { PRESENCE_SCALE } from '../../../domain/constants/presenceScaleDomain';
 import { environment } from '../../../environments/environment';
 
@@ -97,51 +97,23 @@ export class EvaluationComponent implements OnInit {
     // Pasar el pilar para filtrar preguntas específicas del pilar activo
     const pillar = this.activePillar || undefined;
 
-    // Mensajes rotativos amigables — se muestran mientras el servidor despierta
-    const MESSAGES = [
-      'Preparando tu diagnóstico personalizado...',
-      'Conectando con el servidor familiar...',
-      'El servidor está despertando, un momento...',
-      'Casi listo, ya casi...',
-      'Estabilizando la conexión...',
-      'Unos segundos más y comenzamos...',
-    ];
+    // ── PASO 1: cargar preguntas locales INMEDIATAMENTE (cero red) ──────────
+    this.questions     = getFallbackQuestions(pillar);
+    this.loadError     = '';
+    this.loadingMessage = '';
+    if (this.evaluationId > 0) this.restoreProgress();
 
-    this.retryCount = 0;
-    this.loadError  = '';
-    this.loadingMessage = MESSAGES[0];
-
-    // Ping silencioso para despertar el backend (Railway free tier duerme tras inactividad)
-    this.http.get(`${environment.apiBaseUrl}/assessments/resilience-check`, { responseType: 'text' })
-        .subscribe({ error: () => {} }); // ignorar error — solo sirve para hacer wakeup
-
-    const attempt = () => {
-      this.assessmentService.getRandomQuestions(this.familyId, milestone, pillar).subscribe({
-        next: (data: Question[]) => {
-          if (!data || data.length === 0) {
-            scheduleRetry();
-            return;
-          }
-          this.questions = data;
-          this.loadError  = '';
-          if (this.evaluationId > 0) this.restoreProgress();
-        },
-        error: () => scheduleRetry()
-      });
-    };
-
-    const scheduleRetry = () => {
-      // 15 reintentos × 5 s = 75 s (cubre el cold start completo de Railway ~60 s)
-      if (this.retryCount < 15) {
-        this.retryCount++;
-        this.loadingMessage = MESSAGES[Math.min(this.retryCount, MESSAGES.length - 1)];
-        setTimeout(attempt, 5000);
-      } else {
-        this.loadError = 'timeout';
-      }
-    };
-
-    attempt();
+    // ── PASO 2: en segundo plano, intentar obtener preguntas del backend ────
+    // Si el backend responde con preguntas, las reemplaza silenciosamente.
+    // Si falla, el usuario ya tiene las locales y nunca ve error.
+    this.assessmentService.getRandomQuestions(this.familyId, milestone, pillar).subscribe({
+      next: (data: Question[]) => {
+        if (data && data.length > 0) {
+          this.questions = data; // actualiza silenciosamente con versión del servidor
+        }
+      },
+      error: () => { /* silencioso — las preguntas locales ya están activas */ }
+    });
   }
 
   /** Reanuda el cuestionario: restaura las respuestas ya guardadas en el servidor. */

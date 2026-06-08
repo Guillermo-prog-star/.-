@@ -97,15 +97,23 @@ export class EvaluationComponent implements OnInit {
     // Pasar el pilar para filtrar preguntas específicas del pilar activo
     const pillar = this.activePillar || undefined;
 
+    // Mensajes rotativos amigables — se muestran mientras el servidor despierta
     const MESSAGES = [
       'Preparando tu diagnóstico personalizado...',
-      'Calibrando preguntas para tu familia...',
-      'Casi listo, un momento más...',
+      'Conectando con el servidor familiar...',
+      'El servidor está despertando, un momento...',
+      'Casi listo, ya casi...',
+      'Estabilizando la conexión...',
+      'Unos segundos más y comenzamos...',
     ];
 
     this.retryCount = 0;
     this.loadError  = '';
     this.loadingMessage = MESSAGES[0];
+
+    // Ping silencioso para despertar el backend (Railway free tier duerme tras inactividad)
+    this.http.get(`${environment.apiBaseUrl}/assessments/resilience-check`, { responseType: 'text' })
+        .subscribe({ error: () => {} }); // ignorar error — solo sirve para hacer wakeup
 
     const attempt = () => {
       this.assessmentService.getRandomQuestions(this.familyId, milestone, pillar).subscribe({
@@ -123,13 +131,13 @@ export class EvaluationComponent implements OnInit {
     };
 
     const scheduleRetry = () => {
-      if (this.retryCount < 4) {
+      // 15 reintentos × 5 s = 75 s (cubre el cold start completo de Railway ~60 s)
+      if (this.retryCount < 15) {
         this.retryCount++;
         this.loadingMessage = MESSAGES[Math.min(this.retryCount, MESSAGES.length - 1)];
-        setTimeout(attempt, 3000);   // reintenta silenciosamente cada 3 s
+        setTimeout(attempt, 5000);
       } else {
-        // Después de 4 intentos (~12 s) muestra mensaje amigable (no técnico)
-        this.loadError = 'El sistema tardó más de lo esperado. Intenta de nuevo.';
+        this.loadError = 'timeout';
       }
     };
 

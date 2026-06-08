@@ -200,14 +200,14 @@
         <p class="loader-desc">Un momento — estamos seleccionando las preguntas más relevantes para tu familia.</p>
       </ng-container>
 
-      <!-- Después de 4 intentos: mensaje cálido + botón discreto -->
+      <!-- Solo tras 75 s sin respuesta: botón de reintento manual -->
       <ng-container *ngIf="loadError">
         <div style="font-size:40px;margin-bottom:12px;">🌿</div>
-        <h3 class="loader-title">El sistema tardó más de lo esperado</h3>
-        <p class="loader-desc">A veces el servidor necesita un momento para despertar. Haz clic para continuar.</p>
+        <h3 class="loader-title">El servidor tardó más de lo habitual</h3>
+        <p class="loader-desc">Puede ser por mantenimiento. Toca para volver a intentar.</p>
         <button (click)="loadQuestions()"
           style="margin-top:20px;padding:12px 28px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:12px;color:white;font-weight:700;font-size:15px;cursor:pointer;">
-          Continuar →
+          Intentar de nuevo →
         </button>
       </ng-container>
 

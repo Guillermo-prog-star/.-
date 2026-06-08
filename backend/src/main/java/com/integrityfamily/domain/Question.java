@@ -63,11 +63,14 @@ public class Question {
 
     private Double severityWeight; // Ponderación de severidad clínica
 
-    private boolean detectsRelapse; // Detecta recaída
+    @Builder.Default
+    private boolean detectsRelapse = false;   // Detecta recaída
 
-    private boolean requiresEvidence; // Requiere adjuntar evidencia física/conductual
+    @Builder.Default
+    private boolean requiresEvidence = false; // Requiere adjuntar evidencia física/conductual
 
-    private boolean reverseQuestion; // Pregunta espejo / invertida para detectar simulación
+    @Builder.Default
+    private boolean reverseQuestion = false;  // Pregunta espejo / invertida para detectar simulación
 
     @Column(length = 100)
     private String category; // escucha, regulacion emocional, orden, etc.

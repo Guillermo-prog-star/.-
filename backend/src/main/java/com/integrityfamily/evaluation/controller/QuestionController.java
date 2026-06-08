@@ -86,7 +86,7 @@ public class QuestionController {
                 adaptivePool.add(q);
             } else if ("FASE_PILLAR".equals(type) || (q.getPillar() != null && q.getPillar().equalsIgnoreCase(currentMilestone))) {
                 phasePool.add(q);
-            } else if ("MIRROR".equals(type) || q.isReverseQuestion()) {
+            } else if ("MIRROR".equals(type) || Boolean.TRUE.equals(q.getReverseQuestion())) {
                 mirrorPool.add(q);
             } else if ("EXPLORATORY".equals(type)) {
                 exploratoryPool.add(q);

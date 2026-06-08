@@ -149,7 +149,7 @@ public class RiskAlgoV1Engine {
                 // direction=NEGATIVE → mismo efecto (campo legado).
                 // Ambos contribuyen al ICF; solo cambia la dirección de la escala.
                 double normScore;
-                if (q.isReverseQuestion() || "NEGATIVE".equalsIgnoreCase(q.getDirection())) {
+                if (Boolean.TRUE.equals(q.getReverseQuestion()) || "NEGATIVE".equalsIgnoreCase(q.getDirection())) {
                     normScore = ((5.0 - rawValue) / 4.0) * 100.0;
                 } else {
                     normScore = ((rawValue - 1.0) / 4.0) * 100.0;
@@ -164,7 +164,7 @@ public class RiskAlgoV1Engine {
                 weightTotal.merge(dim, effectiveWeight, Double::sum);
 
                 // ── Detección de recaída ─────────────────────────────────────
-                if (q.isDetectsRelapse() && rawValue <= 2) {
+                if (Boolean.TRUE.equals(q.getDetectsRelapse()) && rawValue <= 2) {
                     String key = q.getQuestionKey() != null ? q.getQuestionKey() : "Q-" + q.getId();
                     relapseFlags.add(key + " [dim=" + dim + ", val=" + rawValue + "]");
                     log.warn("[RISK_ALGO_V1] Señal de recaída detectada: {}", key);

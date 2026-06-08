@@ -75,18 +75,31 @@ public class AssessmentController {
         // ── Modo Pilar Puro: si se especifica pillarName devolver 20 preguntas del pilar ──
         if (pillarName != null && !pillarName.isBlank()) {
             String normalizedPillar = pillarName.trim().toLowerCase();
-            List<Question> pillarPool = new ArrayList<>(
-                    questionRepository.findByPillarNameAndActiveTrue(normalizedPillar));
-            if (pillarPool.isEmpty()) {
-                log.warn("[ASSESSMENT-V2] No hay preguntas para pilar '{}'. Usando fallback.", normalizedPillar);
-                return ApiResponse.ok(getDefaultFallbackQuestions(20));
+            try {
+                List<Question> pillarPool = new ArrayList<>(
+                        questionRepository.findByPillarNameAndActiveTrue(normalizedPillar));
+                if (pillarPool.isEmpty()) {
+                    log.warn("[ASSESSMENT-V2] No hay preguntas para pilar '{}'. Usando fallback general.", normalizedPillar);
+                    List<Question> fallback = safeGetAllActive();
+                    Collections.shuffle(fallback);
+                    return ApiResponse.ok(fallback.stream().limit(20).toList());
+                }
+                Collections.shuffle(pillarPool);
+                return ApiResponse.ok(pillarPool.subList(0, Math.min(20, pillarPool.size())));
+            } catch (Exception e) {
+                log.error("[ASSESSMENT-V2] Error cargando preguntas de pilar '{}': {}", normalizedPillar, e.getMessage());
+                List<Question> fallback = safeGetAllActive();
+                if (!fallback.isEmpty()) {
+                    Collections.shuffle(fallback);
+                    return ApiResponse.ok(fallback.stream().limit(20).toList());
+                }
+                return ApiResponse.ok(List.of());
             }
-            Collections.shuffle(pillarPool);
-            return ApiResponse.ok(pillarPool.subList(0, Math.min(20, pillarPool.size())));
         }
 
         // ── Resolver el hito efectivo ────────────────────────────────────────
         // Prioridad: milestoneCode explícito > hito de la familia > W1 por defecto
+        // Todo el bloque está en try-catch: ante cualquier error devuelve fallback (nunca 500)
         String currentMilestone;
         String vulnerableDimension = "comunicacion"; // default si no hay historial
 
@@ -117,6 +130,7 @@ public class AssessmentController {
         }
 
         Set<Question> selected = new LinkedHashSet<>();
+        try {
 
         // --- Pool 1: CORE del hito actual (6) ---
         List<Question> corePool = new ArrayList<>(
@@ -167,9 +181,25 @@ public class AssessmentController {
         List<Question> finalSet = new ArrayList<>(selected);
         Collections.shuffle(finalSet);
 
-        log.info("[ASSESSMENT-V2] Set final: {} preguntas para familia {} en hito {}",
-                finalSet.size(), familyId, currentMilestone);
-        return ApiResponse.ok(finalSet);
+            log.info("[ASSESSMENT-V2] Set final: {} preguntas para familia {} en hito {}",
+                    finalSet.size(), familyId, currentMilestone);
+            return ApiResponse.ok(finalSet);
+        } catch (Exception e) {
+            log.error("[ASSESSMENT-V2] Error construyendo set adaptativo, usando fallback: {}", e.getMessage(), e);
+            List<Question> fallback = safeGetAllActive();
+            Collections.shuffle(fallback);
+            return ApiResponse.ok(fallback.stream().limit(20).toList());
+        }
+    }
+
+    /** Obtiene todas las preguntas activas de forma segura; nunca lanza excepción. */
+    private List<Question> safeGetAllActive() {
+        try {
+            return new ArrayList<>(questionRepository.findByActiveTrue());
+        } catch (Exception ex) {
+            log.error("[ASSESSMENT-V2] safeGetAllActive falló: {}", ex.getMessage());
+            return new ArrayList<>();
+        }
     }
 
     private String detectVulnerableDimension(Long familyId) {

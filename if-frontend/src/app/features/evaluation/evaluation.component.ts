@@ -1,12 +1,14 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { AssessmentService } from '../../core/services/assessment.service';
 import { Question, SaveAnswerRequest, FinalizeRequest } from '../../core/models/question.model';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { catchError, EMPTY } from 'rxjs';
 import { PRESENCE_SCALE } from '../../../domain/constants/presenceScaleDomain';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-evaluation',
@@ -20,6 +22,7 @@ export class EvaluationComponent implements OnInit {
   private familyState       = inject(FamilyStateService);
   private router = inject(Router);
   private route  = inject(ActivatedRoute);
+  private http   = inject(HttpClient);
 
   evaluationId: number = 0;
   questions: Question[] = [];
@@ -63,7 +66,21 @@ export class EvaluationComponent implements OnInit {
     this.activePillar = this.route.snapshot.queryParamMap.get('pillar') ?? '';
 
     if (this.familyId === 0) {
-      this.router.navigate(['/families']);
+      // Recuperar la familia desde el backend si el estado no está cargado en memoria
+      this.http.get<any>(`${environment.apiBaseUrl}/families/mine`).subscribe({
+        next: res => {
+          const family = res?.data ?? res;
+          if (family?.id) {
+            this.familyState.setFamily(family);
+            this.familyId   = family.id;
+            this.familyName = family.name || 'la familia';
+            this.loadQuestions();
+          } else {
+            this.router.navigate(['/families/create']);
+          }
+        },
+        error: () => this.router.navigate(['/families/create'])
+      });
       return;
     }
     this.loadQuestions();

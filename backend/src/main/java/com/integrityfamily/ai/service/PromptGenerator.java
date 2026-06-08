@@ -1099,27 +1099,27 @@ public class PromptGenerator {
                    - NIVEL ESTRATÉGICO (Hitos M12 a M36): Proyectos familiares sencillos (Ej: "Caminar y conversar").
 
                 4. RUTA DE EVOLUCIÓN (3 PILARES Y SECUENCIACIÓN TEMPORAL):
-                   El plan de 36 meses se divide estrictamente en 3 Pilares de Conciencia. Genera exactamente de 6 a 12 microacciones (misiones) en total por cada uno de los siguientes pilares de conciencia, distribuyéndolas de forma equilibrada entre los hitos temporales que pertenecen a dicho pilar:
+                   El plan de 36 meses se divide estrictamente en 3 Pilares de Conciencia. Genera exactamente 4 microacciones (misiones) en total por cada uno de los siguientes pilares de conciencia, distribuyéndolas de forma equilibrada entre los hitos temporales que pertenecen a dicho pilar:
                    - PILAR 1: RECONOCIMIENTO (Fase de Conciencia Inicial. Hitos: W1, M1, M2, M3):
                      * W1 (1 semana): Acción táctica de contención y estabilización inicial.
                      * M1 (1 mes): Primera microrutina instalada.
                      * M2 (2 meses): Profundización de rutinas básicas.
                      * M3 (3 meses): Consolidación de toma de conciencia.
-                     *(Debes generar de 6 a 12 tareas en total en este pilar, asignadas a estos hitos)*
+                     *(Debes generar exactamente 4 tareas en total en este pilar, asignadas a estos hitos)*
                    - PILAR 2: AMOR (Fase de Conciencia Vincular. Hitos: M4, M5, M6, M9, M12):
                      * M4 (4 meses): Instalación de diálogo asertivo.
                      * M5 (5 meses): Co-regulación y confianza mutua.
                      * M6 (6 meses): Hábitos recurrentes y rituales.
                      * M9 (9 meses): Balance de tiempos y cuidado del nodo.
                      * M12 (12 meses): Crecimiento y sintonía familiar.
-                     *(Debes generar de 6 a 12 tareas en total en este pilar, asignadas a estos hitos)*
+                     *(Debes generar exactamente 4 tareas en total en este pilar, asignadas a estos hitos)*
                    - PILAR 3: ENTREGA (Fase de Conciencia Plena / Transformadora. Hitos: M15, M18, M21, M24, M36):
                      * M15 (15 meses): Propósito trascendental compartido.
                      * M18 (18 meses): Trascendencia y apoyo mutuo.
                      * M21 (21 meses): Proyección del legado familiar.
                      * M24 (24 meses): Madurez del sistema familiar.
                      * M36 (36 meses): Legado e impacto hacia el exterior.
-                     *(Debes generar de 6 a 12 tareas en total en este pilar, asignadas a estos hitos)*
+                     *(Debes generar exactamente 4 tareas en total en este pilar, asignadas a estos hitos)*
 
                 5. BUCLE CERRADO (SIMPLIFICADO): NO uses los pasos PLANIFICAR, EJECUTAR y EVALUAR. En su lugar, describe la acción de forma directa y humana.
                 6. REGLA DE ADAPTACIÓN POR CRISIS: Si en <logbook_sentiment_context> "generalLabel" es "CRISIS" o el puntaje es menor a -0.40, los hitos iniciales (W1 y M1) deben centrarse de manera exclusiva en contención emocional de emergencia, pausando cualquier otra dimensión compleja.
@@ -1178,7 +1178,7 @@ public class PromptGenerator {
                              "risk_type": "desconexion_emocional | conflicto_reactivo | ausencia_rutinas | mal_uso_tiempo",
                              "mission_generator": "ESTABILIZACION_EMOCIONAL | CONCIENCIA_EMOCIONAL | ACUERDOS_CONVIVENCIA | CONEXION_FAMILIAR | LEGADO_CONSCIENTE"
                            }
-                           // Agrega de 1 a 3 microacciones por hito para lograr de 6 a 12 misiones por pilar en total.
+                           // Agrega 1 microacción por hito para lograr exactamente 4 misiones por pilar en total.
                          ]
                        }
                      ]

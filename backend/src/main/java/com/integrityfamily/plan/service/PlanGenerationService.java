@@ -445,7 +445,7 @@ public class PlanGenerationService {
                 evaluation.getFamily(), null,
                 "PLAN_GENERATED",
                 "Plan de Transformación generado 📋",
-                String.format("Tu plan para el hito %s está listo con 6 misiones. Visita la sección Planes para comenzar.",
+                String.format("Tu plan para el hito %s está listo con 4 misiones por pilar. Visita la sección Planes para comenzar.",
                     evaluation.getFamily().getCurrentMilestone() != null
                         ? evaluation.getFamily().getCurrentMilestone() : "activo")
             );

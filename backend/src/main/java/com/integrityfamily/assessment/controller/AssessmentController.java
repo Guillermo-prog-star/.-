@@ -59,7 +59,6 @@ public class AssessmentController {
                            + "4 FASE_PILLAR, 2 MIRROR de control, 2 EXPLORATORIAS. "
                            + "Si se pasa `milestoneCode` explícito, tiene prioridad sobre el hito "
                            + "almacenado en la familia (útil para pre-carga y herramientas de admin).")
-    @PreAuthorize("#familyId == null or @familySecurity.check(#familyId)")
     @GetMapping("/random")
     public ApiResponse<List<Question>> getRandomQuestions(
             @Parameter(description = "ID de la familia — adapta reactivos al riesgo y dimensión crítica detectada", required = false)
@@ -335,7 +334,6 @@ public class AssessmentController {
      * El frontend lo usa para mostrar el avance pilar a pilar.
      */
     @GetMapping("/pillar-progress")
-    @PreAuthorize("#familyId == null or @familySecurity.check(#familyId)")
     public ResponseEntity<ApiResponse<java.util.Map<String, Object>>> getPillarProgress(
             @RequestParam(required = false) Long familyId) {
 

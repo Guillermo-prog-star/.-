@@ -5,6 +5,7 @@ import { HttpClient } from '@angular/common/http';
 import { GuardianService } from '../../core/services/guardian.service';
 import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { GuardianStatusResponse, VoteCount } from '../../core/models/models';
+import { environment } from '../../../environments/environment';
 
 interface MemberCandidate {
   memberId: number;
@@ -297,7 +298,7 @@ export class GuardianElectionComponent implements OnInit {
   /** Carga los miembros reales de la familia y luego el estado del guardián */
   loadFamilyMembers() {
     this.loading = true;
-    this.http.get<any>(`/api/families/${this.familyId}`).subscribe({
+    this.http.get<any>(`${environment.apiBaseUrl}/families/${this.familyId}`).subscribe({
       next: res => {
         const family = res?.data ?? res;
         const rawMembers: any[] = family?.members ?? [];

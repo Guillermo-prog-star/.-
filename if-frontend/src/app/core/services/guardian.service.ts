@@ -6,13 +6,14 @@ import {
   GuardianStatusResponse, VoteRequest, ActivateMissionRequest, MissionDto,
   GuardianBriefingResponse, ParticipationPulseResponse
 } from '../models/models';
+import { environment } from '../../../environments/environment';
 
 interface ApiResponse<T> { data: T; message?: string; success?: boolean; }
 
 @Injectable({ providedIn: 'root' })
 export class GuardianService {
 
-  private base = '/api/families';
+  private base = `${environment.apiBaseUrl}/families`;
 
   constructor(private http: HttpClient) {}
 

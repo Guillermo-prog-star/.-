@@ -20,7 +20,7 @@ import { environment } from '../../../environments/environment';
 export class EvaluationComponent implements OnInit {
   private assessmentService = inject(AssessmentService);
   private familyState       = inject(FamilyStateService);
-  private router = inject(Router);
+  readonly router = inject(Router);
   private route  = inject(ActivatedRoute);
   private http   = inject(HttpClient);
 
@@ -32,6 +32,7 @@ export class EvaluationComponent implements OnInit {
   isFinished: boolean = false;
   isTransitioning: boolean = false;
   isLoadingResults: boolean = false;
+  loadError: string = '';   // ← error visible si no cargan las preguntas
   familyId: number = 0;
   familyName: string = '';
 
@@ -96,13 +97,28 @@ export class EvaluationComponent implements OnInit {
 
     this.assessmentService.getRandomQuestions(this.familyId, milestone, pillar).subscribe({
       next: (data: Question[]) => {
+        if (!data || data.length === 0) {
+          this.loadError = 'No se encontraron preguntas para este pilar. Por favor intenta de nuevo o selecciona otro pilar.';
+          return;
+        }
         this.questions = data;
+        this.loadError = '';
         // Tras cargar las preguntas, intentar recuperar el progreso guardado
         if (this.evaluationId > 0) {
           this.restoreProgress();
         }
       },
-      error: (err: any) => console.error('[ASSESSMENT] Error cargando preguntas:', err)
+      error: (err: any) => {
+        console.error('[ASSESSMENT] Error cargando preguntas:', err);
+        const status = err?.status;
+        if (status === 403) {
+          this.loadError = 'No tienes permiso para acceder a este diagnóstico. Vuelve al Dashboard e intenta de nuevo.';
+        } else if (status === 0 || status === 502 || status === 503) {
+          this.loadError = 'El servidor no responde. Espera un momento y recarga la página (el servidor puede estar despertando).';
+        } else {
+          this.loadError = `Error al cargar las preguntas (código ${status}). Recarga la página e intenta de nuevo.`;
+        }
+      }
     });
   }
 

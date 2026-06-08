@@ -187,8 +187,25 @@
     </div>
   </div>
 
-  <!-- Estado 2: Cargando el banco de preguntas adaptativo (Se muestra inicialmente) -->
-  <div class="assessment-container initial-loading" *ngIf="!isLoadingResults">
+  <!-- Estado 2: Error al cargar preguntas -->
+  <div class="assessment-container initial-loading" *ngIf="!isLoadingResults && loadError">
+    <div class="loader-box">
+      <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
+      <h3 class="loader-title" style="color:#fca5a5;">No se pudieron cargar las preguntas</h3>
+      <p class="loader-desc" style="color:rgba(255,255,255,0.6);">{{ loadError }}</p>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap;">
+        <button (click)="loadQuestions()" style="padding:10px 22px;background:rgba(99,102,241,0.2);border:1px solid rgba(99,102,241,0.4);color:#818cf8;border-radius:10px;cursor:pointer;font-weight:700;">
+          🔄 Reintentar
+        </button>
+        <button (click)="router.navigate(['/evaluations/start'])" style="padding:10px 22px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);color:rgba(255,255,255,0.5);border-radius:10px;cursor:pointer;">
+          ← Volver
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Estado 3: Cargando el banco de preguntas adaptativo (Se muestra inicialmente) -->
+  <div class="assessment-container initial-loading" *ngIf="!isLoadingResults && !loadError">
     <div class="loader-box">
       <div class="pulse-loader">
         <div></div>

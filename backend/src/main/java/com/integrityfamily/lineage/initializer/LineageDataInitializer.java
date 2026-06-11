@@ -405,9 +405,15 @@ public class LineageDataInitializer implements CommandLineRunner {
                 .story("Martha Cecilia López Blanco, hija menor de Jesús María y Mariana.")
                 .build());
 
-        // ── GEN +2: NIETOS (por agregar desde la UI) ──────────────────────
+        // ── GEN +2: NIETOS ────────────────────────────────────────────────
         // Los nietos se agregarán progresivamente desde la interfaz de Integrity Family
         // a medida que la familia los incorpore al árbol.
+
+        // ── EVENTOS CLAVE ─────────────────────────────────────────────────
+        seedEvents(bisAbueloPatLopez, bisAbuelaPatLopez,
+                   abueloPatJesus, abuelaPatJesus,
+                   jesusMariaLopez, marianaBlanco,
+                   william, luzMarina, jesusMarijaHijo, sandraPatricia, marthaCecilia);
 
         log.info(">>>> [LINAJE] 15 miembros sembrados en 5 generaciones.");
         return List.of(
@@ -461,7 +467,132 @@ public class LineageDataInitializer implements CommandLineRunner {
         saveRel(lineage, m.get(9),  m.get(14), "biological", false); // Mariana → Martha Cecilia
     }
 
+    // ══════════════════════════════════════════════════════════════════════
+    // EVENTOS POR MIEMBRO
+    // ══════════════════════════════════════════════════════════════════════
+
+    @SuppressWarnings("java:S107")   // más de 7 parámetros es aceptable aquí
+    private void seedEvents(
+            LineageMember bisAbueloPatLopez, LineageMember bisAbuelaPatLopez,
+            LineageMember abueloPatJesus,    LineageMember abuelaPatJesus,
+            LineageMember jesusMariaLopez,   LineageMember marianaBlanco,
+            LineageMember william,           LineageMember luzMarina,
+            LineageMember jesusMariaHijo,    LineageMember sandraPatricia,
+            LineageMember marthaCecilia) {
+
+        // ── Gen -2: Bisabuelos ─────────────────────────────────────────────
+        addEvents(bisAbueloPatLopez,
+                ev("~1885", "Nacimiento", "Bisabuelo paterno de Jesús María. " +
+                        "Raíces de la estirpe López en Colombia.", "birth", 1),
+                ev("~1960", "Fallecimiento", "Vivió aproximadamente 75 años. " +
+                        "Su historia permanece en la memoria oral de la familia.", "death", 2));
+
+        addEvents(bisAbuelaPatLopez,
+                ev("~1890", "Nacimiento", "Bisabuela paterna — apellido García. " +
+                        "Historia por recuperar con la familia.", "birth", 1));
+
+        // ── Gen -1: Abuelos ────────────────────────────────────────────────
+        addEvents(abueloPatJesus,
+                ev("~1920", "Nacimiento", "Abuelo paterno de Jesús María López García. " +
+                        "Generación que vivió la transformación de Colombia.", "birth", 1),
+                ev("~1945", "Formación del hogar", "Estableció el núcleo familiar " +
+                        "que transmitiría los valores a su hijo Jesús María.", "milestone", 2),
+                ev("~1995", "Fallecimiento", "Dejó como herencia el valor del trabajo, " +
+                        "la disciplina y el amor a la familia.", "death", 3));
+
+        addEvents(abuelaPatJesus,
+                ev("~1924", "Nacimiento", "Abuela paterna de Jesús María. " +
+                        "Guardiana de la tradición del rosario familiar.", "birth", 1),
+                ev("~1960", "Inicia tradición del rosario en familia",
+                        "Estableció la práctica de la oración del rosario que persiste " +
+                        "hasta hoy en la familia López Blanco.", "milestone", 2));
+
+        // ── Gen 0: Patriarcas ──────────────────────────────────────────────
+        addEvents(jesusMariaLopez,
+                ev("1957", "Nacimiento en Colombia",
+                        "Nace Jesús María López García, quien se convertiría en el " +
+                        "patriarca de la familia López Blanco y fundador de Integrity Family.",
+                        "birth", 1),
+                ev("~1975", "Primeros años de trabajo",
+                        "Inicio de su trayectoria laboral para contribuir al sostén familiar " +
+                        "y construir su propio camino.", "milestone", 2),
+                ev("1979", "Matrimonio con Mariana Blanco Enríquez",
+                        "Unión que dio origen a la familia López Blanco. Jesús María y Mariana " +
+                        "forjarían juntos un hogar de 5 hijos.",
+                        "marriage", 3),
+                ev("1980", "Nace William — el primogénito",
+                        "Llegada del primer hijo, William López Blanco, quien se convertiría " +
+                        "en el Guardián del Legado generacional.", "milestone", 4),
+                ev("1988", "Nace Martha Cecilia — el hogar completo",
+                        "Con el nacimiento de la quinta hija, el hogar de Jesús María y Mariana " +
+                        "alcanza su plenitud: 5 hijos formados en valores.", "milestone", 5),
+                ev("2024", "Fundación del sistema Integrity Family",
+                        "Jesús María lidera la creación de Integrity Family, plataforma de " +
+                        "gobierno y transformación familiar para familias colombianas.",
+                        "achievement", 6),
+                ev("2026", "Construcción del Árbol de Evolución Familiar",
+                        "Decisión histórica de documentar y sistematizar el legado generacional " +
+                        "de la familia López Blanco para que trascienda las generaciones.",
+                        "achievement", 7));
+
+        addEvents(marianaBlanco,
+                ev("~1960", "Nacimiento",
+                        "Nace Mariana Blanco Enríquez, quien sería la matrona de la " +
+                        "familia López Blanco.", "birth", 1),
+                ev("1979", "Matrimonio con Jesús María López García",
+                        "Unión matrimonial que daría origen al hogar López Blanco. " +
+                        "Mariana sería el pilar del hogar por más de cuatro décadas.",
+                        "marriage", 2),
+                ev("1980", "Primera maternidad — nace William",
+                        "Con el nacimiento de William se inaugura su rol como matrona " +
+                        "y corazón del hogar.", "milestone", 3));
+
+        // ── Gen +1: Los 5 hijos ────────────────────────────────────────────
+        addEvents(william,
+                ev("~1980", "Nacimiento — Primogénito",
+                        "William López Blanco, primer hijo de Jesús María y Mariana. " +
+                        "El que abre el camino para sus cuatro hermanos.", "birth", 1),
+                ev("2024", "Implementación de Integrity Family",
+                        "Lidera la adopción y puesta en marcha de Integrity Family " +
+                        "como guardián del legado generacional de la familia.", "achievement", 2));
+
+        addEvents(luzMarina,
+                ev("~1982", "Nacimiento",
+                        "Luz Marina López Blanco, segunda hija de Jesús María y Mariana.",
+                        "birth", 1));
+
+        addEvents(jesusMariaHijo,
+                ev("~1984", "Nacimiento",
+                        "Jesús María López Blanco, tercer hijo. Porta el nombre del padre " +
+                        "como símbolo de continuidad del legado.", "birth", 1));
+
+        addEvents(sandraPatricia,
+                ev("~1986", "Nacimiento",
+                        "Sandra Patricia López Blanco, cuarta hija de Jesús María y Mariana.",
+                        "birth", 1));
+
+        addEvents(marthaCecilia,
+                ev("~1988", "Nacimiento — La pequeña del hogar",
+                        "Martha Cecilia López Blanco, quinta e última hija. " +
+                        "Completó el círculo familiar de Jesús María y Mariana.", "birth", 1));
+    }
+
     // ── HELPERS ────────────────────────────────────────────────────────────
+
+    private LineageEvent ev(String year, String title, String description, String type, int order) {
+        return LineageEvent.builder()
+                .eventYear(year).title(title).description(description)
+                .eventType(type).isApproximate(year != null && year.startsWith("~"))
+                .sortOrder(order).build();
+    }
+
+    private void addEvents(LineageMember member, LineageEvent... events) {
+        for (LineageEvent e : events) {
+            e.setMember(member);
+            member.getEvents().add(e);
+        }
+        memberRepo.save(member);
+    }
 
     private LineageMember saveMember(FamilyLineage lineage, LineageMember m) {
         m.setLineage(lineage);

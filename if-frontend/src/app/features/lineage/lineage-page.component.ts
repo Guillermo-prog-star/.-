@@ -105,9 +105,21 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     @if (activeTab() === 'tree') {
       <div class="tree-layout">
 
+        <!-- Zoom toolbar -->
+        <div class="zoom-bar">
+          <button class="zb-btn" (click)="zoomOut()" title="Alejar (−)">−</button>
+          <span class="zb-pct">{{ zoomPct() }}%</span>
+          <button class="zb-btn" (click)="zoomIn()" title="Acercar (+)">+</button>
+          <button class="zb-btn zb-reset" (click)="resetView()" title="Restablecer vista">⊞</button>
+          <span class="zb-hint">Alt+arrastrar · rueda = zoom</span>
+        </div>
+
         <!-- Canvas SVG -->
         <div class="tree-canvas-wrap" (click)="clearSelection()">
           <svg class="tree-svg" [attr.viewBox]="svgViewBox()" preserveAspectRatio="xMidYMid meet"
+            style="touch-action:none"
+            (wheel)="onWheel($event)"
+            (mousedown)="onSvgMouseDown($event)"
             (mousemove)="onDragMove($event)" (mouseup)="endDrag($event)" (mouseleave)="endDrag($event)">
             <defs>
               <filter id="lin-glow" x="-60%" y="-60%" width="220%" height="220%">
@@ -1071,6 +1083,29 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     .sp-actions{ display: flex; gap: 8px; padding: 10px 14px; border-top: 1px solid #1f2937;
       justify-content: space-between; align-items: center; }
 
+    /* ── ZOOM TOOLBAR ────────────────────────────────── */
+    .zoom-bar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 6px 16px; border-bottom: 1px solid #1f2937;
+      background: #0d1117;
+    }
+    .zb-btn {
+      width: 28px; height: 28px; border-radius: 6px;
+      background: #1f2937; border: 1px solid #374151;
+      color: #d1d5db; font-size: 16px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .zb-btn:hover { background: #374151; color: #fbbf24; }
+    .zb-reset { font-size: 13px; width: auto; padding: 0 8px; }
+    .zb-pct {
+      min-width: 40px; text-align: center;
+      font-size: 12px; font-weight: 600; color: #9ca3af;
+    }
+    .zb-hint {
+      margin-left: 8px; font-size: 10px; color: #4b5563;
+    }
+
     /* ── GENERATION LEGEND ───────────────────────────── */
     .gen-legend {
       display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
@@ -1341,6 +1376,14 @@ export class LineagePageComponent implements OnInit, OnDestroy {
   }
 
   onDragMove(e: MouseEvent) {
+    // Paneo con Alt+drag o middle-click
+    if (this.isPanning) {
+      const dx = (e.clientX - this.panClientX) * this.panSvgScale;
+      const dy = (e.clientY - this.panClientY) * this.panSvgScale;
+      this.vbOffX.set(this.panVbStartX - dx);
+      this.vbOffY.set(this.panVbStartY - dy);
+      return;
+    }
     const id = this.dragId();
     if (id == null) return;
     e.preventDefault();
@@ -1356,6 +1399,7 @@ export class LineagePageComponent implements OnInit, OnDestroy {
   }
 
   endDrag(e: MouseEvent) {
+    if (this.isPanning) { this.isPanning = false; return; }
     const id = this.dragId();
     if (id == null) return;
     this.dragId.set(null);
@@ -1557,13 +1601,80 @@ export class LineagePageComponent implements OnInit, OnDestroy {
       .subscribe();
   }
 
-  // ── SVG sizing ────────────────────────────────────────────────────────────
+  // ── SVG sizing + Zoom/Pan ─────────────────────────────────────────────────
   svgW = signal(1000);
   svgH = computed(() => {
     const rows = this.visibleGens().length;
     return Math.max(500, rows * 140 + 100);
   });
-  svgViewBox = computed(() => `0 0 ${this.svgW()} ${this.svgH()}`);
+  svgZoom  = signal(1.0);
+  vbOffX   = signal(0);
+  vbOffY   = signal(0);
+
+  svgViewBox = computed(() => {
+    const z   = this.svgZoom();
+    const vbW = this.svgW() / z;
+    const vbH = this.svgH() / z;
+    return `${this.vbOffX()} ${this.vbOffY()} ${vbW} ${vbH}`;
+  });
+
+  // pan state (class fields, not signals — no re-render needed)
+  private isPanning  = false;
+  private panClientX = 0;
+  private panClientY = 0;
+  private panVbStartX = 0;
+  private panVbStartY = 0;
+  private panSvgScale = 1;
+
+  onWheel(e: WheelEvent) {
+    e.preventDefault();
+    const svg = e.currentTarget as SVGSVGElement;
+    const pt  = svg.createSVGPoint();
+    pt.x = e.clientX; pt.y = e.clientY;
+    const sp   = pt.matrixTransform(svg.getScreenCTM()!.inverse());
+    const oldZ = this.svgZoom();
+    const newZ = Math.max(0.25, Math.min(4.0, oldZ * (e.deltaY < 0 ? 1.15 : 1 / 1.15)));
+    const vbW  = this.svgW() / oldZ;
+    const vbH  = this.svgH() / oldZ;
+    const fx   = (sp.x - this.vbOffX()) / vbW;
+    const fy   = (sp.y - this.vbOffY()) / vbH;
+    this.vbOffX.set(sp.x - fx * (this.svgW() / newZ));
+    this.vbOffY.set(sp.y - fy * (this.svgH() / newZ));
+    this.svgZoom.set(newZ);
+  }
+
+  onSvgMouseDown(e: MouseEvent) {
+    // Middle-click (button=1) o Alt+click inicia paneo
+    if (e.button !== 1 && !e.altKey) return;
+    e.preventDefault();
+    this.isPanning = true;
+    this.panClientX  = e.clientX;
+    this.panClientY  = e.clientY;
+    this.panVbStartX = this.vbOffX();
+    this.panVbStartY = this.vbOffY();
+    const svg  = e.currentTarget as SVGSVGElement;
+    const rect = svg.getBoundingClientRect();
+    this.panSvgScale = (this.svgW() / this.svgZoom()) / rect.width;
+  }
+
+  zoomIn()  { this.applyZoomCentered(this.svgZoom() * 1.25); }
+  zoomOut() { this.applyZoomCentered(this.svgZoom() / 1.25); }
+  resetView() { this.svgZoom.set(1.0); this.vbOffX.set(0); this.vbOffY.set(0); }
+  zoomPct() { return Math.round(this.svgZoom() * 100); }
+
+  private applyZoomCentered(newZ: number) {
+    const clampedZ = Math.max(0.25, Math.min(4.0, newZ));
+    const oldZ  = this.svgZoom();
+    const vbW   = this.svgW() / oldZ;
+    const vbH   = this.svgH() / oldZ;
+    const cx    = this.vbOffX() + vbW / 2;
+    const cy    = this.vbOffY() + vbH / 2;
+    const newVbW = this.svgW() / clampedZ;
+    const newVbH = this.svgH() / clampedZ;
+    this.vbOffX.set(cx - newVbW / 2);
+    this.vbOffY.set(cy - newVbH / 2);
+    this.svgZoom.set(clampedZ);
+  }
 
   // ── Derived ───────────────────────────────────────────────────────────────
   memberCount    = computed(() => this.lineage()?.members?.length ?? 0);

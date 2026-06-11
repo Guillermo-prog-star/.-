@@ -1,5 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import {
   FamilyTreeService, FamilyTreeNode, HeritageDto,
@@ -17,7 +18,7 @@ const MSG_ICONS: Record<string, string> = {
 @Component({
   selector: 'app-family-tree',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="ft-page">
 
@@ -37,6 +38,16 @@ const MSG_ICONS: Record<string, string> = {
         <button class="ft-tab" [class.active]="tab() === 'messages'" (click)="loadMessages(); tab.set('messages')">✉️ Mensajes</button>
         <button class="ft-tab" [class.active]="tab() === 'write'"    (click)="tab.set('write')">    ✍️ Escribir</button>
         <button class="ft-tab" [class.active]="tab() === 'link'"     (click)="tab.set('link')">     🔗 Vincular</button>
+      </div>
+
+      <!-- Cross-link to lineage -->
+      <div class="ft-lineage-banner">
+        <span class="flb-icon">🌿</span>
+        <div class="flb-text">
+          <strong>¿Buscas el Árbol de Evolución y Legado?</strong>
+          Miembros individuales, valores, aprendizajes y legado generacional están en
+          <a routerLink="/lineage" class="flb-link">Linaje Generacional →</a>
+        </div>
       </div>
 
       <!-- ── ÁRBOL ─────────────────────────────────────────────── -->
@@ -356,6 +367,19 @@ const MSG_ICONS: Record<string, string> = {
     .ft-icon   { font-size: 42px; }
     .ft-title  { font-size: 24px; font-weight: 800; margin: 0 0 4px; }
     .ft-sub    { font-size: 13px; color: var(--if-text-secondary, #888); margin: 0; }
+
+    /* Lineage cross-link banner */
+    .ft-lineage-banner {
+      display: flex; align-items: center; gap: 12px;
+      background: linear-gradient(135deg, #1c1005 0%, #0d0d0d 100%);
+      border: 1px solid #78350f40; border-radius: 12px;
+      padding: 12px 16px; margin-bottom: 24px; font-size: 13px;
+    }
+    .flb-icon { font-size: 20px; flex-shrink: 0; }
+    .flb-text { color: #9ca3af; }
+    .flb-text strong { color: #d97706; font-weight: 600; }
+    .flb-link { color: #fbbf24; text-decoration: none; font-weight: 600; }
+    .flb-link:hover { text-decoration: underline; }
 
     /* Tabs */
     .ft-tabs {

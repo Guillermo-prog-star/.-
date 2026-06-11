@@ -43,6 +43,7 @@ public class LineageDataInitializer implements CommandLineRunner {
     private final LineageMemberRepository        memberRepo;
     private final LineageRelationshipRepository  relRepo;
     private final LineageGenerationInfoRepository genInfoRepo;
+    private final LineageEventRepository         eventRepo;
 
     @Override
     @Transactional
@@ -589,9 +590,8 @@ public class LineageDataInitializer implements CommandLineRunner {
     private void addEvents(LineageMember member, LineageEvent... events) {
         for (LineageEvent e : events) {
             e.setMember(member);
-            member.getEvents().add(e);
+            eventRepo.save(e);
         }
-        memberRepo.save(member);
     }
 
     private LineageMember saveMember(FamilyLineage lineage, LineageMember m) {

@@ -103,16 +103,17 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
 
     <!-- ── TAB: ÁRBOL ──────────────────────────────────── -->
     @if (activeTab() === 'tree') {
-      <div class="tree-layout">
 
-        <!-- Zoom toolbar -->
-        <div class="zoom-bar">
-          <button class="zb-btn" (click)="zoomOut()" title="Alejar (−)">−</button>
-          <span class="zb-pct">{{ zoomPct() }}%</span>
-          <button class="zb-btn" (click)="zoomIn()" title="Acercar (+)">+</button>
-          <button class="zb-btn zb-reset" (click)="resetView()" title="Restablecer vista">⊞</button>
-          <span class="zb-hint">Alt+arrastrar · rueda = zoom</span>
-        </div>
+      <!-- Zoom toolbar (fuera del flex-row del árbol) -->
+      <div class="zoom-bar">
+        <button class="zb-btn" (click)="zoomOut()" title="Alejar (−)">−</button>
+        <span class="zb-pct">{{ zoomPct() }}%</span>
+        <button class="zb-btn" (click)="zoomIn()" title="Acercar (+)">+</button>
+        <button class="zb-btn zb-reset" (click)="resetView()" title="Restablecer vista">⊞</button>
+        <span class="zb-hint">Alt+arrastrar · rueda = zoom</span>
+      </div>
+
+      <div class="tree-layout">
 
         <!-- Canvas SVG -->
         <div class="tree-canvas-wrap" (click)="clearSelection()">
@@ -408,7 +409,7 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
 
       </div><!-- /tree-layout -->
 
-      <!-- generation legend -->
+      <!-- generation legend (fuera del tree-layout, dentro del @if tree) -->
       <div class="gen-legend">
         @for (band of genBands(); track band.gen) {
           <div class="gl-item" (click)="filterByGen(band.gen)"
@@ -956,7 +957,7 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
 
     /* ── TREE LAYOUT ─────────────────────────────────── */
     .tree-layout {
-      display: flex; height: calc(100vh - 165px); min-height: 500px; overflow: hidden;
+      display: flex; height: calc(100vh - 209px); min-height: 456px; overflow: hidden;
     }
     .tree-canvas-wrap {
       flex: 1; overflow: auto; padding: 16px;
@@ -1772,7 +1773,10 @@ export class LineagePageComponent implements OnInit, OnDestroy {
         memberColor: getGenMeta(m.generation).color
       })))
       .filter(x => x.event.eventYear)
-      .sort((a, b) => parseInt(a.event.eventYear ?? '0') - parseInt(b.event.eventYear ?? '0'));
+      .sort((a, b) => {
+        const parseYear = (y: string) => parseInt(y.replace(/[^0-9-]/g, '')) || 0;
+        return parseYear(a.event.eventYear ?? '0') - parseYear(b.event.eventYear ?? '0');
+      });
   });
 
   membersByGeneration = computed(() => {

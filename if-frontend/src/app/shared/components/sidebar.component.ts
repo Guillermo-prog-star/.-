@@ -166,6 +166,9 @@ import { filter } from 'rxjs/operators';
           <a routerLink="/family-tree"    class="nav-item nav-tree" routerLinkActive="active">
             <span class="nav-icon">🌳</span><span class="nav-text">Árbol Generacional</span>
           </a>
+          <a routerLink="/lineage" class="nav-item nav-lineage" routerLinkActive="active">
+            <span class="nav-icon">🌿</span><span class="nav-text">Linaje Generacional</span>
+          </a>
         </div>
 
         <div class="divider"></div>

@@ -43,7 +43,8 @@ import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
         "com.integrityfamily.tree.domain",
         "com.integrityfamily.twin.domain",
         "com.integrityfamily.context.domain",
-        "com.integrityfamily.movie.domain"
+        "com.integrityfamily.movie.domain",
+        "com.integrityfamily.lineage.domain"
 })
 public class IntegrityFamilyApplication {
 

@@ -147,6 +147,14 @@ export const routes: Routes = [
         ]
       },
 
+      // ── Linaje Generacional ──────────────────────────────────────────
+      {
+        path: 'lineage',
+        title: 'Linaje Generacional',
+        loadComponent: () => import('./features/lineage/lineage-page.component')
+          .then(m => m.LineagePageComponent)
+      },
+
       // ── Legado Familiar ──────────────────────────────────────────────
       {
         path: 'legado',

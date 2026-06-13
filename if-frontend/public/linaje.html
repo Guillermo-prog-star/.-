@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Linaje García · IF-LIN-GARCIA-0001</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:#0a0e1a;color:#e0e0e0}
+
+/* NAV */
+nav{position:fixed;top:0;left:0;right:0;height:50px;z-index:300;background:rgba(10,14,26,.97);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.07);padding:0 18px;display:flex;align-items:center;gap:10px}
+.nl-icon{width:28px;height:28px;border-radius:7px;background:#fcfbf4;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nl-icon svg{width:19px;height:19px}
+.nl-name{font-size:13px;font-weight:800;color:#fff}
+.nsep{width:1px;height:16px;background:rgba(255,255,255,.1)}
+.nmod{font-size:11px;color:#64748b}
+.nid{font-size:9px;font-weight:800;color:#f97316;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.25);padding:3px 10px;border-radius:20px;letter-spacing:.04em}
+.ntabs{margin-left:auto;display:flex;gap:2px}
+.ntab{padding:5px 14px;border-radius:7px;font-size:11px;font-weight:700;color:rgba(255,255,255,.35);cursor:pointer;transition:all .15s;border:none;background:none}
+.ntab.active{background:rgba(249,115,22,.12);color:#fb923c}
+.ntab:hover:not(.active){color:rgba(255,255,255,.6)}
+
+/* APP */
+#app{position:fixed;top:50px;left:0;right:0;bottom:0;display:flex;overflow:hidden}
+
+/* ══ TREE TAB ══ */
+#tab-tree{flex:1;overflow:auto;position:relative;display:flex;justify-content:center;align-items:flex-start}
+.tab-content{display:none;flex:1;overflow-y:auto}
+.tab-content.active{display:flex}
+#tab-tree.active{display:flex}
+
+/* Atmospheric background */
+#tree-bg{
+  position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 90%,rgba(120,80,20,.35) 0%,transparent 70%),
+    radial-gradient(ellipse 100% 60% at 50% 100%,rgba(80,50,10,.5) 0%,transparent 60%),
+    radial-gradient(ellipse 80% 50% at 20% 20%,rgba(10,20,50,.6) 0%,transparent 70%),
+    radial-gradient(ellipse 80% 50% at 80% 10%,rgba(10,20,50,.6) 0%,transparent 70%),
+    linear-gradient(180deg,#060a16 0%,#0d1520 40%,#141e10 100%);
+}
+
+/* Stage */
+#stage{position:relative;width:1320px;height:980px;flex-shrink:0;margin:20px auto}
+
+/* Tree SVG */
+#tree-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+
+/* Leaf particles (decorative) */
+.leaf{position:absolute;width:8px;height:8px;border-radius:50% 0;background:rgba(60,120,30,.4);pointer-events:none;transform:rotate(45deg)}
+
+/* ══ MEMBER NODES ══ */
+.node{
+  position:absolute;transform:translate(-50%,-50%);
+  display:flex;flex-direction:column;align-items:center;
+  cursor:pointer;z-index:20;
+  transition:filter .2s;
+}
+.node:hover{filter:brightness(1.2)}
+.node:hover .ring{transform:scale(1.12);box-shadow:0 0 22px var(--gc)}
+.node.sel .ring{outline:3px solid #f97316;outline-offset:3px;box-shadow:0 0 24px rgba(249,115,22,.5)}
+
+.ring{
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  transition:transform .2s,box-shadow .2s;
+  border:2.5px solid;position:relative;overflow:hidden;
+  box-shadow:0 4px 16px rgba(0,0,0,.5);
+}
+.ring::before{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,rgba(255,255,255,.18),transparent 70%);
+  pointer-events:none;
+}
+
+/* Status dot */
+.sdot{position:absolute;bottom:2px;right:2px;width:9px;height:9px;border-radius:50%;border:1.5px solid rgba(0,0,0,.5);z-index:2}
+.sa{background:#10b981;box-shadow:0 0 6px rgba(16,185,129,.8)}
+.sd{background:#475569}
+.su{background:#6366f1}
+.sf{background:#f97316;animation:fp 2s ease-in-out infinite}
+@keyframes fp{0%,100%{opacity:.3}50%{opacity:1}}
+
+.nav{
+  font-size:9.5px;font-weight:800;color:rgba(255,255,255,.85);
+  text-align:center;margin-top:5px;white-space:nowrap;
+  text-shadow:0 1px 4px rgba(0,0,0,.9),0 0 8px rgba(0,0,0,.6);
+  max-width:100px;line-height:1.3;
+}
+.nav .sub{font-weight:400;color:rgba(255,255,255,.5);font-size:8px;display:block}
+.nav .dates{color:rgba(255,255,255,.35);font-size:8px;font-weight:400;display:block;margin-top:1px}
+
+/* gen-specific colors via CSS var */
+.g0{--gc:rgba(107,114,128,.6)}
+.g1{--gc:rgba(96,165,250,.6)}
+.g2{--gc:rgba(52,211,153,.6)}
+.g3c{--gc:rgba(251,146,60,.8)} /* current */
+.g4{--gc:rgba(249,115,22,.35)}
+
+/* Generation badges */
+.gbadge{position:absolute;right:18px;background:rgba(10,14,26,.88);border:1px solid rgba(255,200,80,.12);border-radius:8px;padding:5px 11px;pointer-events:none}
+.gb1{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.07em}
+.gb2{font-size:9px;color:#475569;margin-top:1px}
+
+/* Legend */
+#legend{position:sticky;top:0;z-index:50;display:flex;gap:10px;flex-wrap:wrap;padding:7px 16px;background:rgba(10,14,26,.9);border-bottom:1px solid rgba(255,200,80,.08);font-size:10px;color:#94a3b8;flex-shrink:0}
+.li{display:flex;align-items:center;gap:5px}
+.ld{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ══ OTHER TABS ══ */
+.tab-inner{padding:28px;display:flex;flex-direction:column;gap:16px;max-width:800px;margin:0 auto;width:100%}
+.sec-label{font-size:9px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.tab-title{font-family:'Playfair Display',serif;font-size:24px;color:#fff;margin-bottom:4px}
+.tab-sub{font-size:12px;color:#64748b}
+.tl-item{display:flex;gap:14px;padding:14px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px}
+.tl-ico{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.tl-y{font-size:9px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.tl-t{font-size:12px;font-weight:800;color:#fff;margin-bottom:3px}
+.tl-d{font-size:11px;color:#64748b;line-height:1.65}
+.tl-s{font-size:9px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:5px;display:inline-block}
+.nc{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px}
+.nc-gen{font-size:9px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+.nc-title{font-size:16px;font-weight:800;color:#fff;margin-bottom:10px;font-family:'Playfair Display',serif}
+.nc-text{font-size:12px;color:#94a3b8;line-height:1.8;margin-bottom:10px}
+.nc-text strong{color:#e0e0e0}
+.nc-tags{display:flex;gap:6px;flex-wrap:wrap}
+.nc-tag{font-size:9px;font-weight:700;padding:3px 9px;border-radius:10px}
+.lcard{border-radius:14px;padding:18px}
+.lc-ico{font-size:22px;margin-bottom:6px}
+.lc-cat{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.lc-title{font-size:14px;font-weight:800;color:#fff;margin-bottom:5px}
+.lc-desc{font-size:11px;color:#64748b;line-height:1.65}
+
+/* ══ SIDE PANEL ══ */
+#sp{width:0;overflow:hidden;background:rgba(10,14,26,.98);border-left:1px solid rgba(255,200,80,.1);transition:width .28s ease;flex-shrink:0;display:flex;flex-direction:column}
+#sp.open{width:330px}
+.sp-hdr{padding:14px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;align-items:center;gap:9px}
+.sp-av{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:#fff;flex-shrink:0;border:2px solid rgba(255,200,80,.3)}
+.sp-nm{font-size:16px;font-weight:900;color:#fff;line-height:1.2}
+.sp-rl{font-size:10px;color:#64748b}
+.spx{margin-left:auto;background:none;border:none;color:#475569;cursor:pointer;font-size:16px;padding:4px}
+.spx:hover{color:#fff}
+.sp-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.spsec{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:12px}
+.spsl{font-size:9px;font-weight:800;color:#f97316;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px}
+.sprow{display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px}
+.spk{color:#64748b}.spv{color:#e0e0e0;font-weight:600}.spv.ap{color:#f59e0b}.spv.un{color:#6366f1;font-style:italic}
+.spcert{background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.18);border-radius:10px;padding:11px}
+.spcbar{background:rgba(0,0,0,.3);border-radius:3px;height:5px;overflow:hidden;margin:5px 0}
+.spcfill{height:100%;border-radius:3px}
+.spctxt{font-size:9px;color:#94a3b8}
+.spstory{font-size:11px;color:#94a3b8;line-height:1.8;font-style:italic}
+.spstory strong{color:#e0e0e0;font-style:normal}
+.spev{display:flex;flex-direction:column;gap:6px}
+.spe{display:flex;gap:7px;align-items:flex-start}
+.sped{width:7px;height:7px;border-radius:50%;background:#f97316;flex-shrink:0;margin-top:3px}
+.spey{font-size:9px;font-weight:800;color:#f97316;width:32px;flex-shrink:0}
+.spet{font-size:10px;color:#94a3b8}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nl-icon"><svg viewBox="0 0 56 56" fill="none"><circle cx="20" cy="28" r="13" stroke="#f97316" stroke-width="3" fill="none"/><circle cx="36" cy="28" r="13" stroke="#4f46e5" stroke-width="3" fill="none"/><circle cx="28" cy="20" r="7" fill="#f97316" opacity=".9"/><circle cx="28" cy="36" r="5" fill="#4f46e5" opacity=".8"/></svg></div>
+  <span class="nl-name">Integrity Family</span>
+  <div class="nsep"></div>
+  <span class="nmod">Linaje Generacional</span>
+  <div class="nid">IF-LIN-GARCIA-0001</div>
+  <div class="ntabs">
+    <button class="ntab active" onclick="switchTab('tree')">🌳 Árbol</button>
+    <button class="ntab" onclick="switchTab('hist')">📅 Historia</button>
+    <button class="ntab" onclick="switchTab('narr')">✍️ Narrativa</button>
+    <button class="ntab" onclick="switchTab('leg')">🏛️ Legado</button>
+  </div>
+</nav>
+
+<div id="app">
+
+<!-- ══════════ TAB: ÁRBOL ══════════ -->
+<div class="tab-content active" id="tab-tree" style="display:flex;flex-direction:column;background:#0a0e1a">
+
+  <div id="legend">
+    <span class="li"><span class="ld" style="background:#10b981;box-shadow:0 0 5px rgba(16,185,129,.6)"></span>Vivo/a</span>
+    <span class="li"><span class="ld" style="background:#475569"></span>Fallecido/a</span>
+    <span class="li"><span class="ld" style="background:#6366f1"></span>Desconocido</span>
+    <span class="li"><span class="ld" style="background:#f97316;animation:fp 2s infinite"></span>Generación futura</span>
+    <span class="li" style="border-left:1px solid rgba(255,255,255,.08);padding-left:10px;margin-left:6px">
+      <svg width="28" height="9"><path d="M 0 4 C 8 4 20 4 28 4" stroke="#d97706" stroke-width="2" fill="none" opacity=".7"/></svg>Rama principal
+    </span>
+    <span class="li">
+      <svg width="28" height="9"><path d="M 0 4 C 8 4 20 4 28 4" stroke="#64748b" stroke-width="1.5" fill="none" stroke-dasharray="3,2" opacity=".7"/></svg>Pareja
+    </span>
+    <span style="margin-left:auto;font-size:10px;color:#374151;font-style:italic">← Arrastra para explorar · Haz clic en un miembro →</span>
+  </div>
+
+  <div style="flex:1;overflow:auto;position:relative">
+    <div id="tree-bg"></div>
+    <div id="stage">
+
+      <!-- ══ SVG TREE BRANCHES ══ -->
+      <svg id="tree-svg">
+        <defs>
+          <!-- GOLD glow filter — outer halo -->
+          <filter id="glow-gold" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="6" result="blur1"/>
+            <feGaussianBlur stdDeviation="12" result="blur2"/>
+            <feMerge>
+              <feMergeNode in="blur2"/>
+              <feMergeNode in="blur1"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <filter id="glow-soft" x="-40%" y="-40%" width="180%" height="180%">
+            <feGaussianBlur stdDeviation="4" result="blur1"/>
+            <feGaussianBlur stdDeviation="8" result="blur2"/>
+            <feMerge>
+              <feMergeNode in="blur2"/>
+              <feMergeNode in="blur1"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+
+          <!-- TRUE GOLD gradients -->
+          <linearGradient id="trunk-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fcd34d" stop-opacity=".5"/>
+            <stop offset="35%" stop-color="#f59e0b" stop-opacity="1"/>
+            <stop offset="70%" stop-color="#d97706" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#92400e" stop-opacity=".9"/>
+          </linearGradient>
+          <linearGradient id="branch-left" x1="1" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#fbbf24" stop-opacity=".9"/>
+            <stop offset="100%" stop-color="#b45309" stop-opacity=".4"/>
+          </linearGradient>
+          <linearGradient id="branch-right" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#fbbf24" stop-opacity=".9"/>
+            <stop offset="100%" stop-color="#b45309" stop-opacity=".4"/>
+          </linearGradient>
+        </defs>
+
+        <!-- ══ GLOW HALO LAYERS (drawn first, behind everything) ══ -->
+        <!-- Trunk halo -->
+        <path d="M 660 960 C 660 900 658 850 655 790 C 652 740 650 720 652 698"
+          stroke="#fbbf24" stroke-width="32" fill="none" opacity=".08"/>
+        <path d="M 660 960 C 660 900 658 850 655 790 C 652 740 650 720 652 698"
+          stroke="#f59e0b" stroke-width="22" fill="none" opacity=".15"/>
+        <!-- Left main branch halo -->
+        <path d="M 650 740 C 600 720 540 680 460 630 C 410 600 385 570 370 518"
+          stroke="#fbbf24" stroke-width="24" fill="none" opacity=".08"/>
+        <!-- Right main branch halo -->
+        <path d="M 655 730 C 690 710 720 680 745 648 C 762 625 768 605 764 535"
+          stroke="#fbbf24" stroke-width="24" fill="none" opacity=".08"/>
+        <!-- Far right halo -->
+        <path d="M 658 710 C 730 680 830 620 930 555 C 975 525 1005 498 1022 468"
+          stroke="#fbbf24" stroke-width="20" fill="none" opacity=".07"/>
+
+        <!-- ══ TRUNK ══ -->
+        <path d="M 660 960 C 660 900 658 850 655 790 C 652 740 650 720 652 698"
+          stroke="url(#trunk-grad)" stroke-width="14" fill="none" filter="url(#glow-gold)"/>
+
+        <!-- ══ MAIN LEFT BRANCH (trunk → Luis) ══ -->
+        <path d="M 650 740 C 600 720 540 680 460 630 C 410 600 385 570 370 518"
+          stroke="url(#branch-left)" stroke-width="9" fill="none" filter="url(#glow-soft)"/>
+
+        <!-- ══ BRANCH: Luis → Alberto ══ -->
+        <path d="M 370 518 C 340 490 300 460 265 420 C 248 400 242 382 238 360"
+          stroke="#fbbf24" stroke-width="6" fill="none" filter="url(#glow-soft)" opacity=".85"/>
+
+        <!-- ══ BRANCH: Alberto → José ══ -->
+        <path d="M 238 360 C 215 330 188 295 162 255 C 150 237 144 225 140 212"
+          stroke="#fcd34d" stroke-width="4" fill="none" filter="url(#glow-soft)" opacity=".75"/>
+
+        <!-- ══ COUPLE ARC: José ↔ María Rosa ══ -->
+        <path d="M 140 212 C 162 168 192 155 228 164"
+          stroke="#fcd34d" stroke-width="2" fill="none" stroke-dasharray="4,3" opacity=".6"/>
+
+        <!-- ══ BRANCH: Alberto → Rosa María ══ -->
+        <path d="M 238 360 C 255 340 272 320 290 300"
+          stroke="#fcd34d" stroke-width="2" fill="none" stroke-dasharray="4,3" opacity=".55"/>
+
+        <!-- ══ MAIN RIGHT BRANCH (trunk → Cecilia) ══ -->
+        <path d="M 655 730 C 690 710 720 680 745 648 C 762 625 768 605 764 535"
+          stroke="url(#branch-right)" stroke-width="9" fill="none" filter="url(#glow-soft)"/>
+
+        <!-- ══ BRANCH: Cecilia → Hernando ══ -->
+        <path d="M 764 535 C 790 505 820 470 848 432 C 860 415 866 402 868 386"
+          stroke="#fbbf24" stroke-width="6" fill="none" filter="url(#glow-soft)" opacity=".8"/>
+
+        <!-- ══ BRANCH: Hernando → Elena ══ -->
+        <path d="M 868 386 C 898 362 928 340 960 326"
+          stroke="#fcd34d" stroke-width="3" fill="none" filter="url(#glow-soft)" opacity=".65"/>
+
+        <!-- ══ BRANCH: Elena → Carmen ══ -->
+        <path d="M 960 326 C 988 300 1020 268 1055 238 C 1074 222 1092 210 1116 196"
+          stroke="#fcd34d" stroke-width="4" fill="none" filter="url(#glow-soft)" opacity=".7"/>
+
+        <!-- ══ COUPLE ARC: Unknown ↔ Carmen ══ -->
+        <path d="M 1116 196 C 1130 172 1148 160 1168 158"
+          stroke="#a5b4fc" stroke-width="2" fill="none" stroke-dasharray="3,3" opacity=".6"/>
+
+        <!-- ══ FAR RIGHT BRANCH (trunk → Hugo/Patricia) ══ -->
+        <path d="M 658 710 C 730 680 830 620 930 555 C 975 525 1005 498 1022 468"
+          stroke="url(#branch-right)" stroke-width="7" fill="none" filter="url(#glow-soft)"/>
+
+        <!-- ══ Hugo ↔ Patricia couple ══ -->
+        <path d="M 1022 468 C 1048 448 1070 434 1096 426"
+          stroke="#fcd34d" stroke-width="2" fill="none" stroke-dasharray="4,3" opacity=".6"/>
+
+        <!-- ══ BRANCH: Carlos → Valentina ══ -->
+        <path d="M 620 722 C 590 748 562 772 536 798"
+          stroke="#fbbf24" stroke-width="5" fill="none" filter="url(#glow-soft)" opacity=".75"/>
+
+        <!-- ══ BRANCH: Camila → Santiago ══ -->
+        <path d="M 728 722 C 758 748 786 772 812 800"
+          stroke="#fbbf24" stroke-width="5" fill="none" filter="url(#glow-soft)" opacity=".75"/>
+
+        <!-- ══ BRANCH: Valentina → Fut1 ══ -->
+        <path d="M 536 798 C 518 826 502 852 488 878"
+          stroke="#fbbf24" stroke-width="3" fill="none" stroke-dasharray="5,3" opacity=".45"/>
+
+        <!-- ══ BRANCH: Santiago → Fut2 ══ -->
+        <path d="M 812 800 C 826 828 838 854 848 880"
+          stroke="#fbbf24" stroke-width="3" fill="none" stroke-dasharray="5,3" opacity=".45"/>
+
+        <!-- ══ COUPLE LINE: Carlos ↔ Camila ══ -->
+        <path d="M 640 714 C 658 706 682 706 708 714"
+          stroke="#fbbf24" stroke-width="3" fill="none" opacity=".7"/>
+        <text x="674" y="708" text-anchor="middle" font-size="14" fill="#fbbf24" opacity=".9">♥</text>
+
+        <!-- ══ LEAF GLOW DOTS along branches ══ -->
+        <g filter="url(#glow-soft)">
+          <circle cx="490" cy="632" r="3.5" fill="#fcd34d" opacity=".5"/>
+          <circle cx="430" cy="610" r="3" fill="#fbbf24" opacity=".4"/>
+          <circle cx="302" cy="474" r="3" fill="#fcd34d" opacity=".45"/>
+          <circle cx="196" cy="342" r="2.5" fill="#fbbf24" opacity=".4"/>
+          <circle cx="168" cy="242" r="2" fill="#fef3c7" opacity=".35"/>
+          <circle cx="722" cy="650" r="3.5" fill="#fcd34d" opacity=".5"/>
+          <circle cx="792" cy="578" r="3" fill="#fbbf24" opacity=".4"/>
+          <circle cx="898" cy="500" r="3" fill="#fcd34d" opacity=".45"/>
+          <circle cx="1002" cy="440" r="2.5" fill="#fbbf24" opacity=".4"/>
+          <circle cx="340" cy="314" r="2.5" fill="#fef3c7" opacity=".38"/>
+          <circle cx="900" cy="362" r="2.5" fill="#fef3c7" opacity=".38"/>
+          <circle cx="820" cy="618" r="2" fill="#fcd34d" opacity=".35"/>
+        </g>
+
+        <!-- ══ GREEN FOLIAGE dots (subtle) ══ -->
+        <g opacity=".25" fill="#4ade80">
+          <circle cx="155" cy="195" r="4"/><circle cx="215" cy="148" r="3.5"/>
+          <circle cx="128" cy="228" r="3"/><circle cx="248" cy="138" r="3"/>
+          <circle cx="1100" cy="182" r="4"/><circle cx="1178" cy="145" r="3.5"/>
+          <circle cx="1138" cy="150" r="3"/>
+        </g>
+      </svg>
+
+      <!-- ══ GENERATION BADGES ══ -->
+      <div class="gbadge" style="top:115px"><div class="gb1" style="color:#6b7280">Bisabuelos</div><div class="gb2">≈ 1880 – 1920</div></div>
+      <div class="gbadge" style="top:300px"><div class="gb1" style="color:#3b82f6">Abuelos</div><div class="gb2">1912 – 1928</div></div>
+      <div class="gbadge" style="top:470px"><div class="gb1" style="color:#10b981">Padres</div><div class="gb2">1940 – 1951</div></div>
+      <div class="gbadge" style="top:660px"><div class="gb1" style="color:#f97316">Familia actual</div><div class="gb2">1982 – 2013</div></div>
+      <div class="gbadge" style="top:870px"><div class="gb1" style="color:#f97316;opacity:.5">Futura</div><div class="gb2">por venir</div></div>
+
+      <!-- ══════════ MEMBER NODES ══════════ -->
+
+      <!-- GEN 0 — BISABUELOS -->
+      <!-- José García -->
+      <div class="node g0" id="n-jg" style="left:140px;top:212px" onclick="openM('jg')">
+        <div class="ring" style="width:72px;height:72px;background:linear-gradient(135deg,#292524,#57534e);border-color:rgba(120,113,108,.5)">
+          <div class="sdot sd"></div>
+          <span style="font-size:15px;font-weight:900;color:#d6d3d1">JG</span>
+        </div>
+        <div class="nav">José García<span class="sub">Medrano</span><span class="dates">~1881 — ~1948</span></div>
+      </div>
+
+      <!-- María Rosa -->
+      <div class="node g0" id="n-mrh" style="left:232px;top:162px" onclick="openM('mrh')">
+        <div class="ring" style="width:70px;height:70px;background:linear-gradient(135deg,#292524,#6b7280);border-color:rgba(120,113,108,.5)">
+          <div class="sdot sd"></div>
+          <span style="font-size:15px;font-weight:900;color:#d6d3d1">MR</span>
+        </div>
+        <div class="nav">María Rosa<span class="sub">Herrera</span><span class="dates">~1884 — ~1952</span></div>
+      </div>
+
+      <!-- Unknown López -->
+      <div class="node g0" id="n-dlv" style="left:1168px;top:158px" onclick="openM('dlv')">
+        <div class="ring" style="width:68px;height:68px;background:rgba(49,46,129,.4);border-color:rgba(99,102,241,.5);border-style:dashed">
+          <div class="sdot su"></div>
+          <span style="font-size:18px;font-weight:900;color:#a5b4fc">?</span>
+        </div>
+        <div class="nav" style="color:rgba(165,180,252,.7)">Desconocido<span class="sub">López</span><span class="dates">datos perdidos</span></div>
+      </div>
+
+      <!-- Carmen Inés -->
+      <div class="node g0" id="n-civ" style="left:1116px;top:194px" onclick="openM('civ')">
+        <div class="ring" style="width:72px;height:72px;background:linear-gradient(135deg,#3b0764,#7e22ce);border-color:rgba(168,85,247,.5)">
+          <div class="sdot sd"></div>
+          <span style="font-size:15px;font-weight:900;color:#e9d5ff">CI</span>
+        </div>
+        <div class="nav">Carmen Inés<span class="sub">Vargas</span><span class="dates">~1890 — 1961</span></div>
+      </div>
+
+      <!-- GEN 1 — ABUELOS -->
+      <!-- Alberto -->
+      <div class="node g1" id="n-agpm" style="left:238px;top:360px" onclick="openM('agpm')">
+        <div class="ring" style="width:80px;height:80px;background:linear-gradient(135deg,#1e3a5f,#1d4ed8);border-color:rgba(59,130,246,.55)">
+          <div class="sdot sd"></div>
+          <span style="font-size:16px;font-weight:900;color:#bfdbfe">AG</span>
+        </div>
+        <div class="nav">Alberto García<span class="sub">Herrera</span><span class="dates">1912 — 1979</span></div>
+      </div>
+
+      <!-- Rosa María -->
+      <div class="node g1" id="n-agpf" style="left:294px;top:298px" onclick="openM('agpf')">
+        <div class="ring" style="width:76px;height:76px;background:linear-gradient(135deg,#3b1278,#6d28d9);border-color:rgba(139,92,246,.55)">
+          <div class="sdot sd"></div>
+          <span style="font-size:15px;font-weight:900;color:#ddd6fe">RM</span>
+        </div>
+        <div class="nav">Rosa María<span class="sub">Morales</span><span class="dates">1916 — 1991</span></div>
+      </div>
+
+      <!-- Hernando -->
+      <div class="node g1" id="n-agmm" style="left:868px;top:385px" onclick="openM('agmm')">
+        <div class="ring" style="width:80px;height:80px;background:linear-gradient(135deg,#052e16,#15803d);border-color:rgba(16,185,129,.6)">
+          <div class="sdot sa"></div>
+          <span style="font-size:16px;font-weight:900;color:#bbf7d0">HL</span>
+        </div>
+        <div class="nav">Hernando<span class="sub">López V.</span><span class="dates">1924 — vivo (101)</span></div>
+      </div>
+
+      <!-- Elena Sofía -->
+      <div class="node g1" id="n-agmf" style="left:960px;top:325px" onclick="openM('agmf')">
+        <div class="ring" style="width:76px;height:76px;background:linear-gradient(135deg,#7c2d12,#c2410c);border-color:rgba(249,115,22,.55)">
+          <div class="sdot sd"></div>
+          <span style="font-size:15px;font-weight:900;color:#fed7aa">ES</span>
+        </div>
+        <div class="nav">Elena Sofía<span class="sub">Salcedo</span><span class="dates">1928 — 2018</span></div>
+      </div>
+
+      <!-- GEN 2 — PADRES -->
+      <!-- Luis Ernesto -->
+      <div class="node g2" id="n-parpt" style="left:370px;top:518px" onclick="openM('parpt')">
+        <div class="ring" style="width:86px;height:86px;background:linear-gradient(135deg,#1e3a5f,#1e40af);border-color:rgba(37,99,235,.6)">
+          <div class="sdot sd"></div>
+          <span style="font-size:17px;font-weight:900;color:#bfdbfe">LG</span>
+        </div>
+        <div class="nav">Luis Ernesto<span class="sub">García M.</span><span class="dates">1940 — 2008</span></div>
+      </div>
+
+      <!-- Cecilia -->
+      <div class="node g2" id="n-cecilia" style="left:764px;top:535px" onclick="openM('cecilia')">
+        <div class="ring" style="width:86px;height:86px;background:linear-gradient(135deg,#701a75,#a21caf);border-color:rgba(217,70,239,.6)">
+          <div class="sdot sa"></div>
+          <span style="font-size:17px;font-weight:900;color:#f5d0fe">CL</span>
+        </div>
+        <div class="nav">Cecilia<span class="sub">López de García</span><span class="dates">1944 — viva (81)</span></div>
+      </div>
+
+      <!-- Hugo -->
+      <div class="node g2" id="n-hugo" style="left:1022px;top:468px" onclick="openM('hugo')">
+        <div class="ring" style="width:82px;height:82px;background:linear-gradient(135deg,#0c4a6e,#0369a1);border-color:rgba(14,165,233,.55)">
+          <div class="sdot sd"></div>
+          <span style="font-size:16px;font-weight:900;color:#bae6fd">HR</span>
+        </div>
+        <div class="nav">Hugo Andrés<span class="sub">Ruiz S.</span><span class="dates">1948 — 2015</span></div>
+      </div>
+
+      <!-- Patricia -->
+      <div class="node g2" id="n-pat" style="left:1096px;top:426px" onclick="openM('pat')">
+        <div class="ring" style="width:80px;height:80px;background:linear-gradient(135deg,#064e3b,#047857);border-color:rgba(52,211,153,.55)">
+          <div class="sdot sa"></div>
+          <span style="font-size:16px;font-weight:900;color:#a7f3d0">PR</span>
+        </div>
+        <div class="nav">Patricia<span class="sub">Salcedo de R.</span><span class="dates">1951 — viva (74)</span></div>
+      </div>
+
+      <!-- GEN 3 — FAMILIA ACTUAL (largest rings) -->
+      <!-- Valentina -->
+      <div class="node g3c" id="n-valentina" style="left:536px;top:798px" onclick="openM('valentina')">
+        <div class="ring" style="width:82px;height:82px;background:linear-gradient(135deg,#831843,#be185d);border-color:rgba(244,114,182,.65)">
+          <div class="sdot sa"></div>
+          <span style="font-size:17px;font-weight:900;color:#fce7f3">V</span>
+        </div>
+        <div class="nav" style="color:rgba(255,255,255,.9)">Valentina<span class="sub">García Ruiz</span><span class="dates">2010 — viva (16)</span></div>
+      </div>
+
+      <!-- Carlos (CENTRAL) -->
+      <div class="node g3c" id="n-carlos" style="left:624px;top:714px" onclick="openM('carlos')">
+        <div class="ring" style="width:96px;height:96px;background:linear-gradient(135deg,#1e3a8a,#1d4ed8);border-color:rgba(96,165,250,.8);box-shadow:0 0 28px rgba(96,165,250,.3)">
+          <div class="sdot sa"></div>
+          <span style="font-size:20px;font-weight:900;color:#dbeafe">C</span>
+        </div>
+        <div class="nav" style="color:#fff;font-size:10.5px">Carlos García<span class="sub">López · ICF 89</span><span class="dates">1982 — vivo (44)</span></div>
+      </div>
+
+      <!-- Camila (CENTRAL) -->
+      <div class="node g3c" id="n-camila" style="left:728px;top:714px" onclick="openM('camila')">
+        <div class="ring" style="width:96px;height:96px;background:linear-gradient(135deg,#78350f,#b45309);border-color:rgba(251,191,36,.75);box-shadow:0 0 28px rgba(251,191,36,.25)">
+          <div class="sdot sa"></div>
+          <span style="font-size:20px;font-weight:900;color:#fef3c7">M</span>
+        </div>
+        <div class="nav" style="color:#fff;font-size:10.5px">Camila Ruiz<span class="sub">Salcedo · ICF 89</span><span class="dates">1985 — viva (41)</span></div>
+      </div>
+
+      <!-- Santiago -->
+      <div class="node g3c" id="n-santiago" style="left:812px;top:800px" onclick="openM('santiago')">
+        <div class="ring" style="width:82px;height:82px;background:linear-gradient(135deg,#052e16,#15803d);border-color:rgba(52,211,153,.65)">
+          <div class="sdot sa"></div>
+          <span style="font-size:17px;font-weight:900;color:#d1fae5">S</span>
+        </div>
+        <div class="nav" style="color:rgba(255,255,255,.9)">Santiago<span class="sub">García Ruiz</span><span class="dates">2013 — vivo (13)</span></div>
+      </div>
+
+      <!-- GEN 4 — FUTURA -->
+      <div class="node g4" id="n-fut1" style="left:488px;top:878px" onclick="openM('fut1')">
+        <div class="ring" style="width:62px;height:62px;background:rgba(120,53,15,.2);border-color:rgba(249,115,22,.3);border-style:dashed;opacity:.7">
+          <div class="sdot sf"></div>
+          <span style="font-size:18px;font-weight:900;color:rgba(249,115,22,.5)">?</span>
+        </div>
+        <div class="nav" style="color:rgba(120,113,108,.8)">Futura<span class="sub">de Valentina</span><span class="dates">~2032</span></div>
+      </div>
+      <div class="node g4" id="n-fut2" style="left:848px;top:880px" onclick="openM('fut2')">
+        <div class="ring" style="width:62px;height:62px;background:rgba(120,53,15,.2);border-color:rgba(249,115,22,.3);border-style:dashed;opacity:.7">
+          <div class="sdot sf"></div>
+          <span style="font-size:18px;font-weight:900;color:rgba(249,115,22,.5)">?</span>
+        </div>
+        <div class="nav" style="color:rgba(120,113,108,.8)">Futura<span class="sub">de Santiago</span><span class="dates">~2038</span></div>
+      </div>
+
+      <!-- ══ BOTTOM LABELS ══ -->
+      <div style="position:absolute;bottom:18px;left:0;right:0;display:flex;justify-content:center;gap:24px;pointer-events:none">
+        <div style="text-align:center">
+          <div style="font-size:9px;color:#374151;font-weight:700;text-transform:uppercase;letter-spacing:.08em">Historias que inspiran</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:9px;color:#374151;font-weight:700;text-transform:uppercase;letter-spacing:.08em">Lecciones que trascienden</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:9px;color:#374151;font-weight:700;text-transform:uppercase;letter-spacing:.08em">Decisiones que transforman</div>
+        </div>
+      </div>
+
+    </div><!-- /stage -->
+  </div>
+</div>
+
+<!-- ══════════ TAB: HISTORIA ══════════ -->
+<div class="tab-content" id="tab-hist">
+<div class="tab-inner">
+  <div><div class="sec-label">Línea de Historia · Familia García</div><div class="tab-title">5 generaciones · ~145 años</div><div class="tab-sub">De Andes, Antioquia (~1881) al proceso Integrity Family (2026)</div></div>
+  <div class="tl-item"><div class="tl-ico" style="background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.2)">🌾</div><div><div class="tl-y">~1881 · certeza baja</div><div class="tl-t">Nacimiento de José García Medrano</div><div class="tl-d">Municipio de Andes, Antioquia. Familia campesina. Datos reconstruidos a partir de relatos orales. Sin documentos primarios.</div><div class="tl-s" style="background:rgba(245,158,11,.1);color:#f59e0b">⚠ Dato aproximado · Memoria oral</div></div></div>
+  <div class="tl-item"><div class="tl-ico" style="background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2)">⛪</div><div><div class="tl-y">1890 · verificado</div><div class="tl-t">Bautismo de Carmen Inés Vargas — primera fuente primaria</div><div class="tl-d">Parroquia San Rafael, Medellín. El documento más antiguo verificado de toda la familia.</div><div class="tl-s" style="background:rgba(16,185,129,.1);color:#10b981">✓ Partida de bautismo · Archivo eclesiástico</div></div></div>
+  <div class="tl-item"><div class="tl-ico" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2)">🎓</div><div><div class="tl-y">1935 · verificado</div><div class="tl-t">Alberto García — primer universitario del linaje</div><div class="tl-d">Ingresa a la Universidad Nacional. Rompió un patrón de trabajo manual de dos generaciones.</div><div class="tl-s" style="background:rgba(16,185,129,.1);color:#10b981">✓ Registros universitarios</div></div></div>
+  <div class="tl-item" style="border-color:rgba(239,68,68,.25);background:rgba(239,68,68,.05)"><div class="tl-ico" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2)">⚡</div><div><div class="tl-y">1948 · evento crítico</div><div class="tl-t">El Bogotazo destruye el negocio de Alberto</div><div class="tl-d">El 9 de abril destruye el pequeño negocio de construcción. Genera deudas de 15 años y un patrón de desconfianza institucional que llegó hasta Carlos.</div><div class="tl-s" style="background:rgba(239,68,68,.1);color:#f87171">🔴 Trauma generacional · Impacto documentado hasta gen. 4</div></div></div>
+  <div class="tl-item"><div class="tl-ico" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2)">💑</div><div><div class="tl-y">2007 · hito</div><div class="tl-t">Matrimonio Carlos García & Camila Ruiz — unión de dos linajes</div><div class="tl-d">Linaje García (origen antioqueño) + linaje Ruiz-Salcedo (origen boyacense). Hernando López, 83 años, asistió a la boda.</div><div class="tl-s" style="background:rgba(16,185,129,.1);color:#10b981">✓ Acta de matrimonio</div></div></div>
+  <div class="tl-item" style="border-color:rgba(16,185,129,.25);background:rgba(16,185,129,.05)"><div class="tl-ico" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3)">⭐</div><div><div class="tl-y">2026 · punto de inflexión</div><div class="tl-t">Proceso Integrity Family · ICF 61 → 89 en 6 meses</div><div class="tl-d">Por primera vez en 145 años, la Familia García decide nombrar, medir y transformar sus vínculos. Valentina editó la Película Familiar. Santiago narró.</div><div class="tl-s" style="background:rgba(16,185,129,.1);color:#10b981">✨ Quiebre generacional positivo</div></div></div>
+</div>
+</div>
+
+<!-- ══════════ TAB: NARRATIVA ══════════ -->
+<div class="tab-content" id="tab-narr">
+<div class="tab-inner">
+  <div><div class="sec-label">Narrativa Generacional</div><div class="tab-title">Lo que heredamos. Lo que cambiamos.</div></div>
+  <div class="nc"><div class="nc-gen">Primera generación · ~1880</div><div class="nc-title">Los que llegaron con las manos vacías</div><div class="nc-text">De José García Medrano heredamos poco en documentos, pero mucho en cultura. <strong>La disciplina del trabajo duro, la desconfianza hacia las instituciones y la convicción de que la familia es lo único confiable</strong> atravesaron cuatro generaciones sin nombrarse.<br/><br/>El bisabuelo materno es solo un apellido. Lo que no se nombra tampoco desaparece.</div><div class="nc-tags"><span class="nc-tag" style="background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.2);color:#9ca3af">Trabajo</span><span class="nc-tag" style="background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.2);color:#9ca3af">Silencio</span><span class="nc-tag" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#fca5a5">⚠ Datos incompletos</span></div></div>
+  <div class="nc"><div class="nc-gen">Segunda generación · 1912–1991</div><div class="nc-title">Los que rompieron el ciclo educativo</div><div class="nc-text">Alberto fue el primer universitario. <strong>Rompió la pobreza campesina pero absorbió el trauma del Bogotazo</strong> y lo tradujo en una crianza de exigencia silenciosa.<br/><br/>Carlos creció con un padre que trabajaba mucho y hablaba poco. Ese patrón se repitió sin que nadie lo nombrara.</div><div class="nc-tags"><span class="nc-tag" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.2);color:#93c5fd">Educación</span><span class="nc-tag" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#fca5a5">Trauma heredado</span></div></div>
+  <div class="nc"><div class="nc-gen">Tercera generación · 1940–2015</div><div class="nc-title">Los que lograron pero no descansaron</div><div class="nc-text">Luis Ernesto y Hugo alcanzaron la clase media. <strong>Dieron a sus hijos lo que no tuvieron.</strong> Pero les enseñaron lo mismo: que el trabajo vale más que las palabras.<br/><br/>La muerte de Luis Ernesto en 2008 dejó en Carlos una herida que nombró por primera vez en IF.</div><div class="nc-tags"><span class="nc-tag" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#fcd34d">Clase media</span><span class="nc-tag" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#fca5a5">Duelo no resuelto</span></div></div>
+  <div class="nc" style="border-color:rgba(16,185,129,.2);background:rgba(16,185,129,.06)"><div class="nc-gen">Cuarta generación · 1982–2013</div><div class="nc-title" style="color:#34d399">Los que decidieron cambiar</div><div class="nc-text">Carlos y Camila llegaron con ICF 61. <strong>Por primera vez en cuatro generaciones, una rama García decidió nombrar lo que no funcionaba y construir intencionalmente sus vínculos.</strong><br/><br/>Valentina y Santiago son la primera generación con vocabulario emocional activo. <em>Eso no tiene precio generacional.</em></div><div class="nc-tags"><span class="nc-tag" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);color:#6ee7b7">Quiebre positivo</span><span class="nc-tag" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);color:#6ee7b7">ICF 89</span></div></div>
+</div>
+</div>
+
+<!-- ══════════ TAB: LEGADO ══════════ -->
+<div class="tab-content" id="tab-leg">
+<div class="tab-inner">
+  <div><div class="sec-label">Legado Identificado</div><div class="tab-title">Lo que persiste a través del tiempo</div></div>
+  <div class="lcard" style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2)"><div class="lc-ico">✅</div><div class="lc-cat" style="color:#34d399">Valor heredado positivo</div><div class="lc-title">La educación como escalera</div><div class="lc-desc">Desde Alberto García (1935), cada generación accedió a mayor nivel educativo. Este valor se transmitió sin nombrarse nunca explícitamente.</div></div>
+  <div class="lcard" style="background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2)"><div class="lc-ico">🔄</div><div class="lc-cat" style="color:#fb923c">Patrón repetido (en transformación)</div><div class="lc-title">Presencia sin conexión emocional</div><div class="lc-desc">José, Alberto, Luis Ernesto y Carlos repitieron el mismo patrón. El proceso IF rompió este ciclo en la 4.ª generación. Por primera vez, un García nombró sus emociones en familia.</div></div>
+  <div class="lcard" style="background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2)"><div class="lc-ico">⚠️</div><div class="lc-cat" style="color:#f87171">Trauma generacional</div><div class="lc-title">El Bogotazo y la desconfianza institucional</div><div class="lc-desc">La pérdida del negocio en 1948 generó una desconfianza que Carlos heredó como "no te fíes de nadie que no sea familia". Identificado como limitante en el diagnóstico IF.</div></div>
+  <div class="lcard" style="background:rgba(6,182,212,.07);border:1px solid rgba(6,182,212,.2)"><div class="lc-ico">📖</div><div class="lc-cat" style="color:#67e8f9">Vacío documentado</div><div class="lc-title">La historia perdida del bisabuelo materno</div><div class="lc-desc">Solo queda el apellido López. Una generación entera borrada. Lo que no se nombra se convierte en ausencia que las generaciones siguientes sienten sin saber por qué.</div></div>
+  <div style="background:linear-gradient(135deg,rgba(180,83,9,.15),rgba(120,53,15,.1));border:1px solid rgba(217,119,6,.3);border-radius:14px;padding:20px">
+    <div style="font-family:'Playfair Display',serif;font-size:18px;color:#fef3c7;margin-bottom:8px">"Somos la suma de todas las familias que fuimos."</div>
+    <div style="font-size:12px;color:#94a3b8;line-height:1.7">El linaje García acumula 145 años de historia. <strong style="color:#fbbf24">Integrity Family no empezó en 2026.</strong> Empezó el día en que José García decidió caminar desde Andes hasta Bogotá buscando algo mejor para sus hijos.</div>
+  </div>
+</div>
+</div>
+
+<!-- ══ SIDE PANEL ══ -->
+<div id="sp">
+  <div class="sp-hdr">
+    <div id="sp-av" class="sp-av" style="background:linear-gradient(135deg,#374151,#6b7280)">?</div>
+    <div style="flex:1;min-width:0"><div id="sp-nm" class="sp-nm">Miembro</div><div id="sp-rl" class="sp-rl">Selecciona un nodo del árbol</div></div>
+    <button class="spx" onclick="closeSP()">✕</button>
+  </div>
+  <div class="sp-body" id="sp-body"></div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+const M={
+  jg:{name:'José García Medrano',role:'Bisabuelo paterno',av:'JG',color:'linear-gradient(135deg,#374151,#6b7280)',st:'dead',birth:'~1881',death:'~1948',age:'No determinada',orig:'Andes, Antioquia',conf:40,cfTxt:'Relato oral · Sin documentos primarios',story:'José llegó a Bogotá desde Andes buscando trabajo. <strong>Fue campesino toda su vida.</strong> Sus nietos lo recuerdan como un hombre callado que trabajaba desde el amanecer.',ev:[['~1881','Nace en Andes, Antioquia'],['~1915','Migra a Bogotá'],['~1948','Fallece']],src:'Memoria oral'},
+  mrh:{name:'María Rosa Herrera',role:'Bisabuela paterna',av:'MR',color:'linear-gradient(135deg,#374151,#9ca3af)',st:'dead',birth:'~1884',death:'~1952',age:'No determinada',orig:'Antioquia',conf:35,cfTxt:'Una fotografía · Cartas de Alberto',story:'De María Rosa queda una fotografía borrosa. <strong>Era quien mantenía unida a la familia en los momentos difíciles.</strong>',ev:[['~1884','Nace'],['~1952','Fallece']],src:'Fotografía y cartas'},
+  dlv:{name:'Desconocido López',role:'Bisabuelo materno',av:'?',color:'linear-gradient(135deg,#312e81,#6366f1)',st:'unk',birth:'Desconocido',death:'Desconocido',age:'No determinada',orig:'Desconocido',conf:10,cfTxt:'Solo se conoce el apellido · Sin ninguna fuente',story:'<strong>El vacío más grande del linaje.</strong> Solo se conserva el apellido. Su ausencia es también parte de la historia.',ev:[['?','Solo queda el apellido López']],src:'Sin fuentes'},
+  civ:{name:'Carmen Inés Vargas',role:'Bisabuela materna',av:'CI',color:'linear-gradient(135deg,#581c87,#a855f7)',st:'dead',birth:'~1890',death:'1961',age:'~71 años',orig:'Medellín',conf:65,cfTxt:'Partida de bautismo · Primera fuente primaria del linaje',story:'<strong>La ancestra más documentada.</strong> Su partida de bautismo es el documento más antiguo del linaje. Era costurera.',ev:[['~1890','Bautismo en Medellín'],['1961','Fallece en Bogotá']],src:'Partida de bautismo'},
+  agpm:{name:'Alberto García Herrera',role:'Abuelo paterno',av:'AG',color:'linear-gradient(135deg,#1e3a5f,#3b82f6)',st:'dead',birth:'1912',death:'1979',age:'67 años',orig:'Bogotá',conf:85,cfTxt:'Cédula · Registros universitarios · Acta de defunción',story:'<strong>Primer universitario del linaje.</strong> El Bogotazo de 1948 destruyó su negocio y generó un patrón de desconfianza que llegó hasta Carlos.',ev:[['1912','Nace'],['1935','Universidad Nacional'],['1948','El Bogotazo destruye su negocio'],['1979','Fallece']],src:'Cédula y registros'},
+  agpf:{name:'Rosa María Morales',role:'Abuela paterna',av:'RM',color:'linear-gradient(135deg,#5b21b6,#8b5cf6)',st:'dead',birth:'1916',death:'1991',age:'75 años',orig:'Bogotá',conf:90,cfTxt:'Acta de defunción · Registros escolares',story:'<strong>La columna de la familia post-Bogotazo.</strong> Trabajó como costurera para sostener a los hijos. Carlos guarda su receta como único objeto heredado.',ev:[['1916','Nace'],['1938','Se casa con Alberto'],['1991','Fallece']],src:'Acta de defunción'},
+  agmm:{name:'Hernando López Vargas',role:'Abuelo materno · 101 años',av:'HL',color:'linear-gradient(135deg,#064e3b,#10b981)',st:'alive',birth:'1924',death:null,age:'101 años (vivo)',orig:'Boyacá',conf:100,cfTxt:'Cédula activa · Fuente oral más valiosa',story:'<strong>Único bisabuelo vivo de Valentina y Santiago.</strong> Cuando habla de Elena Sofía su voz cambia. Con 101 años, es el hilo humano con los bisabuelos del linaje.',ev:[['1924','Nace en Boyacá'],['1950','Se casa con Elena Sofía'],['2018','Pierde a Elena Sofía'],['2026','Asiste a reunión familiar IF']],src:'Cédula activa'},
+  agmf:{name:'Elena Sofía Salcedo',role:'Abuela materna',av:'ES',color:'linear-gradient(135deg,#7c2d12,#f97316)',st:'dead',birth:'1928',death:'2018',age:'90 años',orig:'Medellín / Bogotá',conf:95,cfTxt:'Registro civil · Acta de defunción',story:'Elena Sofía era la narradora de la familia. <strong>Cuando Sentinel AI generó su narrativa, Camila dijo: "fue como escucharla otra vez".</strong>',ev:[['1928','Nace en Medellín'],['1950','Se casa con Hernando'],['2018','Fallece a los 90 años']],src:'Registro civil'},
+  parpt:{name:'Luis Ernesto García Morales',role:'Padre de Carlos',av:'LG',color:'linear-gradient(135deg,#1e3a5f,#2563eb)',st:'dead',birth:'1940',death:'2008',age:'68 años',orig:'Bogotá',conf:98,cfTxt:'Registro completo · Cédula · Acta de defunción',story:'30 años en el banco. <strong>Carlos lo recuerda como alguien que llegaba a cenar pero nunca preguntó cómo te fue.</strong> Su muerte dejó una herida que Carlos nombró por primera vez en IF.',ev:[['1940','Nace'],['1965','Entra al banco'],['1982','Nace Carlos'],['2008','Fallece']],src:'Registro completo'},
+  cecilia:{name:'Cecilia López de García',role:'Madre de Carlos · Viva 81 años',av:'CL',color:'linear-gradient(135deg,#86198f,#d946ef)',st:'alive',birth:'1944',death:null,age:'81 años (viva)',orig:'Bogotá',conf:100,cfTxt:'Cédula activa · Participante en IF',story:'<strong>"Tu papá te quería, no sabía cómo decirlo."</strong> Esas palabras de Cecilia en el Mes 3 desbloquearon el avance más grande del proceso IF de Carlos.',ev:[['1944','Nace'],['1967','Se casa con Luis Ernesto'],['1982','Nace Carlos'],['2026','Observadora en IF']],src:'Cédula activa'},
+  hugo:{name:'Hugo Andrés Ruiz Salcedo',role:'Padre de Camila',av:'HR',color:'linear-gradient(135deg,#1c3d5a,#0ea5e9)',st:'dead',birth:'1948',death:'2015',age:'67 años',orig:'Bogotá',conf:97,cfTxt:'Registro civil · Acta de defunción',story:'Hugo fue médico. <strong>Camila heredó de él la capacidad de observar a las personas con calma.</strong> Su muerte en 2015 la llevó a repensar las prioridades de su familia.',ev:[['1948','Nace'],['1975','Se gradúa de medicina'],['1985','Nace Camila'],['2015','Fallece de ACV']],src:'Registro civil'},
+  pat:{name:'Patricia Salcedo de Ruiz',role:'Madre de Camila · Viva 74 años',av:'PR',color:'linear-gradient(135deg,#065f46,#34d399)',st:'alive',birth:'1951',death:null,age:'74 años (viva)',orig:'Bogotá',conf:100,cfTxt:'Cédula activa · Cuida a Hernando (101 años)',story:'<strong>Fue la primera en decir "ustedes necesitan hacer algo con la familia"</strong> al ver a Carlos y Camila discutir en navidad 2023.',ev:[['1951','Nace'],['1975','Se casa con Hugo'],['1985','Nace Camila'],['2023','Propone proceso IF']],src:'Cédula activa'},
+  carlos:{name:'Carlos García López',role:'Padre · 44 años · Usuario IF',av:'C',color:'linear-gradient(135deg,#1e40af,#3b82f6)',st:'alive',birth:'1982',death:null,age:'44 años',orig:'Bogotá',conf:100,cfTxt:'Usuario activo IF · ICF 61→89 en 6 meses',story:'<strong>Primera generación García que rompió el patrón de presencia sin conexión.</strong> Lloró por primera vez en 12 años cuando Cecilia le dijo que Luis Ernesto lo quería pero no sabía decirlo.',ev:[['1982','Nace'],['2007','Se casa con Camila'],['2010','Nace Valentina'],['2013','Nace Santiago'],['2026','ICF 61 → 89']],src:'Usuario IF'},
+  camila:{name:'Camila Ruiz Salcedo',role:'Madre · 41 años · Docente',av:'M',color:'linear-gradient(135deg,#b45309,#f59e0b)',st:'alive',birth:'1985',death:null,age:'41 años',orig:'Bogotá',conf:100,cfTxt:'Usuaria activa IF',story:'Heredó la observación de Hugo. <strong>Escribió la "Carta sin filtros": "Carlos, no te escribo para acusarte. Te lo escribo para que me conozcas."</strong>',ev:[['1985','Nace'],['2007','Se casa con Carlos'],['2015','Pierde a su padre Hugo'],['2026','ICF 89']],src:'Usuaria IF'},
+  valentina:{name:'Valentina García Ruiz',role:'Hija mayor · 16 años',av:'V',color:'linear-gradient(135deg,#be185d,#f472b6)',st:'alive',birth:'2010',death:null,age:'16 años',orig:'Bogotá',conf:100,cfTxt:'Miembro IF · Editó la Película Familiar',story:'<strong>Editó la Película Familiar García.</strong> Última en responder el diagnóstico, primera en hablar en el sprint más difícil.',ev:[['2010','Nace'],['2026','Edita la Película Familiar']],src:'Miembro IF'},
+  santiago:{name:'Santiago García Ruiz',role:'Hijo menor · 13 años',av:'S',color:'linear-gradient(135deg,#065f46,#34d399)',st:'alive',birth:'2013',death:null,age:'13 años',orig:'Bogotá',conf:100,cfTxt:'Miembro IF · Narrador de la Película Familiar',story:'Narró la Película Familiar. <strong>Preguntó "¿cómo te fue?" a su papá en la primera cena sin pantallas. Esa pregunta cambió todo.</strong>',ev:[['2013','Nace'],['2026','Narra la Película Familiar']],src:'Miembro IF'},
+  fut1:{name:'Hijo/a de Valentina',role:'5.ª generación · ~2032',av:'?',color:'rgba(249,115,22,.3)',st:'fut',birth:'Por venir',death:null,age:'No aplica',orig:'Por determinar',conf:0,cfTxt:'Generación proyectada',story:'Valentina crecerá sabiendo que sus padres se eligieron deliberadamente. <strong>Esa es la herencia más valiosa que puede transmitir.</strong>',ev:[],src:'Proyección'},
+  fut2:{name:'Hijo/a de Santiago',role:'5.ª generación · ~2038',av:'?',color:'rgba(249,115,22,.3)',st:'fut',birth:'Por venir',death:null,age:'No aplica',orig:'Por determinar',conf:0,cfTxt:'Generación proyectada',story:'Santiago aprendió a los 13 años que las familias se construyen con intención. <strong>Eso define lo que será.</strong>',ev:[],src:'Proyección'},
+};
+
+function switchTab(t){
+  const keys=['tree','hist','narr','leg'];
+  document.querySelectorAll('.ntab').forEach((b,i)=>b.classList.toggle('active',keys[i]===t));
+  document.querySelectorAll('.tab-content').forEach(c=>{c.classList.remove('active');c.style.display='none'});
+  const el=document.getElementById('tab-'+t);
+  if(el){el.classList.add('active');el.style.display=(t==='tree'?'flex':'flex');}
+}
+
+function openM(id){
+  const m=M[id]; if(!m) return;
+  document.querySelectorAll('.node').forEach(n=>n.classList.remove('sel'));
+  document.getElementById('n-'+id)?.classList.add('sel');
+  document.getElementById('sp-av').style.background=m.color;
+  document.getElementById('sp-av').textContent=m.av;
+  document.getElementById('sp-nm').textContent=m.name;
+  document.getElementById('sp-rl').textContent=m.role;
+  const stMap={alive:'🟢 Vivo/a',dead:'⚫ Fallecido/a',unk:'🔵 Desconocido',fut:'🟠 Generación futura'};
+  const cfC=m.conf>=80?'#10b981':m.conf>=40?'#f97316':'#6366f1';
+  const evHtml=m.ev.length?`<div class="spsec"><div class="spsl">Eventos</div><div class="spev">${m.ev.map(([y,t])=>`<div class="spe"><div class="sped"></div><div class="spey">${y}</div><div class="spet">${t}</div></div>`).join('')}</div></div>`:'';
+  document.getElementById('sp-body').innerHTML=`
+    <div class="spsec">
+      <div class="spsl">Datos</div>
+      <div class="sprow"><span class="spk">Estado</span><span class="spv">${stMap[m.st]||m.st}</span></div>
+      <div class="sprow"><span class="spk">Nacimiento</span><span class="spv ${m.birth?.startsWith('~')?'ap':''}">${m.birth}</span></div>
+      ${m.death?`<div class="sprow"><span class="spk">Fallecimiento</span><span class="spv">${m.death}</span></div>`:''}
+      <div class="sprow"><span class="spk">Edad</span><span class="spv ${m.age==='No determinada'||m.age==='No aplica'?'un':''}">${m.age}</span></div>
+      <div class="sprow"><span class="spk">Origen</span><span class="spv ${m.orig==='Desconocido'?'un':''}">${m.orig}</span></div>
+      <div class="sprow"><span class="spk">Fuente</span><span class="spv">${m.src}</span></div>
+    </div>
+    <div class="spcert"><div class="spsl" style="margin-bottom:5px">Certeza del dato</div>
+      <div class="spcbar"><div class="spcfill" style="width:${m.conf}%;background:${cfC}"></div></div>
+      <div class="spctxt">${m.conf}% — ${m.cfTxt}</div>
+    </div>
+    <div class="spsec"><div class="spsl">Historia</div><div class="spstory">${m.story}</div></div>
+    ${evHtml}
+  `;
+  document.getElementById('sp').classList.add('open');
+}
+function closeSP(){
+  document.getElementById('sp').classList.remove('open');
+  document.querySelectorAll('.node').forEach(n=>n.classList.remove('sel'));
+}
+// init display
+document.addEventListener('DOMContentLoaded',()=>{
+  document.querySelectorAll('.tab-content').forEach(c=>c.style.display='none');
+  const tree=document.getElementById('tab-tree');
+  tree.style.display='flex'; tree.classList.add('active');
+});
+</script>
+</body>
+</html>

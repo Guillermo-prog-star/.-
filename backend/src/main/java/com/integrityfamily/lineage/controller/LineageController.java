@@ -88,6 +88,37 @@ public class LineageController {
         return ApiResponse.ok(null, "Relación eliminada");
     }
 
+    // ── EVENTS ───────────────────────────────────────────────────
+
+    @PostMapping("/members/{memberId}/events")
+    @PreAuthorize("@familySecurity.check(#familyId)")
+    public ApiResponse<LineageEventResponse> addEvent(
+            @PathVariable Long familyId,
+            @PathVariable Long memberId,
+            @Valid @RequestBody LineageEventRequest req) {
+        return ApiResponse.ok(lineageService.addEvent(familyId, memberId, req), "Evento registrado");
+    }
+
+    @PutMapping("/members/{memberId}/events/{eventId}")
+    @PreAuthorize("@familySecurity.check(#familyId)")
+    public ApiResponse<LineageEventResponse> updateEvent(
+            @PathVariable Long familyId,
+            @PathVariable Long memberId,
+            @PathVariable Long eventId,
+            @Valid @RequestBody LineageEventRequest req) {
+        return ApiResponse.ok(lineageService.updateEvent(familyId, memberId, eventId, req), "Evento actualizado");
+    }
+
+    @DeleteMapping("/members/{memberId}/events/{eventId}")
+    @PreAuthorize("@familySecurity.check(#familyId)")
+    public ApiResponse<Void> deleteEvent(
+            @PathVariable Long familyId,
+            @PathVariable Long memberId,
+            @PathVariable Long eventId) {
+        lineageService.deleteEvent(familyId, memberId, eventId);
+        return ApiResponse.ok(null, "Evento eliminado");
+    }
+
     // ── GENERATION INFO ───────────────────────────────────────────
 
     @PutMapping("/generation-info")

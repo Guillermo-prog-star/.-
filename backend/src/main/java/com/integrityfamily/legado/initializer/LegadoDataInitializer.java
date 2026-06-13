@@ -29,7 +29,7 @@ import java.util.List;
 @Order(11)
 public class LegadoDataInitializer implements CommandLineRunner {
 
-    private static final long FAMILY_ID = 1L;
+    private static final long FAMILY_ID = 2L;
 
     private final FamilyLegacyRepository legacyRepo;
     private final FamilyValueRepository  valueRepo;

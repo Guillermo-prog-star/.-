@@ -33,6 +33,7 @@ public record LineageMemberResponse(
         String misionesCumplidas,
         String legadoPersonal,
 
+        String photoUrl,
         Float positionX,
         Float positionY,
         Long familyMemberId,

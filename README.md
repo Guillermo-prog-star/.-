@@ -194,6 +194,11 @@ Esta filosofía se refleja directamente en la arquitectura:
 | DB_PASS | Contraseña MySQL | root123 |
 | RABBIT_HOST | Host de RabbitMQ | localhost |
 
+## Actualizaciones recientes
+
+- Se añadió la dependencia **H2** en `pom.xml` para que los tests usen una base de datos en‑memory.
+- Se introdujo la constante `SIMULATION_MESSAGE` en `WhisperSttService` para unificar el mensaje de simulación y evitar fallos de pruebas.
+
 ---
 
 ## Solución de problemas

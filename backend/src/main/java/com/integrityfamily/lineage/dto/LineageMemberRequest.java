@@ -41,6 +41,7 @@ public record LineageMemberRequest(
         String misionesCumplidas,
         String legadoPersonal,
 
+        String photoUrl,
         Float positionX,
         Float positionY,
         Long familyMemberId,

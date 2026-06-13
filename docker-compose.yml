@@ -1,98 +1,62 @@
 services:
-  # Base de Datos: Sincronizada a MySQL 8.4
-  if-mysql:
+  db:
     image: mysql:8.4
-    container_name: if-mysql
-    restart: always
+    container_name: integrity-db
     environment:
+      MYSQL_ROOT_PASSWORD: root123
       MYSQL_DATABASE: integrity_family
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_HOST: "%"
     ports:
       - "3307:3306"
     volumes:
-      - ./mysql_data:/var/lib/mysql
-    networks:
-      - if-net
+      - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Bus de Eventos: Crucial para el AiInferenceService
-  if-rabbitmq:
+  rabbitmq:
     image: rabbitmq:3-management
-    container_name: if-rabbitmq
-    restart: always
+    container_name: integrity-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     ports:
       - "5672:5672"
       - "15672:15672"
-    networks:
-      - if-net
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      test: ["CMD", "rabbitmqctl", "status"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # Backend: Inyección de Secretos y Resiliencia
-  if-backend:
+  backend:
     build:
       context: ./backend
-    image: william195/if-backend:v1.0.0
-    container_name: if-backend
-    environment:
-      DB_HOST: if-mysql
-      DB_PORT: 3306
-      DB_NAME: integrity_family
-      DB_USER: root
-      DB_PASSWORD: ${DB_PASSWORD:-root}
-      RABBITMQ_HOST: if-rabbitmq
-      RABBITMQ_ENABLED: "true"
-      CLAUDE_API_KEY: ${CLAUDE_API_KEY:-${ANTHROPIC_API_KEY:-}}
-      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-haiku-4-5}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      APP_AI_VOICE_ENABLED: ${APP_AI_VOICE_ENABLED:-true}
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-default}
+      dockerfile: Dockerfile
+    container_name: integrity-backend
     depends_on:
-      if-mysql:
+      db:
         condition: service_healthy
-      if-rabbitmq:
+      rabbitmq:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 15s
-      timeout: 10s
-      retries: 5
-      start_period: 120s
-    restart: on-failure:3
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/integrity_family?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Bogota
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root123
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_PORT: 5672
+      SPRING_RABBITMQ_USERNAME: guest
+      SPRING_RABBITMQ_PASSWORD: guest
     ports:
       - "8080:8080"
-    volumes:
-      - ./backend_logs:/app/logs
-    networks:
-      - if-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-  # Frontend: Entorno de Desarrollo (Hot-Reloading)
-  if-frontend:
-    build:
-      context: ./if-frontend
-      dockerfile: Dockerfile.dev
-    container_name: if-frontend
-    restart: unless-stopped
-    ports:
-      - "4200:4200"
-    environment:
-      - BACKEND_URL=if-backend
-    depends_on:
-      if-backend:
-        condition: service_healthy
-    networks:
-      - if-net
-    volumes:
-      - ./if-frontend:/app
-      - /app/node_modules
-
-networks:
-  if-net:
-    driver: bridge
+volumes:
+  db_data:

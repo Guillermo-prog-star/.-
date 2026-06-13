@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Integrity Family — Demo Automático</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --orange: #f97316; --blue: #4f46e5; --green: #10b981;
+  --red: #ef4444; --purple: #8b5cf6; --teal: #06b6d4;
+  --bg: #0d1117; --bg2: #161b22; --text: #e0e0e0; --muted: #64748b;
+}
+html, body { width:100%; height:100%; background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; overflow:hidden; }
+
+/* ── CHROME ── */
+#chrome {
+  position: fixed; top: 0; left: 0; right: 0; height: 52px;
+  background: rgba(13,17,23,.97); border-bottom: 1px solid rgba(255,255,255,.07);
+  display: flex; align-items: center; padding: 0 16px; gap: 12px; z-index: 200;
+}
+.chrome-dots { display: flex; gap: 5px; }
+.chrome-dot  { width:10px; height:10px; border-radius:50%; }
+.url-bar {
+  flex: 1; max-width: 420px; background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1); border-radius: 7px;
+  padding: 5px 12px; font-size: .72rem; color: rgba(255,255,255,.45);
+  display: flex; align-items: center; gap: 6px;
+}
+.chrome-brand {
+  margin-left: auto; font-size: .75rem; font-weight: 700; color: rgba(255,255,255,.25);
+  letter-spacing: .06em;
+}
+
+/* ── MAIN FRAME ── */
+#frame {
+  position: fixed; top: 52px; left: 0; right: 0; bottom: 48px;
+  overflow: hidden;
+}
+
+/* ── SCREENS ── */
+.screen { position: absolute; inset: 0; display: none; flex-direction: column; }
+.screen.active { display: flex; }
+
+/* ── CURSOR SIMULATION ── */
+#cursor {
+  position: fixed; width: 20px; height: 20px; pointer-events: none;
+  z-index: 500; transition: left .8s cubic-bezier(.4,0,.2,1), top .8s cubic-bezier(.4,0,.2,1);
+}
+#cursor svg { width: 20px; height: 20px; }
+
+/* ── CLICK RIPPLE ── */
+.ripple {
+  position: fixed; width: 30px; height: 30px; border-radius: 50%;
+  border: 2px solid rgba(249,115,22,.7); pointer-events: none; z-index: 499;
+  animation: rippleOut .5s ease forwards;
+}
+@keyframes rippleOut { from { transform: scale(0); opacity: 1; } to { transform: scale(2.5); opacity: 0; } }
+
+/* ── BOTTOM BAR ── */
+#bottom-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 48px;
+  background: rgba(13,17,23,.97); border-top: 1px solid rgba(255,255,255,.07);
+  display: flex; align-items: center; padding: 0 16px; gap: 12px; z-index: 200;
+}
+#demo-progress { flex: 1; height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+#demo-bar { height: 100%; background: var(--orange); border-radius: 2px; transition: width .6s ease; }
+#scene-label { font-size: .68rem; font-weight: 600; color: rgba(255,255,255,.3); letter-spacing: .08em; white-space: nowrap; }
+#btn-pause {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+  color: rgba(255,255,255,.5); border-radius: 6px; padding: 5px 12px;
+  font-size: .68rem; font-weight: 600; cursor: pointer; letter-spacing: .04em;
+  transition: all .2s;
+}
+#btn-pause:hover { background: rgba(255,255,255,.1); color: #fff; }
+#btn-restart {
+  background: none; border: none; color: rgba(255,255,255,.3);
+  font-size: .68rem; cursor: pointer; letter-spacing: .04em;
+}
+#btn-restart:hover { color: rgba(255,255,255,.6); }
+
+/* ════════════════════════════════════════
+   SCREEN 1 — LOGIN
+════════════════════════════════════════ */
+#sc-login {
+  background: linear-gradient(145deg,#1a1654 0%,#2f2b83 50%,#1e1b4b 100%);
+  align-items: center; justify-content: center;
+}
+.login-card {
+  width: min(100%,440px); padding: 36px 32px;
+  background: rgba(255,255,255,.07); backdrop-filter: blur(24px);
+  border: 1px solid rgba(255,255,255,.1); border-radius: 24px;
+  display: flex; flex-direction: column; gap: 20px;
+  box-shadow: 0 32px 64px -12px rgba(0,0,0,.6);
+  margin: 16px;
+}
+.lc-brand { display: flex; align-items: center; gap: 14px; }
+.lc-logo  { width: 58px; height: 58px; border-radius: 14px; background: #fcfbf4; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.lc-logo svg { width: 40px; height: 40px; }
+.lc-name  { font-size: 18px; font-weight: 900; color: #fff; }
+.lc-tag   { font-size: 10px; color: rgba(255,255,255,.45); letter-spacing: .04em; }
+
+.lc-zone  { border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 16px 18px; background: rgba(255,255,255,.03); }
+.zone-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .1em; padding: 3px 10px; border-radius: 20px; margin-bottom: 10px; }
+.badge-new { background: rgba(16,185,129,.12); border: 1px solid rgba(16,185,129,.25); color: #6ee7b7; }
+.badge-ret { background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.3);  color: #fb923c; }
+.zone-title { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+.zone-desc  { font-size: 12px; color: rgba(255,255,255,.5); line-height: 1.55; }
+
+.inp { width: 100%; background: rgba(0,0,0,.25); border: 1px solid rgba(255,255,255,.1); border-radius: 10px; padding: 11px 14px; font-size: 14px; color: #fff; outline: none; margin-top: 10px; }
+.inp.focus { border-color: rgba(249,115,22,.5); box-shadow: 0 0 0 3px rgba(249,115,22,.1); }
+.inp::placeholder { color: rgba(255,255,255,.2); }
+
+.btn-orange { width: 100%; background: linear-gradient(135deg,#f97316,#ea580c); border: none; color: #fff; padding: 13px; border-radius: 11px; font-size: 14px; font-weight: 800; cursor: pointer; margin-top: 14px; box-shadow: 0 4px 16px rgba(249,115,22,.4); }
+.btn-blue   { width: 100%; background: linear-gradient(135deg,#4f46e5,#4338ca); border: none; color: #fff; padding: 13px; border-radius: 11px; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+
+/* ════════════════════════════════════════
+   SCREEN 2 — DASHBOARD
+════════════════════════════════════════ */
+#sc-dash { background: #0d1117; flex-direction: column; }
+.top-nav {
+  background: rgba(13,17,23,.98); border-bottom: 1px solid rgba(255,255,255,.07);
+  padding: 12px 20px; display: flex; align-items: center; gap: 12px;
+}
+.nav-logo { width: 32px; height: 32px; border-radius: 8px; background: #fcfbf4; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.nav-logo svg { width: 22px; height: 22px; }
+.nav-title { font-size: 14px; font-weight: 800; color: #fff; }
+.nav-sub   { font-size: 10px; color: #64748b; }
+.nav-badge { margin-left: auto; background: rgba(249,115,22,.15); border: 1px solid rgba(249,115,22,.35); color: #fb923c; padding: 4px 12px; border-radius: 20px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+
+.dash-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+
+.dash-pilar {
+  background: linear-gradient(135deg,rgba(249,115,22,.15),rgba(234,88,12,.07));
+  border: 1px solid rgba(249,115,22,.3); border-radius: 16px; padding: 18px 20px;
+}
+.dp-label { font-size: 9px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+.dp-title { font-size: 17px; font-weight: 800; color: #fff; margin-bottom: 3px; }
+.dp-sub   { font-size: 11px; color: #64748b; margin-bottom: 12px; }
+.progress-track { background: rgba(0,0,0,.3); border-radius: 6px; height: 6px; overflow: hidden; margin-bottom: 14px; }
+.progress-fill  { height: 100%; border-radius: 6px; background: linear-gradient(to right,#f97316,#fb923c); }
+.btn-sprint { background: linear-gradient(135deg,#f97316,#ea580c); border: none; color: #fff; padding: 10px 20px; border-radius: 9px; font-size: 12px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 14px rgba(249,115,22,.4); }
+
+.stats-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; }
+.stat-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 14px 10px; text-align: center; }
+.stat-val { font-size: 22px; font-weight: 900; color: var(--orange); line-height: 1; margin-bottom: 4px; }
+.stat-lbl { font-size: 9px; color: #64748b; }
+
+.members-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.member-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 11px; border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+}
+
+/* ════════════════════════════════════════
+   SCREEN 3 — EVALUACIÓN
+════════════════════════════════════════ */
+#sc-eval { background: #0d1117; flex-direction: column; }
+.eval-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 14px; }
+.eval-score-block {
+  background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07);
+  border-radius: 16px; padding: 20px; text-align: center;
+}
+.score-big { font-size: 52px; font-weight: 900; color: var(--orange); line-height: 1; }
+.score-sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+.dim-bar-item { margin-bottom: 12px; }
+.dim-bar-top  { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.dim-bar-name { font-size: 12px; font-weight: 700; }
+.dim-bar-val  { font-size: 12px; font-weight: 800; }
+.dim-bar-track { background: rgba(0,0,0,.3); border-radius: 6px; height: 6px; overflow: hidden; }
+.dim-bar-fill  { height: 100%; border-radius: 6px; transition: width 1.2s ease; }
+
+.eval-cta { background: linear-gradient(135deg,#f97316,#ea580c); border: none; color: #fff; width: 100%; padding: 14px; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 16px rgba(249,115,22,.4); }
+
+/* ════════════════════════════════════════
+   SCREEN 4 — PLAN MENSUAL
+════════════════════════════════════════ */
+#sc-plan { background: #0d1117; flex-direction: column; }
+.plan-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 12px; }
+.pilar-active {
+  background: linear-gradient(135deg,rgba(249,115,22,.15),rgba(234,88,12,.08));
+  border: 1px solid rgba(249,115,22,.4); border-radius: 16px; padding: 18px;
+}
+.pa-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.pa-icon   { font-size: 24px; }
+.pa-label  { font-size: 9px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: .08em; }
+.pa-title  { font-size: 15px; font-weight: 800; color: #fff; }
+.mission-item {
+  display: flex; align-items: center; gap: 10px;
+  border-radius: 10px; padding: 10px 13px; margin-bottom: 8px;
+}
+.m-done   { background: rgba(16,185,129,.1);  border: 1px solid rgba(16,185,129,.25); }
+.m-active { background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.3);  }
+.m-locked { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); opacity: .55; }
+.m-icon   { font-size: 14px; flex-shrink: 0; }
+.m-name   { font-size: 12px; font-weight: 700; flex: 1; }
+.m-state  { font-size: 10px; font-weight: 700; }
+
+.pilar-future { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.06); border-radius: 13px; padding: 13px 15px; opacity: .6; }
+.pf-icon  { font-size: 20px; }
+.pf-name  { font-size: 13px; font-weight: 700; color: #94a3b8; }
+.pf-sub   { font-size: 10px; color: #64748b; }
+
+/* ════════════════════════════════════════
+   SCREEN 5 — SPRINT DIARIO
+════════════════════════════════════════ */
+#sc-sprint { background: #0d1117; flex-direction: column; }
+.sprint-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 13px; }
+.sprint-header {
+  background: linear-gradient(135deg,rgba(249,115,22,.18),rgba(124,58,237,.1));
+  border: 1px solid rgba(249,115,22,.35); border-radius: 16px; padding: 18px;
+}
+.sh-label { font-size: 9px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 4px; }
+.sh-title { font-size: 18px; font-weight: 900; color: #fff; margin-bottom: 5px; }
+.sh-desc  { font-size: 11px; color: #64748b; line-height: 1.6; margin-bottom: 12px; }
+.sh-pills { display: flex; gap: 7px; flex-wrap: wrap; }
+.sh-pill  { padding: 3px 10px; border-radius: 20px; font-size: 9px; font-weight: 700; }
+
+.step-item { display: flex; gap: 11px; align-items: flex-start; border-radius: 11px; padding: 12px 13px; }
+.step-done   { background: rgba(16,185,129,.08);  border: 1px solid rgba(16,185,129,.2);  }
+.step-active { background: rgba(249,115,22,.08);  border: 1px solid rgba(249,115,22,.2);  }
+.step-next   { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); }
+.step-num  { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+.step-title { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+.step-body  { font-size: 11px; color: #64748b; line-height: 1.5; }
+
+.check-item { display: flex; align-items: center; gap: 11px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 11px; padding: 11px 14px; }
+.chk  { width: 18px; height: 18px; border-radius: 5px; border: 2px solid rgba(255,255,255,.2); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 10px; }
+.chk.checked { background: #f97316; border-color: #f97316; }
+.member-avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #fff; flex-shrink: 0; }
+.chk-name { flex: 1; font-size: 12px; font-weight: 700; }
+.chk-role { font-size: 10px; color: #64748b; }
+.btn-complete { width: 100%; background: linear-gradient(135deg,#f97316,#ea580c); border: none; color: #fff; padding: 14px; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; box-shadow: 0 4px 16px rgba(249,115,22,.4); }
+
+/* ════════════════════════════════════════
+   SCREEN 6 — MISIÓN COMPLETADA
+════════════════════════════════════════ */
+#sc-win { background: #0d1117; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
+.win-badge { background: linear-gradient(135deg,rgba(16,185,129,.15),rgba(5,150,105,.08)); border: 1px solid rgba(16,185,129,.35); border-radius: 14px; padding: 16px 24px; display: flex; align-items: center; gap: 14px; margin-bottom: 20px; width: 100%; max-width: 440px; }
+.win-icon  { font-size: 32px; flex-shrink: 0; }
+.win-label { font-size: 10px; font-weight: 700; color: #6ee7b7; text-transform: uppercase; letter-spacing: .1em; }
+.win-date  { font-size: 11px; color: #64748b; margin-top: 2px; }
+.win-title { font-size: 26px; font-weight: 900; color: #fff; text-align: center; margin-bottom: 6px; max-width: 440px; line-height: 1.2; }
+.win-sub   { font-size: 12px; color: #64748b; text-align: center; margin-bottom: 20px; }
+.win-ai {
+  background: linear-gradient(135deg,rgba(124,58,237,.1),rgba(79,70,229,.06));
+  border: 1px solid rgba(124,58,237,.25); border-radius: 14px; padding: 20px;
+  width: 100%; max-width: 440px; margin-bottom: 20px;
+}
+.ai-label { font-size: 9px; font-weight: 700; color: #a78bfa; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; }
+.ai-text  { font-size: 13px; line-height: 1.8; color: #e0e0e0; font-style: italic; }
+.win-cta  { background: linear-gradient(135deg,#f97316,#ea580c); border: none; color: #fff; width: 100%; max-width: 440px; padding: 14px; border-radius: 12px; font-size: 13px; font-weight: 800; cursor: pointer; }
+
+/* ── TRANSITION OVERLAY ── */
+#overlay {
+  position: fixed; inset: 0; background: #000; z-index: 400;
+  opacity: 0; pointer-events: none; transition: opacity .4s;
+}
+#overlay.fade { opacity: 1; pointer-events: all; }
+</style>
+</head>
+<body>
+
+<!-- Chrome bar -->
+<div id="chrome">
+  <div class="chrome-dots">
+    <div class="chrome-dot" style="background:#ef4444;"></div>
+    <div class="chrome-dot" style="background:#f59e0b;"></div>
+    <div class="chrome-dot" style="background:#22c55e;"></div>
+  </div>
+  <div class="url-bar">🔒 <span id="url-text">integrity-family.app/login</span></div>
+  <div class="chrome-brand">Integrity Family</div>
+</div>
+
+<!-- Overlay for transitions -->
+<div id="overlay"></div>
+
+<!-- Cursor -->
+<div id="cursor">
+  <svg viewBox="0 0 20 20" fill="none"><path d="M3 2L17 10L10 11.5L6 18L3 2Z" fill="white" stroke="#333" stroke-width=".8"/></svg>
+</div>
+
+<!-- Main frame -->
+<div id="frame">
+
+  <!-- SC1: LOGIN -->
+  <div class="screen active" id="sc-login">
+    <div class="login-card">
+      <div class="lc-brand">
+        <div class="lc-logo">
+          <svg viewBox="0 0 56 56" fill="none">
+            <circle cx="20" cy="28" r="13" stroke="#f97316" stroke-width="3" fill="none"/>
+            <circle cx="36" cy="28" r="13" stroke="#4f46e5" stroke-width="3" fill="none"/>
+            <circle cx="28" cy="20" r="7" fill="#f97316" opacity=".9"/>
+            <circle cx="28" cy="36" r="5" fill="#4f46e5" opacity=".8"/>
+          </svg>
+        </div>
+        <div><div class="lc-name">Integrity Family</div><div class="lc-tag">Preservando Historias · Transformando Generaciones</div></div>
+      </div>
+
+      <div class="lc-zone">
+        <span class="zone-badge badge-new">🌱 Primera vez aquí</span>
+        <div class="zone-title">Crea tu familia</div>
+        <div class="zone-desc">Comienza el diagnóstico y construye la ruta de evolución de tu familia.</div>
+        <button class="btn-orange" id="btn-crear">Crear mi familia →</button>
+      </div>
+
+      <div style="height:1px;background:rgba(255,255,255,.07);"></div>
+
+      <div class="lc-zone">
+        <span class="zone-badge badge-ret">🟠 Juntos hoy</span>
+        <div class="zone-title">Ya tengo cuenta</div>
+        <input class="inp" id="inp-email" placeholder="tu@correo.com" type="email"/>
+        <input class="inp" id="inp-pass"  placeholder="••••••••" type="password"/>
+        <button class="btn-blue">Continuar nuestro proceso</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SC2: DASHBOARD -->
+  <div class="screen" id="sc-dash">
+    <div class="top-nav">
+      <div class="nav-logo"><svg viewBox="0 0 56 56" fill="none"><circle cx="20" cy="28" r="13" stroke="#f97316" stroke-width="3" fill="none"/><circle cx="36" cy="28" r="13" stroke="#4f46e5" stroke-width="3" fill="none"/><circle cx="28" cy="20" r="7" fill="#f97316" opacity=".9"/><circle cx="28" cy="36" r="5" fill="#4f46e5" opacity=".8"/></svg></div>
+      <div><div class="nav-title">Familia García</div><div class="nav-sub">Domingo, 8 junio 2026 · Mes 1</div></div>
+      <div class="nav-badge">🟠 Juntos hoy</div>
+    </div>
+    <div class="dash-body">
+      <div class="dash-pilar">
+        <div class="dp-label">Pilar activo — Mes 1</div>
+        <div class="dp-title">🗣️ Comunicación Familiar</div>
+        <div class="dp-sub">Misión 2 de 4 · 3 semanas restantes</div>
+        <div class="progress-track"><div class="progress-fill" style="width:38%;"></div></div>
+        <button class="btn-sprint" id="btn-sprint">⚡ Ver Sprint de hoy →</button>
+      </div>
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-val">14</div><div class="stat-lbl">Días activos</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:#10b981;">3</div><div class="stat-lbl">Misiones ✅</div></div>
+        <div class="stat-card"><div class="stat-val" style="color:#8b5cf6;">82</div><div class="stat-lbl">Puntos IF</div></div>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">Activos hoy</div>
+      <div class="members-row">
+        <div class="member-chip" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:#93c5fd;">
+          <div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#1e40af,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;">C</div>Carlos
+        </div>
+        <div class="member-chip" style="background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.25);color:#fcd34d;">
+          <div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#b45309,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;">M</div>Camila
+        </div>
+        <div class="member-chip" style="background:rgba(236,72,153,.1);border:1px solid rgba(236,72,153,.2);color:#f9a8d4;">
+          <div style="width:18px;height:18px;border-radius:50%;background:linear-gradient(135deg,#be185d,#f472b6);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;">V</div>Valentina
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SC3: EVALUACIÓN -->
+  <div class="screen" id="sc-eval">
+    <div class="top-nav">
+      <div class="nav-logo"><svg viewBox="0 0 56 56" fill="none"><circle cx="20" cy="28" r="13" stroke="#f97316" stroke-width="3" fill="none"/><circle cx="36" cy="28" r="13" stroke="#4f46e5" stroke-width="3" fill="none"/><circle cx="28" cy="20" r="7" fill="#f97316" opacity=".9"/><circle cx="28" cy="36" r="5" fill="#4f46e5" opacity=".8"/></svg></div>
+      <div><div class="nav-title">Diagnóstico Familiar</div><div class="nav-sub">Sentinel AI · Familia García</div></div>
+    </div>
+    <div class="eval-body">
+      <div class="eval-score-block">
+        <div class="score-big">61</div>
+        <div class="score-sub">ICF — Familia en desarrollo · Potencial alto</div>
+      </div>
+      <div>
+        <div class="dim-bar-item">
+          <div class="dim-bar-top"><span class="dim-bar-name" style="color:#fb923c;">🗣️ Comunicación</span><span class="dim-bar-val" style="color:#fb923c;">68%</span></div>
+          <div class="dim-bar-track"><div class="dim-bar-fill" style="width:68%;background:#f97316;"></div></div>
+        </div>
+        <div class="dim-bar-item">
+          <div class="dim-bar-top"><span class="dim-bar-name" style="color:#6ee7b7;">📅 Tiempo juntos</span><span class="dim-bar-val" style="color:#6ee7b7;">74%</span></div>
+          <div class="dim-bar-track"><div class="dim-bar-fill" style="width:74%;background:#10b981;"></div></div>
+        </div>
+        <div class="dim-bar-item">
+          <div class="dim-bar-top"><span class="dim-bar-name" style="color:#fb7185;">❤️ Emociones</span><span class="dim-bar-val" style="color:#fb7185;">45%</span></div>
+          <div class="dim-bar-track"><div class="dim-bar-fill" style="width:45%;background:#f43f5e;"></div></div>
+        </div>
+        <div class="dim-bar-item">
+          <div class="dim-bar-top"><span class="dim-bar-name" style="color:#94a3b8;">🌱 Hábitos</span><span class="dim-bar-val" style="color:#94a3b8;">52%</span></div>
+          <div class="dim-bar-track"><div class="dim-bar-fill" style="width:52%;background:#64748b;"></div></div>
+        </div>
+      </div>
+      <button class="eval-cta" id="btn-ver-plan">🗺️ Ver mi Plan de Transformación →</button>
+    </div>
+  </div>
+
+  <!-- SC4: PLAN MENSUAL -->
+  <div class="screen" id="sc-plan">
+    <div class="top-nav">
+      <div class="nav-logo"><svg viewBox="0 0 56 56" fill="none"><circle cx="20" cy="28" r="13" stroke="#f97316" stroke-width="3" fill="none"/><circle cx="36" cy="28" r="13" stroke="#4f46e5" stroke-width="3" fill="none"/><circle cx="28" cy="20" r="7" fill="#f97316" opacity=".9"/><circle cx="28" cy="36" r="5" fill="#4f46e5" opacity=".8"/></svg></div>
+      <div><div class="nav-title">Plan de Transformación</div><div class="nav-sub">6 Pilares · Familia García</div></div>
+    </div>
+    <div class="plan-body">
+      <div class="pilar-active">
+        <div class="pa-header">
+          <div class="pa-icon">🗣️</div>
+          <div><div class="pa-label">Mes 1 · Activo ahora</div><div class="pa-title">Comunicación Familiar</div></div>
+        </div>
+        <div class="mission-item m-done">
+          <div class="m-icon">✅</div><div class="m-name" style="color:#34d399;">M1 — Cena Sin Pantallas</div><div class="m-state" style="color:#10b981;">Completada</div>
+        </div>
+        <div class="mission-item m-active" id="m2-item">
+          <div class="m-icon">⚡</div><div class="m-name" style="color:#fb923c;">M2 — Conversación Profunda</div><div class="m-state" style="color:#f97316;">En curso</div>
+        </div>
+        <div class="mission-item m-locked">
+          <div class="m-icon">🔒</div><div class="m-name">M3 — Escucha Activa</div><div class="m-state" style="color:#64748b;">Sem. 3</div>
+        </div>
+        <div class="mission-item m-locked">
+          <div class="m-icon">🔒</div><div class="m-name">M4 — Carta Familiar</div><div class="m-state" style="color:#64748b;">Sem. 4</div>
+        </div>
+      </div>
+      <div class="pilar-future"><div class="pf-icon">❤️</div><div><div class="pf-name">Mes 2 — Emociones</div><div class="pf-sub">Inicia cuando completes Mes 1</div></div></div>
+      <div class="pilar-future" style="opacity:.45;"><div class="pf-icon">🌱</div><div><div class="pf-name">Mes 3 — Hábitos</div><div class="pf-sub">Bloqueado</div></div></div>
+    </div>
+  </div>
+
+  <!-- SC5: SPRINT DIARIO -->
+  <div class="screen" id="sc-sprint">
+    <div class="top-nav">
+      <div class="nav-logo"><svg viewBox="0 0 56 56" fill="none"><circle cx="20" cy="28" r="13" stroke="#f97316" stroke-width="3" fill="none"/><circle cx="36" cy="28" r="13" stroke="#4f46e5" stroke-width="3" fill="none"/><circle cx="28" cy="20" r="7" fill="#f97316" opacity=".9"/><circle cx="28" cy="36" r="5" fill="#4f46e5" opacity=".8"/></svg></div>
+      <div><div class="nav-title">Sprint Diario</div><div class="nav-sub">Misión 2 · Día 3 de 7</div></div>
+    </div>
+    <div class="sprint-body">
+      <div class="sprint-header">
+        <div class="sh-label">⚡ Sprint Diario — Misión 2</div>
+        <div class="sh-title">Conversación Profunda</div>
+        <div class="sh-desc">Hoy la familia García tiene una conversación sin juicios, donde cada uno dice algo que normalmente se calla.</div>
+        <div class="sh-pills">
+          <span class="sh-pill" style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:#fb923c;">⏱️ 45 min</span>
+          <span class="sh-pill" style="background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);color:#a78bfa;">👨‍👩‍👧‍👦 Todos juntos</span>
+          <span class="sh-pill" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.22);color:#34d399;">Día 3 de 7</span>
+        </div>
+      </div>
+      <div class="step-item step-done">
+        <div class="step-num" style="background:#10b981;color:#fff;">✓</div>
+        <div><div class="step-title" style="color:#34d399;">Reunirse a la hora de la cena</div><div class="step-body">Sin celulares sobre la mesa.</div></div>
+      </div>
+      <div class="step-item step-active">
+        <div class="step-num" style="background:#f97316;color:#fff;">2</div>
+        <div><div class="step-title" style="color:#fb923c;">La pregunta del día</div><div class="step-body">"¿Qué fue lo más difícil de tu semana y por qué no lo habías dicho?"</div></div>
+      </div>
+      <div class="step-item step-next">
+        <div class="step-num" style="background:#475569;color:#fff;">3</div>
+        <div><div class="step-title" style="color:#94a3b8;">Regla de oro</div><div class="step-body">Quien habla, no es interrumpido. Quien escucha, no juzga.</div></div>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;">¿Quién participó hoy?</div>
+      <div class="check-item">
+        <div class="member-avatar" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">C</div>
+        <div class="chk-name" style="color:#93c5fd;">Carlos <span class="chk-role">— Papá</span></div>
+        <div class="chk checked">✓</div>
+      </div>
+      <div class="check-item">
+        <div class="member-avatar" style="background:linear-gradient(135deg,#b45309,#f59e0b);">M</div>
+        <div class="chk-name" style="color:#fcd34d;">Camila <span class="chk-role">— Mamá</span></div>
+        <div class="chk checked">✓</div>
+      </div>
+      <div class="check-item" id="chk-valentina">
+        <div class="member-avatar" style="background:linear-gradient(135deg,#be185d,#f472b6);">V</div>
+        <div class="chk-name" style="color:#f9a8d4;">Valentina <span class="chk-role">— Hija</span></div>
+        <div class="chk" id="chk-v-box"></div>
+      </div>
+      <button class="btn-complete" id="btn-complete">✅ Marcar sprint completado →</button>
+    </div>
+  </div>
+
+  <!-- SC6: MISIÓN COMPLETADA -->
+  <div class="screen" id="sc-win">
+    <div class="win-badge">
+      <div class="win-icon">🏆</div>
+      <div><div class="win-label">Misión Cumplida</div><div class="win-date">Domingo 8 de junio 2026 · 7:34 p.m.</div></div>
+    </div>
+    <div class="win-title">Conversación Profunda</div>
+    <div class="win-sub">Registrado por Carlos · Familia García</div>
+    <div class="win-ai">
+      <div class="ai-label">🧠 Narrativa generada por Sentinel AI</div>
+      <div class="ai-text">Esa noche, la familia García tomó una decisión que parecía pequeña pero que resultó ser el primer paso de algo grande. <strong style="color:#c4b5fd;">Les enseñó que ya sabían encenderse los unos a los otros.</strong></div>
+    </div>
+    <button class="win-cta">🎬 Ver en el Documental Familiar →</button>
+  </div>
+
+</div><!-- /frame -->
+
+<!-- Bottom bar -->
+<div id="bottom-bar">
+  <div id="demo-progress"><div id="demo-bar" style="width:0%"></div></div>
+  <div id="scene-label">Iniciando…</div>
+  <button id="btn-pause" onclick="togglePause()">⏸ Pausar</button>
+  <button id="btn-restart" onclick="restart()">↺ Reiniciar</button>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+//  DEMO SCRIPT
+// ─────────────────────────────────────────
+
+const TOTAL_DURATION = 62; // seconds total
+let elapsed   = 0;
+let paused    = false;
+let raf       = null;
+let lastTime  = null;
+
+const screens = {
+  login:  document.getElementById('sc-login'),
+  dash:   document.getElementById('sc-dash'),
+  eval:   document.getElementById('sc-eval'),
+  plan:   document.getElementById('sc-plan'),
+  sprint: document.getElementById('sc-sprint'),
+  win:    document.getElementById('sc-win'),
+};
+const urlEl    = document.getElementById('url-text');
+const barEl    = document.getElementById('demo-bar');
+const labelEl  = document.getElementById('scene-label');
+const overlay  = document.getElementById('overlay');
+const cursor   = document.getElementById('cursor');
+
+// ── SCENES ──────────────────────────────
+// Each scene: { at, screen, url, label, actions: [{at, fn}] }
+const SCENES = [
+  {
+    at: 0, screen: 'login', url: 'integrity-family.app/login', label: '1 — Login · Primera visita',
+    actions: [
+      { at: 1.5, fn: () => moveCursor(430, 420) },
+      { at: 2.5, fn: () => { focus('inp-email'); typeIn('inp-email','carlos@garcia.com'); } },
+      { at: 5,   fn: () => moveCursor(430, 490) },
+    ],
+  },
+  {
+    at: 7, screen: 'dash', url: 'integrity-family.app/dashboard', label: '2 — Dashboard · Familia García',
+    actions: [
+      { at: 8.5,  fn: () => moveCursor(250, 300) },
+      { at: 10.5, fn: () => { click(250,300); moveCursor(250, 350); } },
+    ],
+  },
+  {
+    at: 14, screen: 'eval', url: 'integrity-family.app/evaluacion', label: '3 — Diagnóstico · ICF 61',
+    actions: [
+      { at: 15.5, fn: () => moveCursor(300, 480) },
+      { at: 18,   fn: () => moveCursor(300, 520) },
+    ],
+  },
+  {
+    at: 22, screen: 'plan', url: 'integrity-family.app/plan', label: '4 — Plan Mensual · 6 Pilares',
+    actions: [
+      { at: 23.5, fn: () => moveCursor(300, 350) },
+      { at: 25.5, fn: () => { click(300,350); moveCursor(300, 420); } },
+    ],
+  },
+  {
+    at: 29, screen: 'sprint', url: 'integrity-family.app/sprint', label: '5 — Sprint Diario · Misión 2',
+    actions: [
+      { at: 31,   fn: () => moveCursor(300, 460) },
+      { at: 33,   fn: () => { checkValentina(); click(340,462); } },
+      { at: 36,   fn: () => moveCursor(300, 550) },
+      { at: 38,   fn: () => click(300,550) },
+    ],
+  },
+  {
+    at: 42, screen: 'win', url: 'integrity-family.app/mision-cumplida', label: '6 — Misión Completada 🏆',
+    actions: [
+      { at: 44, fn: () => moveCursor(300, 400) },
+      { at: 48, fn: () => moveCursor(300, 480) },
+    ],
+  },
+  {
+    at: 56, screen: 'login', url: 'integrity-family.app', label: 'Demo completo · Reiniciando…',
+    actions: [
+      { at: 58, fn: () => { document.getElementById('chk-v-box').classList.remove('checked'); document.getElementById('chk-v-box').textContent = ''; } }
+    ],
+  },
+];
+
+let sceneIdx  = -1;
+let actionsDone = new Set();
+
+function getScene(t) {
+  let s = null;
+  for (const sc of SCENES) { if (t >= sc.at) s = sc; }
+  return s;
+}
+
+function moveCursor(x, y) {
+  cursor.style.left = x + 'px';
+  cursor.style.top  = (y + 52) + 'px';
+}
+
+function click(x, y) {
+  moveCursor(x, y);
+  const r = document.createElement('div');
+  r.className = 'ripple';
+  r.style.left = (x - 15) + 'px';
+  r.style.top  = (y + 52 - 15) + 'px';
+  document.body.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+}
+
+function focus(id) {
+  document.getElementById(id)?.classList.add('focus');
+}
+
+function typeIn(id, text) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  let i = 0;
+  const iv = setInterval(() => {
+    el.value = text.slice(0, ++i);
+    if (i >= text.length) clearInterval(iv);
+  }, 60);
+}
+
+function checkValentina() {
+  const box = document.getElementById('chk-v-box');
+  if (box) { box.classList.add('checked'); box.textContent = '✓'; }
+}
+
+function switchScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  screens[name]?.classList.add('active');
+}
+
+function transition(toFn) {
+  overlay.classList.add('fade');
+  setTimeout(() => { toFn(); overlay.classList.remove('fade'); }, 420);
+}
+
+function tick(ts) {
+  if (paused) { lastTime = ts; raf = requestAnimationFrame(tick); return; }
+  if (lastTime) elapsed += (ts - lastTime) / 1000;
+  lastTime = ts;
+
+  const t = elapsed % TOTAL_DURATION;
+  const pct = (t / TOTAL_DURATION) * 100;
+  barEl.style.width = pct + '%';
+
+  const scene = getScene(t);
+  if (scene) {
+    const idx = SCENES.indexOf(scene);
+    if (idx !== sceneIdx) {
+      sceneIdx = idx;
+      actionsDone = new Set();
+      transition(() => {
+        switchScreen(scene.screen);
+        urlEl.textContent = scene.url;
+        labelEl.textContent = scene.label;
+      });
+    }
+    scene.actions?.forEach((a, i) => {
+      const key = idx + '-' + i;
+      if (t >= scene.at + a.at - scene.at && !actionsDone.has(key)) {
+        actionsDone.add(key);
+        a.fn();
+      }
+    });
+  }
+
+  raf = requestAnimationFrame(tick);
+}
+
+function togglePause() {
+  paused = !paused;
+  document.getElementById('btn-pause').textContent = paused ? '▶ Reanudar' : '⏸ Pausar';
+}
+
+function restart() {
+  elapsed = 0; sceneIdx = -1; actionsDone = new Set(); lastTime = null; paused = false;
+  document.getElementById('btn-pause').textContent = '⏸ Pausar';
+}
+
+// Init cursor position
+moveCursor(300, 300);
+
+// Start
+raf = requestAnimationFrame(tick);
+</script>
+</body>
+</html>

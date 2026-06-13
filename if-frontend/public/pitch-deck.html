@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Pitch Deck — Integrity Family</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --orange: #f97316; --blue: #4f46e5; --green: #10b981;
+  --red: #ef4444; --purple: #8b5cf6; --teal: #06b6d4;
+  --bg: #0d1117;
+}
+html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Inter', sans-serif; }
+
+/* ── DECK CONTAINER ── */
+#deck { width: 100%; height: 100%; position: relative; }
+
+/* ── SLIDE ── */
+.slide {
+  position: absolute; inset: 0;
+  display: none; flex-direction: column;
+  padding: 0;
+  transition: opacity .35s ease;
+}
+.slide.active { display: flex; }
+
+/* ── NAV ── */
+#nav-bar {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 44px;
+  background: rgba(0,0,0,.85); backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255,255,255,.08);
+  display: flex; align-items: center; justify-content: center; gap: 16px;
+  z-index: 100;
+}
+.nav-arrow { background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12); color: rgba(255,255,255,.5); padding: 6px 16px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: all .15s; font-weight: 700; }
+.nav-arrow:hover { background: rgba(255,255,255,.12); color: #fff; }
+#slide-counter { font-size: 10px; color: rgba(255,255,255,.3); font-weight: 700; letter-spacing: .06em; min-width: 60px; text-align: center; }
+#progress-dots { display: flex; gap: 5px; }
+.pdot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.15); cursor: pointer; transition: background .2s; }
+.pdot.active { background: var(--orange); }
+
+/* ── SLIDE 1: PORTADA ── */
+#s1 {
+  background: radial-gradient(ellipse at 30% 40%, rgba(249,115,22,.18) 0%, transparent 60%),
+              radial-gradient(ellipse at 70% 60%, rgba(79,70,229,.12) 0%, transparent 60%),
+              #0d1117;
+  align-items: center; justify-content: center; text-align: center;
+}
+.s1-logo { width: 72px; height: 72px; border-radius: 18px; background: #fcfbf4; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }
+.s1-logo svg { width: 50px; height: 50px; }
+.s1-title { font-family: 'Playfair Display', serif; font-size: clamp(32px,5vw,58px); color: #fff; line-height: 1.1; margin-bottom: 12px; }
+.s1-title span { color: var(--orange); }
+.s1-sub   { font-size: clamp(13px,2vw,17px); color: rgba(255,255,255,.5); margin-bottom: 28px; letter-spacing: .01em; }
+.s1-badge { display: inline-flex; gap: 6px; align-items: center; background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.3); color: #fb923c; padding: 7px 18px; border-radius: 20px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+
+/* ── SLIDE 2: PROBLEMA ── */
+#s2 { background: #0d1117; padding: 48px 6% 60px; justify-content: center; }
+.slide-label { font-size: 10px; font-weight: 800; color: var(--orange); text-transform: uppercase; letter-spacing: .12em; margin-bottom: 12px; }
+.slide-h { font-family: 'Playfair Display', serif; font-size: clamp(24px,3.5vw,44px); color: #fff; line-height: 1.15; margin-bottom: 28px; }
+.slide-h em { color: var(--orange); font-style: normal; }
+.stat-trio { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 28px; }
+.st-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); border-radius: 14px; padding: 20px; text-align: center; }
+.st-big  { font-size: clamp(28px,4vw,46px); font-weight: 900; line-height: 1; margin-bottom: 6px; }
+.st-lbl  { font-size: 11px; color: #64748b; line-height: 1.4; }
+.problem-quote { background: rgba(239,68,68,.07); border: 1px solid rgba(239,68,68,.18); border-left: 3px solid #ef4444; border-radius: 0 12px 12px 0; padding: 16px 20px; font-size: 14px; color: #fca5a5; line-height: 1.6; font-style: italic; }
+
+/* ── SLIDE 3: SOLUCIÓN ── */
+#s3 { background: #0d1117; padding: 48px 6% 60px; justify-content: center; }
+.solution-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 14px; }
+.sol-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 14px; padding: 18px; }
+.sc-icon  { font-size: 24px; margin-bottom: 8px; }
+.sc-title { font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 5px; }
+.sc-desc  { font-size: 11px; color: #64748b; line-height: 1.6; }
+
+/* ── SLIDE 4: MERCADO ── */
+#s4 { background: #0d1117; padding: 48px 6% 60px; justify-content: center; }
+.market-funnel { display: flex; flex-direction: column; gap: 10px; max-width: 560px; }
+.mf-row { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; }
+.mf-tam { background: rgba(79,70,229,.1);  border: 1px solid rgba(79,70,229,.25); }
+.mf-sam { background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.25); }
+.mf-som { background: rgba(16,185,129,.1); border: 1px solid rgba(16,185,129,.25); }
+.mf-tag { font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .06em; width: 44px; flex-shrink: 0; }
+.mf-desc { flex: 1; font-size: 12px; color: #94a3b8; }
+.mf-val  { font-size: 20px; font-weight: 900; }
+.market-note { font-size: 11px; color: #475569; margin-top: 14px; line-height: 1.6; }
+
+/* ── SLIDE 5: MODELO DE NEGOCIO ── */
+#s5 { background: #0d1117; padding: 48px 6% 60px; justify-content: center; }
+.model-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 20px; }
+.model-card { border-radius: 14px; padding: 18px; text-align: center; }
+.mc-icon  { font-size: 22px; margin-bottom: 8px; }
+.mc-name  { font-size: 12px; font-weight: 800; margin-bottom: 5px; }
+.mc-price { font-size: 20px; font-weight: 900; margin-bottom: 4px; }
+.mc-cycle { font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: .06em; }
+.unit-econ { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; }
+.ue-item { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 10px; padding: 12px; text-align: center; }
+.ue-val { font-size: 18px; font-weight: 900; color: var(--green); margin-bottom: 4px; }
+.ue-lbl { font-size: 9px; color: #64748b; }
+
+/* ── SLIDE 6: TRACCIÓN ── */
+#s6 { background: #0d1117; padding: 48px 6% 60px; justify-content: center; }
+.traction-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; margin-bottom: 20px; }
+.tr-card { background: rgba(16,185,129,.07); border: 1px solid rgba(16,185,129,.18); border-radius: 14px; padding: 20px; }
+.tr-val  { font-size: 32px; font-weight: 900; color: var(--green); line-height: 1; margin-bottom: 4px; }
+.tr-lbl  { font-size: 11px; color: #64748b; }
+.timeline-strip { display: flex; gap: 0; }
+.ts-item { flex: 1; border-left: 1px solid rgba(255,255,255,.08); padding: 10px 12px; }
+.ts-item:first-child { border-left: none; }
+.ts-mo   { font-size: 9px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 3px; }
+.ts-ev   { font-size: 10px; color: #94a3b8; line-height: 1.4; }
+
+/* ── SLIDE 7: EQUIPO ── */
+#s7 { background: #0d1117; padding: 48px 6% 60px; justify-content: center; }
+.team-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 14px; }
+.team-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 14px; padding: 18px; text-align: center; }
+.team-avatar { width: 52px; height: 52px; border-radius: 50%; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #fff; }
+.team-name { font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 3px; }
+.team-role { font-size: 10px; color: #64748b; margin-bottom: 8px; }
+.team-tag  { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+
+/* ── SLIDE 8: PROYECCIÓN ── */
+#s8 { background: #0d1117; padding: 48px 6% 60px; justify-content: center; }
+.proj-chart { display: flex; align-items: flex-end; gap: 10px; height: 160px; margin-bottom: 18px; }
+.pc-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.pc-bar { width: 100%; border-radius: 6px 6px 0 0; transition: height .8s ease; min-height: 8px; }
+.pc-year-lbl { font-size: 9px; color: #64748b; font-weight: 700; }
+.pc-year-val { font-size: 11px; font-weight: 900; }
+.proj-items { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.pi-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; padding: 14px; text-align: center; }
+.pi-val { font-size: 20px; font-weight: 900; color: var(--orange); }
+.pi-lbl { font-size: 10px; color: #64748b; margin-top: 3px; }
+
+/* ── SLIDE 9: THE ASK ── */
+#s9 {
+  background: radial-gradient(ellipse at 50% 40%, rgba(249,115,22,.15) 0%, transparent 65%), #0d1117;
+  align-items: center; justify-content: center; text-align: center; padding: 48px 8% 60px;
+}
+.ask-amount { font-size: clamp(40px,7vw,80px); font-weight: 900; color: var(--orange); line-height: 1; margin-bottom: 8px; }
+.ask-sub    { font-size: 14px; color: rgba(255,255,255,.5); margin-bottom: 28px; }
+.use-grid   { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; max-width: 520px; margin: 0 auto 28px; }
+.ug-item    { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 14px 10px; }
+.ug-pct     { font-size: 22px; font-weight: 900; color: var(--orange); margin-bottom: 4px; }
+.ug-lbl     { font-size: 10px; color: #64748b; }
+.ask-cta    { font-family: 'Playfair Display', serif; font-size: clamp(16px,2.5vw,22px); color: #fff; line-height: 1.5; max-width: 500px; }
+.ask-cta span { color: var(--orange); }
+</style>
+</head>
+<body>
+<div id="deck">
+
+  <!-- S1: PORTADA -->
+  <div class="slide active" id="s1">
+    <div class="s1-logo">
+      <svg viewBox="0 0 56 56" fill="none">
+        <circle cx="20" cy="28" r="13" stroke="#f97316" stroke-width="3" fill="none"/>
+        <circle cx="36" cy="28" r="13" stroke="#4f46e5" stroke-width="3" fill="none"/>
+        <circle cx="28" cy="20" r="7" fill="#f97316" opacity=".9"/>
+        <circle cx="28" cy="36" r="5" fill="#4f46e5" opacity=".8"/>
+      </svg>
+    </div>
+    <div class="s1-title">Integrity<br/><span>Family</span></div>
+    <div class="s1-sub">El sistema operativo de la familia moderna</div>
+    <div class="s1-badge">🌱 Seed Round · 2026</div>
+  </div>
+
+  <!-- S2: PROBLEMA -->
+  <div class="slide" id="s2">
+    <div class="slide-label">01 — El Problema</div>
+    <div class="slide-h">Las familias están juntas<br/>pero <em>no están conectadas</em></div>
+    <div class="stat-trio">
+      <div class="st-card">
+        <div class="st-big" style="color:#ef4444;">67%</div>
+        <div class="st-lbl">de padres reportan no tener conversaciones profundas con sus hijos en la semana</div>
+      </div>
+      <div class="st-card">
+        <div class="st-big" style="color:#f97316;">3.2h</div>
+        <div class="st-lbl">promedio diario de pantalla por miembro de familia vs. 18 min de conversación real</div>
+      </div>
+      <div class="st-card">
+        <div class="st-big" style="color:#f59e0b;">82%</div>
+        <div class="st-lbl">de familias no tienen ningún sistema intencional para fortalecer sus vínculos</div>
+      </div>
+    </div>
+    <div class="problem-quote">"Tenemos más herramientas para gestionar proyectos en el trabajo que para gestionar la relación con nuestros propios hijos."</div>
+  </div>
+
+  <!-- S3: SOLUCIÓN -->
+  <div class="slide" id="s3">
+    <div class="slide-label">02 — La Solución</div>
+    <div class="slide-h">Un sistema operativo para<br/>la <em>transformación familiar</em></div>
+    <div class="solution-grid">
+      <div class="sol-card">
+        <div class="sc-icon">📊</div>
+        <div class="sc-title">Diagnóstico ICF</div>
+        <div class="sc-desc">Índice de Cohesión Familiar: un número 0–100 que mide el estado real de tu familia en 4 dimensiones. Base objetiva para el proceso.</div>
+      </div>
+      <div class="sol-card">
+        <div class="sc-icon">🗺️</div>
+        <div class="sc-title">Plan de 6 Pilares</div>
+        <div class="sc-desc">Ruta personalizada de transformación: 6 meses, 1 pilar por mes, 4 misiones por pilar. Estructura que convierte intención en hábito.</div>
+      </div>
+      <div class="sol-card">
+        <div class="sc-icon">⚡</div>
+        <div class="sc-title">Sprint Diario</div>
+        <div class="sc-desc">Actividad de 30–45 min cada día. Diseñada para la familia específica. Registrada y seguida por Sentinel AI en tiempo real.</div>
+      </div>
+      <div class="sol-card">
+        <div class="sc-icon">🎬</div>
+        <div class="sc-title">Cápsula Familiar</div>
+        <div class="sc-desc">Al cierre del proceso: una película, cartas, fotografías y narrativa generada por IA. El legado digital de la transformación.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S4: MERCADO -->
+  <div class="slide" id="s4">
+    <div class="slide-label">03 — El Mercado</div>
+    <div class="slide-h">Un mercado enorme,<br/>sin un <em>producto líder</em></div>
+    <div class="market-funnel">
+      <div class="mf-row mf-tam">
+        <div class="mf-tag" style="color:#818cf8;">TAM</div>
+        <div class="mf-desc">Familias latinoamericanas con acceso a smartphone y disposición de pago en bienestar familiar</div>
+        <div class="mf-val" style="color:#818cf8;">$4.2B</div>
+      </div>
+      <div class="mf-row mf-sam">
+        <div class="mf-tag" style="color:#fb923c;">SAM</div>
+        <div class="mf-desc">Familias urbanas clase media-alta en Colombia, México y Chile con perfil de early adopter</div>
+        <div class="mf-val" style="color:#fb923c;">$380M</div>
+      </div>
+      <div class="mf-row mf-som">
+        <div class="mf-tag" style="color:#34d399;">SOM</div>
+        <div class="mf-desc">Meta 2028: 8,000 familias activas con proceso completo en Colombia</div>
+        <div class="mf-val" style="color:#34d399;">$14M</div>
+      </div>
+    </div>
+    <div class="market-note">El mercado de bienestar familiar digital creció 34% en Latam entre 2022–2025. No existe aún un producto que combine diagnóstico, ruta y legado en una sola plataforma.</div>
+  </div>
+
+  <!-- S5: MODELO DE NEGOCIO -->
+  <div class="slide" id="s5">
+    <div class="slide-label">04 — Modelo de Negocio</div>
+    <div class="slide-h">Tres líneas de ingreso.<br/><em>Una misión.</em></div>
+    <div class="model-grid">
+      <div class="model-card" style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);">
+        <div class="mc-icon">👨‍👩‍👧‍👦</div>
+        <div class="mc-name" style="color:#fb923c;">Suscripción Familia</div>
+        <div class="mc-price" style="color:#f97316;">$49</div>
+        <div class="mc-cycle">/ mes · plan activo</div>
+      </div>
+      <div class="model-card" style="background:rgba(79,70,229,.08);border:1px solid rgba(79,70,229,.2);">
+        <div class="mc-icon">👔</div>
+        <div class="mc-name" style="color:#a5b4fc;">Consultor IF</div>
+        <div class="mc-price" style="color:#818cf8;">$199</div>
+        <div class="mc-cycle">/ mes · hasta 8 familias</div>
+      </div>
+      <div class="model-card" style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);">
+        <div class="mc-icon">🏢</div>
+        <div class="mc-name" style="color:#34d399;">Empresas B2B</div>
+        <div class="mc-price" style="color:#10b981;">$2,400</div>
+        <div class="mc-cycle">/ año · plan corporativo</div>
+      </div>
+    </div>
+    <div class="unit-econ">
+      <div class="ue-item"><div class="ue-val">$180</div><div class="ue-lbl">CAC estimado</div></div>
+      <div class="ue-item"><div class="ue-val">$588</div><div class="ue-lbl">LTV (12 meses)</div></div>
+      <div class="ue-item"><div class="ue-val">3.3×</div><div class="ue-lbl">LTV/CAC</div></div>
+      <div class="ue-item"><div class="ue-val">14mo</div><div class="ue-lbl">Payback period</div></div>
+    </div>
+  </div>
+
+  <!-- S6: TRACCIÓN -->
+  <div class="slide" id="s6">
+    <div class="slide-label">05 — Tracción</div>
+    <div class="slide-h">Piloto activo.<br/><em>Datos reales.</em></div>
+    <div class="traction-grid">
+      <div class="tr-card">
+        <div class="tr-val">47</div>
+        <div class="tr-lbl">Familias activas en piloto · Bogotá 2026</div>
+      </div>
+      <div class="tr-card">
+        <div class="tr-val">+24pts</div>
+        <div class="tr-lbl">Mejora ICF promedio en 6 meses</div>
+      </div>
+      <div class="tr-card">
+        <div class="tr-val">89%</div>
+        <div class="tr-lbl">Adherencia a sprints diarios</div>
+      </div>
+      <div class="tr-card">
+        <div class="tr-val">4.7★</div>
+        <div class="tr-lbl">NPS promedio (de 5.0)</div>
+      </div>
+    </div>
+    <div class="timeline-strip" style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;overflow:hidden;margin-top:6px;">
+      <div class="ts-item"><div class="ts-mo">Ene 26</div><div class="ts-ev">Lanzamiento piloto · 12 familias</div></div>
+      <div class="ts-item"><div class="ts-mo">Mar 26</div><div class="ts-ev">Primera cápsula generada · ICF García 89</div></div>
+      <div class="ts-item"><div class="ts-mo">May 26</div><div class="ts-ev">47 familias activas · 2 consultores IF</div></div>
+      <div class="ts-item"><div class="ts-mo">Jun 26</div><div class="ts-ev">Ronda seed abierta · $350k target</div></div>
+    </div>
+  </div>
+
+  <!-- S7: EQUIPO -->
+  <div class="slide" id="s7">
+    <div class="slide-label">06 — El Equipo</div>
+    <div class="slide-h">Construido por personas<br/>que <em>vivieron el problema</em></div>
+    <div class="team-grid">
+      <div class="team-card">
+        <div class="team-avatar" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">WL</div>
+        <div class="team-name">William López</div>
+        <div class="team-role">CEO & Co-Fundador</div>
+        <div class="team-tag" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:#93c5fd;">Tecnología · 12 años</div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar" style="background:linear-gradient(135deg,#be185d,#f472b6);">PS</div>
+        <div class="team-name">Paula Sánchez</div>
+        <div class="team-role">CPO & Co-Fundadora</div>
+        <div class="team-tag" style="background:rgba(236,72,153,.1);border:1px solid rgba(236,72,153,.25);color:#f9a8d4;">Psicología Sistémica</div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar" style="background:linear-gradient(135deg,#065f46,#34d399);">JM</div>
+        <div class="team-name">Jorge Mora</div>
+        <div class="team-role">CTO</div>
+        <div class="team-tag" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#6ee7b7;">AI / Angular / Cloud</div>
+      </div>
+      <div class="team-card">
+        <div class="team-avatar" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);">LC</div>
+        <div class="team-name">Luisa Cano</div>
+        <div class="team-role">Head of Consultores</div>
+        <div class="team-tag" style="background:rgba(124,58,237,.1);border:1px solid rgba(124,58,237,.25);color:#c4b5fd;">Coaching Familiar</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- S8: PROYECCIÓN -->
+  <div class="slide" id="s8">
+    <div class="slide-label">07 — Proyección</div>
+    <div class="slide-h">El camino hacia<br/><em>50,000 familias</em></div>
+    <div class="proj-chart">
+      <div class="pc-col">
+        <div class="pc-bar" style="height:5%;background:rgba(249,115,22,.4);"></div>
+        <div class="pc-year-val" style="color:#f97316;">150</div>
+        <div class="pc-year-lbl">2026</div>
+      </div>
+      <div class="pc-col">
+        <div class="pc-bar" style="height:18%;background:rgba(249,115,22,.55);"></div>
+        <div class="pc-year-val" style="color:#f97316;">1,200</div>
+        <div class="pc-year-lbl">2027</div>
+      </div>
+      <div class="pc-col">
+        <div class="pc-bar" style="height:42%;background:rgba(249,115,22,.7);"></div>
+        <div class="pc-year-val" style="color:#f97316;">8,000</div>
+        <div class="pc-year-lbl">2028</div>
+      </div>
+      <div class="pc-col">
+        <div class="pc-bar" style="height:72%;background:rgba(249,115,22,.85);"></div>
+        <div class="pc-year-val" style="color:#f97316;">22,000</div>
+        <div class="pc-year-lbl">2029</div>
+      </div>
+      <div class="pc-col">
+        <div class="pc-bar" style="height:100%;background:#f97316;"></div>
+        <div class="pc-year-val" style="color:#f97316;">50,000</div>
+        <div class="pc-year-lbl">2030</div>
+      </div>
+    </div>
+    <div class="proj-items">
+      <div class="pi-card"><div class="pi-val">$2.8M</div><div class="pi-lbl">ARR proyectado 2028</div></div>
+      <div class="pi-card"><div class="pi-val">62%</div><div class="pi-lbl">Margen bruto estimado</div></div>
+      <div class="pi-card"><div class="pi-val">Q3 2027</div><div class="pi-lbl">Break-even proyectado</div></div>
+    </div>
+  </div>
+
+  <!-- S9: THE ASK -->
+  <div class="slide" id="s9">
+    <div class="ask-amount">$350,000</div>
+    <div class="ask-sub">Ronda Seed · Participación 12% · Valoración pre-money $2.4M</div>
+    <div class="use-grid">
+      <div class="ug-item"><div class="ug-pct">45%</div><div class="ug-lbl">Tecnología y AI</div></div>
+      <div class="ug-item"><div class="ug-pct">30%</div><div class="ug-lbl">Crecimiento de familias</div></div>
+      <div class="ug-item"><div class="ug-pct">25%</div><div class="ug-lbl">Equipo y operaciones</div></div>
+    </div>
+    <div class="ask-cta">No estamos construyendo una app.<br/>Estamos construyendo el <span>primer sistema operativo<br/>para la familia intencional.</span></div>
+  </div>
+
+</div><!-- /deck -->
+
+<!-- NAV BAR -->
+<div id="nav-bar">
+  <button class="nav-arrow" onclick="prev()">← Anterior</button>
+  <div id="progress-dots"></div>
+  <span id="slide-counter">1 / 9</span>
+  <button class="nav-arrow" onclick="next()">Siguiente →</button>
+</div>
+
+<script>
+const TOTAL = 9;
+let current = 1;
+
+// Build dots
+const dotsEl = document.getElementById('progress-dots');
+for (let i = 1; i <= TOTAL; i++) {
+  const d = document.createElement('div');
+  d.className = 'pdot' + (i === 1 ? ' active' : '');
+  d.addEventListener('click', () => goTo(i));
+  dotsEl.appendChild(d);
+}
+
+function goTo(n) {
+  document.getElementById('s'+current)?.classList.remove('active');
+  current = Math.max(1, Math.min(TOTAL, n));
+  document.getElementById('s'+current)?.classList.add('active');
+  document.getElementById('slide-counter').textContent = current + ' / ' + TOTAL;
+  document.querySelectorAll('.pdot').forEach((d,i) => d.classList.toggle('active', i+1 === current));
+}
+function next() { goTo(current+1); }
+function prev() { goTo(current-1); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); next(); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
+});
+</script>
+</body>
+</html>

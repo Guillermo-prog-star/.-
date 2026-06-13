@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Integrity Family — Sistema Vivo de Transformación Familiar</title>
+<style>
+  :root {
+    --bg: #060c1a;
+    --bg2: #0d1528;
+    --nucleus: #f59e0b;
+    --nucleus-glow: #f59e0b44;
+    --ai: #8b5cf6;
+    --ai-glow: #8b5cf644;
+    --emotion: #f43f5e;
+    --emotion-glow: #f43f5e44;
+    --plan: #10b981;
+    --plan-glow: #10b98144;
+    --crisis: #ef4444;
+    --crisis-glow: #ef444444;
+    --journal: #3b82f6;
+    --journal-glow: #3b82f644;
+    --portal: #06b6d4;
+    --portal-glow: #06b6d444;
+    --identity: #64748b;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --border: #1e293b;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #0d1528 0%, #0a0f1e 100%);
+    border-bottom: 1px solid #1e293b;
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo-pulse {
+    width: 44px; height: 44px;
+    background: radial-gradient(circle, #f59e0b, #d97706);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    animation: heartbeat 1.8s ease-in-out infinite;
+    box-shadow: 0 0 20px #f59e0b66;
+  }
+  @keyframes heartbeat {
+    0%,100% { transform: scale(1); box-shadow: 0 0 20px #f59e0b66; }
+    15% { transform: scale(1.15); box-shadow: 0 0 35px #f59e0baa; }
+    30% { transform: scale(1); box-shadow: 0 0 20px #f59e0b66; }
+    45% { transform: scale(1.08); box-shadow: 0 0 28px #f59e0b88; }
+  }
+  .header h1 { font-size: 20px; font-weight: 700; color: #f8fafc; }
+  .header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .badge-live {
+    margin-left: auto;
+    background: #10b98120;
+    border: 1px solid #10b98166;
+    color: #10b981;
+    padding: 4px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .dot-live {
+    width: 7px; height: 7px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: blink 1.2s ease-in-out infinite;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+  /* ── EVENT BUS ── */
+  .event-bus {
+    background: #0a0f1e;
+    border-top: 1px solid #1e293b;
+    border-bottom: 2px solid #f59e0b33;
+    padding: 10px 0;
+    overflow: hidden;
+    position: relative;
+  }
+  .event-bus-label {
+    position: absolute; left: 12px; top: 50%;
+    transform: translateY(-50%);
+    font-size: 9px; font-weight: 700; letter-spacing: 2px;
+    color: #f59e0b88;
+    z-index: 2;
+    background: #060c1a;
+    padding: 0 8px;
+  }
+  .event-track {
+    display: flex;
+    gap: 0;
+    animation: scroll-events 30s linear infinite;
+    width: max-content;
+    padding-left: 160px;
+  }
+  @keyframes scroll-events { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+  .ev {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 14px;
+    border-radius: 999px;
+    font-size: 10px; font-weight: 600;
+    margin: 0 8px;
+    white-space: nowrap;
+    border: 1px solid currentColor;
+    opacity: 0.9;
+  }
+  .ev-emotion { color:#f43f5e; background:#f43f5e11; }
+  .ev-risk    { color:#ef4444; background:#ef444411; }
+  .ev-plan    { color:#10b981; background:#10b98111; }
+  .ev-ai      { color:#8b5cf6; background:#8b5cf611; }
+  .ev-crisis  { color:#ff6b35; background:#ff6b3511; }
+  .ev-journal { color:#3b82f6; background:#3b82f611; }
+  .ev-icf     { color:#f59e0b; background:#f59e0b11; }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 0;
+    min-height: calc(100vh - 120px);
+  }
+
+  /* ── CANVAS ── */
+  .canvas {
+    padding: 32px;
+    position: relative;
+  }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  /* ── ICF DIMENSIONS BAR ── */
+  .dimensions-bar {
+    display: flex; gap: 12px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+  .dim-card {
+    flex: 1; min-width: 120px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .dim-card::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .dim-emotion::before { background: var(--emotion); }
+  .dim-comms::before   { background: var(--journal); }
+  .dim-habits::before  { background: var(--plan); }
+  .dim-time::before    { background: var(--nucleus); }
+  .dim-name { font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: 1px; }
+  .dim-value { font-size: 24px; font-weight: 800; margin: 4px 0 6px; }
+  .dim-emotion .dim-value { color: var(--emotion); }
+  .dim-comms .dim-value   { color: var(--journal); }
+  .dim-habits .dim-value  { color: var(--plan); }
+  .dim-time .dim-value    { color: var(--nucleus); }
+  .dim-bar { height: 4px; background: #1e293b; border-radius: 2px; overflow: hidden; }
+  .dim-fill { height: 100%; border-radius: 2px; animation: breathe 3s ease-in-out infinite; }
+  .dim-emotion .dim-fill { background: var(--emotion); width: 70%; }
+  .dim-comms .dim-fill   { background: var(--journal); width: 48%; }
+  .dim-habits .dim-fill  { background: var(--plan);    width: 59%; }
+  .dim-time .dim-fill    { background: var(--nucleus); width: 35%; }
+  @keyframes breathe { 0%,100%{opacity:1} 50%{opacity:0.6} }
+  .dim-trend { font-size: 9px; margin-top: 4px; }
+  .dim-emotion .dim-trend { color: #f59e0b; }
+  .dim-comms .dim-trend   { color: var(--crisis); }
+  .dim-habits .dim-trend  { color: var(--plan); }
+  .dim-time .dim-trend    { color: var(--crisis); }
+
+  /* ── ARCHITECTURE DIAGRAM ── */
+  .arch-diagram {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/10;
+    max-height: 540px;
+  }
+  .arch-svg { width: 100%; height: 100%; }
+
+  .mod-node { cursor: pointer; transition: filter 0.2s; }
+  .mod-node:hover { filter: brightness(1.3); }
+
+  /* ── FLOW STEPPER ── */
+  .flow-stepper {
+    margin-top: 24px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+  }
+  .flow-title { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--muted); margin-bottom: 12px; }
+  .flow-steps {
+    display: flex;
+    gap: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    align-items: center;
+  }
+  .flow-step { display: flex; align-items: center; gap: 0; flex-shrink: 0; }
+  .step-bubble {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    border: 1px solid #1e293b;
+    background: #1e293b;
+    color: #64748b;
+    white-space: nowrap;
+    transition: all 0.4s;
+  }
+  .step-bubble.active {
+    background: #f59e0b22;
+    border-color: #f59e0b88;
+    color: #f59e0b;
+    box-shadow: 0 0 12px #f59e0b44;
+  }
+  .step-bubble.done {
+    background: #10b98111;
+    border-color: #10b98166;
+    color: #10b981;
+  }
+  .step-arrow { color: #1e293b; font-size: 14px; padding: 0 3px; }
+  .step-arrow.active { color: #f59e0b88; }
+
+  /* ── SIDE PANEL ── */
+  .side-panel {
+    border-left: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 24px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .state-card {
+    background: #0a0f1e;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  .state-title { font-size: 10px; font-weight: 700; letter-spacing: 2px; color: var(--muted); margin-bottom: 12px; }
+  .state-row { margin-bottom: 12px; }
+  .state-label { font-size: 11px; color: var(--muted); margin-bottom: 4px; display:flex; justify-content:space-between; }
+  .state-label span { font-weight: 600; }
+  .state-bar { height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+  .state-fill { height: 100%; border-radius: 3px; }
+  .fill-stability { background: linear-gradient(90deg, #3b82f6, #06b6d4); width: 62%; }
+  .fill-risk      { background: linear-gradient(90deg, #f59e0b, #ef4444); width: 55%; }
+  .fill-comms     { background: linear-gradient(90deg, #ef4444, #f43f5e); width: 30%; }
+  .fill-time      { background: linear-gradient(90deg, #ef4444, #f59e0b); width: 25%; }
+
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .tl-item { display: flex; gap: 10px; }
+  .tl-line { display: flex; flex-direction: column; align-items: center; }
+  .tl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .tl-connector { flex: 1; width: 1px; background: var(--border); min-height: 24px; }
+  .tl-content { padding-bottom: 16px; }
+  .tl-when { font-size: 9px; color: var(--muted); font-weight: 600; letter-spacing: 1px; }
+  .tl-what { font-size: 11px; color: var(--text); margin-top: 2px; }
+
+  .detail-panel {
+    background: #0a0f1e;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: none;
+  }
+  .detail-panel.visible { display: block; }
+  .detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .detail-icon { font-size: 24px; }
+  .detail-name { font-size: 14px; font-weight: 700; }
+  .detail-role { font-size: 10px; color: var(--muted); margin-top: 1px; }
+  .detail-section { margin-bottom: 12px; }
+  .detail-section-title { font-size: 9px; font-weight: 700; letter-spacing: 2px; color: var(--muted); margin-bottom: 6px; }
+  .tag-list { display: flex; flex-wrap: wrap; gap: 5px; }
+  .tag { font-size: 10px; padding: 2px 8px; border-radius: 4px; border: 1px solid; font-weight: 600; }
+  .tag-consume { color: #06b6d4; border-color: #06b6d466; background: #06b6d411; }
+  .tag-produce { color: #10b981; border-color: #10b98166; background: #10b98111; }
+  .tag-event   { color: #f59e0b; border-color: #f59e0b66; background: #f59e0b11; font-family: monospace; font-size: 9px; }
+  .detail-desc { font-size: 11px; color: #94a3b8; line-height: 1.6; margin-top: 10px; }
+
+  .causal-chain { display: flex; flex-direction: column; gap: 0; }
+  .causal-step {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 7px 12px;
+    border-left: 2px solid var(--border);
+    margin-left: 12px;
+    color: #94a3b8;
+    position: relative;
+    transition: all 0.3s;
+    font-size: 11px;
+  }
+  .causal-step.lit { border-left-color: var(--nucleus); color: var(--text); background: #f59e0b08; }
+  .causal-dot {
+    width: 10px; height: 10px; border-radius: 50%; background: var(--border);
+    flex-shrink: 0; margin-top: 2px; margin-left: -17px;
+    border: 2px solid var(--bg2); position: absolute; left: 0;
+    transition: background 0.3s;
+  }
+  .causal-step.lit .causal-dot { background: var(--nucleus); }
+
+  /* Full-width sections */
+  .section-block { padding: 32px; border-top: 1px solid var(--border); }
+  .section-block-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+  .section-block-sub { font-size: 11px; color: var(--muted); margin-bottom: 20px; }
+
+  .falla-card { background: #ef444408; border: 1px solid #ef444422; border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .falla-title { color: #ef4444; font-size: 11px; font-weight: 700; margin-bottom: 6px; }
+  .falla-body { font-size: 11px; color: #94a3b8; line-height: 1.6; }
+
+  .alt-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  .alt-table th { text-align: left; padding: 6px 8px; color: var(--muted); font-weight: 700; letter-spacing: 1px; border-bottom: 1px solid var(--border); }
+  .alt-table td { padding: 6px 8px; border-bottom: 1px solid #0d1528; color: #94a3b8; }
+  .alt-badge { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 9px; font-weight: 700; }
+  .alt-low   { background:#ef444422; color:#ef4444; }
+  .alt-high  { background:#10b98122; color:#10b981; }
+  .alt-vhigh { background:#8b5cf622; color:#8b5cf6; }
+  .alt-selected td { background: #f59e0b08; }
+  .alt-selected td:first-child { border-left: 2px solid #f59e0b; }
+
+  .cp-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  .cp-table th { text-align: left; padding: 6px 10px; color: var(--muted); font-weight: 700; letter-spacing: 1px; border-bottom: 1px solid var(--border); background: var(--bg2); }
+  .cp-table td { padding: 7px 10px; border-bottom: 1px solid #0d1528; color: #94a3b8; }
+  .cp-table tr:hover td { background: #0d1528; }
+  .cp-mod-name { color: var(--text); font-weight: 600; }
+  .cp-consume { color: #06b6d4; }
+  .cp-produce { color: #10b981; }
+
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
+
+  @media (max-width: 900px) {
+    .main { grid-template-columns: 1fr; }
+    .side-panel { border-left: none; border-top: 1px solid var(--border); }
+    .arch-diagram { aspect-ratio: 4/3; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo-pulse">💎</div>
+  <div>
+    <h1>Integrity Family</h1>
+    <p>Sistema Vivo de Transformación Familiar Continua — Arquitectura Event-Driven</p>
+  </div>
+  <div class="badge-live"><div class="dot-live"></div> SISTEMA ACTIVO</div>
+</header>
+
+<!-- EVENT BUS -->
+<div class="event-bus">
+  <div class="event-bus-label">⚡ EVENT BUS FAMILIAR</div>
+  <div class="event-track">
+    <span class="ev ev-emotion">🔴 family.assessment.completed</span>
+    <span class="ev ev-risk">🚨 family.risk.increased → MODERADO</span>
+    <span class="ev ev-journal">📖 family.journal.entry.added</span>
+    <span class="ev ev-ai">🧠 family.ai.context.updated</span>
+    <span class="ev ev-plan">✅ family.mission.completed</span>
+    <span class="ev ev-crisis">⚠️ family.communication.collapse.detected</span>
+    <span class="ev ev-icf">📊 family.icf.recalculated → 62%</span>
+    <span class="ev ev-plan">🎯 family.plan.adjusted → nuevo sprint</span>
+    <span class="ev ev-emotion">💭 family.emotional-improvement.detected</span>
+    <span class="ev ev-crisis">🆘 family.crisis.triggered → AISLAMIENTO</span>
+    <span class="ev ev-ai">🤖 family.ai.recommendation.generated</span>
+    <span class="ev ev-icf">📈 family.evolution.milestone.reached</span>
+    <span class="ev ev-risk">🔄 family.risk.recalculated → BAJO</span>
+    <span class="ev ev-journal">🗓️ family.sprint.retrospective.done</span>
+    <!-- duplicate for seamless loop -->
+    <span class="ev ev-emotion">🔴 family.assessment.completed</span>
+    <span class="ev ev-risk">🚨 family.risk.increased → MODERADO</span>
+    <span class="ev ev-journal">📖 family.journal.entry.added</span>
+    <span class="ev ev-ai">🧠 family.ai.context.updated</span>
+    <span class="ev ev-plan">✅ family.mission.completed</span>
+    <span class="ev ev-crisis">⚠️ family.communication.collapse.detected</span>
+    <span class="ev ev-icf">📊 family.icf.recalculated → 62%</span>
+    <span class="ev ev-plan">🎯 family.plan.adjusted → nuevo sprint</span>
+    <span class="ev ev-emotion">💭 family.emotional-improvement.detected</span>
+    <span class="ev ev-crisis">🆘 family.crisis.triggered → AISLAMIENTO</span>
+    <span class="ev ev-ai">🤖 family.ai.recommendation.generated</span>
+    <span class="ev ev-icf">📈 family.evolution.milestone.reached</span>
+    <span class="ev ev-risk">🔄 family.risk.recalculated → BAJO</span>
+    <span class="ev ev-journal">🗓️ family.sprint.retrospective.done</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- CANVAS -->
+  <div class="canvas">
+
+    <div class="section-title">📐 DIMENSIONES ICF — Estado en tiempo real</div>
+    <div class="dimensions-bar">
+      <div class="dim-card dim-emotion">
+        <div class="dim-name">EMOCIONES</div>
+        <div class="dim-value">70%</div>
+        <div class="dim-bar"><div class="dim-fill"></div></div>
+        <div class="dim-trend">↗ mejorando</div>
+      </div>
+      <div class="dim-card dim-comms">
+        <div class="dim-name">COMUNICACIÓN</div>
+        <div class="dim-value">48%</div>
+        <div class="dim-bar"><div class="dim-fill"></div></div>
+        <div class="dim-trend">↘ deterioro progresivo</div>
+      </div>
+      <div class="dim-card dim-habits">
+        <div class="dim-name">HÁBITOS</div>
+        <div class="dim-value">59%</div>
+        <div class="dim-bar"><div class="dim-fill"></div></div>
+        <div class="dim-trend">→ estable</div>
+      </div>
+      <div class="dim-card dim-time">
+        <div class="dim-name">TIEMPOS</div>
+        <div class="dim-value">35%</div>
+        <div class="dim-bar"><div class="dim-fill"></div></div>
+        <div class="dim-trend">↘ crítico</div>
+      </div>
+    </div>
+
+    <div class="section-title">🗺️ ARQUITECTURA — Clic en cualquier módulo para ver su rol sistémico</div>
+
+    <!-- SVG DIAGRAM -->
+    <div class="arch-diagram">
+      <svg class="arch-svg" viewBox="0 0 900 520" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="gG"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="gR"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="gP"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+
+          <marker id="aGold"  markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#f59e0b88"/></marker>
+          <marker id="aRed"   markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#f43f5e88"/></marker>
+          <marker id="aBlue"  markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#3b82f688"/></marker>
+          <marker id="aPurp"  markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#8b5cf688"/></marker>
+          <marker id="aGreen" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#10b98188"/></marker>
+          <marker id="aCrisis"markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#ef444488"/></marker>
+        </defs>
+
+        <!-- Grid -->
+        <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M40 0L0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.3"/>
+        </pattern>
+        <rect width="900" height="520" fill="url(#grid)" opacity="0.4"/>
+
+        <!-- ── PATHS IDs (invisible, for animateMotion) ── -->
+        <path id="p1" d="M 450 82 L 450 158" fill="none"/>
+        <path id="p2" d="M 390 200 Q 250 200 215 242" fill="none"/>
+        <path id="p3" d="M 380 215 Q 195 255 175 298" fill="none"/>
+        <path id="p4" d="M 510 200 Q 660 200 685 242" fill="none"/>
+        <path id="p5" d="M 215 288 Q 215 348 305 370" fill="none"/>
+        <path id="p6" d="M 175 338 Q 195 375 305 382" fill="none"/>
+        <path id="p7" d="M 685 288 Q 685 348 595 370" fill="none"/>
+        <path id="p8" d="M 450 415 L 450 440" fill="none"/>
+        <path id="p9" d="M 360 462 L 248 462" fill="none"/>
+        <path id="p10" d="M 540 462 L 680 462" fill="none"/>
+        <path id="p11" d="M 750 440 L 750 420 L 820 420 L 820 418" fill="none"/>
+        <path id="pfb" d="M 820 395 Q 870 280 820 200 Q 790 130 530 183" fill="none"/>
+        <path id="pcrisis" d="M 720 455 Q 600 435 530 228" fill="none"/>
+
+        <!-- ── VISIBLE CONNECTIONS ── -->
+        <!-- Login → Nucleus -->
+        <path d="M 450 82 L 450 158" stroke="#64748b" stroke-width="1.5" fill="none" stroke-dasharray="5,4" marker-end="url(#aGold)"/>
+        <!-- Nucleus → Diag -->
+        <path d="M 390 200 Q 250 200 215 242" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="6,4" opacity="0.7" marker-end="url(#aRed)"/>
+        <!-- Nucleus → Bitacora -->
+        <path d="M 380 215 Q 195 255 175 298" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="6,4" opacity="0.7" marker-end="url(#aBlue)"/>
+        <!-- Nucleus → IA -->
+        <path d="M 510 200 Q 660 200 685 242" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="6,4" opacity="0.7" marker-end="url(#aPurp)"/>
+        <!-- Diag → Motor -->
+        <path d="M 215 288 Q 215 348 305 370" stroke="#f43f5e" stroke-width="1.5" fill="none" stroke-dasharray="5,4" opacity="0.8" marker-end="url(#aGold)"/>
+        <!-- Bitacora → Motor -->
+        <path d="M 175 338 Q 195 375 305 382" stroke="#3b82f6" stroke-width="1.5" fill="none" stroke-dasharray="5,4" opacity="0.8" marker-end="url(#aGold)"/>
+        <!-- IA → Motor -->
+        <path d="M 685 288 Q 685 348 595 370" stroke="#8b5cf6" stroke-width="1.5" fill="none" stroke-dasharray="5,4" opacity="0.8" marker-end="url(#aGold)"/>
+        <!-- Motor → Planes -->
+        <path d="M 450 415 L 450 440" stroke="#f59e0b" stroke-width="2" fill="none" marker-end="url(#aGreen)"/>
+        <!-- Planes → Portal -->
+        <path d="M 360 462 L 248 462" stroke="#10b981" stroke-width="1.5" fill="none" marker-end="url(#aGold)"/>
+        <!-- Planes → Crisis -->
+        <path d="M 540 462 L 680 462" stroke="#10b981" stroke-width="1" fill="none" stroke-dasharray="3,5" opacity="0.5" marker-end="url(#aCrisis)"/>
+        <!-- Crisis → Reevaluacion -->
+        <path d="M 750 440 L 750 420 L 820 420 L 820 418" stroke="#ef4444" stroke-width="1.5" fill="none" stroke-dasharray="4,3" opacity="0.8" marker-end="url(#aGold)"/>
+        <!-- Feedback Reevaluacion → Nucleus -->
+        <path d="M 820 395 Q 870 280 820 200 Q 790 130 530 183" stroke="#f59e0b" stroke-width="1.5" fill="none" stroke-dasharray="8,4" opacity="0.45" marker-end="url(#aGold)"/>
+        <!-- Crisis direct → Nucleus -->
+        <path d="M 720 455 Q 600 435 530 228" stroke="#ef4444" stroke-width="1" fill="none" stroke-dasharray="3,6" opacity="0.35" marker-end="url(#aRed)"/>
+
+        <!-- Nucleus orbit rings -->
+        <ellipse cx="450" cy="195" rx="90" ry="40" fill="none" stroke="#f59e0b" stroke-width="1" opacity="0.15" stroke-dasharray="3,6">
+          <animateTransform attributeName="transform" type="rotate" from="0 450 195" to="360 450 195" dur="20s" repeatCount="indefinite"/>
+        </ellipse>
+        <ellipse cx="450" cy="195" rx="116" ry="56" fill="none" stroke="#f59e0b" stroke-width="0.5" opacity="0.07" stroke-dasharray="2,9">
+          <animateTransform attributeName="transform" type="rotate" from="360 450 195" to="0 450 195" dur="32s" repeatCount="indefinite"/>
+        </ellipse>
+
+        <!-- ── ANIMATED PULSES ── -->
+        <circle r="4" fill="#f59e0b" opacity="0.9"><animateMotion dur="2.5s" repeatCount="indefinite" begin="0s"><mpath href="#p1"/></animateMotion></circle>
+        <circle r="3.5" fill="#f43f5e" opacity="0.85"><animateMotion dur="3s" repeatCount="indefinite" begin="0.5s"><mpath href="#p2"/></animateMotion></circle>
+        <circle r="3.5" fill="#3b82f6" opacity="0.85"><animateMotion dur="3.5s" repeatCount="indefinite" begin="1s"><mpath href="#p3"/></animateMotion></circle>
+        <circle r="3.5" fill="#8b5cf6" opacity="0.85"><animateMotion dur="3s" repeatCount="indefinite" begin="0.8s"><mpath href="#p4"/></animateMotion></circle>
+        <circle r="3" fill="#f59e0b" opacity="0.85"><animateMotion dur="2.8s" repeatCount="indefinite" begin="1.5s"><mpath href="#p5"/></animateMotion></circle>
+        <circle r="3" fill="#3b82f6" opacity="0.85"><animateMotion dur="2.8s" repeatCount="indefinite" begin="2s"><mpath href="#p6"/></animateMotion></circle>
+        <circle r="3" fill="#8b5cf6" opacity="0.85"><animateMotion dur="2.8s" repeatCount="indefinite" begin="1.8s"><mpath href="#p7"/></animateMotion></circle>
+        <circle r="4" fill="#10b981" opacity="0.9"><animateMotion dur="1.8s" repeatCount="indefinite" begin="2.5s"><mpath href="#p8"/></animateMotion></circle>
+        <circle r="3" fill="#06b6d4" opacity="0.85"><animateMotion dur="2s" repeatCount="indefinite" begin="3s"><mpath href="#p9"/></animateMotion></circle>
+        <circle r="3" fill="#ef4444" opacity="0.8"><animateMotion dur="2.2s" repeatCount="indefinite" begin="3.5s"><mpath href="#p10"/></animateMotion></circle>
+        <circle r="3" fill="#ef4444" opacity="0.85"><animateMotion dur="2.5s" repeatCount="indefinite" begin="4s"><mpath href="#p11"/></animateMotion></circle>
+        <circle r="3" fill="#f59e0b" opacity="0.55"><animateMotion dur="7s" repeatCount="indefinite" begin="3s"><mpath href="#pfb"/></animateMotion></circle>
+        <circle r="2.5" fill="#ef4444" opacity="0.4"><animateMotion dur="4.5s" repeatCount="indefinite" begin="5s"><mpath href="#pcrisis"/></animateMotion></circle>
+
+        <!-- ══ MODULE NODES ══ -->
+
+        <!-- LOGIN -->
+        <g class="mod-node" id="mod-login" onclick="selectModule('login')">
+          <rect x="385" y="28" width="130" height="44" rx="8" fill="#0d1528" stroke="#64748b" stroke-width="1.5"/>
+          <text x="450" y="47" text-anchor="middle" font-size="13" fill="#e2e8f0">🔐 Login</text>
+          <text x="450" y="62" text-anchor="middle" font-size="8" fill="#64748b">Identidad + Contexto familiar</text>
+        </g>
+
+        <!-- NUCLEUS -->
+        <g class="mod-node" id="mod-nucleus" onclick="selectModule('nucleus')">
+          <ellipse cx="450" cy="195" rx="82" ry="38" fill="#0a1428" stroke="#f59e0b" stroke-width="2" filter="url(#gG)"/>
+          <text x="450" y="187" text-anchor="middle" font-size="13" fill="#f59e0b" font-weight="700">💎 NÚCLEO ICF</text>
+          <text x="450" y="200" text-anchor="middle" font-size="8" fill="#d97706">Estado longitudinal familiar</text>
+          <text x="450" y="213" text-anchor="middle" font-size="8" fill="#92400e">ICF 62% — Riesgo Moderado</text>
+        </g>
+
+        <!-- DIAGNÓSTICO -->
+        <g class="mod-node" id="mod-diagnostico" onclick="selectModule('diagnostico')">
+          <rect x="145" y="235" width="140" height="54" rx="10" fill="#0d1528" stroke="#f43f5e" stroke-width="1.5"/>
+          <text x="215" y="256" text-anchor="middle" font-size="13" fill="#e2e8f0">📊 Diagnóstico</text>
+          <text x="215" y="269" text-anchor="middle" font-size="8" fill="#f43f5e">Scanner emocional estructural</text>
+          <text x="215" y="281" text-anchor="middle" font-size="8" fill="#64748b">vectores de riesgo + patrones</text>
+        </g>
+
+        <!-- BITÁCORA -->
+        <g class="mod-node" id="mod-bitacora" onclick="selectModule('bitacora')">
+          <rect x="110" y="298" width="130" height="50" rx="10" fill="#0d1528" stroke="#3b82f6" stroke-width="1.5"/>
+          <text x="175" y="318" text-anchor="middle" font-size="13" fill="#e2e8f0">📖 Bitácora</text>
+          <text x="175" y="331" text-anchor="middle" font-size="8" fill="#3b82f6">Timeline emocional versionada</text>
+          <text x="175" y="342" text-anchor="middle" font-size="8" fill="#64748b">memoria episódica</text>
+        </g>
+
+        <!-- CONSULTOR IA -->
+        <g class="mod-node" id="mod-ia" onclick="selectModule('ia')">
+          <rect x="613" y="235" width="144" height="54" rx="10" fill="#0d1528" stroke="#8b5cf6" stroke-width="1.5" filter="url(#gP)"/>
+          <text x="685" y="256" text-anchor="middle" font-size="13" fill="#e2e8f0">🧠 Consultor IA</text>
+          <text x="685" y="269" text-anchor="middle" font-size="8" fill="#8b5cf6">Inferencia contextual</text>
+          <text x="685" y="281" text-anchor="middle" font-size="8" fill="#64748b">memoria episódica + historial</text>
+        </g>
+
+        <!-- MOTOR INFERENCIAL -->
+        <g class="mod-node" id="mod-motor" onclick="selectModule('motor')">
+          <rect x="345" y="358" width="210" height="58" rx="10" fill="#0d1428" stroke="#f59e0b" stroke-width="2" filter="url(#gG)"/>
+          <text x="450" y="378" text-anchor="middle" font-size="13" fill="#f59e0b" font-weight="700">⚙️ Motor Inferencial</text>
+          <text x="450" y="393" text-anchor="middle" font-size="8" fill="#d97706">Riesgo · ICF · Evolución longitudinal</text>
+          <text x="450" y="406" text-anchor="middle" font-size="8" fill="#92400e">Correlación temporal · Explicabilidad</text>
+        </g>
+
+        <!-- GENERADOR DE PLANES -->
+        <g class="mod-node" id="mod-planes" onclick="selectModule('planes')">
+          <rect x="360" y="440" width="180" height="44" rx="8" fill="#0d1528" stroke="#10b981" stroke-width="1.5"/>
+          <text x="450" y="458" text-anchor="middle" font-size="13" fill="#e2e8f0">🎯 Generador de Planes</text>
+          <text x="450" y="472" text-anchor="middle" font-size="8" fill="#10b981">1sem · 1mes · 3m · 6m · 1a · 3a</text>
+        </g>
+
+        <!-- PORTAL -->
+        <g class="mod-node" id="mod-portal" onclick="selectModule('portal')">
+          <rect x="112" y="440" width="136" height="44" rx="8" fill="#0d1528" stroke="#06b6d4" stroke-width="1.5"/>
+          <text x="180" y="458" text-anchor="middle" font-size="13" fill="#e2e8f0">🌐 Portal</text>
+          <text x="180" y="472" text-anchor="middle" font-size="8" fill="#06b6d4">Misiones · Hitos · Pilares</text>
+        </g>
+
+        <!-- CRISIS -->
+        <g class="mod-node" id="mod-crisis" onclick="selectModule('crisis')">
+          <rect x="680" y="440" width="140" height="44" rx="8" fill="#0d1528" stroke="#ef4444" stroke-width="1.5" filter="url(#gR)"/>
+          <text x="750" y="458" text-anchor="middle" font-size="12" fill="#ef4444" font-weight="700">🆘 Módulo Crisis</text>
+          <text x="750" y="472" text-anchor="middle" font-size="8" fill="#ef4444">Violencia · Ruptura · Aislamiento</text>
+        </g>
+
+        <!-- REEVALUACIÓN -->
+        <g class="mod-node" id="mod-reeval" onclick="selectModule('reeval')">
+          <rect x="760" y="370" width="120" height="50" rx="8" fill="#0d1528" stroke="#f59e0b" stroke-width="1.5"/>
+          <text x="820" y="390" text-anchor="middle" font-size="11" fill="#f59e0b">🔄 Reevaluación</text>
+          <text x="820" y="403" text-anchor="middle" font-size="8" fill="#d97706">Automática</text>
+          <text x="820" y="415" text-anchor="middle" font-size="8" fill="#64748b">→ recalcula todo</text>
+        </g>
+
+      </svg>
+    </div>
+
+    <!-- FLOW STEPPER -->
+    <div class="flow-stepper">
+      <div class="flow-title">🔄 CICLO VIVO — Flujo dinámico completo de la familia</div>
+      <div class="flow-steps" id="flowSteps">
+        <div class="flow-step"><div class="step-bubble" data-i="0">🔐 Login</div><span class="step-arrow">→</span></div>
+        <div class="flow-step"><div class="step-bubble" data-i="1">💬 Interacción</div><span class="step-arrow">→</span></div>
+        <div class="flow-step"><div class="step-bubble" data-i="2">📊 Diagnóstico</div><span class="step-arrow">→</span></div>
+        <div class="flow-step"><div class="step-bubble" data-i="3">⚙️ Inferencia</div><span class="step-arrow">→</span></div>
+        <div class="flow-step"><div class="step-bubble" data-i="4">💎 ICF</div><span class="step-arrow">→</span></div>
+        <div class="flow-step"><div class="step-bubble" data-i="5">🎯 Planes</div><span class="step-arrow">→</span></div>
+        <div class="flow-step"><div class="step-bubble" data-i="6">🏃 Misiones</div><span class="step-arrow">→</span></div>
+        <div class="flow-step"><div class="step-bubble" data-i="7">📖 Bitácora</div><span class="step-arrow">→</span></div>
+        <div class="flow-step"><div class="step-bubble" data-i="8">🧠 Análisis IA</div><span class="step-arrow">→</span></div>
+        <div class="flow-step"><div class="step-bubble" data-i="9">📈 Ajuste</div><span class="step-arrow">→</span></div>
+        <div class="flow-step"><div class="step-bubble" data-i="10">🆘 Crisis?</div><span class="step-arrow">→</span></div>
+        <div class="flow-step"><div class="step-bubble" data-i="11">🔄 Replanif.</div><span class="step-arrow">→</span></div>
+        <div class="flow-step"><div class="step-bubble" data-i="12">🌱 Evolución</div></div>
+      </div>
+    </div>
+
+  </div><!-- /canvas -->
+
+  <!-- SIDE PANEL -->
+  <div class="side-panel">
+
+    <div class="detail-panel" id="detailPanel">
+      <div class="detail-header">
+        <div class="detail-icon" id="detailIcon">💎</div>
+        <div>
+          <div class="detail-name" id="detailName">NÚCLEO ICF</div>
+          <div class="detail-role" id="detailRole">Corazón del sistema</div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">CONSUME</div>
+        <div class="tag-list" id="detailConsume"></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">PRODUCE</div>
+        <div class="tag-list" id="detailProduce"></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">EVENTOS</div>
+        <div class="tag-list" id="detailEvents"></div>
+      </div>
+      <div class="detail-desc" id="detailDesc"></div>
+    </div>
+
+    <!-- Estado Familiar -->
+    <div class="state-card">
+      <div class="state-title">📡 ESTADO FAMILIAR ACTUAL</div>
+      <div class="state-row">
+        <div class="state-label">Estabilidad familiar <span>62%</span></div>
+        <div class="state-bar"><div class="state-fill fill-stability"></div></div>
+      </div>
+      <div class="state-row">
+        <div class="state-label">Riesgo emocional <span style="color:#f59e0b">Moderado</span></div>
+        <div class="state-bar"><div class="state-fill fill-risk"></div></div>
+      </div>
+      <div class="state-row">
+        <div class="state-label">Comunicación <span style="color:#ef4444">deterioro</span></div>
+        <div class="state-bar"><div class="state-fill fill-comms"></div></div>
+      </div>
+      <div class="state-row">
+        <div class="state-label">Tiempo compartido <span style="color:#ef4444">insuficiente</span></div>
+        <div class="state-bar"><div class="state-fill fill-time"></div></div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="state-card">
+      <div class="state-title">📅 TRAYECTORIA FAMILIAR</div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-line"><div class="tl-dot" style="background:#ef4444"></div><div class="tl-connector"></div></div>
+          <div class="tl-content"><div class="tl-when">HACE 3 MESES</div><div class="tl-what">Discusiones severas · riesgo ALTO</div></div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-line"><div class="tl-dot" style="background:#f59e0b"></div><div class="tl-connector"></div></div>
+          <div class="tl-content"><div class="tl-when">HACE 1 MES</div><div class="tl-what">Mejora parcial · primer plan completado</div></div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-line"><div class="tl-dot" style="background:#3b82f6"></div><div class="tl-connector"></div></div>
+          <div class="tl-content"><div class="tl-when">ÚLTIMOS 7 DÍAS</div><div class="tl-what">Recaída emocional · crisis comunicacional</div></div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-line"><div class="tl-dot" style="background:#10b981"></div></div>
+          <div class="tl-content"><div class="tl-when">HOY</div><div class="tl-what">IA ajusta plan · nueva misión generada</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Causal loop -->
+    <div class="state-card">
+      <div class="state-title">🔁 BUCLE CAUSAL VIVO</div>
+      <div class="causal-chain" id="causalChain">
+        <div class="causal-step"><div class="causal-dot"></div>Emoción detectada</div>
+        <div class="causal-step"><div class="causal-dot"></div>→ altera el riesgo familiar</div>
+        <div class="causal-step"><div class="causal-dot"></div>→ riesgo modifica el plan</div>
+        <div class="causal-step"><div class="causal-dot"></div>→ plan transforma hábitos</div>
+        <div class="causal-step"><div class="causal-dot"></div>→ hábitos mejoran convivencia</div>
+        <div class="causal-step"><div class="causal-dot"></div>→ convivencia recalcula ICF</div>
+        <div class="causal-step"><div class="causal-dot"></div>→ ICF retroalimenta el sistema</div>
+      </div>
+    </div>
+
+  </div><!-- /side-panel -->
+</div><!-- /main -->
+
+<!-- FALLAS -->
+<div class="section-block">
+  <div class="section-block-title">⚠️ Fallas arquitectónicas que Integrity Family evita</div>
+  <div class="section-block-sub">Sistema vivo vs. navegación de pantallas</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+    <div class="falla-card">
+      <div class="falla-title">FALLA 1 — Arquitectura pantalla-céntrica</div>
+      <div class="falla-body">
+        <span style="color:#64748b">❌ Error:</span> Login → Dashboard → Diagnóstico → Plan<br>
+        Eso es navegación UI, no dinámica familiar.<br><br>
+        <span style="color:#10b981">✅ IF opera:</span> Interacción humana → señal emocional → inferencia → riesgo → intervención → aprendizaje → nueva inferencia
+      </div>
+    </div>
+    <div class="falla-card">
+      <div class="falla-title">FALLA 2 — IA sin estado longitudinal</div>
+      <div class="falla-body">
+        <span style="color:#64748b">❌ Resultado:</span> Consejos incoherentes, pérdida de continuidad, imposibilidad de medir evolución real.<br><br>
+        <span style="color:#10b981">✅ IF requiere:</span> Memoria episódica + estado emocional + historial causal + trayectoria familiar
+      </div>
+    </div>
+    <div class="falla-card">
+      <div class="falla-title">FALLA 3 — Crisis desacoplada</div>
+      <div class="falla-body">
+        <span style="color:#64748b">❌ Error:</span> Crisis como módulo aislado sin impacto sistémico.<br><br>
+        <span style="color:#10b981">✅ IF:</span> Una crisis impacta simultáneamente ICF + planes + prioridad IA + alertas + seguimiento + indicadores longitudinales
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ALTERNATIVAS -->
+<div class="section-block" style="border-top:1px solid var(--border)">
+  <div class="section-block-title">🏗️ Alternativas arquitectónicas evaluadas</div>
+  <div class="section-block-sub">IF opera como Modular Monolith Event-Driven Híbrido ★</div>
+  <table class="alt-table">
+    <tr><th>Alternativa</th><th>Ventajas</th><th>Riesgos</th><th>Escalabilidad</th></tr>
+    <tr><td>Monolito CRUD</td><td>Rápido de implementar</td><td>Acoplamiento extremo</td><td><span class="alt-badge alt-low">BAJA</span></td></tr>
+    <tr><td>Microservicios completos</td><td>Altamente escalable</td><td>Complejidad operacional alta</td><td><span class="alt-badge alt-high">ALTA</span></td></tr>
+    <tr class="alt-selected"><td><strong>Modular Monolith + Event Bus ★</strong></td><td>Mejor equilibrio real</td><td>Disciplina arquitectónica</td><td><span class="alt-badge alt-vhigh">MUY ALTA</span></td></tr>
+  </table>
+</div>
+
+<!-- CONSUME/PRODUCE -->
+<div class="section-block" style="border-top:1px solid var(--border)">
+  <div class="section-block-title">🔗 Contratos de interconexión sistémica</div>
+  <div class="section-block-sub">Cada módulo es productor y consumidor de eventos — no hay módulos aislados</div>
+  <table class="cp-table">
+    <tr><th>Módulo</th><th>Consume</th><th>Produce</th></tr>
+    <tr><td><div class="cp-mod-name">🔐 Login</div></td><td class="cp-consume">identidad + dispositivo</td><td class="cp-produce">contexto familiar · rol · sesión</td></tr>
+    <tr><td><div class="cp-mod-name">📡 Dashboard</div></td><td class="cp-consume">ICF + riesgo + dimensiones</td><td class="cp-produce">visualización · alertas visibles</td></tr>
+    <tr><td><div class="cp-mod-name">👨‍👩‍👧 Familia</div></td><td class="cp-consume">miembros + perfiles</td><td class="cp-produce">estructura relacional · jerarquía</td></tr>
+    <tr><td><div class="cp-mod-name">📊 Diagnóstico</div></td><td class="cp-consume">respuestas + contexto histórico</td><td class="cp-produce">eventos emocionales · vectores riesgo · patrones</td></tr>
+    <tr><td><div class="cp-mod-name">🧠 Consultor IA</div></td><td class="cp-consume">contexto total · historial · riesgo · rol</td><td class="cp-produce">recomendaciones contextualizadas · narrativa</td></tr>
+    <tr><td><div class="cp-mod-name">🎯 Planes</div></td><td class="cp-consume">inferencia · ICF · dimensiones críticas</td><td class="cp-produce">misiones · sprints · hitos temporales</td></tr>
+    <tr><td><div class="cp-mod-name">📖 Bitácora</div></td><td class="cp-consume">eventos humanos diarios</td><td class="cp-produce">evolución · timeline · consistencia diagnóstica</td></tr>
+    <tr><td><div class="cp-mod-name">🆘 Crisis</div></td><td class="cp-consume">anomalías · señales críticas</td><td class="cp-produce">alertas críticas · reevaluación total del sistema</td></tr>
+    <tr><td><div class="cp-mod-name">📈 Analytics</div></td><td class="cp-consume">todos los eventos del bus</td><td class="cp-produce">métricas · tendencias · reportes</td></tr>
+    <tr><td><div class="cp-mod-name">🙋 Mi Espacio</div></td><td class="cp-consume">trayectoria individual</td><td class="cp-produce">señales personales · engagement</td></tr>
+  </table>
+</div>
+
+<!-- CONCLUSION -->
+<div class="section-block" style="border-top:1px solid var(--border);background:#0d1528;text-align:center;padding:40px 32px;">
+  <div style="font-size:32px;margin-bottom:16px;">💎</div>
+  <div style="font-size:20px;font-weight:800;color:#f59e0b;margin-bottom:14px;">
+    Integrity Family no es una app. Es un sistema vivo.
+  </div>
+  <div style="font-size:13px;color:#64748b;max-width:640px;margin:0 auto;line-height:1.9;">
+    La verdadera interconexión ocurre cuando
+    <span style="color:#f43f5e">una emoción altera un riesgo</span>,
+    el riesgo altera un plan, el plan altera hábitos,
+    los hábitos alteran convivencia, y la convivencia
+    <span style="color:#f59e0b">modifica nuevamente el sistema completo</span>.<br>
+    Ahí es donde Integrity Family deja de ser una app
+    y se convierte en un <em style="color:#e2e8f0">sistema de transformación familiar continuo</em>.
+  </div>
+  <div style="margin-top:24px;display:flex;justify-content:center;gap:24px;font-size:11px;color:#1e3a5f;letter-spacing:3px;">
+    <span>RECONOCIMIENTO</span><span style="color:#f59e0b22">→</span>
+    <span>AMOR</span><span style="color:#f59e0b22">→</span>
+    <span>ENTREGA</span>
+  </div>
+</div>
+
+<script>
+const MODULES = {
+  login: {
+    icon:'🔐', name:'Login / Identidad', role:'Puerta de entrada contextual al sistema familiar',
+    consume:['credenciales','dispositivo','timestamp'],
+    produce:['contexto familiar','rol (guardian/member)','sesión autenticada','señal de frecuencia de uso'],
+    events:['family.session.created','family.member.identified','family.engagement.tracked'],
+    desc:'No es solo autenticación. Establece el contexto familiar completo: quién entra, desde qué rol y en qué momento del ciclo familiar. Cada login puede disparar inferencias sobre frecuencia de uso y engagement familiar real.'
+  },
+  nucleus: {
+    icon:'💎', name:'Núcleo ICF', role:'Corazón — Estado longitudinal familiar vivo',
+    consume:['todos los eventos del sistema','diagnóstico','bitácora','crisis','IA'],
+    produce:['ICF score','estado familiar','vectores de evolución','señales de riesgo','contexto para IA'],
+    events:['family.icf.recalculated','family.state.updated','family.risk.changed','family.longitudinal.updated'],
+    desc:'El núcleo no es una pantalla. Es el estado vivo de la familia. Cada evento del sistema lo modifica. Mantiene el historial longitudinal completo: emociones, comunicación, hábitos y tiempos a lo largo del tiempo. Es la fuente de verdad del sistema.'
+  },
+  diagnostico: {
+    icon:'📊', name:'Diagnóstico Emocional', role:'Scanner estructural del estado familiar',
+    consume:['respuestas familiares','contexto histórico','perfil de miembros'],
+    produce:['estado emocional estructural','perfil relacional','vectores de riesgo','patrones temporales'],
+    events:['family.assessment.completed','family.risk.increased','family.pattern.detected','family.emotional-signal.emitted'],
+    desc:'No genera puntajes aislados. Genera vectores emocionales con causalidad. Ejemplo real: Padre → baja presencia temporal + alta irritabilidad + deterioro comunicacional progresivo → activa eventos downstream que modifican riesgo, planes e IA.'
+  },
+  bitacora: {
+    icon:'📖', name:'Bitácora Familiar', role:'Timeline emocional versionada con memoria',
+    consume:['eventos humanos diarios','misiones completadas','interacciones familiares','observaciones'],
+    produce:['evolución emocional','consistencia diagnóstica','señales de mejora/deterioro','memoria episódica'],
+    events:['family.journal.entry.added','family.emotional-improvement.detected','family.communication.collapse.detected','family.sprint.retrospective.done'],
+    desc:'No es texto libre. Es un timeline emocional versionado. Cada entrada modifica inferencias, riesgo y evolución. La bitácora es la memoria episódica que permite al Motor Inferencial aprender sobre la familia a lo largo del tiempo.'
+  },
+  ia: {
+    icon:'🧠', name:'Consultor IA', role:'Inferencia contextual con memoria estructural completa',
+    consume:['historial familiar','evolución longitudinal','ICF score','nivel de riesgo','edad','rol','contexto temporal','eventos recientes'],
+    produce:['recomendaciones contextualizadas','narrativa familiar','señales de alerta','intervenciones sugeridas'],
+    events:['family.ai.recommendation.generated','family.ai.context.updated','family.narrative.updated','family.intervention.suggested'],
+    desc:'NO responde genéricamente. Consume el contexto total: historial, evolución, pilares, riesgo, rol y eventos recientes. Sin memoria estructural los consejos son incoherentes y sin continuidad — exactamente la FALLA 2 que IF evita.'
+  },
+  motor: {
+    icon:'⚙️', name:'Motor Inferencial', role:'Centro de procesamiento causal del sistema',
+    consume:['diagnóstico emocional','bitácora','consultor IA','crisis','eventos del bus'],
+    produce:['riesgo calculado','ICF recalculado','correlaciones temporales','detección temprana','explicabilidad causal'],
+    events:['family.risk.recalculated','family.icf.recalculated','family.early-warning.triggered','family.causal.correlation.found'],
+    desc:'El cerebro del sistema. Correlaciona todos los inputs para producir un estado familiar consistente. Detecta patrones que ningún módulo individual puede ver por separado: correlaciones entre hábitos y emociones a lo largo del tiempo.'
+  },
+  planes: {
+    icon:'🎯', name:'Generador de Planes IA', role:'Planificación longitudinal adaptativa',
+    consume:['inferencia del motor','ICF score','dimensiones críticas','riesgo actual'],
+    produce:['planes adaptativos en 6 horizontes','misiones semanales','sprints','hitos a 1-3 años'],
+    events:['family.plan.created','family.plan.adjusted','family.mission.assigned','family.sprint.started'],
+    desc:'Genera planes en 6 horizontes temporales: 1 semana, 1 mes, 3 meses, 6 meses, 1 año, 3 años. Cada plan se ajusta automáticamente cuando cambia el estado familiar. Las misiones no son tareas — son transformaciones medibles.'
+  },
+  portal: {
+    icon:'🌐', name:'Portal de Transformación', role:'Experiencia familiar activa y medible',
+    consume:['planes','misiones','hitos','ICF score','trayectoria'],
+    produce:['engagement familiar real','ejecución de misiones','retroalimentación de campo','señales de adherencia'],
+    events:['family.mission.completed','family.mission.failed','family.milestone.reached','family.pillar.advanced'],
+    desc:'No es solo un dashboard que muestra datos. Es el punto de acción familiar. Muestra estado actual, trayectoria y evolución visual desde Reconocimiento → Amor → Entrega, con hitos reales verificables por el sistema.'
+  },
+  crisis: {
+    icon:'🆘', name:'Módulo de Crisis', role:'Intervención de emergencia con impacto sistémico total',
+    consume:['anomalías del motor','señales críticas persistentes','riesgo ALTO/CRÍTICO'],
+    produce:['alertas críticas','reevaluación total','prioridad IA elevada','intervención de emergencia'],
+    events:['family.crisis.triggered','family.crisis.resolved','family.intervention.required','family.system.rebalanced'],
+    desc:'Una crisis NO es un módulo aislado — esa es la FALLA 3 que IF evita. Impacta simultáneamente: ICF + planes + prioridad IA + alertas + seguimiento + indicadores longitudinales. Al resolverse, dispara reevaluación completa del sistema.'
+  },
+  reeval: {
+    icon:'🔄', name:'Reevaluación Automática', role:'Bucle de retroalimentación sistémica continua',
+    consume:['resolución de crisis','cambios de estado significativos','nuevas inferencias'],
+    produce:['ICF recalculado','planes ajustados','alertas actualizadas','nueva inferencia del sistema'],
+    events:['family.system.rebalanced','family.plan.regenerated','family.risk.updated','family.icf.recalculated'],
+    desc:'El bucle de retroalimentación que convierte IF en un sistema vivo. Cada reevaluación recalcula riesgo, ICF, planes y alertas. Garantiza coherencia sistémica: ningún módulo opera con información obsoleta del estado familiar.'
+  }
+};
+
+function selectModule(id) {
+  const m = MODULES[id];
+  if (!m) return;
+  const panel = document.getElementById('detailPanel');
+  panel.classList.add('visible');
+  document.getElementById('detailIcon').textContent = m.icon;
+  document.getElementById('detailName').textContent = m.name;
+  document.getElementById('detailRole').textContent = m.role;
+  document.getElementById('detailDesc').textContent = m.desc;
+  const mkTags = (arr, cls) => arr.map(t => `<span class="tag ${cls}">${t}</span>`).join('');
+  document.getElementById('detailConsume').innerHTML = mkTags(m.consume, 'tag-consume');
+  document.getElementById('detailProduce').innerHTML = mkTags(m.produce, 'tag-produce');
+  document.getElementById('detailEvents').innerHTML  = mkTags(m.events,  'tag-event');
+  document.querySelector('.side-panel').scrollTo({top:0, behavior:'smooth'});
+}
+
+// Flow stepper
+const bubbles = document.querySelectorAll('.step-bubble');
+const arrows  = document.querySelectorAll('.step-arrow');
+let stepIdx = 0;
+function advanceStep() {
+  bubbles.forEach((b, i) => {
+    b.classList.toggle('active', i === stepIdx);
+    b.classList.toggle('done', i < stepIdx);
+  });
+  arrows.forEach((a, i) => a.classList.toggle('active', i === stepIdx));
+  stepIdx = (stepIdx + 1) % bubbles.length;
+}
+advanceStep();
+setInterval(advanceStep, 1800);
+
+// Causal chain
+const causalSteps = document.querySelectorAll('.causal-step');
+let ci = 0;
+function advanceCausal() {
+  causalSteps.forEach((s, i) => s.classList.toggle('lit', i <= ci));
+  ci++;
+  if (ci >= causalSteps.length) {
+    ci = -1;
+    setTimeout(() => causalSteps.forEach(s => s.classList.remove('lit')), 600);
+  }
+}
+setInterval(advanceCausal, 900);
+
+// Auto-cycle modules
+const modIds = Object.keys(MODULES);
+let mi = 0;
+function autoCycle() { selectModule(modIds[mi]); mi = (mi+1)%modIds.length; }
+autoCycle();
+setInterval(autoCycle, 6000);
+</script>
+</body>
+</html>

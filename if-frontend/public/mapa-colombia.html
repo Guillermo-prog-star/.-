@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mapa de Impacto — Integrity Family · Colombia</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --orange: #f97316; --blue: #4f46e5; --green: #10b981;
+  --bg: #0d1117; --text: #e0e0e0;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; }
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; height: 48px; z-index: 200;
+  background: rgba(13,17,23,.96); backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  padding: 0 24px; display: flex; align-items: center; gap: 12px;
+}
+.nl-icon { width: 28px; height: 28px; border-radius: 6px; background: #fcfbf4; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.nl-icon svg { width: 19px; height: 19px; }
+.nl-name { font-size: 12px; font-weight: 800; color: #fff; }
+.nav-sep { width: 1px; height: 14px; background: rgba(255,255,255,.1); }
+.nav-tag { font-size: 11px; color: #64748b; }
+.nav-stats { margin-left: auto; display: flex; gap: 20px; }
+.ns-item { text-align: right; }
+.ns-val  { font-size: 14px; font-weight: 900; color: var(--orange); line-height: 1; }
+.ns-lbl  { font-size: 8px; color: #475569; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+
+/* ── MAP CONTAINER ── */
+#map-wrap {
+  position: fixed; top: 48px; left: 0; right: 340px; bottom: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 50%, rgba(30,30,50,.8) 0%, #0d1117 100%);
+  overflow: hidden;
+}
+
+/* Colombia SVG */
+#colombia-svg { max-height: 100%; max-width: 100%; }
+
+/* City dot */
+.city-dot { cursor: pointer; }
+.city-dot .pulse-ring {
+  transform-origin: center;
+  animation: pulseRing 2s ease-out infinite;
+}
+.city-dot .pulse-ring2 {
+  transform-origin: center;
+  animation: pulseRing 2s ease-out infinite .6s;
+}
+@keyframes pulseRing {
+  0%   { transform: scale(1);   opacity: .7; }
+  100% { transform: scale(2.8); opacity: 0;  }
+}
+.city-label-group { pointer-events: none; }
+.city-name-text { font-family: Inter, sans-serif; font-weight: 800; font-size: 9px; fill: rgba(255,255,255,.7); }
+.city-icf-text  { font-family: Inter, sans-serif; font-weight: 900; font-size: 8px; }
+
+/* ── SIDE PANEL ── */
+#side-panel {
+  position: fixed; top: 48px; right: 0; width: 340px; bottom: 0;
+  background: rgba(13,17,23,.98); border-left: 1px solid rgba(255,255,255,.07);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.sp-header { padding: 20px 20px 14px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.sp-title { font-family: 'Playfair Display', serif; font-size: 18px; color: #fff; margin-bottom: 4px; }
+.sp-sub   { font-size: 11px; color: #64748b; }
+
+/* City detail */
+#city-detail { flex: 1; overflow-y: auto; padding: 20px; }
+
+.cd-empty { color: #475569; font-size: 12px; text-align: center; padding: 40px 0; }
+.cd-empty-icon { font-size: 36px; margin-bottom: 10px; }
+
+.cd-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.cd-icon   { font-size: 28px; }
+.cd-city   { font-size: 18px; font-weight: 900; color: #fff; }
+.cd-dept   { font-size: 10px; color: #64748b; }
+
+.cd-icf { display: flex; align-items: center; gap: 10px; background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.25); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+.cd-icf-num  { font-size: 38px; font-weight: 900; color: var(--orange); line-height: 1; }
+.cd-icf-info {}
+.cd-icf-lbl  { font-size: 9px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: .06em; }
+.cd-icf-zone { font-size: 12px; font-weight: 700; color: #fb923c; }
+
+.cd-stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.cds-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 10px; padding: 10px 8px; text-align: center; }
+.cds-val  { font-size: 17px; font-weight: 900; color: var(--green); margin-bottom: 2px; }
+.cds-lbl  { font-size: 8px; color: #64748b; }
+
+.cd-dims { margin-bottom: 14px; }
+.dim-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.dr-icon { font-size: 12px; width: 18px; flex-shrink: 0; }
+.dr-name { font-size: 10px; font-weight: 700; flex: 1; }
+.dr-bar  { flex: 2; height: 5px; background: rgba(0,0,0,.3); border-radius: 3px; overflow: hidden; }
+.dr-fill { height: 100%; border-radius: 3px; }
+.dr-val  { font-size: 10px; font-weight: 800; width: 24px; text-align: right; }
+
+.cd-testimonial { background: rgba(79,70,229,.07); border: 1px solid rgba(79,70,229,.18); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+.ct-text { font-size: 11px; color: #c7d2fe; line-height: 1.65; font-style: italic; margin-bottom: 6px; }
+.ct-author { font-size: 9px; font-weight: 700; color: #818cf8; }
+
+/* ── LEGEND ── */
+.map-legend {
+  position: absolute; bottom: 12px; left: 12px;
+  background: rgba(13,17,23,.9); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 10px; padding: 10px 14px; display: flex; flex-direction: column; gap: 5px;
+}
+.leg-row { display: flex; align-items: center; gap: 6px; font-size: 9px; color: #64748b; }
+.leg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nl-icon"><svg viewBox="0 0 56 56" fill="none"><circle cx="20" cy="28" r="13" stroke="#f97316" stroke-width="3" fill="none"/><circle cx="36" cy="28" r="13" stroke="#4f46e5" stroke-width="3" fill="none"/><circle cx="28" cy="20" r="7" fill="#f97316" opacity=".9"/><circle cx="28" cy="36" r="5" fill="#4f46e5" opacity=".8"/></svg></div>
+  <span class="nl-name">Integrity Family</span>
+  <div class="nav-sep"></div>
+  <span class="nav-tag">Mapa de Impacto · Colombia 2026</span>
+  <div class="nav-stats">
+    <div class="ns-item"><div class="ns-val">47</div><div class="ns-lbl">Familias activas</div></div>
+    <div class="ns-item"><div class="ns-val">6</div><div class="ns-lbl">Ciudades</div></div>
+    <div class="ns-item"><div class="ns-val">ICF 81</div><div class="ns-lbl">Promedio piloto</div></div>
+  </div>
+</nav>
+
+<div id="map-wrap">
+  <!-- Colombia simplified SVG map -->
+  <svg id="colombia-svg" viewBox="0 0 420 520" fill="none" xmlns="http://www.w3.org/2000/svg">
+
+    <!-- Colombia outline (simplified) -->
+    <path d="
+      M180,18 L220,14 L260,22 L290,38 L310,60 L320,85 L315,110
+      L330,128 L345,140 L355,158 L350,175 L360,192 L370,210
+      L380,228 L375,248 L365,265 L370,285 L360,300 L355,318
+      L345,330 L330,340 L315,350 L300,365 L285,378 L272,392
+      L258,400 L244,410 L230,418 L216,424 L200,430 L185,424
+      L172,416 L158,408 L145,396 L132,382 L120,368 L108,352
+      L98,338 L90,322 L85,305 L88,288 L82,270 L78,252 L80,234
+      L75,216 L70,198 L68,180 L72,162 L78,145 L72,128 L68,110
+      L72,92 L80,75 L92,60 L108,46 L128,35 L150,24 L168,18 Z
+    " fill="rgba(30,40,60,.9)" stroke="rgba(79,100,150,.5)" stroke-width="1.5"/>
+
+    <!-- Pacific coast indent -->
+    <path d="M68,180 L55,200 L48,220 L50,240 L58,255 L68,265 L75,275 L78,265"
+      fill="rgba(30,40,60,.9)" stroke="rgba(79,100,150,.5)" stroke-width="1.5"/>
+
+    <!-- Department lines (simplified) -->
+    <g stroke="rgba(255,255,255,.06)" stroke-width=".8" fill="none">
+      <line x1="120" y1="180" x2="330" y2="180"/>
+      <line x1="100" y1="250" x2="360" y2="250"/>
+      <line x1="95"  y1="310" x2="340" y2="310"/>
+      <line x1="210" y1="18"  x2="210" y2="430"/>
+      <line x1="150" y1="18"  x2="150" y2="350"/>
+      <line x1="270" y1="22"  x2="270" y2="370"/>
+    </g>
+
+    <!-- CITIES -->
+    <!-- Bogotá: ~213,268 -->
+    <g class="city-dot" data-city="bogota" onclick="showCity('bogota')">
+      <circle cx="213" cy="268" r="22" fill="rgba(249,115,22,.05)" class="pulse-ring"/>
+      <circle cx="213" cy="268" r="22" fill="rgba(249,115,22,.04)" class="pulse-ring2"/>
+      <circle cx="213" cy="268" r="10" fill="rgba(249,115,22,.25)" stroke="#f97316" stroke-width="2"/>
+      <circle cx="213" cy="268" r="4"  fill="#f97316"/>
+      <g class="city-label-group">
+        <text x="227" y="265" class="city-name-text">Bogotá</text>
+        <text x="227" y="274" class="city-icf-text" fill="#fb923c">ICF 84</text>
+      </g>
+    </g>
+
+    <!-- Medellín: ~155,215 -->
+    <g class="city-dot" data-city="medellin" onclick="showCity('medellin')">
+      <circle cx="155" cy="215" r="18" fill="rgba(16,185,129,.05)" class="pulse-ring"/>
+      <circle cx="155" cy="215" r="8" fill="rgba(16,185,129,.2)" stroke="#10b981" stroke-width="2"/>
+      <circle cx="155" cy="215" r="3" fill="#10b981"/>
+      <g class="city-label-group">
+        <text x="168" y="212" class="city-name-text">Medellín</text>
+        <text x="168" y="221" class="city-icf-text" fill="#34d399">ICF 79</text>
+      </g>
+    </g>
+
+    <!-- Cali: ~140,310 -->
+    <g class="city-dot" data-city="cali" onclick="showCity('cali')">
+      <circle cx="140" cy="310" r="16" fill="rgba(6,182,212,.05)" class="pulse-ring"/>
+      <circle cx="140" cy="310" r="7" fill="rgba(6,182,212,.2)" stroke="#06b6d4" stroke-width="2"/>
+      <circle cx="140" cy="310" r="3" fill="#06b6d4"/>
+      <g class="city-label-group">
+        <text x="152" y="307" class="city-name-text">Cali</text>
+        <text x="152" y="316" class="city-icf-text" fill="#67e8f9">ICF 76</text>
+      </g>
+    </g>
+
+    <!-- Barranquilla: ~200,80 -->
+    <g class="city-dot" data-city="barranquilla" onclick="showCity('barranquilla')">
+      <circle cx="200" cy="80" r="14" fill="rgba(139,92,246,.05)" class="pulse-ring"/>
+      <circle cx="200" cy="80" r="6" fill="rgba(139,92,246,.2)" stroke="#8b5cf6" stroke-width="2"/>
+      <circle cx="200" cy="80" r="2.5" fill="#8b5cf6"/>
+      <g class="city-label-group">
+        <text x="210" y="77" class="city-name-text">Barranquilla</text>
+        <text x="210" y="86" class="city-icf-text" fill="#c4b5fd">ICF 72</text>
+      </g>
+    </g>
+
+    <!-- Bucaramanga: ~250,170 -->
+    <g class="city-dot" data-city="bucaramanga" onclick="showCity('bucaramanga')">
+      <circle cx="250" cy="170" r="13" fill="rgba(245,158,11,.05)" class="pulse-ring"/>
+      <circle cx="250" cy="170" r="6" fill="rgba(245,158,11,.2)" stroke="#f59e0b" stroke-width="2"/>
+      <circle cx="250" cy="170" r="2.5" fill="#f59e0b"/>
+      <g class="city-label-group">
+        <text x="260" y="167" class="city-name-text">Bucaramanga</text>
+        <text x="260" y="176" class="city-icf-text" fill="#fcd34d">ICF 69</text>
+      </g>
+    </g>
+
+    <!-- Manizales: ~175,248 -->
+    <g class="city-dot" data-city="manizales" onclick="showCity('manizales')">
+      <circle cx="175" cy="248" r="12" fill="rgba(236,72,153,.05)" class="pulse-ring"/>
+      <circle cx="175" cy="248" r="5.5" fill="rgba(236,72,153,.2)" stroke="#ec4899" stroke-width="1.5"/>
+      <circle cx="175" cy="248" r="2.5" fill="#ec4899"/>
+      <g class="city-label-group">
+        <text x="185" y="245" class="city-name-text">Manizales</text>
+        <text x="185" y="254" class="city-icf-text" fill="#f9a8d4">ICF 74</text>
+      </g>
+    </g>
+
+    <!-- Legend -->
+    <g transform="translate(20,400)">
+      <rect width="100" height="74" rx="8" fill="rgba(13,17,23,.9)" stroke="rgba(255,255,255,.08)" stroke-width=".8"/>
+      <circle cx="14" cy="14" r="5" fill="rgba(249,115,22,.3)" stroke="#f97316" stroke-width="1.5"/>
+      <text x="24" y="18" font-family="Inter,sans-serif" font-size="7.5" fill="#94a3b8">Mayor volumen</text>
+      <circle cx="14" cy="32" r="3.5" fill="rgba(16,185,129,.3)" stroke="#10b981" stroke-width="1.5"/>
+      <text x="24" y="36" font-family="Inter,sans-serif" font-size="7.5" fill="#94a3b8">Volumen medio</text>
+      <circle cx="14" cy="48" r="2.5" fill="rgba(100,116,139,.3)" stroke="#64748b" stroke-width="1.5"/>
+      <text x="24" y="52" font-family="Inter,sans-serif" font-size="7.5" fill="#94a3b8">Piloto nuevo</text>
+      <text x="8" y="68" font-family="Inter,sans-serif" font-size="6.5" fill="#475569">Haz click en cada ciudad</text>
+    </g>
+
+  </svg>
+</div>
+
+<!-- SIDE PANEL -->
+<div id="side-panel">
+  <div class="sp-header">
+    <div class="sp-title">Impacto por ciudad</div>
+    <div class="sp-sub">Selecciona una ciudad en el mapa</div>
+  </div>
+  <div id="city-detail">
+    <div class="cd-empty">
+      <div class="cd-empty-icon">🗺️</div>
+      <div>Haz click en cualquier<br/>punto del mapa para ver<br/>el detalle de esa ciudad</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CITIES = {
+  bogota: {
+    name: 'Bogotá', dept: 'Cundinamarca · Capital', icon: '🏙️',
+    icf: 84, zone: 'Familia en cohesión',
+    familias: 24, misiones: 178, capsulas: 9,
+    dims: { com: 87, tpo: 82, emo: 80, hab: 76 },
+    testimonial: '"El proceso IF nos devolvió las cenas en familia. Suena simple, pero para nosotros fue todo."',
+    author: 'Familia Torres · Bogotá · ICF 61→89',
+  },
+  medellin: {
+    name: 'Medellín', dept: 'Antioquia', icon: '🌸',
+    icf: 79, zone: 'Familia en cohesión',
+    familias: 11, misiones: 74, capsulas: 4,
+    dims: { com: 82, tpo: 77, emo: 74, hab: 72 },
+    testimonial: '"Nuestros hijos ahora nos preguntan cuándo es el siguiente sprint. Nunca pensé que les gustaría."',
+    author: 'Familia Restrepo · Medellín · ICF 55→79',
+  },
+  cali: {
+    name: 'Cali', dept: 'Valle del Cauca', icon: '🌴',
+    icf: 76, zone: 'Familia en cohesión',
+    familias: 7, misiones: 48, capsulas: 3,
+    dims: { com: 78, tpo: 74, emo: 72, hab: 68 },
+    testimonial: '"Lo que más nos sorprendió fue el diagnóstico. Ver el ICF por primera vez fue un espejo que nos costó mirar."',
+    author: 'Familia Castro · Cali · ICF 62→83',
+  },
+  barranquilla: {
+    name: 'Barranquilla', dept: 'Atlántico', icon: '🌊',
+    icf: 72, zone: 'Familia en cohesión',
+    familias: 3, misiones: 18, capsulas: 1,
+    dims: { com: 74, tpo: 70, emo: 68, hab: 65 },
+    testimonial: '"Estamos en el Mes 3. Ya no reconocemos la familia que éramos hace tres meses."',
+    author: 'Familia Díaz · Barranquilla · ICF 51→72',
+  },
+  bucaramanga: {
+    name: 'Bucaramanga', dept: 'Santander', icon: '⛰️',
+    icf: 69, zone: 'Familia en cohesión',
+    familias: 2, misiones: 12, capsulas: 1,
+    dims: { com: 71, tpo: 68, emo: 65, hab: 62 },
+    testimonial: '"Empezamos por curiosidad. Ahora somos los que le recomendamos IF a todo el mundo."',
+    author: 'Familia Cárdenas · Bucaramanga · ICF 48→69',
+  },
+  manizales: {
+    name: 'Manizales', dept: 'Caldas', icon: '☕',
+    icf: 74, zone: 'Familia en cohesión',
+    familias: 2, misiones: 14, capsulas: 1,
+    dims: { com: 76, tpo: 73, emo: 70, hab: 68 },
+    testimonial: '"La cápsula familiar es algo que nuestros hijos van a ver en 20 años y van a entender quiénes somos."',
+    author: 'Familia Ríos · Manizales · ICF 57→74',
+  },
+};
+
+const DIM_COLORS = { com: '#f97316', tpo: '#06b6d4', emo: '#ec4899', hab: '#10b981' };
+const DIM_LABELS = { com: '🗣️ Comunicación', tpo: '📅 Tiempo', emo: '❤️ Emociones', hab: '🌱 Hábitos' };
+
+function showCity(key) {
+  const c = CITIES[key];
+  if (!c) return;
+
+  // Highlight selected dot
+  document.querySelectorAll('.city-dot').forEach(d => {
+    d.style.opacity = d.dataset.city === key ? '1' : '.45';
+  });
+
+  const el = document.getElementById('city-detail');
+  el.innerHTML = `
+    <div class="cd-header">
+      <div class="cd-icon">${c.icon}</div>
+      <div><div class="cd-city">${c.name}</div><div class="cd-dept">${c.dept}</div></div>
+    </div>
+    <div class="cd-icf">
+      <div class="cd-icf-num">${c.icf}</div>
+      <div class="cd-icf-info">
+        <div class="cd-icf-lbl">ICF Promedio</div>
+        <div class="cd-icf-zone">${c.zone}</div>
+      </div>
+    </div>
+    <div class="cd-stats-row">
+      <div class="cds-card"><div class="cds-val">${c.familias}</div><div class="cds-lbl">Familias</div></div>
+      <div class="cds-card"><div class="cds-val">${c.misiones}</div><div class="cds-lbl">Misiones</div></div>
+      <div class="cds-card"><div class="cds-val">${c.capsulas}</div><div class="cds-lbl">Cápsulas</div></div>
+    </div>
+    <div class="cd-dims">
+      ${Object.entries(c.dims).map(([d,v]) => `
+        <div class="dim-row">
+          <div class="dr-icon">${DIM_LABELS[d].split(' ')[0]}</div>
+          <div class="dr-name" style="color:${DIM_COLORS[d]};">${DIM_LABELS[d].split(' ').slice(1).join(' ')}</div>
+          <div class="dr-bar"><div class="dr-fill" style="width:${v}%;background:${DIM_COLORS[d]};"></div></div>
+          <div class="dr-val" style="color:${DIM_COLORS[d]};">${v}</div>
+        </div>
+      `).join('')}
+    </div>
+    <div class="cd-testimonial">
+      <div class="ct-text">${c.testimonial}</div>
+      <div class="ct-author">— ${c.author}</div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>

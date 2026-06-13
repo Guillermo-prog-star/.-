@@ -55,6 +55,7 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // Servir el index.html estándar de Angular
     let filePath = path.join(STATIC_PATH, req.url === '/' ? 'index.html' : req.url);
     if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
         filePath = path.join(STATIC_PATH, 'index.html');

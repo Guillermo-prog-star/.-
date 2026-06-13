@@ -1,0 +1,38 @@
+/* opening.css */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: #000;
+  color: #fff;
+  font-family: 'Playfair Display', serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+#scene {
+  text-align: center;
+  max-width: 80vw;
+  font-size: 2rem;
+  line-height: 1.4;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+.visible {
+  opacity: 1;
+}
+
+.subtitle {
+  position: absolute;
+  bottom: 5vh;
+  width: 100%;
+  text-align: center;
+  font-size: 1.2rem;
+  color: #aaa;
+}

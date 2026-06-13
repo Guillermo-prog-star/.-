@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Integrity Family — Simulación</title>
+<style>
+  :root {
+    --blue:   #4f46e5;
+    --blue2:  #4338ca;
+    --orange: #f97316;
+    --orange2:#ea580c;
+    --orange-l:#fb923c;
+    --green:  #10b981;
+    --text:   #e0e0e0;
+    --muted:  #888;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0d1117;color:var(--text);}
+
+  /* Nav simulación */
+  .sim-nav{
+    display:flex;gap:0;background:rgba(13,17,28,.97);
+    border-bottom:1px solid rgba(255,255,255,.08);
+    position:sticky;top:0;z-index:100;overflow-x:auto;
+  }
+  .snav{
+    padding:11px 18px;font-size:12px;font-weight:700;
+    color:var(--muted);background:none;border:none;cursor:pointer;
+    white-space:nowrap;border-bottom:2px solid transparent;
+    transition:all .2s;
+  }
+  .snav:hover{color:var(--orange-l);}
+  .snav.active{color:var(--orange-l);border-bottom-color:var(--orange);}
+
+  .screen{display:none;animation:fadeIn .3s ease;}
+  .screen.on{display:block;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+  /* ══════════════════════════════════
+     LOGIN — PRIMERA VISITA
+  ══════════════════════════════════ */
+  .login-page{
+    min-height:100vh;width:100%;
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+    background:linear-gradient(145deg,#1a1654 0%,#2f2b83 50%,#1e1b4b 100%);
+    position:relative;overflow:hidden;
+  }
+  .bg-c{position:absolute;border-radius:50%;pointer-events:none;}
+  .bg-c1{width:420px;height:420px;background:radial-gradient(circle,rgba(249,115,22,.09) 0%,transparent 70%);top:-120px;right:-80px;}
+  .bg-c2{width:300px;height:300px;background:radial-gradient(circle,rgba(99,102,241,.12) 0%,transparent 70%);bottom:-60px;left:-60px;}
+
+  /* Ilustración sfumato — familia en lápiz suave */
+  .bg-sfumato {
+    position:absolute;inset:0;pointer-events:none;z-index:0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 900 600' preserveAspectRatio='xMidYMid slice'%3E%3Cdefs%3E%3Cfilter id='bl'%3E%3CfeGaussianBlur stdDeviation='5'/%3E%3C/filter%3E%3CradialGradient id='fade' cx='50%25' cy='50%25' r='55%25'%3E%3Cstop offset='0%25' stop-color='white' stop-opacity='0.15'/%3E%3Cstop offset='100%25' stop-color='white' stop-opacity='0'/%3E%3C/radialGradient%3E%3C/defs%3E%3Cg filter='url(%23bl)' fill='white' fill-opacity='0.1'%3E%3Ccircle cx='340' cy='170' r='38'/%3E%3Cpath d='M295 220 Q295 210 303 207 Q340 195 377 207 Q385 210 385 220 L390 340 Q390 350 380 350 L300 350 Q290 350 290 340 Z'/%3E%3Cpath d='M290 240 Q270 250 265 290 Q263 310 275 315 Q285 318 290 300 L295 255 Z'/%3E%3Cpath d='M385 240 Q405 250 410 290 Q412 310 400 315 Q390 318 385 300 L380 255 Z'/%3E%3Cpath d='M300 345 L290 430 Q288 440 298 442 Q308 444 312 434 L325 370 L338 434 Q340 444 350 442 Q360 440 358 430 L348 345 Z'/%3E%3Ccircle cx='520' cy='185' r='34'/%3E%3Cpath d='M478 228 Q478 218 488 215 Q520 204 552 215 Q562 218 562 228 L558 330 Q558 340 546 340 L494 340 Q482 340 482 330 Z'/%3E%3Cpath d='M482 250 Q465 258 462 292 Q460 308 470 312 Q480 316 482 298 L486 264 Z'/%3E%3Cpath d='M558 250 Q575 258 578 292 Q580 308 570 312 Q560 316 558 298 L554 264 Z'/%3E%3Cpath d='M494 336 L486 415 Q484 424 493 426 Q502 428 506 419 L518 358 L530 419 Q534 428 543 426 Q552 424 550 415 L542 336 Z'/%3E%3Ccircle cx='230' cy='270' r='26'/%3E%3Cpath d='M198 302 Q198 294 207 292 Q230 283 253 292 Q262 294 262 302 L264 382 Q264 390 255 390 L205 390 Q196 390 196 382 Z'/%3E%3Cpath d='M198 318 Q185 325 183 352 Q182 364 190 367 Q198 370 200 356 L203 330 Z'/%3E%3Cpath d='M262 318 Q275 325 277 352 Q278 364 270 367 Q262 370 260 356 L257 330 Z'/%3E%3Cpath d='M206 387 L200 445 Q199 452 207 453 Q215 454 218 447 L228 405 L238 447 Q241 454 249 453 Q257 452 256 445 L250 387 Z'/%3E%3Ccircle cx='635' cy='265' r='23'/%3E%3Cpath d='M606 293 Q606 286 614 284 Q635 276 656 284 Q664 286 664 293 L666 365 Q666 372 658 372 L614 372 Q606 372 606 365 Z'/%3E%3Cpath d='M608 308 Q596 314 594 337 Q593 347 600 350 Q607 353 609 341 L611 320 Z'/%3E%3Cpath d='M664 308 Q676 314 678 337 Q679 347 672 350 Q665 353 663 341 L661 320 Z'/%3E%3Ccircle cx='430' cy='295' r='20'/%3E%3Cpath d='M405 318 Q405 311 413 309 Q430 302 447 309 Q455 311 455 318 L456 375 Q456 381 449 381 L411 381 Q404 381 404 375 Z'/%3E%3C/g%3E%3Crect width='900' height='600' fill='url(%23fade)'/%3E%3C/svg%3E");
+    background-size:cover;background-position:center;background-repeat:no-repeat;
+  }
+
+  .login-card{
+    width:min(100%,488px);border-radius:26px;padding:38px 36px;
+    background:rgba(255,255,255,.07);
+    backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);
+    border:1px solid rgba(255,255,255,.1);
+    box-shadow:0 32px 64px -12px rgba(0,0,0,.6);
+    color:#fff;display:flex;flex-direction:column;gap:22px;
+    position:relative;z-index:1;
+  }
+
+  /* Marca */
+  .brand{display:flex;align-items:center;gap:14px;}
+  .brand-logo{
+    width:68px;height:68px;border-radius:16px;
+    overflow:hidden;flex-shrink:0;
+    box-shadow:0 8px 20px rgba(0,0,0,.4);
+    border:1px solid rgba(255,255,255,.08);
+    background:#fcfbf4;
+  }
+  .brand-logo svg { width:100%;height:100%;display:block; }
+  .brand-name{font-size:21px;font-weight:900;margin:0 0 3px;letter-spacing:-.02em;}
+  .brand-tag{font-size:11px;color:rgba(255,255,255,.5);margin:0;letter-spacing:.02em;}
+
+  /* Propuesta de valor */
+  .value-prop{
+    background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);
+    border-radius:14px;padding:16px 18px;
+  }
+  .vp-q{font-size:14px;font-weight:600;color:rgba(255,255,255,.9);margin:0 0 12px;line-height:1.5;}
+  .vp-pills{display:flex;flex-wrap:wrap;gap:7px;}
+  .vp-pill{
+    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+    border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;
+    color:rgba(255,255,255,.8);
+  }
+
+  /* Zonas */
+  .zone{border-radius:16px;padding:18px 20px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);display:flex;flex-direction:column;gap:12px;}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;padding:4px 12px;border-radius:20px;align-self:flex-start;}
+  .badge-new{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;}
+  .badge-orange{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.35);color:#fb923c;}
+  .zone-title{font-size:17px;font-weight:800;color:#fff;}
+  .zone-desc{font-size:13px;color:rgba(255,255,255,.62);line-height:1.5;}
+  .zone-new{border-color:rgba(16,185,129,.2);}
+  .zone-ret{border-color:rgba(249,115,22,.2);}
+
+  /* Botón naranja — Crear mi familia */
+  .btn-create{
+    display:block;text-align:center;
+    background:linear-gradient(135deg,#f97316,#ea580c);
+    color:#fff;border:none;border-radius:12px;padding:14px 20px;
+    font-size:15px;font-weight:800;cursor:pointer;text-decoration:none;
+    box-shadow:0 4px 16px rgba(249,115,22,.38);transition:all .3s;
+  }
+  .btn-create:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(249,115,22,.55);}
+
+  /* Formulario */
+  .form-group{margin-bottom:16px;}
+  .form-group label{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700;color:rgba(255,255,255,.8);text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px;}
+  .form-group input{width:100%;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:#fff;padding:13px 16px;font-size:15px;min-height:48px;outline:none;transition:all .3s;}
+  .form-group input:focus{border-color:rgba(249,115,22,.5);box-shadow:0 0 0 3px rgba(249,115,22,.12);}
+  .form-group input::placeholder{color:rgba(255,255,255,.25);}
+  .toggle-pw{background:none;border:none;color:#fb923c;font-size:12px;font-weight:600;cursor:pointer;padding:0;text-transform:none;letter-spacing:0;}
+
+  .form-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;}
+  .chk-label{display:flex;align-items:center;gap:7px;font-size:13px;color:rgba(255,255,255,.75);cursor:pointer;}
+  .forgot{font-size:13px;color:#fb923c;text-decoration:none;font-weight:500;}
+
+  /* Botón azul — Iniciar sesión */
+  .btn-login{
+    width:100%;background:linear-gradient(135deg,#4f46e5,#4338ca);
+    color:#fff;border:none;border-radius:12px;padding:14px 20px;
+    font-size:15px;font-weight:700;cursor:pointer;min-height:50px;
+    box-shadow:0 4px 14px rgba(79,70,229,.4);transition:all .3s;
+  }
+  .btn-login:hover{transform:translateY(-2px);box-shadow:0 6px 22px rgba(79,70,229,.55);}
+
+  /* Separador */
+  .sep{display:flex;align-items:center;gap:10px;}
+  .sep-l{flex:1;height:1px;background:rgba(255,255,255,.08);}
+  .sep-t{font-size:11px;color:rgba(255,255,255,.3);white-space:nowrap;}
+
+  /* Bienvenida recurrente */
+  .rw-g{font-size:15px;font-weight:700;color:#fff;margin:0 0 4px;}
+  .rw-m{font-size:13px;color:rgba(255,255,255,.62);margin:0;line-height:1.6;}
+
+  /* Frase impacto */
+  .impact{text-align:center;font-size:12px;font-style:italic;color:rgba(255,255,255,.38);line-height:1.6;}
+
+  /* Footer */
+  .footer-leg{text-align:center;font-size:11px;color:rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;}
+  .footer-leg a{color:rgba(255,255,255,.35);text-decoration:none;}
+
+  /* ══════════════════════════════════
+     SISTEMA DE COLORES — demostración
+  ══════════════════════════════════ */
+  .color-demo{max-width:720px;margin:0 auto;padding:40px 24px;}
+  .cd-title{font-size:22px;font-weight:800;margin-bottom:6px;}
+  .cd-sub{font-size:13px;color:var(--muted);margin-bottom:32px;}
+
+  .color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:32px;}
+  .color-card{border-radius:16px;padding:20px;display:flex;flex-direction:column;gap:10px;}
+  .cc-swatch{width:44px;height:44px;border-radius:12px;}
+  .cc-name{font-size:14px;font-weight:800;}
+  .cc-role{font-size:12px;color:rgba(255,255,255,.6);line-height:1.5;}
+  .cc-uses{display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;}
+  .cc-use{font-size:10px;font-weight:700;padding:3px 9px;border-radius:10px;background:rgba(255,255,255,.08);}
+
+  /* Badges en acción */
+  .badges-row{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px;}
+  .demo-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;padding:5px 14px;border-radius:20px;}
+  .db-juntos{background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.35);color:#fb923c;}
+  .db-mision{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;}
+  .db-crisis{background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);color:#fca5a5;}
+  .db-creciendo{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#86efac;}
+
+  /* Botones en acción */
+  .btns-row{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:32px;}
+  .demo-btn{padding:12px 22px;border-radius:11px;font-size:14px;font-weight:700;border:none;cursor:pointer;transition:all .2s;}
+  .db-btn-orange{background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;box-shadow:0 4px 14px rgba(249,115,22,.35);}
+  .db-btn-blue{background:linear-gradient(135deg,#4f46e5,#4338ca);color:#fff;box-shadow:0 4px 14px rgba(79,70,229,.35);}
+  .db-btn-green{background:linear-gradient(135deg,#10b981,#059669);color:#fff;box-shadow:0 4px 14px rgba(16,185,129,.3);}
+  .db-btn-red{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;box-shadow:0 4px 14px rgba(239,68,68,.3);}
+
+  .section-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;}
+
+  /* ══════════════════════════════════
+     LOGIN RECURRENTE
+  ══════════════════════════════════ */
+</style>
+</head>
+<body>
+
+<nav class="sim-nav">
+  <button class="snav active" onclick="show('s-login-new',this)">🌱 Login</button>
+  <button class="snav" onclick="show('s-onboarding',this)">👨‍👩‍👧‍👦 Crear familia</button>
+  <button class="snav" onclick="show('s-dashboard',this)">🏠 Dashboard</button>
+  <button class="snav" onclick="show('s-eval',this)">📊 Evaluación</button>
+  <button class="snav" onclick="show('s-plan',this)">🗺️ Plan Mensual</button>
+  <button class="snav" onclick="show('s-sprint',this)">⚡ Sprint Diario</button>
+  <button class="snav" onclick="show('s-hogar',this)">🏡 Hogar Vivo</button>
+  <button class="snav" onclick="show('s-documental',this)">🎬 Documental</button>
+  <button class="snav" onclick="show('s-colors',this)">🎨 Colores</button>
+</nav>
+
+<!-- ══ EL HOGAR VIVO — FAMILIA ADENTRO ══════════════ -->
+<div id="s-hogar" class="screen">
+<div style="max-width:720px;margin:0 auto;padding:32px 20px 80px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e0e0e0;">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;flex-wrap:wrap;">
+    <span style="font-size:36px;">🏠</span>
+    <div>
+      <h2 style="font-size:20px;font-weight:800;color:#fff;margin:0 0 3px;">El Hogar Vivo</h2>
+      <p style="font-size:12px;color:#888;margin:0;">Familia García · Hoy, 6 de junio 2026</p>
+    </div>
+    <span style="margin-left:auto;background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#fde047;padding:5px 14px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;">🌔 Hogar creciendo</span>
+  </div>
+
+  <!-- Miembros de la familia — quiénes están activos hoy -->
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+    <div style="display:flex;align-items:center;gap:7px;background:rgba(59,130,246,.12);border:1px solid rgba(59,130,246,.25);border-radius:20px;padding:5px 12px;">
+      <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#1e40af,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;">C</div>
+      <span style="font-size:12px;font-weight:700;color:#93c5fd;">Carlos</span>
+      <span style="font-size:10px;color:rgba(255,255,255,.4);">Papá</span>
+      <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;" title="Activo hoy"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:7px;background:rgba(217,119,6,.12);border:1px solid rgba(217,119,6,.25);border-radius:20px;padding:5px 12px;">
+      <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#b45309,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;">M</div>
+      <span style="font-size:12px;font-weight:700;color:#fcd34d;">Camila</span>
+      <span style="font-size:10px;color:rgba(255,255,255,.4);">Mamá</span>
+      <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:7px;background:rgba(20,184,166,.1);border:1px solid rgba(20,184,166,.22);border-radius:20px;padding:5px 12px;">
+      <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#2dd4bf);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;">S</div>
+      <span style="font-size:12px;font-weight:700;color:#5eead4;">Sebastián</span>
+      <span style="font-size:10px;color:rgba(255,255,255,.4);">Hijo · 14</span>
+      <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;"></span>
+    </div>
+    <div style="display:flex;align-items:center;gap:7px;background:rgba(236,72,153,.1);border:1px solid rgba(236,72,153,.22);border-radius:20px;padding:5px 12px;">
+      <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#be185d,#f472b6);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;font-weight:800;">V</div>
+      <span style="font-size:12px;font-weight:700;color:#f9a8d4;">Valentina</span>
+      <span style="font-size:10px;color:rgba(255,255,255,.4);">Hija · 9</span>
+      <span style="width:6px;height:6px;border-radius:50%;background:#f59e0b;display:inline-block;" title="Conectándose"></span>
+    </div>
+  </div>
+
+  <!-- ESCENA: Familia afuera · Casa encendida al fondo -->
+  <div style="background:#07052a;border-radius:18px;border:1px solid rgba(255,255,255,.06);overflow:hidden;margin-bottom:20px;">
+  <svg id="hogar-svg" viewBox="0 0 640 460" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;">
+    <defs>
+      <linearGradient id="sky3" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0f0c2e"/>
+        <stop offset="100%" stop-color="#1e1b4b"/>
+      </linearGradient>
+      <linearGradient id="gnd3" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#14271a"/>
+        <stop offset="100%" stop-color="#0d1117"/>
+      </linearGradient>
+      <!-- Glow naranja sala -->
+      <filter id="gS" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="6" result="b"/>
+        <feFlood flood-color="#f97316" flood-opacity=".45" result="c"/>
+        <feComposite in="c" in2="b" operator="in" result="g"/>
+        <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <!-- Glow verde jardín -->
+      <filter id="gJ" x="-30%" y="-30%" width="160%" height="160%">
+        <feGaussianBlur stdDeviation="7" result="b"/>
+        <feFlood flood-color="#22c55e" flood-opacity=".5" result="c"/>
+        <feComposite in="c" in2="b" operator="in" result="g"/>
+        <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <!-- Suave blur para figuras -->
+      <filter id="figBlur"><feGaussianBlur stdDeviation="0.6"/></filter>
+    </defs>
+
+    <!-- ── FONDO ── -->
+    <rect width="580" height="420" fill="url(#sky3)"/>
+    <!-- Estrellas -->
+    <circle cx="55" cy="28" r="1.5" fill="white" opacity=".55"/>
+    <circle cx="130" cy="14" r="1" fill="white" opacity=".4"/>
+    <circle cx="440" cy="22" r="1.5" fill="white" opacity=".65"/>
+    <circle cx="510" cy="38" r="1" fill="white" opacity=".35"/>
+    <circle cx="220" cy="10" r="1.2" fill="white" opacity=".5"/>
+    <circle cx="350" cy="18" r="1" fill="white" opacity=".45"/>
+    <!-- Luna -->
+    <circle cx="500" cy="55" r="22" fill="#e2e8f0" opacity=".1"/>
+    <circle cx="512" cy="47" r="17" fill="#0f0c2e" opacity=".97"/>
+
+    <!-- ── SUELO + JARDÍN ── -->
+    <rect x="0" y="345" width="580" height="75" fill="url(#gnd3)"/>
+    <ellipse cx="88" cy="350" rx="36" ry="9" fill="#22c55e" opacity=".25"/>
+    <ellipse cx="492" cy="350" rx="32" ry="8" fill="#22c55e" opacity=".2"/>
+    <!-- Árbol izq -->
+    <rect x="80" y="308" width="6" height="42" fill="#374151" opacity=".55"/>
+    <circle cx="83" cy="296" r="22" fill="#166534" opacity=".65"/>
+    <!-- Árbol der -->
+    <rect x="487" y="312" width="6" height="38" fill="#374151" opacity=".5"/>
+    <circle cx="490" cy="300" r="19" fill="#166534" opacity=".6"/>
+
+    <!-- ── TECHO ── -->
+    <polygon points="105,162 290,58 475,162" fill="#1a1745" stroke="rgba(255,255,255,.08)" stroke-width="2"/>
+    <polygon points="105,162 290,58 475,162 475,172 290,68 105,172" fill="rgba(255,255,255,.025)"/>
+    <!-- Chimenea -->
+    <rect x="345" y="80" width="26" height="64" rx="3" fill="#1a1745" stroke="rgba(255,255,255,.09)" stroke-width="1"/>
+    <!-- Humo animado -->
+    <ellipse cx="358" cy="72" rx="7" ry="9" fill="rgba(255,255,255,.055)"><animate attributeName="cy" values="72;60;72" dur="4s" repeatCount="indefinite"/><animate attributeName="opacity" values=".055;.015;.055" dur="4s" repeatCount="indefinite"/></ellipse>
+    <ellipse cx="352" cy="57" rx="5" ry="7" fill="rgba(255,255,255,.035)"><animate attributeName="cy" values="57;44;57" dur="5s" repeatCount="indefinite"/></ellipse>
+
+    <!-- ── FACHADA ── -->
+    <rect x="105" y="162" width="370" height="183" rx="3" fill="#0f1623" stroke="rgba(255,255,255,.07)" stroke-width="1.5"/>
+
+    <!-- ════════════════════════════════════════════════
+         SALA — Comunicación 3/5
+         (izquierda arriba, x=105–290, y=162–245)
+    ════════════════════════════════════════════════ -->
+    <rect x="113" y="170" width="168" height="68" rx="4" fill="rgba(249,115,22,.09)" filter="url(#gS)"/>
+    <!-- Ventana -->
+    <rect x="122" y="178" width="56" height="42" rx="3" fill="rgba(0,0,0,.5)" stroke="rgba(255,255,255,.1)" stroke-width=".8"/>
+    <line x1="150" y1="178" x2="150" y2="220" stroke="rgba(255,255,255,.07)" stroke-width=".7"/>
+    <line x1="122" y1="199" x2="178" y2="199" stroke="rgba(255,255,255,.07)" stroke-width=".7"/>
+    <rect x="123" y="179" width="26" height="19" rx="2" fill="#f97316" opacity=".4"/>
+    <rect x="123" y="200" width="26" height="18" rx="2" fill="#f97316" opacity=".25"/>
+
+    <!-- FIGURAS en la Sala: Carlos + Camila + Valentina conversando -->
+    <!-- Carlos (Papá) — azul, más alto -->
+    <g filter="url(#figBlur)">
+      <circle cx="197" cy="188" r="7" fill="#2563eb" opacity=".9"/>
+      <path d="M190 196 Q190 193 197 191 Q204 193 204 196 L205 220 Q205 223 197 223 Q189 223 189 220 Z" fill="#1d4ed8" opacity=".85"/>
+    </g>
+    <text x="197" y="230" text-anchor="middle" font-size="6.5" fill="#93c5fd" font-family="sans-serif" font-weight="700">Papá</text>
+
+    <!-- Camila (Mamá) — dorada, media altura -->
+    <g filter="url(#figBlur)">
+      <circle cx="216" cy="190" r="6.5" fill="#d97706" opacity=".9"/>
+      <!-- Cabello -->
+      <path d="M210 188 Q209 182 216 181 Q223 182 222 188" fill="#f59e0b" opacity=".7"/>
+      <path d="M209 192 Q207 199 210 207 L209 218" stroke="#b45309" stroke-width="1.5" fill="none" opacity=".6"/>
+      <path d="M210 196 Q210 193 216 192 Q222 193 222 196 L223 216 Q223 219 216 219 Q209 219 209 216 Z" fill="#b45309" opacity=".8"/>
+    </g>
+    <text x="216" y="230" text-anchor="middle" font-size="6.5" fill="#fcd34d" font-family="sans-serif" font-weight="700">Mamá</text>
+
+    <!-- Valentina (Hija) — rosa, más pequeña -->
+    <g filter="url(#figBlur)">
+      <circle cx="232" cy="193" r="5.5" fill="#ec4899" opacity=".85"/>
+      <path d="M227 200 Q227 197 232 196 Q237 197 237 200 L238 214 Q238 217 232 217 Q226 217 226 214 Z" fill="#be185d" opacity=".75"/>
+    </g>
+    <text x="232" y="230" text-anchor="middle" font-size="6.5" fill="#f9a8d4" font-family="sans-serif" font-weight="700">Hija</text>
+
+    <!-- Línea de conversación entre Carlos y Camila -->
+    <path d="M204 192 Q210 187 210 192" fill="none" stroke="rgba(255,255,255,.2)" stroke-width=".8" stroke-dasharray="2,2"/>
+    <!-- Burbuja de diálogo pequeña -->
+    <ellipse cx="210" cy="183" rx="8" ry="5" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.12)" stroke-width=".5"/>
+    <text x="210" y="185" text-anchor="middle" font-size="5" fill="rgba(255,255,255,.5)" font-family="sans-serif">...</text>
+
+    <!-- Label sala -->
+    <text x="155" y="235" text-anchor="middle" font-size="8" font-weight="700" fill="#fb923c" font-family="sans-serif">La Sala · Comunicación</text>
+    <rect x="122" y="239" width="122" height="2.5" rx="1.2" fill="rgba(255,255,255,.07)"/>
+    <rect x="122" y="239" width="73" height="2.5" rx="1.2" fill="#f97316"/>
+
+
+    <!-- ════════════════════════════════════════════════
+         COCINA — Hábitos 2/5
+         (derecha arriba, x=290–475, y=162–245)
+    ════════════════════════════════════════════════ -->
+    <rect x="298" y="170" width="169" height="68" rx="4" fill="rgba(249,115,22,.04)"/>
+    <!-- Ventana -->
+    <rect x="308" y="178" width="56" height="42" rx="3" fill="rgba(0,0,0,.5)" stroke="rgba(255,255,255,.07)" stroke-width=".8"/>
+    <line x1="336" y1="178" x2="336" y2="220" stroke="rgba(255,255,255,.06)" stroke-width=".7"/>
+    <line x1="308" y1="199" x2="364" y2="199" stroke="rgba(255,255,255,.06)" stroke-width=".7"/>
+    <rect x="309" y="179" width="26" height="19" rx="2" fill="#f97316" opacity=".18"/>
+
+    <!-- SOLO Camila en la cocina — sola, hábito pendiente -->
+    <g filter="url(#figBlur)" opacity=".6">
+      <circle cx="405" cy="192" r="6" fill="#d97706" opacity=".8"/>
+      <path d="M399 199 Q399 196 405 195 Q411 196 411 199 L412 218 Q412 220 405 220 Q398 220 398 218 Z" fill="#92400e" opacity=".7"/>
+    </g>
+    <text x="405" y="228" text-anchor="middle" font-size="6.5" fill="rgba(252,211,77,.5)" font-family="sans-serif" font-weight="700">Mamá</text>
+    <!-- Signo de interrogación — hábito no completado -->
+    <text x="417" y="188" font-size="10" fill="rgba(249,115,22,.4)" font-family="sans-serif">?</text>
+
+    <!-- Label cocina -->
+    <text x="383" y="235" text-anchor="middle" font-size="8" font-weight="700" fill="rgba(251,146,60,.55)" font-family="sans-serif">La Cocina · Hábitos</text>
+    <rect x="308" y="239" width="122" height="2.5" rx="1.2" fill="rgba(255,255,255,.07)"/>
+    <rect x="308" y="239" width="49" height="2.5" rx="1.2" fill="#f97316" opacity=".5"/>
+
+
+    <!-- ════════════════════════════════════════════════
+         JARDÍN — Tiempos juntos 4/5  ★ TODA LA FAMILIA
+         (izquierda abajo, x=105–290, y=245–345)
+    ════════════════════════════════════════════════ -->
+    <rect x="113" y="253" width="168" height="84" rx="4" fill="rgba(34,197,94,.12)" filter="url(#gJ)"/>
+    <!-- Ventana -->
+    <rect x="122" y="261" width="56" height="42" rx="3" fill="rgba(0,0,0,.4)" stroke="rgba(255,255,255,.1)" stroke-width=".8"/>
+    <line x1="150" y1="261" x2="150" y2="303" stroke="rgba(255,255,255,.08)" stroke-width=".7"/>
+    <line x1="122" y1="282" x2="178" y2="282" stroke="rgba(255,255,255,.08)" stroke-width=".7"/>
+    <rect x="123" y="262" width="26" height="19" rx="2" fill="#22c55e" opacity=".5"/>
+    <rect x="123" y="283" width="26" height="18" rx="2" fill="#22c55e" opacity=".32"/>
+
+    <!-- TODA LA FAMILIA JUNTA — círculo de conexión -->
+    <!-- Aureola de conexión familiar -->
+    <circle cx="205" cy="290" r="32" fill="rgba(34,197,94,.06)" stroke="rgba(34,197,94,.15)" stroke-width="1" stroke-dasharray="3,3"/>
+
+    <!-- Carlos (Papá) -->
+    <g filter="url(#figBlur)">
+      <circle cx="193" cy="279" r="7" fill="#2563eb" opacity=".95"/>
+      <path d="M186 287 Q186 284 193 282 Q200 284 200 287 L201 307 Q201 310 193 310 Q185 310 185 307 Z" fill="#1d4ed8" opacity=".9"/>
+    </g>
+    <!-- Camila (Mamá) -->
+    <g filter="url(#figBlur)">
+      <circle cx="210" cy="280" r="6.5" fill="#d97706" opacity=".95"/>
+      <path d="M205 188 Q204 181 210 180 Q216 181 215 188" fill="#f59e0b" opacity=".6" transform="translate(0 98)"/>
+      <path d="M204 287 Q204 284 210 283 Q216 284 216 287 L217 306 Q217 309 210 309 Q203 309 203 306 Z" fill="#b45309" opacity=".88"/>
+    </g>
+    <!-- Sebastián (Hijo) -->
+    <g filter="url(#figBlur)">
+      <circle cx="220" cy="283" r="6" fill="#0d9488" opacity=".9"/>
+      <path d="M214 290 Q214 287 220 286 Q226 287 226 290 L227 307 Q227 310 220 310 Q213 310 213 307 Z" fill="#0f766e" opacity=".85"/>
+    </g>
+    <!-- Valentina (Hija) -->
+    <g filter="url(#figBlur)">
+      <circle cx="230" cy="284" r="5.5" fill="#ec4899" opacity=".9"/>
+      <path d="M225 291 Q225 288 230 287 Q235 288 235 291 L236 305 Q236 308 230 308 Q224 308 224 305 Z" fill="#be185d" opacity=".8"/>
+    </g>
+
+    <!-- Líneas de conexión entre los 4 -->
+    <line x1="200" y1="292" x2="204" y2="292" stroke="rgba(34,197,94,.35)" stroke-width="1.2"/>
+    <line x1="216" y1="292" x2="214" y2="292" stroke="rgba(34,197,94,.35)" stroke-width="1.2"/>
+    <line x1="226" y1="292" x2="224" y2="292" stroke="rgba(34,197,94,.25)" stroke-width="1"/>
+
+    <!-- Nombres -->
+    <text x="193" y="318" text-anchor="middle" font-size="6" fill="#93c5fd" font-family="sans-serif" font-weight="700">Papá</text>
+    <text x="210" y="318" text-anchor="middle" font-size="6" fill="#fcd34d" font-family="sans-serif" font-weight="700">Mamá</text>
+    <text x="220" y="318" text-anchor="middle" font-size="6" fill="#5eead4" font-family="sans-serif" font-weight="700">Hijo</text>
+    <text x="230" y="318" text-anchor="middle" font-size="6" fill="#f9a8d4" font-family="sans-serif" font-weight="700">Hija</text>
+
+    <!-- Estrella de actividad compartida -->
+    <text x="210" y="270" text-anchor="middle" font-size="9" opacity=".8">✨</text>
+
+    <!-- Label jardín -->
+    <text x="155" y="329" text-anchor="middle" font-size="8" font-weight="700" fill="#4ade80" font-family="sans-serif">El Jardín · Tiempos juntos</text>
+    <rect x="122" y="333" width="122" height="2.5" rx="1.2" fill="rgba(255,255,255,.07)"/>
+    <rect x="122" y="333" width="98" height="2.5" rx="1.2" fill="#22c55e"/>
+
+
+    <!-- ════════════════════════════════════════════════
+         CORAZÓN — Emociones 2/5  (dormido)
+         (derecha abajo, x=290–475, y=245–345)
+    ════════════════════════════════════════════════ -->
+    <rect x="298" y="253" width="169" height="84" rx="4" fill="rgba(107,114,128,.04)"/>
+    <!-- Puerta central -->
+    <rect x="368" y="279" width="34" height="52" rx="4" fill="rgba(0,0,0,.6)" stroke="rgba(255,255,255,.1)" stroke-width="1"/>
+    <circle cx="396" cy="306" r="2.5" fill="rgba(255,255,255,.3)"/>
+    <path d="M368 294 Q385 275 402 294" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="1"/>
+    <!-- Luz muy tenue bajo la puerta -->
+    <rect x="369" y="328" width="32" height="2" rx="1" fill="#6b7280" opacity=".2"/>
+
+    <!-- Carlos SOLO, de espaldas a la puerta, figura muy tenue -->
+    <g opacity=".3" filter="url(#figBlur)">
+      <circle cx="335" cy="278" r="6" fill="#2563eb"/>
+      <path d="M329 285 Q329 282 335 281 Q341 282 341 285 L342 305 Q342 308 335 308 Q328 308 328 305 Z" fill="#1d4ed8"/>
+    </g>
+    <text x="335" y="315" text-anchor="middle" font-size="6" fill="rgba(147,197,253,.3)" font-family="sans-serif" font-weight="700">Papá</text>
+
+    <!-- Ventana corazón -->
+    <rect x="308" y="261" width="50" height="34" rx="3" fill="rgba(0,0,0,.45)" stroke="rgba(255,255,255,.07)" stroke-width=".8"/>
+    <rect x="309" y="262" width="22" height="15" rx="2" fill="#6b7280" opacity=".12"/>
+
+    <!-- Interrogante emocional -->
+    <text x="450" y="285" font-size="18" fill="rgba(255,255,255,.1)" font-family="sans-serif">💭</text>
+
+    <!-- Label corazón -->
+    <text x="383" y="329" text-anchor="middle" font-size="8" font-weight="700" fill="rgba(255,255,255,.38)" font-family="sans-serif">Corazón del Hogar · Emociones</text>
+    <rect x="308" y="333" width="122" height="2.5" rx="1.2" fill="rgba(255,255,255,.07)"/>
+    <rect x="308" y="333" width="49" height="2.5" rx="1.2" fill="#6b7280" opacity=".4"/>
+
+    <!-- ── Divisores de habitaciones ── -->
+    <line x1="290" y1="162" x2="290" y2="345" stroke="rgba(255,255,255,.055)" stroke-width="1.5"/>
+    <line x1="105" y1="245" x2="475" y2="245" stroke="rgba(255,255,255,.055)" stroke-width="1.5"/>
+
+    <!-- Nombre familia -->
+    <text x="290" y="372" text-anchor="middle" font-size="10" font-weight="700" fill="rgba(255,255,255,.14)" font-family="sans-serif" letter-spacing="2">FAMILIA GARCÍA</text>
+
+  </svg>
+  </div>
+
+  <!-- ── LECTURA DEL HOGAR ── -->
+  <div style="background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:14px;padding:16px 18px;margin-bottom:16px;">
+    <div style="font-size:11px;font-weight:800;color:#fb923c;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;">🟠 JUNTOS HOY — Lo que dice el hogar</div>
+    <p style="font-size:13px;color:rgba(255,255,255,.7);margin:0 0 10px;line-height:1.65;">
+      <strong style="color:#4ade80;">El Jardín tiene a toda la familia unida</strong> — el mayor activo de hoy.<br>
+      <strong style="color:#fb923c;">La Sala conversa</strong>, pero falta Sebastián.<br>
+      <strong style="color:rgba(255,255,255,.5);">El Corazón del Hogar está dormido</strong> — nadie ha registrado cómo se siente.
+    </p>
+    <button style="background:linear-gradient(135deg,#f97316,#ea580c);border:none;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">❤️ Registrar cómo nos sentimos hoy →</button>
+  </div>
+
+  <!-- ── MAPA DE PARTICIPACIÓN ── -->
+  <div style="font-size:12px;font-weight:700;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Participación por miembro hoy</div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+
+    <!-- Carlos -->
+    <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border-radius:12px;padding:10px 14px;">
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#1e40af,#3b82f6);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;">C</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;color:#93c5fd;margin-bottom:3px;">Carlos — Papá</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <span style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:#fb923c;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">🛋️ Sala</span>
+          <span style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#4ade80;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">🌿 Jardín</span>
+          <span style="background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.2);color:rgba(255,255,255,.3);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">❤️ Pendiente</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Camila -->
+    <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border-radius:12px;padding:10px 14px;">
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#b45309,#f59e0b);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;">M</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;color:#fcd34d;margin-bottom:3px;">Camila — Mamá</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <span style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:#fb923c;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">🛋️ Sala</span>
+          <span style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.2);color:rgba(251,146,60,.7);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">🍳 Cocina</span>
+          <span style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#4ade80;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">🌿 Jardín</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sebastián -->
+    <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border-radius:12px;padding:10px 14px;">
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#2dd4bf);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;">S</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;color:#5eead4;margin-bottom:3px;">Sebastián — Hijo · 14 años</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <span style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#4ade80;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">🌿 Jardín</span>
+          <span style="background:rgba(107,114,128,.1);border:1px solid rgba(107,114,128,.2);color:rgba(255,255,255,.3);padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">🛋️ Aún no</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Valentina -->
+    <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border-radius:12px;padding:10px 14px;">
+      <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#be185d,#f472b6);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;">V</div>
+      <div style="flex:1;">
+        <div style="font-size:12px;font-weight:700;color:#f9a8d4;margin-bottom:3px;">Valentina — Hija · 9 años</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <span style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:#fb923c;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">🛋️ Sala</span>
+          <span style="background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.25);color:#4ade80;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;">🌿 Jardín</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Banner película familiar ── -->
+  <div style="display:flex;align-items:center;gap:14px;background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);border-radius:14px;padding:16px 18px;">
+    <span style="font-size:32px;flex-shrink:0;">🎬</span>
+    <div>
+      <div style="font-size:12px;font-weight:800;color:#a78bfa;margin-bottom:4px;">Este momento queda en el Árbol Vivo</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.5;">Cada vez que la familia se reúne en el Jardín, crece una nueva hoja en su árbol de evolución. Al trimestre, esto se convierte en la Película Familiar.</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══ LOGIN PRIMERA VISITA ══════════════════════════════ -->
+<div id="s-login-new" class="screen on">
+<div class="login-page">
+  <div class="bg-sfumato"></div>
+  <div class="bg-c bg-c1"></div>
+  <div class="bg-c bg-c2"></div>
+  <div class="login-card">
+
+    <!-- Marca -->
+    <div class="brand">
+      <div class="brand-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" width="100%" height="100%"><rect x="5" y="5" width="190" height="230" rx="40" fill="#fcfbf4" stroke="#e6e4d5" stroke-width="1.5"/><circle cx="100" cy="95" r="70" fill="none" stroke="url(#cg)" stroke-width="4" opacity="0.8"/><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="50%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#ec4899"/></linearGradient></defs><path d="M 65 65 C 65 53, 77 53, 77 65 C 77 77, 65 77, 65 65 Z" fill="#1e40af"/><path d="M 52 90 C 52 75, 75 70, 78 85 C 80 95, 72 110, 85 125 C 87 127, 85 130, 80 130 C 65 130, 52 110, 52 90 Z" fill="#2563eb"/><path d="M 135 70 C 135 58, 123 58, 123 70 C 123 82, 135 82, 135 70 Z" fill="#b45309"/><path d="M 148 95 C 148 80, 125 75, 122 90 C 120 100, 128 115, 115 130 C 113 132, 115 135, 120 135 C 135 135, 148 115, 148 95 Z" fill="#d97706"/><path d="M 135 70 C 145 75, 150 90, 145 110 C 143 115, 140 110, 142 100 C 144 90, 140 80, 133 75 Z" fill="#f59e0b"/><circle cx="100" cy="98" r="8" fill="#1d4ed8"/><path d="M 92 114 C 92 106, 108 106, 108 114 C 108 122, 92 122, 92 114 Z" fill="#3b82f6"/><path d="M 72 100 Q 100 120 128 100 Q 100 135 72 100 Z" fill="#3b82f6" opacity="0.3"/><text x="100" y="185" text-anchor="middle" font-family="'Outfit','Inter','Segoe UI',sans-serif" font-size="20" font-weight="900" fill="#0f172a" letter-spacing="1">INTEGRITY</text><text x="100" y="208" text-anchor="middle" font-family="'Outfit','Inter','Segoe UI',sans-serif" font-size="14" font-weight="700" fill="#334155" letter-spacing="3">— FAMILY —</text></svg></div>
+      <div>
+        <h1 class="brand-name">Integrity Family</h1>
+        <p class="brand-tag">Preservando historias · Transformando generaciones</p>
+      </div>
+    </div>
+
+    <!-- Propuesta de valor -->
+    <div class="value-prop">
+      <p class="vp-q">¿Y si tu familia pudiera crecer antes de que los problemas crezcan?</p>
+      <div class="vp-pills">
+        <span class="vp-pill">❤️ Emociones</span>
+        <span class="vp-pill">🗣️ Comunicación</span>
+        <span class="vp-pill">📅 Tiempo juntos</span>
+        <span class="vp-pill">🌱 Hábitos</span>
+      </div>
+    </div>
+
+    <!-- Zona NUEVO -->
+    <div class="zone zone-new">
+      <span class="badge badge-new">🌱 PRIMERA VEZ AQUÍ</span>
+      <div class="zone-title">Crea tu familia</div>
+      <p class="zone-desc">Comienza el diagnóstico y construye la ruta de evolución de tu familia.</p>
+      <a href="#" class="btn-create" onclick="return false;">Crear mi familia →</a>
+    </div>
+
+    <!-- Separador -->
+    <div class="sep">
+      <span class="sep-l"></span>
+      <span class="sep-t">o si ya tienes cuenta</span>
+      <span class="sep-l"></span>
+    </div>
+
+    <!-- Zona RECURRENTE -->
+    <div class="zone zone-ret">
+      <span class="badge badge-orange">🟠 JUNTOS HOY</span>
+      <div class="zone-title">Ya tengo cuenta</div>
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" placeholder="tu@correo.com" />
+      </div>
+      <div class="form-group">
+        <label>Contraseña <button class="toggle-pw">Ver</button></label>
+        <input type="password" placeholder="••••••••" />
+      </div>
+      <div class="form-actions">
+        <label class="chk-label">
+          <input type="checkbox" checked style="accent-color:#f97316;width:15px;height:15px;" />
+          <span>Recordar mis datos</span>
+        </label>
+        <a href="#" class="forgot" onclick="return false;">¿Olvidaste tu contraseña?</a>
+      </div>
+      <button class="btn-login">Continuar nuestro proceso</button>
+    </div>
+
+    <!-- Frase -->
+    <p class="impact">"Lo que una generación aprende, la siguiente no tiene que volver a sufrirlo."</p>
+
+    <div class="footer-leg">
+      <a href="#">Privacidad</a> · <a href="#">Términos</a> · <span>🔒 Tu información está protegida</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ LOGIN USUARIO RECURRENTE ══════════════════════════ -->
+<div id="s-login-ret" class="screen">
+<div class="login-page">
+  <div class="bg-sfumato"></div>
+  <div class="bg-c bg-c1"></div>
+  <div class="bg-c bg-c2"></div>
+  <div class="login-card">
+
+    <!-- Marca -->
+    <div class="brand">
+      <div class="brand-logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" width="100%" height="100%"><rect x="5" y="5" width="190" height="230" rx="40" fill="#fcfbf4" stroke="#e6e4d5" stroke-width="1.5"/><circle cx="100" cy="95" r="70" fill="none" stroke="url(#cg)" stroke-width="4" opacity="0.8"/><defs><linearGradient id="cg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#1e3a8a"/><stop offset="50%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#ec4899"/></linearGradient></defs><path d="M 65 65 C 65 53, 77 53, 77 65 C 77 77, 65 77, 65 65 Z" fill="#1e40af"/><path d="M 52 90 C 52 75, 75 70, 78 85 C 80 95, 72 110, 85 125 C 87 127, 85 130, 80 130 C 65 130, 52 110, 52 90 Z" fill="#2563eb"/><path d="M 135 70 C 135 58, 123 58, 123 70 C 123 82, 135 82, 135 70 Z" fill="#b45309"/><path d="M 148 95 C 148 80, 125 75, 122 90 C 120 100, 128 115, 115 130 C 113 132, 115 135, 120 135 C 135 135, 148 115, 148 95 Z" fill="#d97706"/><path d="M 135 70 C 145 75, 150 90, 145 110 C 143 115, 140 110, 142 100 C 144 90, 140 80, 133 75 Z" fill="#f59e0b"/><circle cx="100" cy="98" r="8" fill="#1d4ed8"/><path d="M 92 114 C 92 106, 108 106, 108 114 C 108 122, 92 122, 92 114 Z" fill="#3b82f6"/><path d="M 72 100 Q 100 120 128 100 Q 100 135 72 100 Z" fill="#3b82f6" opacity="0.3"/><text x="100" y="185" text-anchor="middle" font-family="'Outfit','Inter','Segoe UI',sans-serif" font-size="20" font-weight="900" fill="#0f172a" letter-spacing="1">INTEGRITY</text><text x="100" y="208" text-anchor="middle" font-family="'Outfit','Inter','Segoe UI',sans-serif" font-size="14" font-weight="700" fill="#334155" letter-spacing="3">— FAMILY —</text></svg></div>
+      <div>
+        <h1 class="brand-name">Integrity Family</h1>
+        <p class="brand-tag">Preservando historias · Transformando generaciones</p>
+      </div>
+    </div>
+
+    <!-- Zona RECURRENTE — modo principal -->
+    <div class="zone zone-ret" style="border-color:rgba(249,115,22,.35);background:rgba(249,115,22,.04);">
+      <span class="badge badge-orange">🟠 JUNTOS HOY</span>
+      <p class="rw-g">Hola 👋 Qué bueno volver a encontrarnos.</p>
+      <p class="rw-m">Hoy no tienen que hacerlo perfecto.<br>Solo den el siguiente paso.</p>
+
+      <div class="form-group" style="margin-top:6px;">
+        <label>Correo electrónico</label>
+        <input type="email" placeholder="tu@correo.com" />
+      </div>
+      <div class="form-group">
+        <label>Contraseña <button class="toggle-pw">Ver</button></label>
+        <input type="password" placeholder="••••••••" />
+      </div>
+      <div class="form-actions">
+        <label class="chk-label">
+          <input type="checkbox" checked style="accent-color:#f97316;width:15px;height:15px;" />
+          <span>Recordar mis datos</span>
+        </label>
+        <a href="#" class="forgot" onclick="return false;">¿Olvidaste tu contraseña?</a>
+      </div>
+      <button class="btn-login">Continuar nuestro proceso</button>
+    </div>
+
+    <!-- Separador -->
+    <div class="sep">
+      <span class="sep-l"></span>
+      <span class="sep-t"></span>
+      <span class="sep-l"></span>
+    </div>
+
+    <!-- Zona NUEVO — secundaria -->
+    <div class="zone zone-new" style="padding:14px 18px;">
+      <span class="badge badge-new">🌱 ¿Eres nuevo aquí?</span>
+      <a href="#" class="btn-create" onclick="return false;" style="background:rgba(16,185,129,.15);color:#6ee7b7;box-shadow:none;border:1px solid rgba(16,185,129,.3);">Crear mi familia →</a>
+    </div>
+
+    <p class="impact">"Lo que una generación aprende, la siguiente no tiene que volver a sufrirlo."</p>
+
+    <div class="footer-leg">
+      <a href="#">Privacidad</a> · <a href="#">Términos</a> · <span>🔒 Tu información está protegida</span>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ SISTEMA DE COLORES ══════════════════════════════ -->
+<div id="s-colors" class="screen">
+<div class="color-demo">
+  <h2 class="cd-title">Sistema de Colores — Integrity Family</h2>
+  <p class="cd-sub">Cada color comunica una intención. La paleta no es estética — es semántica.</p>
+
+  <div class="section-label">Paleta principal</div>
+  <div class="color-grid">
+    <div class="color-card" style="background:rgba(79,70,229,.12);border:1px solid rgba(79,70,229,.25);">
+      <div class="cc-swatch" style="background:linear-gradient(135deg,#4f46e5,#4338ca);"></div>
+      <div class="cc-name">Azul — Confianza</div>
+      <div class="cc-role">El color institucional. Le dice al usuario: <em>"Aquí estás seguro."</em></div>
+      <div class="cc-uses">
+        <span class="cc-use">Navegación</span>
+        <span class="cc-use">Login</span>
+        <span class="cc-use">Estructura</span>
+      </div>
+    </div>
+
+    <div class="color-card" style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.25);">
+      <div class="cc-swatch" style="background:linear-gradient(135deg,#f97316,#ea580c);"></div>
+      <div class="cc-name">Naranja — Transformación</div>
+      <div class="cc-role">El color de propósito. Le dice al usuario: <em>"Hoy avanzamos."</em></div>
+      <div class="cc-uses">
+        <span class="cc-use">JUNTOS HOY</span>
+        <span class="cc-use">Misiones</span>
+        <span class="cc-use">Acciones</span>
+      </div>
+    </div>
+
+    <div class="color-card" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);">
+      <div class="cc-swatch" style="background:linear-gradient(135deg,#10b981,#059669);"></div>
+      <div class="cc-name">Verde — Éxito</div>
+      <div class="cc-role">Solo para logros completados. <em>"Lo lograron."</em></div>
+      <div class="cc-uses">
+        <span class="cc-use">✅ Misión completada</span>
+        <span class="cc-use">Evidencia validada</span>
+      </div>
+    </div>
+
+    <div class="color-card" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);">
+      <div class="cc-swatch" style="background:linear-gradient(135deg,#ef4444,#dc2626);"></div>
+      <div class="cc-name">Rojo — Crisis</div>
+      <div class="cc-role">Solo para alertas reales. No sobreusar.</div>
+      <div class="cc-uses">
+        <span class="cc-use">Crisis familiar</span>
+        <span class="cc-use">Sentinel alerta</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Badges en la plataforma</div>
+  <div class="badges-row">
+    <span class="demo-badge db-juntos">🟠 JUNTOS HOY</span>
+    <span class="demo-badge db-mision">🏆 MISIÓN CUMPLIDA</span>
+    <span class="demo-badge db-creciendo">🌱 FAMILIA CRECIENDO</span>
+    <span class="demo-badge db-crisis">🚨 ALERTA SENTINEL</span>
+  </div>
+
+  <div class="section-label">Botones por intención</div>
+  <div class="btns-row">
+    <button class="demo-btn db-btn-orange">🌱 Crear mi familia</button>
+    <button class="demo-btn db-btn-blue">Continuar nuestro proceso</button>
+    <button class="demo-btn db-btn-green">✅ Marcar misión cumplida</button>
+    <button class="demo-btn db-btn-red">🚨 Activar apoyo familiar</button>
+  </div>
+
+  <div class="section-label">El cambio más importante</div>
+  <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;padding:20px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;">
+    <div style="text-align:center;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Antes</div>
+      <span class="demo-badge" style="background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.3);color:#34d399;">🟢 CALMA AQUÍ</span>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;">Solo funciona en crisis</div>
+    </div>
+    <div style="font-size:24px;color:rgba(255,255,255,.2);">→</div>
+    <div style="text-align:center;">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;">Ahora</div>
+      <span class="demo-badge db-juntos">🟠 JUNTOS HOY</span>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;">Funciona en toda la plataforma</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ MINI DOCUMENTAL (preview) ══════════════════════ -->
+<div id="s-documental" class="screen">
+<div style="max-width:720px;margin:0 auto;padding:32px 20px 80px;display:flex;flex-direction:column;gap:26px;">
+
+  <button onclick="show('s-login-new',document.querySelectorAll('.snav')[0])" style="background:transparent;border:1px solid rgba(255,255,255,.1);color:#888;padding:9px 16px;border-radius:9px;font-size:12px;font-weight:600;cursor:pointer;align-self:flex-start;">← Ver login</button>
+
+  <!-- Sello -->
+  <div style="display:flex;align-items:center;gap:14px;background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(5,150,105,.07));border:1px solid rgba(16,185,129,.3);border-radius:14px;padding:16px 20px;">
+    <span style="font-size:36px;">🏆</span>
+    <div>
+      <div style="font-size:13px;font-weight:800;color:#6ee7b7;text-transform:uppercase;letter-spacing:.12em;">Misión Cumplida</div>
+      <div style="font-size:12px;color:#888;margin-top:3px;">Domingo 2 de junio de 2026 · 7:34 p.m.</div>
+    </div>
+  </div>
+
+  <!-- Portada -->
+  <div style="position:relative;border-radius:20px;overflow:hidden;min-height:240px;background:linear-gradient(135deg,#1e1b4b 0%,#312e81 50%,#4c1d95 100%);">
+    <div style="position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.85) 0%,transparent 55%);z-index:1;"></div>
+    <div style="position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:28px 24px;min-height:240px;text-align:center;">
+      <div style="font-size:10px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.15em;margin-bottom:10px;">🎯 Misión 3 — Reconocimiento · Mes 1</div>
+      <h1 style="font-size:28px;font-weight:900;color:#fff;margin:0 0 8px;line-height:1.2;">La Cena Sin Pantallas</h1>
+      <div style="font-size:13px;color:rgba(255,255,255,.55);">Registrado por Camila · 6 evidencias · Familia García</div>
+    </div>
+  </div>
+
+  <!-- Narrativa IA -->
+  <div style="background:linear-gradient(135deg,rgba(124,58,237,.09),rgba(79,70,229,.06));border:1px solid rgba(124,58,237,.22);border-radius:16px;padding:22px;">
+    <span style="display:inline-block;font-size:10px;font-weight:700;color:#a78bfa;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;">🧠 Narrativa generada por Sentinel AI</span>
+    <p style="font-size:15px;line-height:1.85;color:#e0e0e0;font-style:italic;margin:0;">
+      Esa noche del domingo, la familia García tomó una decisión que parecía pequeña pero que resultó ser el primer paso de algo grande. Lo que comenzó como un ejercicio incómodo se convirtió en tres horas de conversaciones que llevaban meses esperando ser tenidas.
+      <br><br>
+      Esta misión no les enseñó a apagar pantallas. <strong style="color:#c4b5fd;">Les enseñó que ya sabían encenderse los unos a los otros.</strong>
+    </p>
+  </div>
+
+  <!-- Badge JUNTOS HOY en contexto -->
+  <div style="display:flex;align-items:center;gap:14px;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);border-radius:14px;padding:16px 20px;">
+    <span style="font-size:32px;flex-shrink:0;">🎬</span>
+    <div>
+      <div style="font-size:13px;font-weight:800;color:#fb923c;margin-bottom:4px;">🟠 JUNTOS HOY — Insumo Q2 2026</div>
+      <div style="font-size:12px;color:#888;line-height:1.5;">Este documental ya hace parte del trimestre actual. En agosto la IA lo reunirá con los demás para crear la Película de la Familia García.</div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══ ONBOARDING — CREAR FAMILIA ══════════════════════ -->
+<div id="s-onboarding" class="screen">
+<div style="max-width:520px;margin:0 auto;padding:32px 20px 80px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e0e0e0;">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:28px;">
+    <div style="width:8px;height:8px;border-radius:50%;background:#f97316;"></div>
+    <div style="flex:1;height:2px;background:linear-gradient(to right,#f97316,#f97316 50%,rgba(255,255,255,.1) 50%);"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:#f97316;"></div>
+    <div style="flex:1;height:2px;background:rgba(255,255,255,.1);"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);"></div>
+    <div style="flex:1;height:2px;background:rgba(255,255,255,.1);"></div>
+    <div style="width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.15);"></div>
+  </div>
+  <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Paso 2 de 4 — Tu familia</div>
+  <h2 style="font-size:24px;font-weight:900;color:#fff;margin:0 0 6px;">¿Quiénes forman tu familia?</h2>
+  <p style="font-size:13px;color:#888;margin:0 0 28px;line-height:1.6;">Agrega a cada integrante. Puedes editarlo después.</p>
+
+  <!-- Miembros ya agregados -->
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);border-radius:14px;padding:12px 16px;">
+      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#1e40af,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;">C</div>
+      <div style="flex:1;">
+        <div style="font-size:14px;font-weight:700;color:#93c5fd;">Carlos</div>
+        <div style="font-size:11px;color:#64748b;">Papá · 42 años</div>
+      </div>
+      <span style="font-size:10px;background:rgba(59,130,246,.15);border:1px solid rgba(59,130,246,.3);color:#93c5fd;padding:3px 10px;border-radius:20px;font-weight:700;">TÚ</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.25);border-radius:14px;padding:12px 16px;">
+      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#b45309,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;">M</div>
+      <div style="flex:1;"><div style="font-size:14px;font-weight:700;color:#fcd34d;">Camila</div><div style="font-size:11px;color:#64748b;">Mamá · 39 años</div></div>
+      <button style="background:none;border:none;color:#64748b;cursor:pointer;font-size:12px;">✏️</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(20,184,166,.08);border:1px solid rgba(20,184,166,.2);border-radius:14px;padding:12px 16px;">
+      <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#2dd4bf);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;">S</div>
+      <div style="flex:1;"><div style="font-size:14px;font-weight:700;color:#5eead4;">Sebastián</div><div style="font-size:11px;color:#64748b;">Hijo · 14 años</div></div>
+      <button style="background:none;border:none;color:#64748b;cursor:pointer;font-size:12px;">✏️</button>
+    </div>
+  </div>
+
+  <!-- Agregar miembro -->
+  <button style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px;background:rgba(255,255,255,.04);border:1px dashed rgba(255,255,255,.18);border-radius:14px;padding:13px;color:#888;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:28px;">+ Agregar otro integrante</button>
+
+  <!-- Invitar por WhatsApp -->
+  <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:14px;padding:16px 18px;margin-bottom:28px;">
+    <div style="font-size:12px;font-weight:800;color:#4ade80;margin-bottom:6px;">📲 Invitar a la familia</div>
+    <p style="font-size:12px;color:#888;margin:0 0 12px;line-height:1.6;">Envía un enlace para que cada integrante pueda unirse desde su celular.</p>
+    <button style="background:linear-gradient(135deg,#16a34a,#15803d);border:none;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;">📱 Invitar por WhatsApp</button>
+  </div>
+
+  <button onclick="show('s-eval',document.querySelectorAll('.snav')[3])" style="width:100%;background:linear-gradient(135deg,#f97316,#ea580c);border:none;color:#fff;padding:15px;border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(249,115,22,.4);">Continuar → Hacer el diagnóstico</button>
+</div>
+</div>
+
+<!-- ══ DASHBOARD ══════════════════════════════════════ -->
+<div id="s-dashboard" class="screen">
+<div style="max-width:720px;margin:0 auto;padding:24px 20px 80px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e0e0e0;">
+
+  <!-- Header -->
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+    <div style="width:44px;height:44px;border-radius:12px;background:#fcfbf4;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🏠</div>
+    <div style="flex:1;">
+      <h2 style="font-size:18px;font-weight:800;color:#fff;margin:0;">Familia García</h2>
+      <p style="font-size:12px;color:#64748b;margin:0;">Domingo, 8 de junio 2026 · Mes 1, Semana 2</p>
+    </div>
+    <span style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.35);color:#fb923c;padding:5px 12px;border-radius:20px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;">🟠 JUNTOS HOY</span>
+  </div>
+
+  <!-- Banner pilar activo -->
+  <div style="background:linear-gradient(135deg,rgba(249,115,22,.15),rgba(234,88,12,.08));border:1px solid rgba(249,115,22,.3);border-radius:16px;padding:18px 20px;margin-bottom:16px;">
+    <div style="font-size:10px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px;">PILAR ACTIVO — MES 1</div>
+    <div style="font-size:19px;font-weight:800;color:#fff;margin-bottom:4px;">🗣️ Comunicación Familiar</div>
+    <div style="font-size:12px;color:#888;margin-bottom:14px;">Misión 2 de 4 · 3 semanas restantes</div>
+    <div style="background:rgba(0,0,0,.3);border-radius:8px;height:7px;overflow:hidden;margin-bottom:14px;">
+      <div style="width:38%;height:100%;background:linear-gradient(to right,#f97316,#fb923c);border-radius:8px;"></div>
+    </div>
+    <button onclick="show('s-sprint',document.querySelectorAll('.snav')[5])" style="background:linear-gradient(135deg,#f97316,#ea580c);border:none;color:#fff;padding:11px 22px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 14px rgba(249,115,22,.4);">⚡ Ver Sprint de hoy →</button>
+  </div>
+
+  <!-- Stats rápidos -->
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;">
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px 12px;text-align:center;">
+      <div style="font-size:24px;font-weight:900;color:#f97316;">14</div>
+      <div style="font-size:10px;color:#64748b;margin-top:2px;">Días activos</div>
+    </div>
+    <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:14px;padding:14px 12px;text-align:center;">
+      <div style="font-size:24px;font-weight:900;color:#10b981;">3</div>
+      <div style="font-size:10px;color:#64748b;margin-top:2px;">Misiones ✅</div>
+    </div>
+    <div style="background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);border-radius:14px;padding:14px 12px;text-align:center;">
+      <div style="font-size:24px;font-weight:900;color:#a78bfa;">82</div>
+      <div style="font-size:10px;color:#64748b;margin-top:2px;">Puntos IF</div>
+    </div>
+  </div>
+
+  <!-- Miembros activos hoy -->
+  <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Activos hoy</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#1e40af,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;">C</div><span style="font-size:12px;font-weight:700;color:#93c5fd;">Carlos</span><span style="width:5px;height:5px;border-radius:50%;background:#22c55e;display:inline-block;"></span></div>
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(217,119,6,.1);border:1px solid rgba(217,119,6,.25);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#b45309,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;">M</div><span style="font-size:12px;font-weight:700;color:#fcd34d;">Camila</span><span style="width:5px;height:5px;border-radius:50%;background:#22c55e;display:inline-block;"></span></div>
+    <div style="display:flex;align-items:center;gap:6px;background:rgba(236,72,153,.1);border:1px solid rgba(236,72,153,.2);border-radius:20px;padding:5px 12px;"><div style="width:20px;height:20px;border-radius:50%;background:linear-gradient(135deg,#be185d,#f472b6);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;">V</div><span style="font-size:12px;font-weight:700;color:#f9a8d4;">Valentina</span><span style="width:5px;height:5px;border-radius:50%;background:#f59e0b;display:inline-block;"></span></div>
+  </div>
+
+  <!-- Accesos rápidos -->
+  <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px;">Accesos rápidos</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+    <button onclick="show('s-plan',document.querySelectorAll('.snav')[4])" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;text-align:left;cursor:pointer;color:inherit;">
+      <div style="font-size:20px;margin-bottom:6px;">🗺️</div>
+      <div style="font-size:13px;font-weight:700;color:#fff;">Plan Mensual</div>
+      <div style="font-size:11px;color:#64748b;">Misiones del mes</div>
+    </button>
+    <button onclick="show('s-hogar',document.querySelectorAll('.snav')[6])" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;text-align:left;cursor:pointer;color:inherit;">
+      <div style="font-size:20px;margin-bottom:6px;">🏡</div>
+      <div style="font-size:13px;font-weight:700;color:#fff;">Hogar Vivo</div>
+      <div style="font-size:11px;color:#64748b;">Estado de hoy</div>
+    </button>
+    <button onclick="show('s-eval',document.querySelectorAll('.snav')[3])" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;text-align:left;cursor:pointer;color:inherit;">
+      <div style="font-size:20px;margin-bottom:6px;">📊</div>
+      <div style="font-size:13px;font-weight:700;color:#fff;">Evaluación</div>
+      <div style="font-size:11px;color:#64748b;">Diagnóstico familiar</div>
+    </button>
+    <button onclick="show('s-documental',document.querySelectorAll('.snav')[7])" style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:16px;text-align:left;cursor:pointer;color:inherit;">
+      <div style="font-size:20px;margin-bottom:6px;">🎬</div>
+      <div style="font-size:13px;font-weight:700;color:#fff;">Documental</div>
+      <div style="font-size:11px;color:#64748b;">Historial familiar</div>
+    </button>
+  </div>
+</div>
+</div>
+
+<!-- ══ EVALUACIÓN ══════════════════════════════════════ -->
+<div id="s-eval" class="screen">
+<div style="max-width:680px;margin:0 auto;padding:32px 20px 80px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e0e0e0;">
+  <div style="font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">📊 Diagnóstico Familiar — Sentinel AI</div>
+  <h2 style="font-size:22px;font-weight:900;color:#fff;margin:0 0 6px;">¿Cómo está la Familia García?</h2>
+  <p style="font-size:13px;color:#888;margin:0 0 28px;">Última evaluación: 1 junio 2026 · Próxima: 1 julio</p>
+
+  <!-- Radar visual simplificado -->
+  <div style="background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:18px;padding:24px;margin-bottom:20px;text-align:center;">
+    <svg viewBox="0 0 240 220" style="width:100%;max-width:280px;display:block;margin:0 auto 16px;">
+      <defs>
+        <polygon id="hex" points="120,20 200,65 200,155 120,200 40,155 40,65" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+      </defs>
+      <!-- Grids -->
+      <polygon points="120,20 200,65 200,155 120,200 40,155 40,65" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+      <polygon points="120,47 178,78 178,142 120,173 62,142 62,78" fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+      <polygon points="120,74 156,91 156,129 120,146 84,129 84,91" fill="none" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+      <!-- Axes -->
+      <line x1="120" y1="20" x2="120" y2="200" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+      <line x1="40" y1="65" x2="200" y2="155" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+      <line x1="200" y1="65" x2="40" y2="155" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+      <!-- Data shape — Comunicación 68%, Tiempo 74%, Hábitos 52%, Emociones 45%, Propósito 60%, Liderazgo 70% -->
+      <polygon points="120,47 178,95 174,139 120,165 74,139 67,85" fill="rgba(249,115,22,.2)" stroke="#f97316" stroke-width="2"/>
+      <!-- Labels -->
+      <text x="120" y="13" text-anchor="middle" font-size="9" fill="#fb923c" font-family="sans-serif" font-weight="700">Comunicación 68%</text>
+      <text x="214" y="62" text-anchor="start" font-size="9" fill="#f59e0b" font-family="sans-serif">Tiempo 74%</text>
+      <text x="214" y="162" text-anchor="start" font-size="9" fill="#888" font-family="sans-serif">Hábitos 52%</text>
+      <text x="120" y="214" text-anchor="middle" font-size="9" fill="#f43f5e" font-family="sans-serif">Emociones 45%</text>
+      <text x="26" y="162" text-anchor="end" font-size="9" fill="#888" font-family="sans-serif">Propósito 60%</text>
+      <text x="26" y="62" text-anchor="end" font-size="9" fill="#64748b" font-family="sans-serif">Liderazgo 70%</text>
+    </svg>
+    <div style="font-size:28px;font-weight:900;color:#f97316;">61<span style="font-size:16px;color:#64748b;">/100</span></div>
+    <div style="font-size:12px;color:#888;margin-top:4px;">Familia en desarrollo · Potencial alto</div>
+  </div>
+
+  <!-- Dimensiones -->
+  <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+    <!-- Comunicación -->
+    <div style="background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:13px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:13px;font-weight:700;color:#fb923c;">🗣️ Comunicación</span>
+        <span style="font-size:13px;font-weight:800;color:#fb923c;">68%</span>
+      </div>
+      <div style="background:rgba(0,0,0,.3);border-radius:6px;height:5px;"><div style="width:68%;height:100%;background:#f97316;border-radius:6px;"></div></div>
+      <div style="font-size:11px;color:#888;margin-top:6px;">Conversan, pero Sebastián raramente inicia. Foco del Mes 1.</div>
+    </div>
+    <!-- Emociones -->
+    <div style="background:rgba(244,63,94,.07);border:1px solid rgba(244,63,94,.2);border-radius:13px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:13px;font-weight:700;color:#fb7185;">❤️ Emociones</span>
+        <span style="font-size:13px;font-weight:800;color:#fb7185;">45%</span>
+      </div>
+      <div style="background:rgba(0,0,0,.3);border-radius:6px;height:5px;"><div style="width:45%;height:100%;background:#f43f5e;border-radius:6px;"></div></div>
+      <div style="font-size:11px;color:#888;margin-top:6px;">Zona de mayor riesgo. Nadie verbaliza cómo se siente. Próximo pilar.</div>
+    </div>
+    <!-- Tiempo juntos -->
+    <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:13px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:13px;font-weight:700;color:#34d399;">📅 Tiempo juntos</span>
+        <span style="font-size:13px;font-weight:800;color:#34d399;">74%</span>
+      </div>
+      <div style="background:rgba(0,0,0,.3);border-radius:6px;height:5px;"><div style="width:74%;height:100%;background:#10b981;border-radius:6px;"></div></div>
+      <div style="font-size:11px;color:#888;margin-top:6px;">Fortaleza de la familia. Cenas juntos 5/7 días. Aprovechar.</div>
+    </div>
+    <!-- Hábitos -->
+    <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:13px;padding:14px 16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:13px;font-weight:700;color:#94a3b8;">🌱 Hábitos</span>
+        <span style="font-size:13px;font-weight:800;color:#94a3b8;">52%</span>
+      </div>
+      <div style="background:rgba(0,0,0,.3);border-radius:6px;height:5px;"><div style="width:52%;height:100%;background:#64748b;border-radius:6px;"></div></div>
+      <div style="font-size:11px;color:#888;margin-top:6px;">Rutinas inconsistentes. Oportunidad de mejora estructurada.</div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <button onclick="show('s-plan',document.querySelectorAll('.snav')[4])" style="width:100%;background:linear-gradient(135deg,#f97316,#ea580c);border:none;color:#fff;padding:15px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(249,115,22,.4);">🗺️ Ver mi Plan de Transformación →</button>
+</div>
+</div>
+
+<!-- ══ PLAN MENSUAL ══════════════════════════════════════ -->
+<div id="s-plan" class="screen">
+<div style="max-width:680px;margin:0 auto;padding:32px 20px 80px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e0e0e0;">
+  <div style="font-size:11px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">🗺️ Plan de Transformación</div>
+  <h2 style="font-size:22px;font-weight:900;color:#fff;margin:0 0 4px;">Familia García · 6 Pilares</h2>
+  <p style="font-size:13px;color:#888;margin:0 0 28px;">Cada pilar dura un mes · 4 misiones · Un hogar distinto al final</p>
+
+  <!-- Pilar 1 — ACTIVO -->
+  <div style="background:linear-gradient(135deg,rgba(249,115,22,.15),rgba(234,88,12,.08));border:1px solid rgba(249,115,22,.4);border-radius:18px;padding:20px;margin-bottom:12px;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <span style="font-size:28px;">🗣️</span>
+      <div style="flex:1;">
+        <div style="font-size:10px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.08em;">MES 1 · ACTIVO AHORA</div>
+        <div style="font-size:17px;font-weight:800;color:#fff;">Comunicación Familiar</div>
+      </div>
+      <span style="background:rgba(249,115,22,.2);border:1px solid rgba(249,115,22,.4);color:#fb923c;padding:4px 12px;border-radius:20px;font-size:10px;font-weight:800;">38%</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:10px;padding:10px 14px;">
+        <span style="font-size:16px;">✅</span><div style="flex:1;"><div style="font-size:12px;font-weight:700;color:#34d399;">M1 — Cena Sin Pantallas</div><div style="font-size:11px;color:#64748b;">Completada · hace 12 días</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);border-radius:10px;padding:10px 14px;">
+        <span style="font-size:16px;">⚡</span><div style="flex:1;"><div style="font-size:12px;font-weight:700;color:#fb923c;">M2 — Conversación Profunda</div><div style="font-size:11px;color:#64748b;">En curso · Sprint activo hoy</div></div>
+        <button onclick="show('s-sprint',document.querySelectorAll('.snav')[5])" style="background:rgba(249,115,22,.2);border:1px solid rgba(249,115,22,.4);color:#fb923c;padding:5px 12px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer;">Ver →</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 14px;opacity:.6;">
+        <span style="font-size:16px;">🔒</span><div style="flex:1;"><div style="font-size:12px;font-weight:700;color:#94a3b8;">M3 — Escucha Activa</div><div style="font-size:11px;color:#64748b;">Semana 3</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:10px 14px;opacity:.5;">
+        <span style="font-size:16px;">🔒</span><div style="flex:1;"><div style="font-size:12px;font-weight:700;color:#94a3b8;">M4 — Carta Familiar</div><div style="font-size:11px;color:#64748b;">Semana 4</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pilares futuros -->
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px 16px;opacity:.7;">
+      <span style="font-size:22px;">❤️</span><div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#94a3b8;">Mes 2 — Emociones</div><div style="font-size:11px;color:#64748b;">Inicia cuando completes Mes 1</div></div><span style="font-size:10px;color:#64748b;font-weight:700;">PRÓXIMO</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:14px 16px;opacity:.5;">
+      <span style="font-size:22px;">🌱</span><div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#64748b;">Mes 3 — Hábitos</div><div style="font-size:11px;color:#475569;">Bloqueado</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:14px 16px;opacity:.5;">
+      <span style="font-size:22px;">🎯</span><div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#64748b;">Mes 4 — Propósito</div><div style="font-size:11px;color:#475569;">Bloqueado</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:14px 16px;opacity:.5;">
+      <span style="font-size:22px;">🛡️</span><div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#64748b;">Mes 5 — Resiliencia</div><div style="font-size:11px;color:#475569;">Bloqueado</div></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05);border-radius:14px;padding:14px 16px;opacity:.5;">
+      <span style="font-size:22px;">🏆</span><div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#64748b;">Mes 6 — Legado</div><div style="font-size:11px;color:#475569;">Bloqueado</div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ SPRINT DIARIO ══════════════════════════════════ -->
+<div id="s-sprint" class="screen">
+<div style="max-width:580px;margin:0 auto;padding:32px 20px 80px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#e0e0e0;">
+
+  <!-- Header misión -->
+  <div style="background:linear-gradient(135deg,rgba(249,115,22,.18),rgba(124,58,237,.1));border:1px solid rgba(249,115,22,.35);border-radius:18px;padding:20px;margin-bottom:20px;">
+    <div style="font-size:10px;font-weight:700;color:#f97316;text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px;">⚡ SPRINT DIARIO — MISIÓN 2</div>
+    <h2 style="font-size:20px;font-weight:900;color:#fff;margin:0 0 6px;">Conversación Profunda</h2>
+    <p style="font-size:12px;color:#888;margin:0 0 14px;">Hoy la familia García tiene una conversación sin juicios, donde cada uno dice algo que normalmente se calla.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <span style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:#fb923c;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;">⏱️ 45 min</span>
+      <span style="background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);color:#a78bfa;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;">👨‍👩‍👧‍👦 Todos juntos</span>
+      <span style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.22);color:#34d399;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;">Día 3 de 7</span>
+    </div>
+  </div>
+
+  <!-- Instrucciones paso a paso -->
+  <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Cómo hacerlo hoy</div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+    <div style="display:flex;gap:12px;align-items:flex-start;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:13px 15px;">
+      <span style="width:22px;height:22px;border-radius:50%;background:#10b981;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">1</span>
+      <div><div style="font-size:13px;font-weight:700;color:#34d399;margin-bottom:2px;">Reunirse a la hora de la cena</div><div style="font-size:12px;color:#888;">Sin celulares sobre la mesa. Todos presentes.</div></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.18);border-radius:12px;padding:13px 15px;">
+      <span style="width:22px;height:22px;border-radius:50%;background:#f97316;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">2</span>
+      <div><div style="font-size:13px;font-weight:700;color:#fb923c;margin-bottom:2px;">La pregunta del día</div><div style="font-size:12px;color:#888;">"¿Qué fue lo más difícil de tu semana y por qué no lo habías dicho?"</div></div>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-start;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:13px 15px;">
+      <span style="width:22px;height:22px;border-radius:50%;background:#475569;color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">3</span>
+      <div><div style="font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:2px;">Regla de oro</div><div style="font-size:12px;color:#888;">Quien habla, no es interrumpido. Quien escucha, no juzga.</div></div>
+    </div>
+  </div>
+
+  <!-- Registro de participación -->
+  <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">¿Quién participó hoy?</div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:12px;padding:12px 14px;">
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#1e40af,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">C</div>
+      <span style="flex:1;font-size:13px;font-weight:700;color:#93c5fd;">Carlos</span>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" checked style="width:18px;height:18px;accent-color:#f97316;cursor:pointer;"><span style="font-size:12px;color:#64748b;">Participó</span></label>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(217,119,6,.08);border:1px solid rgba(217,119,6,.2);border-radius:12px;padding:12px 14px;">
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#b45309,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">M</div>
+      <span style="flex:1;font-size:13px;font-weight:700;color:#fcd34d;">Camila</span>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" checked style="width:18px;height:18px;accent-color:#f97316;cursor:pointer;"><span style="font-size:12px;color:#64748b;">Participó</span></label>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(20,184,166,.07);border:1px solid rgba(20,184,166,.18);border-radius:12px;padding:12px 14px;">
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#0d9488,#2dd4bf);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">S</div>
+      <span style="flex:1;font-size:13px;font-weight:700;color:#5eead4;">Sebastián</span>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" style="width:18px;height:18px;accent-color:#f97316;cursor:pointer;"><span style="font-size:12px;color:#64748b;">Participó</span></label>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;background:rgba(236,72,153,.07);border:1px solid rgba(236,72,153,.18);border-radius:12px;padding:12px 14px;">
+      <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#be185d,#f472b6);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;">V</div>
+      <span style="flex:1;font-size:13px;font-weight:700;color:#f9a8d4;">Valentina</span>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" checked style="width:18px;height:18px;accent-color:#f97316;cursor:pointer;"><span style="font-size:12px;color:#64748b;">Participó</span></label>
+    </div>
+  </div>
+
+  <!-- Evidencia -->
+  <div style="background:rgba(124,58,237,.08);border:1px solid rgba(124,58,237,.2);border-radius:14px;padding:16px 18px;margin-bottom:20px;">
+    <div style="font-size:12px;font-weight:800;color:#a78bfa;margin-bottom:8px;">📸 Evidencia del momento</div>
+    <p style="font-size:12px;color:#888;margin:0 0 12px;line-height:1.5;">Una foto, una nota, o simplemente la emoción que te quedó.</p>
+    <div style="display:flex;gap:8px;">
+      <button style="flex:1;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);color:#a78bfa;padding:10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">📷 Foto</button>
+      <button style="flex:1;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);color:#a78bfa;padding:10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">✍️ Nota</button>
+      <button style="flex:1;background:rgba(124,58,237,.12);border:1px solid rgba(124,58,237,.25);color:#a78bfa;padding:10px;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;">❤️ Emoción</button>
+    </div>
+  </div>
+
+  <button onclick="show('s-documental',document.querySelectorAll('.snav')[7])" style="width:100%;background:linear-gradient(135deg,#f97316,#ea580c);border:none;color:#fff;padding:15px;border-radius:12px;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(249,115,22,.4);">✅ Marcar sprint completado →</button>
+</div>
+</div>
+
+<script>
+function show(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  document.querySelectorAll('.snav').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

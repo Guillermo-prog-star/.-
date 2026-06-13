@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Integrity Family — Apertura</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400&display=swap" rel="stylesheet"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: 'Playfair Display', serif;
+    color: #fff;
+  }
+
+  /* ── Grain overlay ── */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    pointer-events: none; z-index: 100;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    background-size: 180px;
+    opacity: .6;
+  }
+
+  /* ── Stage ── */
+  #stage {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 0 10vw;
+  }
+
+  /* ── Main text ── */
+  #line {
+    text-align: center;
+    font-size: clamp(1.4rem, 4.5vw, 3.2rem);
+    font-weight: 400;
+    line-height: 1.45;
+    letter-spacing: .01em;
+    max-width: 820px;
+    color: #f0ece4;
+    opacity: 0;
+  }
+
+  #line.italic { font-style: italic; color: #d4cfc6; }
+  #line.large  { font-size: clamp(1.7rem, 5.5vw, 4rem); font-weight: 700; }
+  #line.small  { font-size: clamp(1rem, 2.8vw, 1.8rem); font-weight: 300; color: #bbb; font-family: 'Inter', sans-serif; }
+
+  /* ── Subtitle (oral narration) ── */
+  #subtitle {
+    position: fixed;
+    bottom: 9vh;
+    left: 50%; transform: translateX(-50%);
+    width: min(90vw, 700px);
+    text-align: center;
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(.78rem, 1.8vw, 1.05rem);
+    font-weight: 300;
+    line-height: 1.7;
+    color: #9e9a93;
+    letter-spacing: .02em;
+    opacity: 0;
+  }
+
+  /* ── Separator line ── */
+  #divider {
+    width: 0; height: 1px;
+    background: rgba(255,255,255,.25);
+    margin: 28px auto 0;
+    transition: width 1.4s ease;
+  }
+  #divider.open { width: 120px; }
+
+  /* ── Logo finale ── */
+  #finale {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 28px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #finale .logo-wrap {
+    width: 84px; height: 84px;
+    border-radius: 20px;
+    background: #fcfbf4;
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 60px rgba(249,115,22,.35);
+  }
+
+  #finale .logo-wrap svg { width: 56px; height: 56px; }
+
+  #finale h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.6rem, 4vw, 2.8rem);
+    font-weight: 700;
+    letter-spacing: -.01em;
+    color: #f8f5ef;
+    text-align: center;
+  }
+
+  #finale p {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(.8rem, 1.8vw, 1rem);
+    font-weight: 300;
+    color: #666;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  /* ── Skip button ── */
+  #skip {
+    position: fixed; bottom: 32px; right: 36px;
+    font-family: 'Inter', sans-serif;
+    font-size: .72rem; font-weight: 400;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: rgba(255,255,255,.28);
+    background: none; border: none; cursor: pointer;
+    padding: 8px 4px;
+    transition: color .3s;
+    z-index: 200;
+  }
+  #skip:hover { color: rgba(255,255,255,.65); }
+
+  /* ── Progress dots ── */
+  #dots {
+    position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 7px;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity .6s;
+  }
+  #dots.visible { opacity: 1; }
+  .dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: rgba(255,255,255,.2);
+    transition: background .4s, transform .4s;
+  }
+  .dot.active { background: rgba(255,255,255,.75); transform: scale(1.4); }
+
+  /* ── Keyframes ── */
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-6px); }
+  }
+  @keyframes fadeInSlow {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="line"></div>
+  <div id="divider"></div>
+</div>
+<div id="subtitle"></div>
+
+<div id="finale">
+  <div class="logo-wrap">
+    <!-- Integrity Family logo mark: two interlocked rings forming a family -->
+    <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="28" r="13" stroke="#f97316" stroke-width="3" fill="none"/>
+      <circle cx="36" cy="28" r="13" stroke="#4f46e5" stroke-width="3" fill="none"/>
+      <circle cx="28" cy="20" r="7"  fill="#f97316" opacity=".9"/>
+      <circle cx="28" cy="36" r="5"  fill="#4f46e5" opacity=".8"/>
+    </svg>
+  </div>
+  <h1>Integrity Family</h1>
+  <p>Sistema vivo de transformación familiar</p>
+</div>
+
+<button id="skip" onclick="skipIntro()">Saltar intro</button>
+<div id="dots"></div>
+
+<script>
+// ─────────────────────────────────────────────
+//  SCRIPT DE APERTURA CINEMATOGRÁFICA
+// ─────────────────────────────────────────────
+
+const DEST = '/'; // destino al terminar
+
+const TIMELINE = [
+  // ── ACTO I: el problema ──
+  { type: 'line',     text: 'Cada día,',                             dur: 2.8 },
+  { type: 'line',     text: 'una familia se rompe.',                 dur: 3.2 },
+  { type: 'pause',                                                   dur: 1.2 },
+  { type: 'line',     text: 'Y casi siempre…',                      dur: 2.5, style: 'italic' },
+  { type: 'line',     text: 'nadie se da cuenta.',                   dur: 3.5 },
+  { type: 'pause',                                                   dur: 1.0 },
+  { type: 'line',     text: 'No porque no se amen.',                 dur: 3.2 },
+  { type: 'pause',                                                   dur: 0.7 },
+  { type: 'line',     text: 'Sino porque dejaron\nde escucharse.',   dur: 3.8 },
+  { type: 'pause',                                                   dur: 0.7 },
+  { type: 'line',     text: 'Dejaron de compartir tiempo.',          dur: 3.2 },
+  { type: 'pause',                                                   dur: 0.7 },
+  { type: 'line',     text: 'Dejaron de entenderse.',                dur: 3.0 },
+  { type: 'pause',                                                   dur: 1.4 },
+
+  // ── ACTO II: narración ──
+  {
+    type: 'subtitle',
+    text: 'Las crisis familiares rara vez comienzan\ncon grandes acontecimientos.',
+    dur: 5.5,
+  },
+  {
+    type: 'subtitle',
+    text: 'Generalmente empiezan con pequeñas desconexiones\nque nadie detecta a tiempo.',
+    dur: 5.5,
+  },
+  { type: 'pause', dur: 1.2 },
+
+  // ── ACTO III: la pregunta ──
+  { type: 'line', text: '¿Y si hubiera una forma\nde detectarlas antes?', dur: 4.5, style: 'italic' },
+  { type: 'pause', dur: 1.2 },
+  { type: 'line', text: '¿Una forma de entender\na tu familia más profundamente?', dur: 4.5 },
+  { type: 'pause', dur: 1.4 },
+
+  // ── ACTO IV: la solución ──
+  {
+    type: 'subtitle',
+    text: 'No como una terapia.\nNo como una obligación.',
+    dur: 4.5,
+  },
+  {
+    type: 'subtitle',
+    text: 'Sino como un sistema vivo\nque crece con tu familia.',
+    dur: 5.0,
+  },
+  { type: 'pause', dur: 1.2 },
+
+  // ── ACTO V: la revelación ──
+  { type: 'line', text: 'Integrity Family.', dur: 4.0, style: 'large' },
+  { type: 'pause', dur: 0.8 },
+  { type: 'line', text: 'Porque las familias que crecen juntas\nno lo hacen por accidente.', dur: 5.0, style: 'small' },
+  { type: 'pause', dur: 1.8 },
+
+  // ── FINALE ──
+  { type: 'finale', dur: 4.0 },
+];
+
+// ── DOM refs ──
+const lineEl     = document.getElementById('line');
+const subtitleEl = document.getElementById('subtitle');
+const dividerEl  = document.getElementById('divider');
+const finaleEl   = document.getElementById('finale');
+const dotsEl     = document.getElementById('dots');
+
+// ── Build progress dots (count non-pause, non-finale entries) ──
+const dotCount = TIMELINE.filter(e => e.type === 'line').length;
+let   dotIndex = 0;
+
+for (let i = 0; i < dotCount; i++) {
+  const d = document.createElement('div');
+  d.className = 'dot';
+  dotsEl.appendChild(d);
+}
+
+function setDot(i) {
+  document.querySelectorAll('.dot').forEach((d, idx) => {
+    d.classList.toggle('active', idx === i);
+  });
+}
+
+// ── Utility: animate element ──
+function animEl(el, animName, duration, delay = 0) {
+  return new Promise(resolve => {
+    el.style.animation = 'none';
+    el.offsetHeight; // reflow
+    el.style.animation = `${animName} ${duration}s ease forwards`;
+    el.style.animationDelay = `${delay}s`;
+    setTimeout(resolve, (duration + delay) * 1000);
+  });
+}
+
+function clearEl(el, fast = false) {
+  return new Promise(resolve => {
+    const dur = fast ? 0.3 : 0.6;
+    el.style.animation = `fadeOut ${dur}s ease forwards`;
+    setTimeout(() => {
+      el.style.animation = 'none';
+      el.style.opacity   = '0';
+      el.textContent     = '';
+      el.className       = '';
+      resolve();
+    }, dur * 1000);
+  });
+}
+
+// ── Sequence runner ──
+let aborted = false;
+
+async function runSequence() {
+  // Initial black hold
+  await sleep(1800);
+  dotsEl.classList.add('visible');
+
+  for (const entry of TIMELINE) {
+    if (aborted) return;
+
+    if (entry.type === 'pause') {
+      await sleep(entry.dur * 1000);
+      continue;
+    }
+
+    if (entry.type === 'line') {
+      await clearEl(lineEl);
+      await clearEl(subtitleEl, true);
+      dividerEl.classList.remove('open');
+
+      lineEl.textContent = entry.text;
+      lineEl.className   = entry.style || '';
+
+      // Show divider for large titles
+      if (entry.style === 'large') {
+        setTimeout(() => dividerEl.classList.add('open'), 400);
+      }
+
+      setDot(dotIndex++);
+      await animEl(lineEl, 'fadeIn', 0.9);
+      await sleep(entry.dur * 1000 - 900);
+      continue;
+    }
+
+    if (entry.type === 'subtitle') {
+      await clearEl(lineEl);
+      await clearEl(subtitleEl, true);
+      dividerEl.classList.remove('open');
+
+      subtitleEl.textContent = entry.text;
+      subtitleEl.style.opacity = '0';
+      subtitleEl.style.animation = `fadeIn ${0.9}s ease forwards`;
+
+      await sleep(entry.dur * 1000);
+      continue;
+    }
+
+    if (entry.type === 'finale') {
+      await clearEl(lineEl);
+      await clearEl(subtitleEl, true);
+      dividerEl.classList.remove('open');
+      dotsEl.classList.remove('visible');
+
+      finaleEl.style.pointerEvents = 'auto';
+      finaleEl.style.animation = 'fadeInSlow 2s ease forwards';
+
+      await sleep(entry.dur * 1000);
+
+      // Fade to destination
+      document.body.style.transition = 'opacity 1.2s ease';
+      document.body.style.opacity = '0';
+      await sleep(1200);
+
+      if (!aborted) window.location.href = DEST;
+      return;
+    }
+  }
+}
+
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
+}
+
+function skipIntro() {
+  aborted = true;
+  document.body.style.transition = 'opacity .5s ease';
+  document.body.style.opacity = '0';
+  setTimeout(() => window.location.href = DEST, 500);
+}
+
+// ── Keyboard shortcut: any key skips ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') skipIntro();
+});
+
+// ── Start ──
+runSequence();
+</script>
+</body>
+</html>

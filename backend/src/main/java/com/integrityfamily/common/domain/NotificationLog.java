@@ -1,5 +1,6 @@
 package com.integrityfamily.common.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.FamilyMember;
 import jakarta.persistence.*;
@@ -14,13 +15,18 @@ public class NotificationLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "family_id", insertable = false, updatable = false)
+    private Long familyId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "family_id", nullable = false)
+    @JsonIgnore
     private Family family;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
-    private FamilyMember FamilyMember;
+    @JsonIgnore
+    private FamilyMember familyMember;
 
     private String recipientName;
     private String recipientRole;

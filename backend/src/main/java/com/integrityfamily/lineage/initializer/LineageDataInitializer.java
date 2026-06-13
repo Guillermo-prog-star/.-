@@ -36,7 +36,7 @@ import java.util.List;
 @Order(10)
 public class LineageDataInitializer implements CommandLineRunner {
 
-    private static final long FAMILY_ID = 1L; // families.id = 1 → "Lopez Blanco" IF-2026-0001
+    private static final long FAMILY_ID = 2L; // families.id = 2 → "Lopez Blanco" IF-2026-0002
 
     private final FamilyRepository               familyRepo;
     private final FamilyLineageRepository        lineageRepo;

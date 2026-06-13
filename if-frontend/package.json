@@ -11,7 +11,8 @@
     "start": "ng serve --host 0.0.0.0 --proxy-config proxy.conf.js",
     "build": "ng build --configuration production",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "open-opening": "start http://localhost:4200/opening.html"
   },
   "dependencies": {
     "@angular/animations": "^17.3.0",

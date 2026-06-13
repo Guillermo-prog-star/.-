@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Integrity Family — Resumen Ejecutivo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg:     #060c1a;
+  --bg2:    #0d1528;
+  --orange: #f97316;
+  --blue:   #4f46e5;
+  --green:  #10b981;
+  --red:    #ef4444;
+  --text:   #e2e8f0;
+  --muted:  #64748b;
+  --border: rgba(255,255,255,.07);
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 80px 24px;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(249,115,22,.12) 0%, transparent 70%),
+              linear-gradient(160deg, #060c1a 0%, #0d1528 100%);
+  text-align: center; position: relative; overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute; inset: 0; pointer-events: none;
+  background-image: radial-gradient(circle, rgba(255,255,255,.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 0%, transparent 100%);
+}
+.hero-logo {
+  width: 80px; height: 80px; border-radius: 20px;
+  background: #fcfbf4; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 60px rgba(249,115,22,.4);
+  margin: 0 auto 24px;
+}
+.hero-logo svg { width: 54px; height: 54px; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.3);
+  color: #fb923c; padding: 5px 16px; border-radius: 999px;
+  font-size: .7rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+  margin-bottom: 20px;
+}
+.hero-badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: #f97316; animation: blink 1.4s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+.hero h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.4rem, 6vw, 5rem);
+  font-weight: 900; line-height: 1.1; letter-spacing: -.02em;
+  color: #f8f5ef; margin-bottom: 8px;
+}
+.hero h2 {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(.75rem, 1.8vw, 1rem);
+  font-weight: 500; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 28px;
+}
+.hero-quote {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.1rem, 2.8vw, 1.9rem);
+  font-weight: 400; font-style: italic;
+  color: rgba(240,236,228,.7); max-width: 680px; margin: 0 auto 36px;
+  line-height: 1.55;
+}
+.hero-cta {
+  display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+}
+.btn-primary {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: #fff; border: none; padding: 14px 28px; border-radius: 12px;
+  font-size: .9rem; font-weight: 700; cursor: pointer; text-decoration: none;
+  box-shadow: 0 4px 20px rgba(249,115,22,.4); transition: all .25s;
+  display: inline-block;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(249,115,22,.5); }
+.btn-outline {
+  background: transparent; border: 1px solid rgba(255,255,255,.15);
+  color: rgba(255,255,255,.65); padding: 14px 28px; border-radius: 12px;
+  font-size: .9rem; font-weight: 600; cursor: pointer; text-decoration: none;
+  transition: all .25s; display: inline-block;
+}
+.btn-outline:hover { border-color: rgba(255,255,255,.35); color: #fff; }
+
+/* ── SECTIONS ── */
+section {
+  max-width: 960px; margin: 0 auto;
+  padding: 80px 24px;
+}
+.section-label {
+  font-size: .68rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--orange); margin-bottom: 10px;
+}
+.section-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.6rem, 4vw, 2.8rem);
+  font-weight: 700; line-height: 1.2; color: #f8f5ef;
+  margin-bottom: 16px;
+}
+.section-sub {
+  font-size: clamp(.85rem, 1.8vw, 1rem);
+  color: var(--muted); max-width: 600px; line-height: 1.75;
+}
+hr.sep {
+  border: none; border-top: 1px solid var(--border);
+  margin: 0;
+}
+
+/* ── EL PROBLEMA ── */
+.problem-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 14px; margin-top: 36px;
+}
+@media(max-width:580px){ .problem-grid { grid-template-columns: 1fr; } }
+.problem-card {
+  background: rgba(255,255,255,.03);
+  border: 1px solid var(--border);
+  border-radius: 16px; padding: 22px 24px;
+}
+.problem-card .icon { font-size: 1.6rem; margin-bottom: 10px; }
+.problem-card h4 { font-size: .85rem; font-weight: 700; color: #f8f5ef; margin-bottom: 6px; }
+.problem-card p  { font-size: .8rem; color: var(--muted); line-height: 1.65; }
+.stat-big {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.2rem, 6vw, 4rem); font-weight: 900; color: var(--orange);
+  line-height: 1; margin-bottom: 6px;
+}
+
+/* ── LAS 4 DIMENSIONES ── */
+.dims-grid {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-top: 32px;
+}
+@media(max-width:640px){ .dims-grid { grid-template-columns: repeat(2,1fr); } }
+.dim-card {
+  border-radius: 16px; padding: 22px 16px; text-align: center;
+}
+.dim-card .d-icon { font-size: 2rem; margin-bottom: 10px; }
+.dim-card .d-name { font-size: .85rem; font-weight: 700; margin-bottom: 4px; }
+.dim-card .d-desc { font-size: .72rem; color: rgba(255,255,255,.45); line-height: 1.55; }
+.d-blue   { background:rgba(59,130,246,.1);  border:1px solid rgba(59,130,246,.25);  }
+.d-green  { background:rgba(16,185,129,.08); border:1px solid rgba(16,185,129,.22);  }
+.d-yellow { background:rgba(245,158,11,.08); border:1px solid rgba(245,158,11,.22);  }
+.d-orange { background:rgba(249,115,22,.1);  border:1px solid rgba(249,115,22,.25);  }
+
+/* ── CÓMO FUNCIONA ── */
+.flow-steps {
+  display: flex; align-items: flex-start; gap: 0;
+  margin-top: 36px; flex-wrap: wrap; justify-content: center;
+}
+.flow-step {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  flex: 1; min-width: 90px; max-width: 130px; text-align: center;
+  position: relative;
+}
+.flow-step::after {
+  content: '→';
+  position: absolute; right: -14px; top: 20px;
+  color: rgba(255,255,255,.2); font-size: 1.1rem;
+}
+.flow-step:last-child::after { display: none; }
+.step-num {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: rgba(249,115,22,.15); border: 1px solid rgba(249,115,22,.35);
+  color: #fb923c; font-size: .8rem; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.step-name { font-size: .72rem; font-weight: 600; color: rgba(240,236,228,.75); line-height: 1.4; }
+
+/* ── ICF VISUAL ── */
+.icf-section {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;
+  margin-top: 36px;
+}
+@media(max-width:640px){ .icf-section { grid-template-columns: 1fr; } }
+.icf-ranges {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.icf-range {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 14px; border-radius: 10px;
+}
+.icf-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.icf-label { font-size: .78rem; font-weight: 600; flex: 1; }
+.icf-val   { font-size: .72rem; color: var(--muted); }
+
+/* ── ARQUITECTURA ── */
+.arch-grid {
+  display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 32px;
+}
+@media(max-width:580px){ .arch-grid { grid-template-columns: 1fr 1fr; } }
+.arch-card {
+  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 14px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.arch-card .a-icon { font-size: 1.3rem; }
+.arch-card .a-name { font-size: .8rem; font-weight: 700; color: #f8f5ef; }
+.arch-card .a-tech { font-size: .68rem; color: var(--muted); }
+
+/* ── DIFERENCIAL ── */
+.diff-list {
+  display: flex; flex-direction: column; gap: 12px; margin-top: 32px;
+}
+.diff-item {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  border-radius: 12px; padding: 16px 18px;
+}
+.diff-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
+.diff-item h4 { font-size: .85rem; font-weight: 700; color: #f8f5ef; margin-bottom: 3px; }
+.diff-item p  { font-size: .78rem; color: var(--muted); line-height: 1.6; }
+
+/* ── IMPACTO PROYECTADO ── */
+.metrics-grid {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-top: 32px;
+}
+@media(max-width:640px){ .metrics-grid { grid-template-columns: repeat(2,1fr); } }
+.metric-card {
+  background: rgba(255,255,255,.03); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px 14px; text-align: center;
+}
+.metric-card .m-val {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.6rem,4vw,2.4rem); font-weight: 900; color: var(--orange);
+  line-height: 1; margin-bottom: 6px;
+}
+.metric-card .m-label { font-size: .7rem; color: var(--muted); line-height: 1.5; }
+
+/* ── LEGADO ── */
+.legado-block {
+  text-align: center; padding: 80px 24px;
+  background: radial-gradient(ellipse 70% 50% at 50% 100%, rgba(249,115,22,.1) 0%, transparent 70%);
+}
+.legado-block blockquote {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.2rem, 3.5vw, 2.4rem);
+  font-style: italic; color: rgba(240,236,228,.85);
+  max-width: 680px; margin: 0 auto 16px; line-height: 1.5;
+}
+.legado-block cite {
+  font-size: .75rem; color: var(--muted); letter-spacing: .1em;
+  text-transform: uppercase; font-style: normal;
+}
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 24px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+  max-width: 960px; margin: 0 auto;
+}
+footer p { font-size: .72rem; color: var(--muted); }
+.footer-brand {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem; font-weight: 700; color: rgba(240,236,228,.6);
+  letter-spacing: .04em;
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HERO ══════════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-logo">
+    <svg viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="20" cy="28" r="13" stroke="#f97316" stroke-width="3" fill="none"/>
+      <circle cx="36" cy="28" r="13" stroke="#4f46e5" stroke-width="3" fill="none"/>
+      <circle cx="28" cy="20" r="7" fill="#f97316" opacity=".9"/>
+      <circle cx="28" cy="36" r="5" fill="#4f46e5" opacity=".8"/>
+    </svg>
+  </div>
+  <div class="hero-badge">Sistema Vivo · Tecnología con propósito social</div>
+  <h1>INTEGRITY<br>FAMILY</h1>
+  <h2>Preservando Historias · Transformando Generaciones</h2>
+  <p class="hero-quote">¿Podemos utilizar la tecnología para fortalecer familias<br>antes de que aparezcan las crisis?</p>
+  <div class="hero-cta">
+    <a href="#problema" class="btn-primary">Ver el problema →</a>
+    <a href="#como-funciona" class="btn-outline">Cómo funciona</a>
+  </div>
+</div>
+
+<hr class="sep"/>
+
+<!-- ══ EL PROBLEMA ═══════════════════════════════════════════ -->
+<section id="problema">
+  <div class="section-label">El Problema</div>
+  <h2 class="section-title">Las familias no saben<br>que están en riesgo.</h2>
+  <p class="section-sub">La mayoría de las crisis familiares no comienzan con un gran acontecimiento. Comienzan con pequeñas desconexiones que nadie detecta a tiempo.</p>
+
+  <div class="problem-grid">
+    <div class="problem-card">
+      <div class="icon">📉</div>
+      <h4>Detección tardía</h4>
+      <p>Las familias buscan ayuda cuando el conflicto ya escala. No existe un sistema de alerta temprana basado en datos.</p>
+    </div>
+    <div class="problem-card">
+      <div class="icon">🔁</div>
+      <h4>Patrones que se repiten</h4>
+      <p>Los problemas de una generación se transfieren a la siguiente sin que nadie los documente ni los interrumpa.</p>
+    </div>
+    <div class="problem-card">
+      <div class="icon">🧩</div>
+      <h4>Soluciones aisladas</h4>
+      <p>Terapia, apps de bienestar, cursos de crianza. Ninguna conecta diagnóstico, plan de acción y seguimiento continuo.</p>
+    </div>
+    <div class="problem-card">
+      <div class="icon">📊</div>
+      <h4>Sin evidencia del proceso</h4>
+      <p>Las familias transforman su dinámica pero no tienen cómo medir, documentar ni celebrar ese progreso.</p>
+    </div>
+  </div>
+</section>
+
+<hr class="sep"/>
+
+<!-- ══ LAS 4 DIMENSIONES ══════════════════════════════════════ -->
+<section id="dimensiones">
+  <div class="section-label">El Diagnóstico</div>
+  <h2 class="section-title">Cuatro dimensiones.<br>Una mirada completa.</h2>
+  <p class="section-sub">Cada familia es evaluada en las cuatro áreas que la investigación muestra como determinantes de la convivencia familiar saludable.</p>
+
+  <div class="dims-grid">
+    <div class="dim-card d-blue">
+      <div class="d-icon">💙</div>
+      <div class="d-name" style="color:#93c5fd;">Emociones</div>
+      <div class="d-desc">Cómo cada integrante procesa y expresa lo que siente dentro del hogar.</div>
+    </div>
+    <div class="dim-card d-green">
+      <div class="d-icon">🗣️</div>
+      <div class="d-name" style="color:#6ee7b7;">Comunicación</div>
+      <div class="d-desc">Calidad y frecuencia de los intercambios significativos entre integrantes.</div>
+    </div>
+    <div class="dim-card d-yellow">
+      <div class="d-icon">🌱</div>
+      <div class="d-name" style="color:#fde68a;">Hábitos</div>
+      <div class="d-desc">Rutinas compartidas que sostienen o erosionan el bienestar familiar.</div>
+    </div>
+    <div class="dim-card d-orange">
+      <div class="d-icon">📅</div>
+      <div class="d-name" style="color:#fb923c;">Tiempos juntos</div>
+      <div class="d-desc">Cantidad y calidad del tiempo que la familia comparte intencionalmente.</div>
+    </div>
+  </div>
+
+  <!-- ICF -->
+  <div class="icf-section" style="margin-top:48px;">
+    <div>
+      <h3 style="font-family:'Playfair Display',serif;font-size:clamp(1.2rem,3vw,1.9rem);font-weight:700;color:#f8f5ef;margin-bottom:10px;">Índice de Convivencia Familiar (ICF)</h3>
+      <p style="font-size:.82rem;color:var(--muted);line-height:1.75;margin-bottom:20px;">El ICF es el número que resume el estado de salud de una familia. No es una calificación — es una brújula. Determina el nivel de riesgo y el plan de intervención personalizado.</p>
+      <div class="icf-ranges">
+        <div class="icf-range" style="background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);">
+          <div class="icf-dot" style="background:#ef4444;"></div>
+          <span class="icf-label" style="color:#fca5a5;">0 – 40</span>
+          <span class="icf-val">Crisis familiar · Riesgo Alto</span>
+        </div>
+        <div class="icf-range" style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);">
+          <div class="icf-dot" style="background:#f97316;"></div>
+          <span class="icf-label" style="color:#fb923c;">41 – 65</span>
+          <span class="icf-val">En desarrollo · Plan activo</span>
+        </div>
+        <div class="icf-range" style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.18);">
+          <div class="icf-dot" style="background:#f59e0b;"></div>
+          <span class="icf-label" style="color:#fde68a;">66 – 85</span>
+          <span class="icf-val">Familia estable · Consolidando</span>
+        </div>
+        <div class="icf-range" style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.18);">
+          <div class="icf-dot" style="background:#10b981;"></div>
+          <span class="icf-label" style="color:#6ee7b7;">86 – 100</span>
+          <span class="icf-val">Familia referente · Legado activo</span>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;">
+      <svg viewBox="0 0 220 200" style="width:100%;max-width:240px;display:block;margin:0 auto;">
+        <polygon points="110,15 190,57 190,143 110,185 30,143 30,57" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1.5"/>
+        <polygon points="110,38 168,69 168,121 110,152 52,121 52,69"   fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+        <polygon points="110,61 146,81 146,99 110,119 74,99 74,81"     fill="none" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+        <line x1="110" y1="15" x2="110" y2="185" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+        <line x1="30" y1="57" x2="190" y2="143" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+        <line x1="190" y1="57" x2="30" y2="143" stroke="rgba(255,255,255,.04)" stroke-width="1"/>
+        <polygon points="110,38 168,75 165,121 110,152 55,124 52,72" fill="rgba(249,115,22,.2)" stroke="#f97316" stroke-width="2"/>
+        <text x="110" y="8"   text-anchor="middle" font-size="9" fill="#93c5fd"  font-family="Inter,sans-serif" font-weight="700">Emociones</text>
+        <text x="198" y="56"  font-size="9" fill="#6ee7b7"  font-family="Inter,sans-serif" font-weight="700">Comunic.</text>
+        <text x="198" y="150" font-size="9" fill="#fde68a"  font-family="Inter,sans-serif" font-weight="700">Hábitos</text>
+        <text x="110" y="198" text-anchor="middle" font-size="9" fill="#fb923c"  font-family="Inter,sans-serif" font-weight="700">Tiempos</text>
+        <text x="22"  y="150" text-anchor="end"    font-size="9" fill="#94a3b8"  font-family="Inter,sans-serif">·</text>
+        <text x="22"  y="56"  text-anchor="end"    font-size="9" fill="#94a3b8"  font-family="Inter,sans-serif">·</text>
+        <text x="110" y="100" text-anchor="middle" font-size="22" font-weight="900" fill="#f97316" font-family="Inter,sans-serif">61</text>
+        <text x="110" y="115" text-anchor="middle" font-size="9" fill="#64748b" font-family="Inter,sans-serif">ICF actual</text>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<hr class="sep"/>
+
+<!-- ══ CÓMO FUNCIONA ══════════════════════════════════════════ -->
+<section id="como-funciona">
+  <div class="section-label">El Sistema</div>
+  <h2 class="section-title">De la información<br>al legado.</h2>
+  <p class="section-sub">Integrity Family es el único sistema que cierra el ciclo completo: desde el diagnóstico inicial hasta la preservación del legado generacional.</p>
+
+  <div class="flow-steps">
+    <div class="flow-step">
+      <div class="step-num">1</div>
+      <div class="step-name">Crear familia</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">2</div>
+      <div class="step-name">Diagnóstico ICF</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">3</div>
+      <div class="step-name">Plan mensual</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">4</div>
+      <div class="step-name">Misiones diarias</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">5</div>
+      <div class="step-name">Evidencias</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num">6</div>
+      <div class="step-name">Documental IA</div>
+    </div>
+    <div class="flow-step">
+      <div class="step-num" style="background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7;">7</div>
+      <div class="step-name">Legado familiar</div>
+    </div>
+  </div>
+</section>
+
+<hr class="sep"/>
+
+<!-- ══ ARQUITECTURA ═══════════════════════════════════════════ -->
+<section id="arquitectura">
+  <div class="section-label">Tecnología</div>
+  <h2 class="section-title">Infraestructura para<br>escalar sin perder alma.</h2>
+  <p class="section-sub">La tecnología no es el protagonista. Es la infraestructura que permite acompañar a miles de familias simultáneamente, con personalización real.</p>
+
+  <div class="arch-grid">
+    <div class="arch-card">
+      <div class="a-icon">🌐</div>
+      <div class="a-name">Frontend</div>
+      <div class="a-tech">Angular · TypeScript</div>
+    </div>
+    <div class="arch-card">
+      <div class="a-icon">⚙️</div>
+      <div class="a-name">Backend</div>
+      <div class="a-tech">Spring Boot · Java</div>
+    </div>
+    <div class="arch-card">
+      <div class="a-icon">🐇</div>
+      <div class="a-name">Mensajería</div>
+      <div class="a-tech">RabbitMQ · Event-driven</div>
+    </div>
+    <div class="arch-card">
+      <div class="a-icon">🗄️</div>
+      <div class="a-name">Persistencia</div>
+      <div class="a-tech">MySQL · JPA</div>
+    </div>
+    <div class="arch-card">
+      <div class="a-icon">🤖</div>
+      <div class="a-name">Consultor IA</div>
+      <div class="a-tech">NLP · Análisis longitudinal</div>
+    </div>
+    <div class="arch-card">
+      <div class="a-icon">🔊</div>
+      <div class="a-name">Voz</div>
+      <div class="a-tech">Alexa Skills · IoT familiar</div>
+    </div>
+  </div>
+</section>
+
+<hr class="sep"/>
+
+<!-- ══ LO QUE NOS DIFERENCIA ═════════════════════════════════ -->
+<section id="diferencial">
+  <div class="section-label">El Diferencial</div>
+  <h2 class="section-title">Lo que ninguna plataforma<br>había construido antes.</h2>
+
+  <div class="diff-list">
+    <div class="diff-item">
+      <div class="diff-icon">📐</div>
+      <div>
+        <h4>Diagnóstico científico, no cuestionario</h4>
+        <p>El ICF se calcula con vectores multidimensionales derivados de análisis documental e investigación de campo. No es un test de revista.</p>
+      </div>
+    </div>
+    <div class="diff-item">
+      <div class="diff-icon">🔄</div>
+      <div>
+        <h4>Sistema vivo, no puntual</h4>
+        <p>La mayoría de las plataformas terminan en el diagnóstico. Integrity Family empieza ahí. El sistema acompaña la evolución familiar en tiempo real.</p>
+      </div>
+    </div>
+    <div class="diff-item">
+      <div class="diff-icon">🎬</div>
+      <div>
+        <h4>Memoria y legado generacional</h4>
+        <p>Cada misión completada, cada evidencia registrada, cada momento compartido se convierte en el Documental Familiar trimestral — una memoria que se preserva para las próximas generaciones.</p>
+      </div>
+    </div>
+    <div class="diff-item">
+      <div class="diff-icon">📡</div>
+      <div>
+        <h4>Arquitectura event-driven</h4>
+        <p>Diseñado desde el inicio para escalar. RabbitMQ garantiza que cada evento familiar (registro de emoción, misión completada, alerta Sentinel) dispara el proceso correcto en tiempo real.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="sep"/>
+
+<!-- ══ IMPACTO PROYECTADO ═════════════════════════════════════ -->
+<section id="impacto">
+  <div class="section-label">Proyección de Impacto</div>
+  <h2 class="section-title">Lo que puede lograr<br>una familia en 12 meses.</h2>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="m-val">+18</div>
+      <div class="m-label">puntos ICF promedio en el primer trimestre</div>
+    </div>
+    <div class="metric-card">
+      <div class="m-val">6</div>
+      <div class="m-label">pilares de transformación completados en 6 meses</div>
+    </div>
+    <div class="metric-card">
+      <div class="m-val">24+</div>
+      <div class="m-label">misiones familiares documentadas con evidencia</div>
+    </div>
+    <div class="metric-card">
+      <div class="m-val">4</div>
+      <div class="m-label">Documentales Familiares generados por la IA en el primer año</div>
+    </div>
+  </div>
+</section>
+
+<hr class="sep"/>
+
+<!-- ══ LEGADO ═════════════════════════════════════════════════ -->
+<div class="legado-block">
+  <blockquote>"Lo que una generación aprende,<br>la siguiente no tiene que volver a sufrirlo."</blockquote>
+  <cite>— Principio fundacional · Integrity Family</cite>
+  <br/><br/>
+  <a href="#problema" class="btn-primary" style="margin-top:20px;display:inline-block;">Volver al inicio ↑</a>
+</div>
+
+<!-- ══ FOOTER ═════════════════════════════════════════════════ -->
+<footer>
+  <span class="footer-brand">INTEGRITY FAMILY</span>
+  <p>Sistema Vivo de Transformación Familiar · Arquitectura Event-Driven</p>
+  <p style="font-size:.65rem;">Angular · Spring Boot · RabbitMQ · MySQL · IA · Alexa</p>
+</footer>
+
+</body>
+</html>

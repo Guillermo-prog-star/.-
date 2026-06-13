@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sentinel AI — Demo en Vivo · Integrity Family</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --orange: #f97316; --blue: #4f46e5; --green: #10b981;
+  --purple: #8b5cf6; --teal: #06b6d4;
+  --bg: #0d1117; --bg2: #161b22; --text: #e0e0e0;
+}
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; overflow: hidden; }
+
+/* NAV */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; height: 50px; z-index: 100;
+  background: rgba(13,17,23,.97); backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  padding: 0 20px; display: flex; align-items: center; gap: 12px;
+}
+.nav-sentinel { display: flex; align-items: center; gap: 8px; }
+.sentinel-orb { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #a78bfa, #4f46e5); box-shadow: 0 0 12px rgba(139,92,246,.5); animation: orbPulse 3s ease-in-out infinite; }
+@keyframes orbPulse { 0%,100%{box-shadow:0 0 12px rgba(139,92,246,.4)} 50%{box-shadow:0 0 24px rgba(139,92,246,.8)} }
+.sentinel-name { font-size: 14px; font-weight: 800; color: #fff; }
+.sentinel-tag  { font-size: 9px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.nav-sep { width: 1px; height: 14px; background: rgba(255,255,255,.1); }
+.nav-brand { font-size: 11px; color: #475569; }
+.nav-status { margin-left: auto; display: flex; align-items: center; gap: 5px; font-size: 9px; font-weight: 700; color: #6ee7b7; text-transform: uppercase; letter-spacing: .06em; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; animation: pulse 1.8s infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+/* LAYOUT */
+#app {
+  position: fixed; top: 50px; left: 0; right: 0; bottom: 0;
+  display: grid; grid-template-columns: 1fr 320px; overflow: hidden;
+}
+
+/* CHAT AREA */
+#chat-area { display: flex; flex-direction: column; border-right: 1px solid rgba(255,255,255,.07); }
+#messages  { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; }
+
+/* Message bubbles */
+.msg { display: flex; gap: 10px; max-width: 680px; }
+.msg-user { align-self: flex-end; flex-direction: row-reverse; }
+.msg-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; }
+.av-sentinel { background: radial-gradient(circle at 35% 35%, #7c3aed, #4f46e5); box-shadow: 0 0 8px rgba(139,92,246,.4); }
+.av-user    { background: linear-gradient(135deg,#b45309,#f59e0b); }
+.msg-bubble { border-radius: 16px; padding: 12px 16px; font-size: 13px; line-height: 1.7; }
+.bubble-sentinel { background: rgba(79,70,229,.1); border: 1px solid rgba(79,70,229,.2); color: #e0e0e0; border-radius: 4px 16px 16px 16px; }
+.bubble-user     { background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.25); color: #e0e0e0; border-radius: 16px 4px 16px 16px; }
+.msg-time { font-size: 9px; color: #475569; margin-top: 4px; padding: 0 4px; }
+
+/* Typing indicator */
+.typing-dots { display: flex; gap: 4px; align-items: center; padding: 4px 0; }
+.td { width: 6px; height: 6px; border-radius: 50%; background: #8b5cf6; animation: tdBounce .9s infinite; }
+.td:nth-child(2) { animation-delay: .2s; }
+.td:nth-child(3) { animation-delay: .4s; }
+@keyframes tdBounce { 0%,100%{transform:translateY(0);opacity:.5} 50%{transform:translateY(-5px);opacity:1} }
+
+/* ICF Card inside message */
+.icf-card-inline {
+  background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.25);
+  border-radius: 12px; padding: 14px; margin-top: 10px;
+}
+.ici-row { display: flex; align-items: center; gap: 10px; }
+.ici-num  { font-size: 40px; font-weight: 900; color: var(--orange); line-height: 1; }
+.ici-info {}
+.ici-lbl  { font-size: 9px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: .06em; }
+.ici-zone { font-size: 12px; font-weight: 700; color: #fb923c; }
+.ici-bars { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+.ici-bar-row { display: flex; align-items: center; gap: 6px; }
+.ici-bar-name { font-size: 9px; font-weight: 700; width: 80px; flex-shrink: 0; }
+.ici-bar-track { flex: 1; height: 4px; background: rgba(0,0,0,.3); border-radius: 2px; overflow: hidden; }
+.ici-bar-fill  { height: 100%; border-radius: 2px; }
+.ici-bar-val   { font-size: 9px; font-weight: 800; width: 20px; text-align: right; }
+
+/* Plan card inline */
+.plan-card-inline {
+  background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.2);
+  border-radius: 12px; padding: 14px; margin-top: 10px;
+}
+.pci-title { font-size: 11px; font-weight: 800; color: #34d399; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .06em; }
+.pci-pilar { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; margin-bottom: 6px; font-size: 11px; }
+.pci-active { background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.25); font-weight: 700; color: #fb923c; }
+.pci-next   { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); color: #94a3b8; opacity: .7; }
+
+/* Narrative card */
+.narr-card {
+  background: rgba(124,58,237,.08); border: 1px solid rgba(124,58,237,.2);
+  border-radius: 12px; padding: 14px; margin-top: 10px;
+}
+.narr-lbl  { font-size: 9px; font-weight: 700; color: #a78bfa; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.narr-text { font-size: 12px; color: #c7d2fe; line-height: 1.75; font-style: italic; }
+.narr-text strong { color: #e0d9ff; font-style: normal; }
+
+/* INPUT AREA */
+#input-area {
+  padding: 14px 20px; border-top: 1px solid rgba(255,255,255,.07);
+  background: rgba(13,17,23,.98);
+}
+.input-row { display: flex; gap: 10px; align-items: flex-end; }
+#chat-input {
+  flex: 1; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 12px; padding: 10px 14px; font-size: 13px; color: #fff;
+  font-family: 'Inter', sans-serif; resize: none; outline: none;
+  min-height: 42px; max-height: 100px; line-height: 1.5;
+  transition: border-color .2s;
+}
+#chat-input:focus { border-color: rgba(139,92,246,.4); }
+#chat-input::placeholder { color: rgba(255,255,255,.2); }
+#send-btn {
+  background: linear-gradient(135deg,#7c3aed,#4f46e5); border: none; color: #fff;
+  width: 42px; height: 42px; border-radius: 10px; cursor: pointer; font-size: 16px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  transition: opacity .2s;
+}
+#send-btn:hover { opacity: .85; }
+#send-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+.input-hint { font-size: 10px; color: #475569; margin-top: 6px; }
+
+/* SUGGESTIONS */
+.suggestions { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.sug-btn {
+  background: rgba(139,92,246,.1); border: 1px solid rgba(139,92,246,.2);
+  color: #a78bfa; padding: 5px 11px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; cursor: pointer; transition: all .15s;
+}
+.sug-btn:hover { background: rgba(139,92,246,.2); color: #c4b5fd; }
+
+/* RIGHT PANEL */
+#right-panel { display: flex; flex-direction: column; background: rgba(13,17,23,.98); overflow: hidden; }
+.rp-header { padding: 16px 16px 12px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.rp-title { font-size: 12px; font-weight: 800; color: #fff; margin-bottom: 2px; }
+.rp-sub   { font-size: 10px; color: #64748b; }
+.rp-body  { flex: 1; overflow-y: auto; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Family context card */
+.ctx-card { background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; padding: 14px; }
+.ctx-label { font-size: 9px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 8px; }
+.ctx-fam  { font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+.ctx-member { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; }
+.ctx-av   { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 900; color: #fff; flex-shrink: 0; }
+.ctx-mname { font-size: 10px; font-weight: 700; }
+.ctx-mrole { font-size: 9px; color: #64748b; }
+
+/* Capabilities */
+.cap-list { display: flex; flex-direction: column; gap: 7px; }
+.cap-item { display: flex; gap: 8px; }
+.cap-icon { font-size: 12px; flex-shrink: 0; margin-top: 1px; }
+.cap-text { font-size: 10px; color: #64748b; line-height: 1.5; }
+.cap-text strong { color: #94a3b8; }
+
+/* ICF Live widget */
+.icf-widget { background: rgba(249,115,22,.08); border: 1px solid rgba(249,115,22,.2); border-radius: 12px; padding: 12px; }
+.iw-label { font-size: 9px; font-weight: 700; color: #f97316; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+.iw-num   { font-size: 36px; font-weight: 900; color: var(--orange); line-height: 1; }
+.iw-zone  { font-size: 10px; color: #fb923c; margin-top: 2px; }
+.iw-bar   { background: rgba(0,0,0,.3); border-radius: 4px; height: 4px; overflow: hidden; margin-top: 8px; }
+.iw-fill  { height: 100%; border-radius: 4px; background: linear-gradient(to right,#ef4444,#f97316,#10b981); transition: width .8s ease; }
+
+/* Scroll */
+#messages::-webkit-scrollbar { width: 4px; }
+#messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-sentinel">
+    <div class="sentinel-orb"></div>
+    <div>
+      <div class="sentinel-name">Sentinel AI</div>
+      <div class="sentinel-tag">Consultor de Cohesión Familiar</div>
+    </div>
+  </div>
+  <div class="nav-sep"></div>
+  <span class="nav-brand">Integrity Family</span>
+  <div class="nav-status" style="margin-left:auto;">
+    <div class="status-dot"></div>En línea · Familia García
+  </div>
+</nav>
+
+<div id="app">
+
+  <!-- CHAT -->
+  <div id="chat-area">
+    <div id="messages">
+      <!-- Initial message from Sentinel -->
+      <div class="msg">
+        <div class="msg-avatar av-sentinel">🧠</div>
+        <div>
+          <div class="msg-bubble bubble-sentinel">
+            Hola, familia García. Soy Sentinel, su consultor de cohesión familiar.<br/><br/>
+            Estoy aquí para acompañarlos en su proceso de transformación. Puedo analizar su ICF, generar narrativas de sus misiones, sugerir el siguiente paso en su plan, o simplemente conversar sobre cómo están.<br/><br/>
+            <strong>¿Por dónde quieren empezar hoy?</strong>
+          </div>
+          <div class="msg-time">Hoy, 7:34 p.m.</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="input-area">
+      <div class="suggestions" id="suggestions">
+        <button class="sug-btn" onclick="sendSuggestion('¿Cuál es nuestro ICF actual?')">📊 Ver ICF actual</button>
+        <button class="sug-btn" onclick="sendSuggestion('¿Cuál es nuestro siguiente paso en el plan?')">🗺️ Siguiente paso</button>
+        <button class="sug-btn" onclick="sendSuggestion('Genera una narrativa de nuestra misión completada')">✍️ Narrativa de misión</button>
+        <button class="sug-btn" onclick="sendSuggestion('¿Qué dice el análisis de Valentina?')">👧 Análisis individual</button>
+      </div>
+      <div class="input-row">
+        <textarea id="chat-input" placeholder="Escribe tu mensaje a Sentinel…" rows="1" onkeydown="handleKey(event)"></textarea>
+        <button id="send-btn" onclick="sendMessage()">➤</button>
+      </div>
+      <div class="input-hint">Enter para enviar · Shift+Enter para nueva línea</div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right-panel">
+    <div class="rp-header">
+      <div class="rp-title">Contexto activo</div>
+      <div class="rp-sub">Familia García · Mes 2 · Semana 3</div>
+    </div>
+    <div class="rp-body">
+
+      <div class="icf-widget">
+        <div class="iw-label">ICF en tiempo real</div>
+        <div class="iw-num" id="rp-icf">66</div>
+        <div class="iw-zone">Familia en cohesión · Mes 2</div>
+        <div class="iw-bar"><div class="iw-fill" id="rp-icf-bar" style="width:66%;"></div></div>
+      </div>
+
+      <div class="ctx-card">
+        <div class="ctx-label">Familia García</div>
+        <div class="ctx-fam">Bogotá · Proceso activo</div>
+        <div style="margin-top:8px;">
+          <div class="ctx-member">
+            <div class="ctx-av" style="background:linear-gradient(135deg,#1e40af,#3b82f6);">C</div>
+            <div><div class="ctx-mname">Carlos</div><div class="ctx-mrole">Padre · 44 años</div></div>
+          </div>
+          <div class="ctx-member">
+            <div class="ctx-av" style="background:linear-gradient(135deg,#b45309,#f59e0b);">M</div>
+            <div><div class="ctx-mname">Camila</div><div class="ctx-mrole">Madre · 41 años</div></div>
+          </div>
+          <div class="ctx-member">
+            <div class="ctx-av" style="background:linear-gradient(135deg,#be185d,#f472b6);">V</div>
+            <div><div class="ctx-mname">Valentina</div><div class="ctx-mrole">Hija · 16 años</div></div>
+          </div>
+          <div class="ctx-member">
+            <div class="ctx-av" style="background:linear-gradient(135deg,#065f46,#34d399);">S</div>
+            <div><div class="ctx-mname">Santiago</div><div class="ctx-mrole">Hijo · 13 años</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ctx-card">
+        <div class="ctx-label">Capacidades Sentinel</div>
+        <div class="cap-list">
+          <div class="cap-item"><div class="cap-icon">📊</div><div class="cap-text"><strong>Diagnóstico ICF</strong> — Calcula y explica el índice en tiempo real</div></div>
+          <div class="cap-item"><div class="cap-icon">🗺️</div><div class="cap-text"><strong>Plan adaptativo</strong> — Sugiere siguiente misión según progreso</div></div>
+          <div class="cap-item"><div class="cap-icon">✍️</div><div class="cap-text"><strong>Narrativas</strong> — Convierte datos en historia familiar</div></div>
+          <div class="cap-item"><div class="cap-icon">🔔</div><div class="cap-text"><strong>Alertas tempranas</strong> — Detecta estancamientos antes de que sean crisis</div></div>
+          <div class="cap-item"><div class="cap-icon">💬</div><div class="cap-text"><strong>Escucha activa</strong> — Responde preguntas y orienta en momentos difíciles</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── RESPONSE ENGINE ──────────────────────────────────
+const RESPONSES = {
+  icf: {
+    trigger: ['icf', 'índice', 'puntaje', 'score', 'número', 'resultado'],
+    generate: () => ({
+      text: 'El ICF de la Familia García al cierre de la Semana 3 del Mes 2 es:',
+      card: 'icf',
+    }),
+  },
+  plan: {
+    trigger: ['plan', 'siguiente', 'paso', 'pilar', 'misión', 'ruta'],
+    generate: () => ({
+      text: 'Basándome en el progreso de la Misión 1 completada con un 94% de adherencia, el siguiente paso recomendado es:',
+      card: 'plan',
+    }),
+  },
+  narrativa: {
+    trigger: ['narrativa', 'historia', 'texto', 'genera', 'escribe', 'misión completada'],
+    generate: () => ({
+      text: 'Aquí está la narrativa generada para el cierre de la Misión 2 — Conversación Profunda:',
+      card: 'narrativa',
+    }),
+  },
+  valentina: {
+    trigger: ['valentina', 'hija', 'individual', 'análisis'],
+    generate: () => ({
+      text: 'El análisis individual de Valentina (16 años) muestra un patrón interesante. Valentina inició el proceso con resistencia activa — fue la última en registrar respuestas en el diagnóstico. Sin embargo, en los últimos 18 días su participación en sprints ha sido del 100%.\n\nSu dimensión emocional pasó de 38 a 61 en 6 semanas. El indicador más significativo: en la Misión 2 fue la primera en responder la "pregunta del día" y la que más tiempo habló.\n\n<strong>Señal clave:</strong> Valentina no cambió por presión externa. Cambió porque el proceso le dio estructura segura para hacer lo que ya quería hacer.',
+    }),
+  },
+  default: [
+    'Entiendo. Basándome en los datos de la Familia García, lo que observo es que están atravesando una fase de consolidación. El Mes 2 suele ser el más difícil: la novedad pasó, los hábitos aún no son automáticos. La adherencia del 89% que mantienen es notable para esta etapa.\n\n¿Hay algo específico que les esté costando más en este momento?',
+    'Esa es una pregunta importante. El proceso IF no pide perfección — pide presencia. Los datos muestran que la Familia García está apareciendo, y eso es suficiente para que el sistema funcione.\n\n¿Quieren que les muestre en qué dimensión están teniendo el mayor impacto esta semana?',
+    'Lo que describes es muy común en la Semana 3 del Mes 2. Es lo que llamamos el "valle de la normalización": el proceso deja de sentirse nuevo y todavía no se siente automático. Es exactamente donde están.\n\nBuenas noticias: el 94% de las familias que pasan esta semana, completan el mes. ¿Cómo están los cuatro hoy?',
+  ],
+};
+
+let defIdx = 0;
+
+function matchResponse(text) {
+  const lower = text.toLowerCase();
+  for (const [key, cfg] of Object.entries(RESPONSES)) {
+    if (key === 'default') continue;
+    if (cfg.trigger.some(t => lower.includes(t))) return cfg.generate();
+  }
+  const r = RESPONSES.default[defIdx % RESPONSES.default.length];
+  defIdx++;
+  return { text: r };
+}
+
+function buildCard(type) {
+  if (type === 'icf') {
+    return `
+      <div class="icf-card-inline">
+        <div class="ici-row">
+          <div class="ici-num">66</div>
+          <div class="ici-info">
+            <div class="ici-lbl">ICF · Semana 3 · Mes 2</div>
+            <div class="ici-zone">Familia en cohesión · ▲ +5 este mes</div>
+          </div>
+        </div>
+        <div class="ici-bars">
+          <div class="ici-bar-row"><div class="ici-bar-name" style="color:#fb923c;">🗣️ Comunicación</div><div class="ici-bar-track"><div class="ici-bar-fill" style="width:72%;background:#f97316;"></div></div><div class="ici-bar-val" style="color:#f97316;">72</div></div>
+          <div class="ici-bar-row"><div class="ici-bar-name" style="color:#67e8f9;">📅 Tiempo</div><div class="ici-bar-track"><div class="ici-bar-fill" style="width:76%;background:#06b6d4;"></div></div><div class="ici-bar-val" style="color:#06b6d4;">76</div></div>
+          <div class="ici-bar-row"><div class="ici-bar-name" style="color:#f9a8d4;">❤️ Emociones</div><div class="ici-bar-track"><div class="ici-bar-fill" style="width:54%;background:#ec4899;"></div></div><div class="ici-bar-val" style="color:#ec4899;">54</div></div>
+          <div class="ici-bar-row"><div class="ici-bar-name" style="color:#6ee7b7;">🌱 Hábitos</div><div class="ici-bar-track"><div class="ici-bar-fill" style="width:60%;background:#10b981;"></div></div><div class="ici-bar-val" style="color:#10b981;">60</div></div>
+        </div>
+      </div>`;
+  }
+  if (type === 'plan') {
+    return `
+      <div class="plan-card-inline">
+        <div class="pci-title">🗺️ Plan recomendado</div>
+        <div class="pci-pilar pci-active">⚡ Mes 2 — Gestión Emocional (activo) · Misión 2 en curso</div>
+        <div class="pci-pilar pci-next">→ Misión 3 · "La pregunta sin filtros" · Disponible sem. 4</div>
+        <div class="pci-pilar pci-next">→ Mes 3 · Tiempo de Calidad · Inicia jul 2026</div>
+      </div>`;
+  }
+  if (type === 'narrativa') {
+    return `
+      <div class="narr-card">
+        <div class="narr-lbl">✍️ Narrativa generada — Misión 2</div>
+        <div class="narr-text">
+          Esa noche, la Familia García se sentó a hacer algo que parecía simple: hablar. Pero no era simple. Era, en realidad, el ejercicio más difícil que habían intentado juntos en años. <strong>Hablar sin saber cómo va a terminar la frase del otro.</strong><br/><br/>
+          Valentina habló primera. Y cuando terminó, Carlos no dijo nada. Solo asintió. Y ese silencio fue suficiente para que ella supiera que esta vez, la habían escuchado de verdad.
+        </div>
+      </div>`;
+  }
+  return '';
+}
+
+// ── SEND LOGIC ──────────────────────────────────────
+
+function appendMessage(role, text, card) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg' + (role === 'user' ? ' msg-user' : '');
+  const avClass = role === 'user' ? 'av-user' : 'av-sentinel';
+  const avContent = role === 'user' ? 'C' : '🧠';
+  const bubbleClass = role === 'user' ? 'bubble-user' : 'bubble-sentinel';
+  const now = new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+
+  div.innerHTML = `
+    <div class="msg-avatar ${avClass}">${avContent}</div>
+    <div>
+      <div class="msg-bubble ${bubbleClass}">${text.replace(/\n/g,'<br/>')}${card ? buildCard(card) : ''}</div>
+      <div class="msg-time">Hoy, ${now}</div>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg'; div.id = 'typing-indicator';
+  div.innerHTML = `
+    <div class="msg-avatar av-sentinel">🧠</div>
+    <div><div class="msg-bubble bubble-sentinel"><div class="typing-dots"><div class="td"></div><div class="td"></div><div class="td"></div></div></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() {
+  document.getElementById('typing-indicator')?.remove();
+}
+
+function typewriterAppend(role, fullText, card) {
+  const msgs = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'msg' + (role === 'user' ? ' msg-user' : '');
+  const avClass = role === 'user' ? 'av-user' : 'av-sentinel';
+  const avContent = role === 'user' ? 'C' : '🧠';
+  const bubbleClass = role === 'user' ? 'bubble-user' : 'bubble-sentinel';
+  const now = new Date().toLocaleTimeString('es-CO', { hour:'2-digit', minute:'2-digit' });
+  const bubbleDiv = document.createElement('div');
+  bubbleDiv.className = `msg-bubble ${bubbleClass}`;
+  const timeDiv = document.createElement('div');
+  timeDiv.className = 'msg-time'; timeDiv.textContent = 'Hoy, ' + now;
+  const wrapper = document.createElement('div');
+  wrapper.appendChild(bubbleDiv); wrapper.appendChild(timeDiv);
+  div.innerHTML = `<div class="msg-avatar ${avClass}">${avContent}</div>`;
+  div.appendChild(wrapper);
+  msgs.appendChild(div);
+
+  // Typewriter
+  const clean = fullText.replace(/<strong>/g,'').replace(/<\/strong>/g,'').replace(/<br\/>/g,'\n');
+  // Use innerHTML version for rich text
+  let i = 0;
+  const iv = setInterval(() => {
+    i = Math.min(i + 3, fullText.length);
+    bubbleDiv.innerHTML = fullText.slice(0, i).replace(/\n/g,'<br/>');
+    msgs.scrollTop = msgs.scrollHeight;
+    if (i >= fullText.length) {
+      clearInterval(iv);
+      if (card) {
+        const cardDiv = document.createElement('div');
+        cardDiv.innerHTML = buildCard(card);
+        bubbleDiv.appendChild(cardDiv.firstElementChild);
+        msgs.scrollTop = msgs.scrollHeight;
+      }
+      document.getElementById('send-btn').disabled = false;
+    }
+  }, 18);
+}
+
+function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('suggestions').style.display = 'none';
+
+  appendMessage('user', text);
+
+  showTyping();
+  const delay = 800 + Math.random() * 800;
+  setTimeout(() => {
+    removeTyping();
+    const resp = matchResponse(text);
+    typewriterAppend('sentinel', resp.text, resp.card);
+    // Update ICF widget if ICF card shown
+    if (resp.card === 'icf') {
+      document.getElementById('rp-icf').textContent = '66';
+      document.getElementById('rp-icf-bar').style.width = '66%';
+    }
+  }, delay);
+}
+
+function sendSuggestion(text) {
+  document.getElementById('chat-input').value = text;
+  sendMessage();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+// Auto-resize textarea
+document.getElementById('chat-input').addEventListener('input', function() {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+});
+</script>
+</body>
+</html>

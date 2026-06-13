@@ -4,7 +4,8 @@ import { Observable, map } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
 import {
   Lineage, LineageMember, LineageMemberRequest,
-  LineageRelationship, GenerationInfo, GenerationInfoRequest
+  LineageRelationship, GenerationInfo, GenerationInfoRequest,
+  LineageEvent, LineageEventRequest
 } from './lineage.model';
 
 interface ApiResponse<T> { data: T; message?: string; success: boolean; }
@@ -15,7 +16,7 @@ export class LineageService {
   private api  = inject(ApiService);
 
   private url(familyId: number, suffix = '') {
-    return `${this.api.base}/api/families/${familyId}/lineage${suffix}`;
+    return `${this.api.base}/families/${familyId}/lineage${suffix}`;
   }
 
   getLineage(familyId: number): Observable<Lineage> {
@@ -63,5 +64,20 @@ export class LineageService {
   upsertGenerationInfo(familyId: number, req: GenerationInfoRequest): Observable<GenerationInfo> {
     return this.http.put<ApiResponse<GenerationInfo>>(this.url(familyId, '/generation-info'), req)
       .pipe(map(r => r.data));
+  }
+
+  addEvent(familyId: number, memberId: number, req: LineageEventRequest): Observable<LineageEvent> {
+    return this.http.post<ApiResponse<LineageEvent>>(
+      this.url(familyId, `/members/${memberId}/events`), req).pipe(map(r => r.data));
+  }
+
+  updateEvent(familyId: number, memberId: number, eventId: number, req: LineageEventRequest): Observable<LineageEvent> {
+    return this.http.put<ApiResponse<LineageEvent>>(
+      this.url(familyId, `/members/${memberId}/events/${eventId}`), req).pipe(map(r => r.data));
+  }
+
+  deleteEvent(familyId: number, memberId: number, eventId: number): Observable<void> {
+    return this.http.delete<ApiResponse<void>>(
+      this.url(familyId, `/members/${memberId}/events/${eventId}`)).pipe(map(() => undefined));
   }
 }

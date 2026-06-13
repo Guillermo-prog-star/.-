@@ -64,6 +64,7 @@ export interface LineageMember {
   tradiciones: string | null;
   misionesCumplidas: string | null;
   legadoPersonal: string | null;
+  photoUrl: string | null;
   positionX: number | null;
   positionY: number | null;
   familyMemberId: number | null;
@@ -133,6 +134,7 @@ export interface LineageMemberRequest {
   tradiciones?: string;
   misionesCumplidas?: string;
   legadoPersonal?: string;
+  photoUrl?: string;
   positionX?: number;
   positionY?: number;
   familyMemberId?: number;

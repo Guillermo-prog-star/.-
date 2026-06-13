@@ -1,5 +1,6 @@
 package com.integrityfamily.lineage.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.integrityfamily.domain.Family;
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,6 +20,7 @@ public class FamilyLineage {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "family_id", nullable = false)
+    @JsonIgnore
     private Family family;
 
     @Column(name = "lineage_code", unique = true, nullable = false)

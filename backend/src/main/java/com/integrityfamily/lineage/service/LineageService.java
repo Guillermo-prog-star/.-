@@ -24,6 +24,7 @@ public class LineageService {
     private final LineageMemberRepository        memberRepo;
     private final LineageRelationshipRepository  relRepo;
     private final LineageGenerationInfoRepository genInfoRepo;
+    private final LineageEventRepository         eventRepo;
     private final FamilyRepository               familyRepo;
 
     // ── LINEAGE ────────────────────────────────────────────────────────────
@@ -164,6 +165,39 @@ public class LineageService {
         return toGenInfoResponse(genInfoRepo.save(info));
     }
 
+    // ── EVENTS ────────────────────────────────────────────────────────────────
+
+    @Transactional
+    public LineageEventResponse addEvent(Long familyId, Long memberId, LineageEventRequest req) {
+        LineageMember member = getMemberEntity(familyId, memberId);
+        LineageEvent event = buildEvent(req, member);
+        return toEventResponse(eventRepo.save(event));
+    }
+
+    @Transactional
+    public LineageEventResponse updateEvent(Long familyId, Long memberId, Long eventId, LineageEventRequest req) {
+        getMemberEntity(familyId, memberId);
+        LineageEvent event = eventRepo.findById(eventId)
+                .orElseThrow(() -> new BusinessException(
+                        "Evento no encontrado", "EVENT_NOT_FOUND", HttpStatus.NOT_FOUND));
+        if (req.eventYear()     != null) event.setEventYear(req.eventYear());
+        if (req.title()         != null) event.setTitle(req.title());
+        if (req.description()   != null) event.setDescription(req.description());
+        if (req.eventType()     != null) event.setEventType(req.eventType());
+        if (req.isApproximate() != null) event.setIsApproximate(req.isApproximate());
+        if (req.sortOrder()     != null) event.setSortOrder(req.sortOrder());
+        return toEventResponse(eventRepo.save(event));
+    }
+
+    @Transactional
+    public void deleteEvent(Long familyId, Long memberId, Long eventId) {
+        getMemberEntity(familyId, memberId);
+        LineageEvent event = eventRepo.findById(eventId)
+                .orElseThrow(() -> new BusinessException(
+                        "Evento no encontrado", "EVENT_NOT_FOUND", HttpStatus.NOT_FOUND));
+        eventRepo.delete(event);
+    }
+
     // ── PRIVATE HELPERS ────────────────────────────────────────────────────
 
     private FamilyLineage getLineageEntity(Long familyId) {
@@ -217,6 +251,7 @@ public class LineageService {
         m.setTradiciones(req.tradiciones());
         m.setMisionesCumplidas(req.misionesCumplidas());
         m.setLegadoPersonal(req.legadoPersonal());
+        m.setPhotoUrl(req.photoUrl());
         m.setPositionX(req.positionX());
         m.setPositionY(req.positionY());
         m.setFamilyMemberId(req.familyMemberId());
@@ -281,7 +316,7 @@ public class LineageService {
                 m.getStory(), m.getValores(), m.getAprendizajes(),
                 m.getErroresSuperados(), m.getTradiciones(),
                 m.getMisionesCumplidas(), m.getLegadoPersonal(),
-                m.getPositionX(), m.getPositionY(), m.getFamilyMemberId(), events);
+                m.getPhotoUrl(), m.getPositionX(), m.getPositionY(), m.getFamilyMemberId(), events);
     }
 
     private LineageEventResponse toEventResponse(LineageEvent e) {

@@ -1,5 +1,6 @@
 package com.integrityfamily.lineage.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,6 +20,7 @@ public class LineageMember {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "lineage_id", nullable = false)
+    @JsonIgnore
     private FamilyLineage lineage;
 
     @Column(name = "first_name")
@@ -111,6 +113,9 @@ public class LineageMember {
     /** Legado específico que dejó o dejará */
     @Column(name = "legado_personal", columnDefinition = "TEXT")
     private String legadoPersonal;
+
+    @Column(name = "photo_url", length = 500)
+    private String photoUrl;
 
     @Column(name = "position_x")
     private Float positionX;

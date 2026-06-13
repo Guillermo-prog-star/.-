@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>ICF Explicado — Índice de Cohesión Familiar · Integrity Family</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --orange: #f97316; --blue: #4f46e5; --green: #10b981;
+  --red: #ef4444; --purple: #8b5cf6; --teal: #06b6d4;
+  --bg: #0d1117; --bg2: #161b22; --text: #e0e0e0;
+}
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+
+/* NAV */
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(13,17,23,.95); backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  padding: 14px 32px; display: flex; align-items: center; gap: 14px;
+}
+.nl-icon { width: 30px; height: 30px; border-radius: 7px; background: #fcfbf4; display: flex; align-items: center; justify-content: center; }
+.nl-icon svg { width: 20px; height: 20px; }
+.nl-name  { font-size: 13px; font-weight: 800; color: #fff; }
+.nav-sep  { width: 1px; height: 16px; background: rgba(255,255,255,.1); }
+.nav-tag  { font-size: 11px; color: #64748b; }
+.nav-pill { margin-left: auto; background: rgba(79,70,229,.12); border: 1px solid rgba(79,70,229,.3); color: #a5b4fc; padding: 4px 12px; border-radius: 20px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+
+/* LAYOUT */
+.container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+/* HERO */
+.hero { padding: 72px 24px 56px; text-align: center; }
+.hero-score {
+  display: inline-block; font-size: clamp(80px,15vw,120px); font-weight: 900;
+  background: linear-gradient(135deg,#ef4444,#f97316,#f59e0b,#10b981);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; line-height: 1; margin-bottom: 6px;
+}
+.hero-acronym { font-family: 'Playfair Display', serif; font-size: clamp(20px,4vw,32px); color: rgba(255,255,255,.4); letter-spacing: .04em; margin-bottom: 16px; }
+.hero-full { font-family: 'Playfair Display', serif; font-size: clamp(18px,3.5vw,28px); color: #fff; font-weight: 700; margin-bottom: 10px; }
+.hero-sub  { font-size: 14px; color: #64748b; max-width: 520px; margin: 0 auto; }
+
+/* DIVIDER */
+.divider { height: 1px; background: rgba(255,255,255,.06); margin: 0 24px; }
+
+/* SECTIONS */
+section { padding: 52px 0; }
+.sec-eyebrow { font-size: 9px; font-weight: 800; color: var(--orange); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 7px; }
+.sec-title   { font-family: 'Playfair Display', serif; font-size: clamp(20px,3.5vw,30px); color: #fff; margin-bottom: 6px; }
+.sec-sub     { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+
+/* SPECTRUM BAR */
+.spectrum-wrap { margin: 32px 0; }
+.spectrum-bar { height: 28px; border-radius: 14px; background: linear-gradient(to right,#ef4444 0%,#f97316 25%,#f59e0b 55%,#84cc16 75%,#10b981 100%); position: relative; margin-bottom: 10px; }
+.spec-zones { display: flex; }
+.spec-zone { flex: 1; text-align: center; }
+.spec-zone-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: rgba(255,255,255,.5); }
+.spec-zone-range { font-size: 11px; font-weight: 900; color: rgba(255,255,255,.9); }
+
+.zone-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(180px,1fr)); gap: 12px; margin-top: 20px; }
+.zone-card { border-radius: 14px; padding: 18px; border: 1px solid; }
+.zc-score { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+.zc-name  { font-size: 13px; font-weight: 800; margin-bottom: 6px; }
+.zc-desc  { font-size: 11px; color: #64748b; line-height: 1.55; }
+.zc-icon  { font-size: 22px; margin-bottom: 8px; }
+
+/* DIMENSIONS */
+.dim-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 14px; }
+.dim-card { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 16px; padding: 22px 18px; }
+.dc-icon    { font-size: 28px; margin-bottom: 10px; }
+.dc-name    { font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 5px; }
+.dc-weight  { display: inline-flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; padding: 2px 8px; border-radius: 20px; margin-bottom: 10px; }
+.dc-desc    { font-size: 11px; color: #64748b; line-height: 1.6; margin-bottom: 12px; }
+.dc-signals { display: flex; flex-direction: column; gap: 5px; }
+.dc-sig     { font-size: 10px; color: #94a3b8; display: flex; gap: 5px; }
+.dc-sig::before { content: '·'; color: #475569; flex-shrink: 0; }
+
+/* FORMULA */
+.formula-block { background: rgba(79,70,229,.07); border: 1px solid rgba(79,70,229,.2); border-radius: 20px; padding: 32px; text-align: center; }
+.formula-title { font-size: 11px; font-weight: 700; color: #818cf8; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
+.formula-eq    { font-family: 'Playfair Display', serif; font-size: clamp(14px,3vw,22px); color: #c7d2fe; line-height: 1.8; }
+.formula-eq em { font-style: normal; color: #f97316; }
+.formula-note  { font-size: 11px; color: #64748b; margin-top: 14px; }
+
+.weight-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 16px; }
+.wp { padding: 5px 14px; border-radius: 20px; font-size: 10px; font-weight: 800; border: 1px solid; }
+
+/* HOW CALCULATED */
+.calc-steps { display: flex; flex-direction: column; gap: 12px; }
+.calc-step { display: flex; gap: 14px; background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 13px; padding: 15px 16px; }
+.cs-num { width: 28px; height: 28px; border-radius: 50%; background: rgba(249,115,22,.15); border: 1px solid rgba(249,115,22,.3); color: #fb923c; font-size: 11px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.cs-title { font-size: 12px; font-weight: 800; color: #fff; margin-bottom: 3px; }
+.cs-body  { font-size: 11px; color: #64748b; line-height: 1.55; }
+
+/* AI ROLE */
+.ai-cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 12px; }
+.ai-card  { background: rgba(124,58,237,.07); border: 1px solid rgba(124,58,237,.18); border-radius: 14px; padding: 18px; }
+.ac-icon  { font-size: 22px; margin-bottom: 8px; }
+.ac-title { font-size: 13px; font-weight: 800; color: #a78bfa; margin-bottom: 6px; }
+.ac-desc  { font-size: 11px; color: #64748b; line-height: 1.6; }
+
+/* EXAMPLE */
+.example-block { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 20px; overflow: hidden; }
+.ex-header { background: rgba(249,115,22,.1); border-bottom: 1px solid rgba(249,115,22,.2); padding: 16px 20px; display: flex; align-items: center; gap: 10px; }
+.ex-tag    { font-size: 9px; font-weight: 800; color: #fb923c; text-transform: uppercase; letter-spacing: .08em; }
+.ex-name   { font-size: 14px; font-weight: 800; color: #fff; }
+.ex-body   { padding: 20px; }
+.ex-dim-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ex-dim-icon { font-size: 14px; flex-shrink: 0; width: 22px; }
+.ex-dim-name { font-size: 12px; font-weight: 700; flex: 1; }
+.ex-dim-bar  { flex: 2; height: 7px; background: rgba(0,0,0,.3); border-radius: 4px; overflow: hidden; }
+.ex-dim-fill { height: 100%; border-radius: 4px; }
+.ex-dim-val  { font-size: 12px; font-weight: 800; width: 38px; text-align: right; }
+.ex-total { display: flex; align-items: center; justify-content: space-between; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,.07); }
+.ex-total-label { font-size: 12px; font-weight: 700; color: #64748b; }
+.ex-total-val   { font-size: 28px; font-weight: 900; }
+
+/* RADAR SVG */
+.radar-wrap { display: flex; justify-content: center; padding: 16px 0; }
+
+/* FOOTER */
+footer { background: var(--bg2); border-top: 1px solid rgba(255,255,255,.06); padding: 28px 24px; text-align: center; }
+.ft-text { font-size: 11px; color: #475569; }
+
+/* ANIM */
+.anim { opacity: 0; transform: translateY(16px); transition: opacity .65s ease, transform .65s ease; }
+.anim.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nl-icon"><svg viewBox="0 0 56 56" fill="none"><circle cx="20" cy="28" r="13" stroke="#f97316" stroke-width="3" fill="none"/><circle cx="36" cy="28" r="13" stroke="#4f46e5" stroke-width="3" fill="none"/><circle cx="28" cy="20" r="7" fill="#f97316" opacity=".9"/><circle cx="28" cy="36" r="5" fill="#4f46e5" opacity=".8"/></svg></div>
+  <span class="nl-name">Integrity Family</span>
+  <div class="nav-sep"></div>
+  <span class="nav-tag">ICF Explicado</span>
+  <div class="nav-pill">📊 Modelo de Medición</div>
+</nav>
+
+<!-- ══ HERO ══ -->
+<div class="hero container anim">
+  <div class="hero-score">ICF</div>
+  <div class="hero-acronym">Índice de Cohesión Familiar</div>
+  <div class="hero-full">El termómetro de tu familia</div>
+  <div class="hero-sub">Un número entre 0 y 100 que mide qué tan conectada, funcional e intencional es tu familia — y cómo está mejorando.</div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ══ EL ESPECTRO ══ -->
+<section>
+  <div class="container">
+    <div class="anim">
+      <div class="sec-eyebrow">01 — Interpretación</div>
+      <div class="sec-title">¿Qué significa tu ICF?</div>
+      <div class="sec-sub">Cuatro zonas, cuatro realidades familiares.</div>
+    </div>
+
+    <div class="spectrum-wrap anim">
+      <div class="spectrum-bar"></div>
+      <div class="spec-zones">
+        <div class="spec-zone"><div class="spec-zone-range" style="color:#ef4444;">0–40</div><div class="spec-zone-label">Crítica</div></div>
+        <div class="spec-zone"><div class="spec-zone-range" style="color:#f97316;">41–65</div><div class="spec-zone-label">Desarrollo</div></div>
+        <div class="spec-zone"><div class="spec-zone-range" style="color:#f59e0b;">66–85</div><div class="spec-zone-label">Cohesión</div></div>
+        <div class="spec-zone"><div class="spec-zone-range" style="color:#10b981;">86–100</div><div class="spec-zone-label">Floreciente</div></div>
+      </div>
+    </div>
+
+    <div class="zone-cards anim">
+      <div class="zone-card" style="background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.2);">
+        <div class="zc-icon">🔴</div>
+        <div class="zc-score" style="color:#ef4444;">0 – 40</div>
+        <div class="zc-name" style="color:#f87171;">Familia en crisis</div>
+        <div class="zc-desc">Patrones disfuncionales activos. Comunicación rota. Presencia sin conexión. Requiere acompañamiento especializado urgente.</div>
+      </div>
+      <div class="zone-card" style="background:rgba(249,115,22,.07);border-color:rgba(249,115,22,.2);">
+        <div class="zc-icon">🟠</div>
+        <div class="zc-score" style="color:#f97316;">41 – 65</div>
+        <div class="zc-name" style="color:#fb923c;">Familia en desarrollo</div>
+        <div class="zc-desc">Hay voluntad pero falta estructura. Momentos buenos pero no sistematizados. Alto potencial de transformación con el proceso correcto.</div>
+      </div>
+      <div class="zone-card" style="background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.2);">
+        <div class="zc-icon">🟡</div>
+        <div class="zc-score" style="color:#f59e0b;">66 – 85</div>
+        <div class="zc-name" style="color:#fcd34d;">Familia en cohesión</div>
+        <div class="zc-desc">Vínculos fuertes y rituales consolidados. La familia funciona bien pero tiene espacio para profundizar su propósito e historia compartida.</div>
+      </div>
+      <div class="zone-card" style="background:rgba(16,185,129,.07);border-color:rgba(16,185,129,.2);">
+        <div class="zc-icon">🟢</div>
+        <div class="zc-score" style="color:#10b981;">86 – 100</div>
+        <div class="zc-name" style="color:#6ee7b7;">Familia floreciente</div>
+        <div class="zc-desc">Alta cohesión, propósito claro, legado consciente. La familia es un activo intergeneracional activo. Modelo para otras familias.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ DIMENSIONES ══ -->
+<section>
+  <div class="container">
+    <div class="anim">
+      <div class="sec-eyebrow">02 — Composición</div>
+      <div class="sec-title">Las 4 dimensiones del ICF</div>
+      <div class="sec-sub">El ICF no es una opinión. Es la suma ponderada de cuatro áreas medibles.</div>
+    </div>
+
+    <div class="dim-cards anim">
+      <div class="dim-card">
+        <div class="dc-icon">🗣️</div>
+        <div class="dc-name">Comunicación</div>
+        <div class="dc-weight" style="background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.25);color:#fb923c;">30% del ICF</div>
+        <div class="dc-desc">Calidad y frecuencia del diálogo familiar. Escucha activa, conversaciones profundas, resolución de conflictos sin violencia verbal.</div>
+        <div class="dc-signals">
+          <div class="dc-sig">Conversaciones más allá de lo logístico</div>
+          <div class="dc-sig">Capacidad de decir "me equivoqué"</div>
+          <div class="dc-sig">Espacio para la diferencia de opinión</div>
+          <div class="dc-sig">Acuerdos cumplidos</div>
+        </div>
+      </div>
+      <div class="dim-card">
+        <div class="dc-icon">📅</div>
+        <div class="dc-name">Tiempo de Calidad</div>
+        <div class="dc-weight" style="background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.25);color:#67e8f9;">25% del ICF</div>
+        <div class="dc-desc">Tiempo intencional compartido. No solo estar en el mismo espacio, sino estar presentes con atención plena.</div>
+        <div class="dc-signals">
+          <div class="dc-sig">Rituales semanales consistentes</div>
+          <div class="dc-sig">Actividades elegidas juntos</div>
+          <div class="dc-sig">Sin pantallas en momentos clave</div>
+          <div class="dc-sig">Frecuencia de salidas compartidas</div>
+        </div>
+      </div>
+      <div class="dim-card">
+        <div class="dc-icon">❤️</div>
+        <div class="dc-name">Gestión Emocional</div>
+        <div class="dc-weight" style="background:rgba(236,72,153,.1);border-color:rgba(236,72,153,.25);color:#f9a8d4;">25% del ICF</div>
+        <div class="dc-desc">Conciencia y manejo de emociones individuales y colectivas. Capacidad de nombrar, sostener y procesar lo que se siente.</div>
+        <div class="dc-signals">
+          <div class="dc-sig">Vocabulario emocional en el hogar</div>
+          <div class="dc-sig">Respuesta vs. reacción ante conflicto</div>
+          <div class="dc-sig">Reconocimiento del otro en momentos difíciles</div>
+          <div class="dc-sig">Reparación después del error</div>
+        </div>
+      </div>
+      <div class="dim-card">
+        <div class="dc-icon">🌱</div>
+        <div class="dc-name">Hábitos y Propósito</div>
+        <div class="dc-weight" style="background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);color:#6ee7b7;">20% del ICF</div>
+        <div class="dc-desc">Rutinas que refuerzan identidad familiar y alineación con un propósito compartido. Visión de hacia dónde va la familia.</div>
+        <div class="dc-signals">
+          <div class="dc-sig">Rutinas matutinas o nocturnas compartidas</div>
+          <div class="dc-sig">Valores familiares explícitos y vividos</div>
+          <div class="dc-sig">Metas colectivas activas</div>
+          <div class="dc-sig">Celebración de logros</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ FÓRMULA ══ -->
+<section>
+  <div class="container">
+    <div class="anim">
+      <div class="sec-eyebrow">03 — La fórmula</div>
+      <div class="sec-title">Cómo se calcula</div>
+      <div class="sec-sub">Cada dimensión se pondera según su impacto en la cohesión familiar demostrado en la literatura de psicología sistémica.</div>
+    </div>
+
+    <div class="formula-block anim">
+      <div class="formula-title">Fórmula ICF</div>
+      <div class="formula-eq">
+        ICF = (<em>Comunicación</em> × 0.30)<br/>
+        + (<em>Tiempo de Calidad</em> × 0.25)<br/>
+        + (<em>Gestión Emocional</em> × 0.25)<br/>
+        + (<em>Hábitos y Propósito</em> × 0.20)
+      </div>
+      <div class="weight-pills">
+        <div class="wp" style="background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.3);color:#fb923c;">🗣️ Comunicación 30%</div>
+        <div class="wp" style="background:rgba(6,182,212,.1);border-color:rgba(6,182,212,.3);color:#67e8f9;">📅 Tiempo 25%</div>
+        <div class="wp" style="background:rgba(236,72,153,.1);border-color:rgba(236,72,153,.3);color:#f9a8d4;">❤️ Emociones 25%</div>
+        <div class="wp" style="background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:#6ee7b7;">🌱 Hábitos 20%</div>
+      </div>
+      <div class="formula-note">Las puntuaciones por dimensión (0–100) se obtienen del cuestionario diagnóstico respondido por todos los miembros de la familia, procesado y normalizado por Sentinel AI.</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ EJEMPLO ══ -->
+<section>
+  <div class="container">
+    <div class="anim">
+      <div class="sec-eyebrow">04 — Ejemplo real</div>
+      <div class="sec-title">Cálculo · Familia García</div>
+      <div class="sec-sub">Así se calculó el ICF inicial de 61 puntos.</div>
+    </div>
+
+    <div class="example-block anim">
+      <div class="ex-header">
+        <div>
+          <div class="ex-tag">Diagnóstico inicial · Feb 2026</div>
+          <div class="ex-name">Familia García — ICF Score</div>
+        </div>
+      </div>
+      <div class="ex-body">
+        <div class="ex-dim-row">
+          <div class="ex-dim-icon">🗣️</div>
+          <div class="ex-dim-name" style="color:#fb923c;">Comunicación <small style="color:#64748b;font-weight:400;">(×0.30)</small></div>
+          <div class="ex-dim-bar"><div class="ex-dim-fill" style="width:68%;background:#f97316;"></div></div>
+          <div class="ex-dim-val" style="color:#f97316;">68</div>
+          <div style="font-size:10px;color:#64748b;width:44px;text-align:right;">= 20.4</div>
+        </div>
+        <div class="ex-dim-row">
+          <div class="ex-dim-icon">📅</div>
+          <div class="ex-dim-name" style="color:#67e8f9;">Tiempo juntos <small style="color:#64748b;font-weight:400;">(×0.25)</small></div>
+          <div class="ex-dim-bar"><div class="ex-dim-fill" style="width:74%;background:#06b6d4;"></div></div>
+          <div class="ex-dim-val" style="color:#06b6d4;">74</div>
+          <div style="font-size:10px;color:#64748b;width:44px;text-align:right;">= 18.5</div>
+        </div>
+        <div class="ex-dim-row">
+          <div class="ex-dim-icon">❤️</div>
+          <div class="ex-dim-name" style="color:#f9a8d4;">Gestión Emocional <small style="color:#64748b;font-weight:400;">(×0.25)</small></div>
+          <div class="ex-dim-bar"><div class="ex-dim-fill" style="width:45%;background:#f43f5e;"></div></div>
+          <div class="ex-dim-val" style="color:#f9a8d4;">45</div>
+          <div style="font-size:10px;color:#64748b;width:44px;text-align:right;">= 11.3</div>
+        </div>
+        <div class="ex-dim-row">
+          <div class="ex-dim-icon">🌱</div>
+          <div class="ex-dim-name" style="color:#6ee7b7;">Hábitos y Propósito <small style="color:#64748b;font-weight:400;">(×0.20)</small></div>
+          <div class="ex-dim-bar"><div class="ex-dim-fill" style="width:52%;background:#10b981;"></div></div>
+          <div class="ex-dim-val" style="color:#10b981;">52</div>
+          <div style="font-size:10px;color:#64748b;width:44px;text-align:right;">= 10.4</div>
+        </div>
+        <div class="ex-total">
+          <div>
+            <div class="ex-total-label">ICF = 20.4 + 18.5 + 11.3 + 10.4</div>
+            <div style="font-size:10px;color:#475569;margin-top:2px;">Zona naranja · Familia en desarrollo · Potencial alto</div>
+          </div>
+          <div class="ex-total-val" style="color:#f97316;">= 61</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SVG Radar -->
+    <div class="anim" style="margin-top:20px;">
+      <div style="font-size:10px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.08em;text-align:center;margin-bottom:12px;">Vista radial · Familia García · Inicio vs. Cierre</div>
+      <div class="radar-wrap">
+        <svg width="300" height="300" viewBox="0 0 300 300">
+          <!-- Grid circles -->
+          <circle cx="150" cy="150" r="100" fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+          <circle cx="150" cy="150" r="75"  fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+          <circle cx="150" cy="150" r="50"  fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+          <circle cx="150" cy="150" r="25"  fill="none" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+          <!-- Axes: top, right, bottom, left -->
+          <line x1="150" y1="50"  x2="150" y2="250" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+          <line x1="50"  y1="150" x2="250" y2="150" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+          <!-- ICF inicio (61): 68%,74%,45%,52% of r=100 -->
+          <!-- top=Comunicación 68→68px up, right=Tiempo 74→74px right, bottom=Emociones 45→45px down, left=Hábitos 52→52px left -->
+          <polygon
+            points="150,82 224,150 150,195 98,150"
+            fill="rgba(249,115,22,.15)" stroke="#f97316" stroke-width="2"/>
+          <!-- ICF cierre (89): estimado dims 88,84,92,90 -->
+          <polygon
+            points="150,62 234,150 150,158 142,150"
+            fill="none" stroke="rgba(16,185,129,.6)" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <!-- Labels -->
+          <text x="150" y="44"  text-anchor="middle" font-size="11" fill="#fb923c" font-family="Inter,sans-serif" font-weight="700">🗣️ 68</text>
+          <text x="258" y="154" text-anchor="start"  font-size="11" fill="#67e8f9" font-family="Inter,sans-serif" font-weight="700">📅 74</text>
+          <text x="150" y="264" text-anchor="middle" font-size="11" fill="#f9a8d4" font-family="Inter,sans-serif" font-weight="700">❤️ 45</text>
+          <text x="42"  y="154" text-anchor="end"    font-size="11" fill="#6ee7b7" font-family="Inter,sans-serif" font-weight="700">🌱 52</text>
+          <!-- Legend -->
+          <rect x="60" y="276" width="10" height="10" fill="rgba(249,115,22,.4)" rx="2"/>
+          <text x="74" y="285" font-size="9" fill="#64748b" font-family="Inter,sans-serif">Inicio (ICF 61)</text>
+          <line x1="160" y1="280" x2="176" y2="280" stroke="rgba(16,185,129,.6)" stroke-width="1.5" stroke-dasharray="5,3"/>
+          <text x="180" y="284" font-size="9" fill="#64748b" font-family="Inter,sans-serif">Cierre (ICF 89)</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ CÓMO SE OBTIENE ══ -->
+<section>
+  <div class="container">
+    <div class="anim">
+      <div class="sec-eyebrow">05 — Proceso</div>
+      <div class="sec-title">¿Cómo se obtiene el ICF?</div>
+      <div class="sec-sub">Cuatro pasos desde el primer contacto hasta el diagnóstico en pantalla.</div>
+    </div>
+
+    <div class="calc-steps anim">
+      <div class="calc-step">
+        <div class="cs-num">1</div>
+        <div>
+          <div class="cs-title">Registro de la familia</div>
+          <div class="cs-body">Cada miembro crea su perfil: nombre, rol, edad. El sistema configura el cuestionario según la composición familiar (pareja, hijos, edades).</div>
+        </div>
+      </div>
+      <div class="calc-step">
+        <div class="cs-num">2</div>
+        <div>
+          <div class="cs-title">Cuestionario diagnóstico</div>
+          <div class="cs-body">48 preguntas distribuidas en las 4 dimensiones. Escala 1–5. Cada miembro lo responde de forma independiente (sin ver las respuestas de los otros). Toma ~12 minutos.</div>
+        </div>
+      </div>
+      <div class="calc-step">
+        <div class="cs-num">3</div>
+        <div>
+          <div class="cs-title">Procesamiento Sentinel AI</div>
+          <div class="cs-body">El modelo analiza respuestas individuales, cruza patrones, detecta contradicciones entre percepciones de distintos miembros y normaliza los puntajes por dimensión (0–100).</div>
+        </div>
+      </div>
+      <div class="calc-step">
+        <div class="cs-num">4</div>
+        <div>
+          <div class="cs-title">ICF calculado y Plan generado</div>
+          <div class="cs-body">Con el ICF en pantalla, Sentinel AI propone el primer pilar a trabajar, las 4 misiones del mes y explica en lenguaje natural qué significa el resultado para esa familia específica.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ ROL DE LA IA ══ -->
+<section>
+  <div class="container">
+    <div class="anim">
+      <div class="sec-eyebrow">06 — Sentinel AI</div>
+      <div class="sec-title">El rol de la inteligencia artificial</div>
+      <div class="sec-sub">Sentinel no sustituye al consultor. Amplifica su capacidad de acompañamiento.</div>
+    </div>
+    <div class="ai-cards anim">
+      <div class="ai-card">
+        <div class="ac-icon">📊</div>
+        <div class="ac-title">Diagnóstico continuo</div>
+        <div class="ac-desc">Recalcula el ICF al completar cada sprint. Detecta estancamientos y alerta al consultor antes de que la familia los perciba.</div>
+      </div>
+      <div class="ai-card">
+        <div class="ac-icon">🗺️</div>
+        <div class="ac-title">Plan personalizado</div>
+        <div class="ac-desc">No hay dos familias iguales. Sentinel genera el plan basado en el perfil específico, no en plantillas genéricas.</div>
+      </div>
+      <div class="ai-card">
+        <div class="ac-icon">📝</div>
+        <div class="ac-title">Narrativa de transformación</div>
+        <div class="ac-desc">Al cerrar cada misión, genera texto que convierte los datos en historia: la familia ve su progreso como relato, no como estadística.</div>
+      </div>
+      <div class="ai-card">
+        <div class="ac-icon">💬</div>
+        <div class="ac-title">Consultor disponible 24/7</div>
+        <div class="ac-desc">Responde preguntas, ofrece orientación en momentos difíciles y escala al consultor humano cuando detecta situaciones que lo requieren.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- ══ CTA FINAL ══ -->
+<section>
+  <div class="container">
+    <div style="text-align:center;padding:24px 0;" class="anim">
+      <div style="font-size:36px;margin-bottom:12px;">📊</div>
+      <div style="font-family:'Playfair Display',serif;font-size:clamp(18px,3.5vw,28px);color:#fff;margin-bottom:8px;">¿Cuál es el ICF de tu familia?</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:20px;">El diagnóstico toma 12 minutos. El resultado cambia la perspectiva para siempre.</div>
+      <div style="display:inline-flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+        <div style="background:linear-gradient(135deg,#f97316,#ea580c);color:#fff;padding:12px 28px;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;">Comenzar diagnóstico →</div>
+        <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#e0e0e0;padding:12px 28px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">Ver caso de estudio</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="ft-text">Integrity Family · Sistema de Cohesión Familiar · ICF basado en psicología sistémica, attachment theory y positive psychology · 2026</div>
+</footer>
+
+<script>
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.07 });
+document.querySelectorAll('.anim').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>

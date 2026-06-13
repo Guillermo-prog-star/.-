@@ -1,11 +1,13 @@
 import {
-  Component, OnInit, OnDestroy, inject, signal, computed, HostListener
+  Component, OnInit, OnDestroy, inject, signal, computed, HostListener, ChangeDetectorRef
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { LineageService } from './lineage.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { ApiService } from '../../core/services/api.service';
 import {
   Lineage, LineageMember, LineageMemberRequest, LineageRelationship,
   GenerationInfo, GenerationInfoRequest,
@@ -34,6 +36,7 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
   selector: 'app-lineage-page',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  providers: [],
   template: `
 <div class="lin-page">
 
@@ -50,11 +53,22 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
           · Ancla: <strong>{{ anchorLabel() }}</strong>
         }
       </div>
+      @if (lineage()) {
+        <div class="lh-completeness">
+          <div class="lhc-bar-wrap">
+            <div class="lhc-bar" [style.width.%]="globalCompleteness()"
+              [style.background]="globalCompleteness() >= 75 ? '#22c55e' : globalCompleteness() >= 40 ? '#f59e0b' : '#ef4444'">
+            </div>
+          </div>
+          <span class="lhc-label">{{ globalCompleteness() }}% completitud del árbol</span>
+        </div>
+      }
     </div>
     <div class="header-actions">
       @if (lineage()) {
         <button class="btn-outline" (click)="openEditLineage()">⚙️ Linaje</button>
         <button class="btn-outline" (click)="openGenInfo()">📋 Contexto</button>
+        <button class="btn-outline btn-doc" (click)="openDocument()">📄 Documento</button>
         <button class="btn-gold" (click)="openAddMember()">+ Miembro</button>
       }
     </div>
@@ -177,23 +191,69 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
                     fill="none" stroke="#fbbf24" stroke-width="1.5" opacity=".4"
                     filter="url(#lin-glow)"/>
                 }
+                <!-- Anillo de completitud: arco exterior (stroke-dasharray = pct/100 * circumference) -->
+                @if (completeness(m) < 100) {
+                  <!-- fondo gris del anillo -->
+                  <circle [attr.cx]="m.px" [attr.cy]="m.py"
+                    [attr.r]="nodeRadius(m.generation) + 5"
+                    fill="none" stroke="#374151" stroke-width="3" opacity=".7"/>
+                  <!-- arco de progreso -->
+                  <circle [attr.cx]="m.px" [attr.cy]="m.py"
+                    [attr.r]="nodeRadius(m.generation) + 5"
+                    fill="none"
+                    [attr.stroke]="completenessColor(m)"
+                    stroke-width="3"
+                    stroke-linecap="round"
+                    [attr.stroke-dasharray]="(completeness(m) / 100) * 2 * 3.14159 * (nodeRadius(m.generation) + 5) + ' ' + (2 * 3.14159 * (nodeRadius(m.generation) + 5))"
+                    [attr.transform]="'rotate(-90 ' + m.px + ' ' + m.py + ')'"
+                    opacity=".9"/>
+                } @else {
+                  <!-- completitud 100% → anillo verde sólido -->
+                  <circle [attr.cx]="m.px" [attr.cy]="m.py"
+                    [attr.r]="nodeRadius(m.generation) + 5"
+                    fill="none" stroke="#22c55e" stroke-width="3" opacity=".9"/>
+                }
+                <!-- defs locales para clipPath por miembro -->
+                <defs>
+                  <clipPath [attr.id]="'clip-' + m.id">
+                    <circle [attr.cx]="m.px" [attr.cy]="m.py" [attr.r]="nodeRadius(m.generation)"/>
+                  </clipPath>
+                </defs>
                 <circle [attr.cx]="m.px" [attr.cy]="m.py"
                   [attr.r]="nodeRadius(m.generation)"
                   [attr.fill]="nodeFill(m)"
                   [attr.stroke]="nodeStroke(m.generation)"
                   [attr.stroke-width]="selectedId() === m.id ? 3 : (m.isAnchor ? 2.5 : 1.8)"
                   filter="url(#lin-glow)" opacity=".95"/>
-                <text [attr.x]="m.px" [attr.y]="m.py + 1"
-                  text-anchor="middle" dominant-baseline="middle"
-                  [attr.font-size]="nodeRadius(m.generation) * 0.62"
-                  fill="#fffbeb" font-weight="600" style="pointer-events:none">
-                  {{ m.avatarInitials || initials(m) }}
-                </text>
+                @if (m.photoUrl) {
+                  <!-- Foto de perfil circular -->
+                  <image [attr.href]="m.photoUrl"
+                    [attr.x]="m.px - nodeRadius(m.generation)"
+                    [attr.y]="m.py - nodeRadius(m.generation)"
+                    [attr.width]="nodeRadius(m.generation) * 2"
+                    [attr.height]="nodeRadius(m.generation) * 2"
+                    [attr.clip-path]="'url(#clip-' + m.id + ')'"
+                    preserveAspectRatio="xMidYMid slice"
+                    style="pointer-events:none"/>
+                } @else {
+                  <text [attr.x]="m.px" [attr.y]="m.py + 1"
+                    text-anchor="middle" dominant-baseline="middle"
+                    [attr.font-size]="nodeRadius(m.generation) * 0.62"
+                    fill="#fffbeb" font-weight="600" style="pointer-events:none">
+                    {{ m.avatarInitials || initials(m) }}
+                  </text>
+                }
                 <!-- deceased overlay -->
                 @if (m.status === 'deceased') {
                   <text [attr.x]="m.px + nodeRadius(m.generation)*0.55"
                     [attr.y]="m.py - nodeRadius(m.generation)*0.55"
                     font-size="11" style="pointer-events:none">🕊️</text>
+                }
+                <!-- Badge de vínculo con miembro registrado -->
+                @if (m.familyMemberId) {
+                  <text [attr.x]="m.px - nodeRadius(m.generation)*0.55"
+                    [attr.y]="m.py - nodeRadius(m.generation)*0.55"
+                    font-size="10" style="pointer-events:none" title="Vinculado a perfil registrado">🔗</text>
                 }
                 <text [attr.x]="m.px" [attr.y]="m.py + nodeRadius(m.generation) + 14"
                   text-anchor="middle" font-size="11" fill="#fde68a" style="pointer-events:none">
@@ -215,9 +275,13 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
         <div class="side-panel" [class.open]="!!selectedMember()">
           @if (selectedMember(); as m) {
             <div class="sp-header" [style.border-left]="'4px solid ' + nodeStroke(m.generation)">
-              <div class="sp-avatar" [style.background]="m.avatarColor || nodeStroke(m.generation)">
-                {{ m.avatarInitials || initials(m) }}
-              </div>
+              @if (m.photoUrl) {
+                <img [src]="m.photoUrl" [alt]="m.fullName" class="sp-avatar sp-avatar-photo"/>
+              } @else {
+                <div class="sp-avatar" [style.background]="m.avatarColor || nodeStroke(m.generation)">
+                  {{ m.avatarInitials || initials(m) }}
+                </div>
+              }
               <div>
                 <div class="sp-name">{{ m.fullName }}</div>
                 <div class="sp-gen-badge" [style.color]="nodeStroke(m.generation)">
@@ -225,6 +289,12 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
                   @if (m.isAnchor) { <span class="anchor-tag">⚓ Ancla</span> }
                 </div>
                 <div class="sp-status">{{ statusIcon(m.status) }} {{ statusLabel(m.status) }}</div>
+                @if (m.familyMemberId && linkedMember(m.familyMemberId); as reg) {
+                  <div class="sp-linked">
+                    🔗 <span>{{ reg.fullName }}</span>
+                    @if (reg.email) { <span class="sp-linked-email">{{ reg.email }}</span> }
+                  </div>
+                }
               </div>
             </div>
 
@@ -431,40 +501,68 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     @if (activeTab() === 'history') {
       <div class="content-tab">
         <div class="ct-header">
-          <h3>Línea de Tiempo del Linaje</h3>
-          <span class="ct-sub">{{ allEvents().length }} eventos · {{ lineage()?.foundingYear ? 'Desde ' + lineage()!.foundingYear : '' }}</span>
+          <div>
+            <h3>Línea de Tiempo del Linaje</h3>
+            <span class="ct-sub">{{ allEvents().length }} eventos · {{ lineage()?.foundingYear ? 'Desde ' + lineage()!.foundingYear : '' }}</span>
+          </div>
+          <button class="btn-gold btn-sm" (click)="openAddEvent()">➕ Nuevo evento</button>
         </div>
         <!-- Generation context blocks -->
-        @for (info of lineage()?.generationInfos || []; track info.id) {
-          @if (info.summary || info.keyChallenge || info.keyAchievement) {
-            <div class="gen-context-block" [style.border-left-color]="getGenMeta(info.generationLevel).color">
-              <div class="gcb-header">
-                <span class="gcb-label" [style.color]="getGenMeta(info.generationLevel).color">
-                  {{ info.title || getGenMeta(info.generationLevel).label }}
-                </span>
-                @if (info.periodStart || info.periodEnd) {
-                  <span class="gcb-period">{{ info.periodStart }}–{{ info.periodEnd }}</span>
+        @for (genGroup of membersByGeneration(); track genGroup.gen) {
+          <div class="gen-context-block"
+            [style.border-left-color]="getGenMeta(genGroup.gen).color"
+            [class.gcb-empty]="!genInfoFor(genGroup.gen)">
+            <div class="gcb-header">
+              <span class="gcb-label" [style.color]="getGenMeta(genGroup.gen).color">
+                {{ genInfoFor(genGroup.gen)?.title || getGenMeta(genGroup.gen).label }}
+              </span>
+              <div class="gcb-actions">
+                @if (genInfoFor(genGroup.gen)?.periodStart || genInfoFor(genGroup.gen)?.periodEnd) {
+                  <span class="gcb-period">
+                    {{ genInfoFor(genGroup.gen)?.periodStart }}–{{ genInfoFor(genGroup.gen)?.periodEnd }}
+                  </span>
                 }
+                <button class="gcb-edit-btn"
+                  (click)="openGenInfo(genGroup.gen)"
+                  [title]="genInfoFor(genGroup.gen) ? 'Editar contexto' : 'Agregar contexto'">
+                  {{ genInfoFor(genGroup.gen) ? '✏️' : '➕' }}
+                </button>
               </div>
-              @if (info.summary)        { <p class="gcb-text">{{ info.summary }}</p> }
-              @if (info.keyChallenge)   { <div class="gcb-kv"><span>⚡ Desafío:</span> {{ info.keyChallenge }}</div> }
-              @if (info.keyAchievement) { <div class="gcb-kv"><span>🏆 Logro:</span> {{ info.keyAchievement }}</div> }
             </div>
-          }
+            @if (genInfoFor(genGroup.gen)?.summary) {
+              <p class="gcb-text">{{ genInfoFor(genGroup.gen)!.summary }}</p>
+            }
+            @if (genInfoFor(genGroup.gen)?.context) {
+              <p class="gcb-text gcb-context">{{ genInfoFor(genGroup.gen)!.context }}</p>
+            }
+            @if (genInfoFor(genGroup.gen)?.keyChallenge) {
+              <div class="gcb-kv"><span>⚡ Desafío:</span> {{ genInfoFor(genGroup.gen)!.keyChallenge }}</div>
+            }
+            @if (genInfoFor(genGroup.gen)?.keyAchievement) {
+              <div class="gcb-kv"><span>🏆 Logro:</span> {{ genInfoFor(genGroup.gen)!.keyAchievement }}</div>
+            }
+            @if (!genInfoFor(genGroup.gen)) {
+              <p class="gcb-empty-hint">Sin contexto aún — haz clic en ➕ para agregar.</p>
+            }
+          </div>
         }
         @if (allEvents().length === 0) {
           <p class="empty-msg">No hay eventos registrados aún.</p>
         } @else {
           <div class="timeline">
             @for (ev of allEvents(); track ev.event.id) {
-              <div class="tl-item">
+              <div class="tl-item" (click)="openEditEvent(ev)" title="Clic para editar">
                 <div class="tl-year">{{ ev.event.isApproximate ? '~' : '' }}{{ ev.event.eventYear || '?' }}</div>
                 <div class="tl-dot" [style.background]="ev.memberColor" [style.box-shadow]="'0 0 8px ' + ev.memberColor + '80'"></div>
                 <div class="tl-body">
                   <div class="tl-member" [style.color]="ev.memberColor">{{ ev.memberName }}</div>
-                  <div class="tl-title">{{ ev.event.title }}</div>
+                  <div class="tl-title">
+                    <span class="tl-type-badge">{{ eventTypeLabel(ev.event.eventType) }}</span>
+                    {{ ev.event.title }}
+                  </div>
                   @if (ev.event.description) { <p class="tl-desc">{{ ev.event.description }}</p> }
                 </div>
+                <button class="tl-edit-btn" (click)="openEditEvent(ev); $event.stopPropagation()" title="Editar">✏️</button>
               </div>
             }
           </div>
@@ -484,35 +582,72 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
         }
         <!-- by generation descending (past first) -->
         @for (genGroup of membersByGeneration(); track genGroup.gen) {
-          @if (genHasNarrative(genGroup.members)) {
+          @if (true) {
             <div class="gen-narrative-section">
               <div class="gns-title" [style.color]="getGenMeta(genGroup.gen).color">
                 {{ getGenMeta(genGroup.gen).label }}
+                <span class="gns-count">{{ genGroup.members.length }} miembro{{ genGroup.members.length !== 1 ? 's' : '' }}</span>
               </div>
               @for (m of genGroup.members; track m.id) {
-                @if (m.story || m.valores || m.aprendizajes || m.legadoPersonal) {
+                @if (m.story || m.valores || m.aprendizajes || m.legadoPersonal || m.erroresSuperados || m.tradiciones || m.misionesCumplidas) {
                   <div class="narrative-card">
                     <div class="nc-header">
-                      <div class="nc-avatar" [style.background]="m.avatarColor || nodeStroke(m.generation)">
-                        {{ m.avatarInitials || initials(m) }}
-                      </div>
-                      <div>
+                      @if (m.photoUrl) {
+                        <img [src]="m.photoUrl" [alt]="m.fullName" class="nc-photo"/>
+                      } @else {
+                        <div class="nc-avatar" [style.background]="m.avatarColor || nodeStroke(m.generation)">
+                          {{ m.avatarInitials || initials(m) }}
+                        </div>
+                      }
+                      <div class="nc-meta">
                         <div class="nc-name">{{ m.fullName }}</div>
                         <div class="nc-role">{{ m.roleLabel || '' }}</div>
+                        <div class="nc-completeness-wrap">
+                          <div class="nc-completeness-bar">
+                            <div class="nc-completeness-fill"
+                              [style.width.%]="completeness(m)"
+                              [style.background]="completenessColor(m)">
+                            </div>
+                          </div>
+                          <span class="nc-completeness-pct" [style.color]="completenessColor(m)">
+                            {{ completeness(m) }}%
+                          </span>
+                        </div>
+                      </div>
+                      <button class="nc-edit-btn" (click)="openEditMember(m)" title="Editar perfil">✏️</button>
+                    </div>
+                    @if (m.story)             { <p class="nc-story italic">{{ m.story }}</p> }
+                    @if (m.valores)           { <p class="nc-field"><span>💎 Valores:</span> {{ m.valores }}</p> }
+                    @if (m.aprendizajes)      { <p class="nc-field"><span>📚 Aprendizajes:</span> {{ m.aprendizajes }}</p> }
+                    @if (m.erroresSuperados)  { <p class="nc-field"><span>🔄 Errores superados:</span> {{ m.erroresSuperados }}</p> }
+                    @if (m.tradiciones)       { <p class="nc-field"><span>🎎 Tradiciones:</span> {{ m.tradiciones }}</p> }
+                    @if (m.misionesCumplidas) { <p class="nc-field"><span>🎯 Misiones:</span> {{ m.misionesCumplidas }}</p> }
+                    @if (m.legadoPersonal)    { <p class="nc-field nc-legado"><span>🏛️ Legado:</span> {{ m.legadoPersonal }}</p> }
+                  </div>
+                } @else {
+                  <!-- Miembro sin narrativa — tarjeta vacía que invita a completar -->
+                  <div class="narrative-card nc-empty" (click)="openEditMember(m)">
+                    <div class="nc-header">
+                      @if (m.photoUrl) {
+                        <img [src]="m.photoUrl" [alt]="m.fullName" class="nc-photo"/>
+                      } @else {
+                        <div class="nc-avatar nc-avatar-dim" [style.background]="m.avatarColor || nodeStroke(m.generation)">
+                          {{ m.avatarInitials || initials(m) }}
+                        </div>
+                      }
+                      <div class="nc-meta">
+                        <div class="nc-name">{{ m.fullName }}</div>
+                        <div class="nc-empty-hint">Sin historia aún · haz clic para completar</div>
                       </div>
                     </div>
-                    @if (m.story)         { <p class="nc-story italic">{{ m.story }}</p> }
-                    @if (m.valores)       { <p class="nc-field"><span>💎 Valores:</span> {{ m.valores }}</p> }
-                    @if (m.aprendizajes)  { <p class="nc-field"><span>📚 Aprendizajes:</span> {{ m.aprendizajes }}</p> }
-                    @if (m.legadoPersonal){ <p class="nc-field"><span>🏛️ Legado:</span> {{ m.legadoPersonal }}</p> }
                   </div>
                 }
               }
             </div>
           }
         }
-        @if (!hasMembersWithNarrative()) {
-          <p class="empty-msg">Agrega historias al editar cada miembro del árbol.</p>
+        @if (!(lineage()?.members?.length)) {
+          <p class="empty-msg">Agrega miembros al árbol para ver su narrativa.</p>
         }
       </div>
     }
@@ -520,11 +655,21 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     <!-- ── TAB: LEGADO ─────────────────────────────────── -->
     @if (activeTab() === 'legacy') {
       <div class="content-tab">
+
+        <!-- Banner con tagline real -->
         <div class="legacy-banner">
-          <div class="lb-title">Árbol de Evolución y Legado Familiar</div>
-          <div class="lb-sub">Historias que inspiran · Lecciones que trascienden · Decisiones que transforman</div>
+          <div class="lb-title">
+            {{ legadoData()?.constitutionFamilyName || 'Árbol de Evolución y Legado Familiar' }}
+          </div>
+          <div class="lb-sub">
+            {{ legadoData()?.familyTagline || 'Historias que inspiran · Lecciones que trascienden · Decisiones que transforman' }}
+          </div>
+          <button class="btn-gold lb-cta" (click)="goToLegado()">
+            📜 Ver Documento Completo →
+          </button>
         </div>
 
+        <!-- Stats -->
         <div class="legacy-stats">
           @for (s of legacyStats(); track s.label) {
             <div class="ls-card">
@@ -534,7 +679,41 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
           }
         </div>
 
-        <!-- Generation columns -->
+        <!-- Misión & Visión -->
+        @if (legadoData()?.familyMission || legadoData()?.familyVision) {
+          <div class="mv-row">
+            @if (legadoData()?.familyMission) {
+              <div class="mv-block">
+                <div class="mv-bhead">🎯 Misión Familiar</div>
+                <p class="mv-btext">{{ legadoData()!.familyMission }}</p>
+              </div>
+            }
+            @if (legadoData()?.familyVision) {
+              <div class="mv-block">
+                <div class="mv-bhead">🌅 Visión 2040</div>
+                <p class="mv-btext">{{ legadoData()!.familyVision }}</p>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Valores familiares -->
+        @if (legadoVals().length > 0) {
+          <div class="vals-section">
+            <div class="vals-title">💎 Valores Familiares</div>
+            <div class="vals-grid">
+              @for (v of legadoVals(); track v.id) {
+                <div class="val-chip">
+                  <span class="val-icon">{{ v.icon }}</span>
+                  <span class="val-name">{{ v.name }}</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Columnas de generación -->
+        <div class="lc-sec-title">🌳 Legado Personal por Generación</div>
         <div class="legacy-columns">
           @for (genGroup of membersByGeneration(); track genGroup.gen) {
             <div class="lc-col">
@@ -560,6 +739,7 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
             </div>
           }
         </div>
+
       </div>
     }
 
@@ -637,6 +817,35 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
             <div class="fg-row">
               <label>Fuente de datos</label>
               <input [(ngModel)]="form.dataSource" placeholder="Acta civil, testimonio, fotografía..."/>
+            </div>
+            <!-- Vincular con miembro registrado -->
+            @if (registeredMembers().length) {
+              <div class="fg-row fg-full">
+                <label>🔗 Vincular con miembro registrado</label>
+                <select [(ngModel)]="form.familyMemberId"
+                  (ngModelChange)="onRegisteredMemberSelect($event)">
+                  <option [ngValue]="undefined">— Sin vincular —</option>
+                  @for (rm of registeredMembers(); track rm.id) {
+                    <option [ngValue]="rm.id">
+                      {{ rm.fullName }}{{ rm.role ? ' · ' + rm.role : '' }}{{ rm.age ? ' (' + rm.age + ' años)' : '' }}
+                    </option>
+                  }
+                </select>
+                @if (form.familyMemberId) {
+                  <div class="link-badge">
+                    ✅ Vinculado a <strong>{{ linkedMember(form.familyMemberId)?.fullName }}</strong>
+                    — nombre y rol auto-rellenados
+                  </div>
+                }
+              </div>
+            }
+            <div class="fg-row fg-full">
+              <label>📷 URL de foto de perfil</label>
+              <input [(ngModel)]="form.photoUrl" placeholder="https://... (opcional)"/>
+              @if (form.photoUrl) {
+                <img [src]="form.photoUrl" alt="preview"
+                  style="width:48px;height:48px;border-radius:50%;object-fit:cover;margin-top:6px;border:2px solid #fbbf24"/>
+              }
             </div>
             <div class="fg-row">
               <label class="check-label">
@@ -734,18 +943,9 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
   @if (showGenInfoModal()) {
     <div class="modal-overlay" (click)="showGenInfoModal.set(false)">
       <div class="modal" (click)="$event.stopPropagation()">
-        <div class="modal-title">📋 Contexto por Generación</div>
-        <div class="fg-row">
-          <label>Generación</label>
-          <select [(ngModel)]="genInfoForm.generationLevel">
-            <option [value]="-3">-3 · Tatarabuelos</option>
-            <option [value]="-2">-2 · Ancestros Fundadores</option>
-            <option [value]="-1">-1 · Generación Constructora</option>
-            <option [value]="0"> 0 · Generación Responsable</option>
-            <option [value]="1">+1 · Generación Actual</option>
-            <option [value]="2">+2 · Generación Futura</option>
-            <option [value]="3">+3 · Proyección</option>
-          </select>
+        <div class="modal-title">
+          📋 {{ genInfoFor(genInfoForm.generationLevel) ? 'Editar' : 'Agregar' }}
+          contexto · {{ getGenMeta(genInfoForm.generationLevel).label }}
         </div>
         <div class="form-grid mt-12">
           <div class="fg-row">
@@ -761,9 +961,14 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
             </div>
           </div>
           <div class="fg-row fg-full">
-            <label>Resumen del contexto</label>
+            <label>Resumen del contexto histórico</label>
             <textarea [(ngModel)]="genInfoForm.summary" rows="2"
               placeholder="¿En qué mundo vivió esta generación?"></textarea>
+          </div>
+          <div class="fg-row fg-full">
+            <label>📖 Contexto ampliado</label>
+            <textarea [(ngModel)]="genInfoForm.context" rows="2"
+              placeholder="Cultura, economía, fe, costumbres de la época…"></textarea>
           </div>
           <div class="fg-row fg-full">
             <label>⚡ Principal desafío</label>
@@ -835,6 +1040,73 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     </div>
   }
 
+  <!-- ── MODAL: EVENTO ───────────────────────────────── -->
+  @if (showEventModal()) {
+    <div class="modal-overlay" (click)="closeEventModal()">
+      <div class="modal modal-sm" (click)="$event.stopPropagation()">
+        <div class="modal-title">
+          {{ editingEvent() ? '✏️ Editar evento' : '➕ Nuevo evento' }}
+        </div>
+        <div class="form-grid" style="grid-template-columns:1fr;">
+          <div class="fg-row">
+            <label>Miembro</label>
+            <select [(ngModel)]="eventForm.memberId" [disabled]="!!editingEvent()">
+              <option [value]="undefined" disabled>— Selecciona un miembro —</option>
+              @for (m of lineage()?.members ?? []; track m.id) {
+                <option [value]="m.id">
+                  Gen {{ m.generation >= 0 ? '+' + m.generation : m.generation }} · {{ m.fullName }}
+                </option>
+              }
+            </select>
+          </div>
+          <div class="fg-row">
+            <label>Tipo de evento</label>
+            <select [(ngModel)]="eventForm.eventType">
+              <option value="milestone">🏁 Hito</option>
+              <option value="birth">🐣 Nacimiento</option>
+              <option value="death">🕊️ Fallecimiento</option>
+              <option value="marriage">💍 Matrimonio</option>
+              <option value="migration">✈️ Migración</option>
+              <option value="achievement">🏆 Logro</option>
+              <option value="trauma">⚡ Trauma / Quiebre</option>
+            </select>
+          </div>
+          <div class="fg-row">
+            <label>Título *</label>
+            <input [(ngModel)]="eventForm.title" placeholder="Ej: Llegó a la ciudad..." maxlength="200"/>
+          </div>
+          <div class="fg-row">
+            <label>Año</label>
+            <input [(ngModel)]="eventForm.eventYear" placeholder="Ej: 1965 ó ~1970"/>
+          </div>
+          <div class="fg-row">
+            <label>Descripción</label>
+            <textarea [(ngModel)]="eventForm.description" rows="3"
+              placeholder="Detalle del evento..."></textarea>
+          </div>
+          <div class="fg-row">
+            <label class="check-label">
+              <input type="checkbox" [(ngModel)]="eventForm.isApproximate"/>
+              El año es aproximado
+            </label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          @if (editingEvent()) {
+            <button class="btn-danger" (click)="confirmDeleteEvent()" [disabled]="saving()">
+              🗑 Eliminar
+            </button>
+          }
+          <button class="btn-ghost" (click)="closeEventModal()">Cancelar</button>
+          <button class="btn-gold" (click)="saveEvent()"
+            [disabled]="saving() || !eventForm.title || !eventForm.memberId">
+            {{ saving() ? 'Guardando...' : (editingEvent() ? 'Actualizar' : 'Crear evento') }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- ── CONFIRM DELETE ──────────────────────────────── -->
   @if (deleteTarget()) {
     <div class="modal-overlay" (click)="deleteTarget.set(null)">
@@ -848,6 +1120,199 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
         </div>
       </div>
     </div>
+  }
+
+  <!-- ── DOCUMENTO DE CONSTITUCIÓN FAMILIAR ───────────── -->
+  @if (showDocument()) {
+    <div class="doc-overlay" (click)="closeDocument()">
+      <div class="doc-modal" (click)="$event.stopPropagation()">
+
+        <!-- Toolbar del documento -->
+        <div class="doc-toolbar">
+          <span class="doc-toolbar-title">📄 Documento de Legado Familiar</span>
+          <div class="doc-toolbar-actions">
+            <button class="btn-gold btn-sm" (click)="printDocument()">🖨️ Imprimir / PDF</button>
+            <button class="btn-ghost btn-sm" (click)="closeDocument()">✕ Cerrar</button>
+          </div>
+        </div>
+
+        <!-- Contenido imprimible -->
+        <div class="doc-content" id="doc-print-area">
+
+          <!-- PORTADA -->
+          <div class="doc-cover">
+            <div class="doc-cover-seal">IF</div>
+            <h1 class="doc-title">{{ lineage()?.title || 'Legado Familiar' }}</h1>
+            <div class="doc-subtitle">{{ legadoData()?.familyName || '' }}</div>
+            <div class="doc-code">{{ lineage()?.lineageCode }}</div>
+            @if (lineage()?.visionStatement) {
+              <blockquote class="doc-vision">"{{ lineage()!.visionStatement }}"</blockquote>
+            }
+            @if (legadoData()?.tagline) {
+              <p class="doc-tagline">{{ legadoData()!.tagline }}</p>
+            }
+            <div class="doc-year">{{ currentYear }}</div>
+          </div>
+
+          <div class="doc-divider"></div>
+
+          <!-- MISIÓN Y VISIÓN -->
+          @if (legadoData()?.missionStatement || legadoData()?.visionStatement) {
+            <section class="doc-section">
+              <h2 class="doc-section-title">🎯 Misión y Visión</h2>
+              @if (legadoData()?.missionStatement) {
+                <div class="doc-mv-block">
+                  <div class="doc-mv-label">MISIÓN</div>
+                  <p class="doc-mv-text">{{ legadoData()!.missionStatement }}</p>
+                </div>
+              }
+              @if (legadoData()?.visionStatement) {
+                <div class="doc-mv-block">
+                  <div class="doc-mv-label">VISIÓN</div>
+                  <p class="doc-mv-text">{{ legadoData()!.visionStatement }}</p>
+                </div>
+              }
+            </section>
+            <div class="doc-divider"></div>
+          }
+
+          <!-- VALORES FAMILIARES -->
+          @if (legadoVals().length) {
+            <section class="doc-section">
+              <h2 class="doc-section-title">💎 Valores Familiares</h2>
+              <div class="doc-values-grid">
+                @for (v of legadoVals(); track v.id) {
+                  <div class="doc-value-card">
+                    <div class="doc-value-icon">{{ v.icon || '💠' }}</div>
+                    <div class="doc-value-name">{{ v.name }}</div>
+                    @if (v.description) {
+                      <div class="doc-value-desc">{{ v.description }}</div>
+                    }
+                  </div>
+                }
+              </div>
+            </section>
+            <div class="doc-divider"></div>
+          }
+
+          <!-- ÁRBOL GENEALÓGICO — resumen por generación -->
+          <section class="doc-section">
+            <h2 class="doc-section-title">🌳 Árbol Genealógico</h2>
+            <p class="doc-tree-stats">
+              {{ memberCount() }} miembros · {{ visibleGenCount() }} generaciones ·
+              {{ globalCompleteness() }}% documentado
+              @if (lineage()?.foundingYear) { · Desde {{ lineage()!.foundingYear }} }
+            </p>
+
+            @for (genGroup of membersByGeneration(); track genGroup.gen) {
+              <div class="doc-gen-block">
+                <div class="doc-gen-header" [style.border-left-color]="getGenMeta(genGroup.gen).color">
+                  <span class="doc-gen-label" [style.color]="getGenMeta(genGroup.gen).color">
+                    {{ getGenMeta(genGroup.gen).label }}
+                  </span>
+                  @if (genInfoFor(genGroup.gen)?.periodStart || genInfoFor(genGroup.gen)?.periodEnd) {
+                    <span class="doc-gen-period">
+                      {{ genInfoFor(genGroup.gen)?.periodStart }} – {{ genInfoFor(genGroup.gen)?.periodEnd }}
+                    </span>
+                  }
+                </div>
+                @if (genInfoFor(genGroup.gen)?.summary) {
+                  <p class="doc-gen-context">{{ genInfoFor(genGroup.gen)!.summary }}</p>
+                }
+                <div class="doc-members-row">
+                  @for (m of genGroup.members; track m.id) {
+                    <div class="doc-member-chip">
+                      @if (m.photoUrl) {
+                        <img [src]="m.photoUrl" [alt]="m.fullName" class="doc-member-photo"/>
+                      } @else {
+                        <div class="doc-member-avatar"
+                          [style.background]="m.avatarColor || getGenMeta(m.generation).color">
+                          {{ m.avatarInitials || initials(m) }}
+                        </div>
+                      }
+                      <div class="doc-member-info">
+                        <div class="doc-member-name">{{ m.fullName }}</div>
+                        @if (m.birthYear) {
+                          <div class="doc-member-years">
+                            {{ m.birthYear }}{{ m.deathYear ? ' – ' + m.deathYear : (m.status === 'alive' ? ' – presente' : '') }}
+                          </div>
+                        }
+                        @if (m.roleLabel) {
+                          <div class="doc-member-role">{{ m.roleLabel }}</div>
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </section>
+
+          <div class="doc-divider"></div>
+
+          <!-- NARRATIVA DE EVOLUCIÓN -->
+          @if (hasMembersWithNarrative()) {
+            <section class="doc-section">
+              <h2 class="doc-section-title">✍️ Narrativa de Evolución</h2>
+              @for (genGroup of membersByGeneration(); track genGroup.gen) {
+                @for (m of genGroup.members; track m.id) {
+                  @if (m.story || m.valores || m.aprendizajes || m.legadoPersonal || m.erroresSuperados || m.tradiciones || m.misionesCumplidas) {
+                    <div class="doc-narrative-entry">
+                      <div class="doc-ne-header">
+                        @if (m.photoUrl) {
+                          <img [src]="m.photoUrl" [alt]="m.fullName" class="doc-ne-photo"/>
+                        } @else {
+                          <div class="doc-ne-avatar"
+                            [style.background]="m.avatarColor || getGenMeta(m.generation).color">
+                            {{ m.avatarInitials || initials(m) }}
+                          </div>
+                        }
+                        <div>
+                          <div class="doc-ne-name">{{ m.fullName }}</div>
+                          <div class="doc-ne-gen" [style.color]="getGenMeta(m.generation).color">
+                            {{ getGenMeta(m.generation).label }}
+                            @if (m.birthYear) { · {{ m.birthYear }}{{ m.deathYear ? ' – ' + m.deathYear : '' }} }
+                          </div>
+                        </div>
+                      </div>
+                      @if (m.story)             { <p class="doc-ne-story"><em>{{ m.story }}</em></p> }
+                      @if (m.valores)           { <p class="doc-ne-field"><strong>💎 Valores:</strong> {{ m.valores }}</p> }
+                      @if (m.aprendizajes)      { <p class="doc-ne-field"><strong>📚 Aprendizajes:</strong> {{ m.aprendizajes }}</p> }
+                      @if (m.erroresSuperados)  { <p class="doc-ne-field"><strong>🔄 Errores superados:</strong> {{ m.erroresSuperados }}</p> }
+                      @if (m.tradiciones)       { <p class="doc-ne-field"><strong>🎎 Tradiciones:</strong> {{ m.tradiciones }}</p> }
+                      @if (m.misionesCumplidas) { <p class="doc-ne-field"><strong>🎯 Misiones:</strong> {{ m.misionesCumplidas }}</p> }
+                      @if (m.legadoPersonal)    { <p class="doc-ne-field doc-ne-legado"><strong>🏛️ Legado:</strong> {{ m.legadoPersonal }}</p> }
+                    </div>
+                  }
+                }
+              }
+            </section>
+            <div class="doc-divider"></div>
+          }
+
+          <!-- COMPROMISOS / PRINCIPIOS RECTORES -->
+          @if (legadoData()?.guidelines?.length) {
+            <section class="doc-section">
+              <h2 class="doc-section-title">📜 Principios Rectores</h2>
+              <ol class="doc-guidelines">
+                @for (g of legadoData()!.guidelines; track $index) {
+                  <li>{{ g }}</li>
+                }
+              </ol>
+            </section>
+            <div class="doc-divider"></div>
+          }
+
+          <!-- PIE DEL DOCUMENTO -->
+          <div class="doc-footer">
+            <div class="doc-footer-seal">🌳</div>
+            <p>Documento generado por <strong>Integrity Family</strong> · {{ currentYear }}</p>
+            <p class="doc-footer-code">{{ lineage()?.lineageCode }}</p>
+          </div>
+
+        </div><!-- /doc-content -->
+      </div><!-- /doc-modal -->
+    </div><!-- /doc-overlay -->
   }
 
 </div><!-- /lin-page -->
@@ -871,6 +1336,11 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     .lh-title { font-size: 22px; font-weight: 700; color: #fbbf24; }
     .lh-sub   { font-size: 12px; color: #9ca3af; margin-top: 3px; }
     .lh-sub strong { color: #d97706; }
+    /* Barra de completitud global en header */
+    .lh-completeness { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+    .lhc-bar-wrap { flex: 1; max-width: 180px; height: 5px; background: #1f2937; border-radius: 99px; overflow: hidden; }
+    .lhc-bar  { height: 100%; border-radius: 99px; transition: width .5s ease; }
+    .lhc-label { font-size: 11px; color: #9ca3af; white-space: nowrap; }
     .header-actions { display: flex; gap: 8px; }
 
     /* ── TABS ───────────────────────────────────────── */
@@ -987,6 +1457,9 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
       width: 50px; height: 50px; border-radius: 50%; flex-shrink: 0;
       display: flex; align-items: center; justify-content: center;
       font-size: 17px; font-weight: 700; color: #fffbeb;
+    }
+    .sp-avatar-photo {
+      object-fit: cover; border: 2px solid #fbbf24;
     }
     .sp-name     { font-size: 15px; font-weight: 700; color: #fbbf24; }
     .sp-gen-badge{ font-size: 11px; margin-top: 2px; font-weight: 600; }
@@ -1129,8 +1602,8 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
 
     /* ── CONTENT TABS ────────────────────────────────── */
     .content-tab { padding: 24px 28px; max-width: 900px; }
-    .ct-header   { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
-    .ct-header h3{ color: #fbbf24; font-size: 18px; margin: 0; }
+    .ct-header   { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+    .ct-header h3{ color: #fbbf24; font-size: 18px; margin: 0 0 2px; }
     .ct-sub      { color: #6b7280; font-size: 12px; }
     .empty-msg   { color: #4b5563; font-style: italic; font-size: 13px; }
 
@@ -1139,24 +1612,56 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
       border-left: 3px solid; padding: 12px 16px; margin-bottom: 16px;
       background: #111827; border-radius: 0 8px 8px 0;
     }
-    .gcb-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
-    .gcb-label  { font-weight: 700; font-size: 13px; }
-    .gcb-period { font-size: 11px; color: #6b7280; }
-    .gcb-text   { font-size: 12px; color: #9ca3af; margin: 4px 0; }
-    .gcb-kv     { font-size: 12px; color: #d1d5db; margin-top: 4px; }
-    .gcb-kv span{ color: #d97706; margin-right: 4px; }
+    /* ── Legado tab enhancements ─────────────────────── */
+    .lb-cta      { margin-top: 12px; font-size: 12px; padding: 8px 18px; }
+    .mv-row      { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    @media(max-width:640px){ .mv-row { grid-template-columns: 1fr; } }
+    .mv-block    { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+                   border-radius: 12px; padding: 14px; }
+    .mv-bhead   { font-size: 12px; font-weight: 700; color: #fbbf24; margin-bottom: 8px; }
+    .mv-btext   { font-size: 12px; color: #9ca3af; line-height: 1.6; margin: 0; }
+    .vals-section{ margin-bottom: 20px; }
+    .vals-title  { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 10px; }
+    .vals-grid   { display: flex; flex-wrap: wrap; gap: 8px; }
+    .val-chip    { display: flex; align-items: center; gap: 6px; background: rgba(251,191,36,0.06);
+                   border: 1px solid rgba(251,191,36,0.15); border-radius: 20px;
+                   padding: 5px 12px; font-size: 12px; color: #e5e7eb; }
+    .val-icon    { font-size: 16px; }
+    .val-name    { font-weight: 600; }
+    .lc-sec-title{ font-size: 13px; font-weight: 700; color: rgba(255,255,255,0.5);
+                   margin-bottom: 12px; letter-spacing: 0.05em; text-transform: uppercase; }
+    /* ── Gen context blocks ──────────────────────────── */
+    .gcb-header  { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .gcb-label   { font-weight: 700; font-size: 13px; }
+    .gcb-actions { display: flex; align-items: center; gap: 8px; }
+    .gcb-period  { font-size: 11px; color: #6b7280; }
+    .gcb-edit-btn{ background: none; border: none; cursor: pointer; font-size: 14px; padding: 2px 4px;
+                   border-radius: 6px; opacity: 0.5; transition: opacity 0.2s; }
+    .gcb-edit-btn:hover { opacity: 1; background: rgba(255,255,255,0.06); }
+    .gcb-text    { font-size: 12px; color: #9ca3af; margin: 4px 0; }
+    .gcb-context { color: #6b7280; font-style: italic; }
+    .gcb-kv      { font-size: 12px; color: #d1d5db; margin-top: 4px; }
+    .gcb-kv span { color: #d97706; margin-right: 4px; }
+    .gcb-empty   { opacity: 0.5; }
+    .gcb-empty-hint { font-size: 11px; color: #4b5563; font-style: italic; margin: 4px 0 0; }
 
     /* Timeline */
     .timeline  { padding-left: 80px; }
     .tl-item   { display: flex; gap: 16px; align-items: flex-start;
-      position: relative; margin-bottom: 20px; }
+      position: relative; margin-bottom: 20px; cursor: pointer; padding: 6px 8px;
+      border-radius: 6px; transition: background .15s; }
+    .tl-item:hover { background: #1f2937; }
+    .tl-item:hover .tl-edit-btn { opacity: 1; }
     .tl-year   { position: absolute; left: -80px; width: 68px;
       text-align: right; font-size: 12px; font-weight: 600; color: #d97706; padding-top: 3px; }
     .tl-dot    { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
     .tl-body   { flex: 1; }
     .tl-member { font-size: 10px; font-weight: 600; text-transform: uppercase; margin-bottom: 2px; }
-    .tl-title  { font-size: 13px; font-weight: 600; color: #fde68a; }
+    .tl-title  { font-size: 13px; font-weight: 600; color: #fde68a; display: flex; align-items: center; gap: 6px; }
+    .tl-type-badge { font-size: 14px; }
     .tl-desc   { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+    .tl-edit-btn { background: none; border: none; cursor: pointer; font-size: 13px;
+      opacity: 0; transition: opacity .15s; padding: 2px 4px; align-self: flex-start; }
 
     /* Narrative */
     .vision-block {
@@ -1168,12 +1673,33 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     .vision-block p { color: #fde68a; font-style: italic; font-size: 14px; line-height: 1.7; margin: 0; }
     .gen-narrative-section { margin-bottom: 28px; }
     .gns-title { font-size: 13px; font-weight: 700; text-transform: uppercase;
-      margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #1f2937; }
+      margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #1f2937;
+      display: flex; justify-content: space-between; align-items: center; }
+    .gns-count { font-size: 11px; font-weight: 400; color: #6b7280; text-transform: none; }
     .narrative-card {
       background: #111827; border: 1px solid #1f2937;
       border-radius: 12px; padding: 14px; margin-bottom: 12px;
     }
-    .nc-header { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+    .nc-header { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+    .nc-photo  { width: 44px; height: 44px; border-radius: 50%; object-fit: cover;
+      border: 2px solid #fbbf24; flex-shrink: 0; }
+    .nc-meta   { flex: 1; min-width: 0; }
+    .nc-edit-btn { background: none; border: none; cursor: pointer; font-size: 14px;
+      opacity: .5; transition: opacity .2s; padding: 2px 4px; }
+    .nc-edit-btn:hover { opacity: 1; }
+    /* Barra de completitud por miembro */
+    .nc-completeness-wrap { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+    .nc-completeness-bar  { flex: 1; height: 3px; background: #1f2937; border-radius: 99px; overflow: hidden; max-width: 80px; }
+    .nc-completeness-fill { height: 100%; border-radius: 99px; transition: width .4s; }
+    .nc-completeness-pct  { font-size: 10px; font-weight: 600; }
+    /* Tarjeta vacía */
+    .nc-empty   { opacity: .6; cursor: pointer; border-style: dashed; }
+    .nc-empty:hover { opacity: 1; border-color: #fbbf24; }
+    .nc-avatar-dim { opacity: .7; }
+    .nc-empty-hint { font-size: 11px; color: #6b7280; margin-top: 2px; }
+    /* Legado personal destacado */
+    .nc-legado  { border-top: 1px solid #1f2937; padding-top: 6px; margin-top: 8px; }
+    .nc-legado span { color: #fbbf24 !important; }
     .nc-avatar {
       width: 40px; height: 40px; border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
@@ -1275,11 +1801,144 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     .ev-field.future      label { color: #fde68a !important; }
     .ev-field.projected   label { color: #9ca3af !important; }
     .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+
+    /* ── BTN DOCUMENTO ──────────────────────────────── */
+    .btn-doc { border-color: #6366f1 !important; color: #a5b4fc !important; }
+    .btn-doc:hover { background: #6366f120 !important; }
+    .btn-sm { padding: 6px 14px !important; font-size: 12px !important; }
+
+    /* ── DOCUMENTO OVERLAY ──────────────────────────── */
+    .doc-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.85);
+      display: flex; align-items: flex-start; justify-content: center;
+      z-index: 2000; overflow-y: auto; padding: 24px 16px;
+    }
+    .doc-modal {
+      background: #fff; color: #1a1a2e; border-radius: 12px;
+      width: 100%; max-width: 820px; box-shadow: 0 32px 80px rgba(0,0,0,.6);
+      overflow: hidden; margin: auto;
+    }
+    .doc-toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 20px; background: #1e1b4b; color: #e0e7ff;
+      position: sticky; top: 0; z-index: 1;
+    }
+    .doc-toolbar-title { font-size: 14px; font-weight: 600; }
+    .doc-toolbar-actions { display: flex; gap: 8px; }
+
+    /* ── DOCUMENTO CONTENIDO ─────────────────────────── */
+    .doc-content { padding: 48px 56px; font-family: 'Georgia', serif; }
+
+    /* PORTADA */
+    .doc-cover { text-align: center; padding: 20px 0 32px; }
+    .doc-cover-seal {
+      width: 64px; height: 64px; border-radius: 50%; background: #1e1b4b;
+      color: #fff; font-size: 22px; font-weight: 900; display: inline-flex;
+      align-items: center; justify-content: center; margin-bottom: 16px;
+      border: 3px solid #4338ca;
+    }
+    .doc-title   { font-size: 28px; font-weight: 700; color: #1e1b4b; margin: 0 0 6px; }
+    .doc-subtitle { font-size: 16px; color: #4338ca; font-weight: 600; margin-bottom: 4px; }
+    .doc-code    { font-size: 11px; color: #9ca3af; letter-spacing: .1em; margin-bottom: 16px; }
+    .doc-vision  { font-style: italic; color: #374151; border-left: 3px solid #4338ca;
+      margin: 16px auto; max-width: 500px; padding: 8px 16px; text-align: left; font-size: 15px; }
+    .doc-tagline { font-size: 13px; color: #6b7280; margin-top: 8px; }
+    .doc-year    { font-size: 12px; color: #9ca3af; margin-top: 16px; }
+
+    .doc-divider { border: none; border-top: 2px solid #e5e7eb; margin: 28px 0; }
+
+    /* SECCIONES */
+    .doc-section { margin-bottom: 12px; }
+    .doc-section-title {
+      font-size: 16px; font-weight: 700; color: #1e1b4b;
+      border-bottom: 2px solid #4338ca; padding-bottom: 6px; margin-bottom: 16px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* MISIÓN / VISIÓN */
+    .doc-mv-block { margin-bottom: 16px; }
+    .doc-mv-label { font-size: 10px; font-weight: 700; letter-spacing: .12em;
+      color: #4338ca; margin-bottom: 4px; font-family: 'Inter', sans-serif; }
+    .doc-mv-text  { font-size: 14px; color: #374151; line-height: 1.7; margin: 0; }
+
+    /* VALORES */
+    .doc-values-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .doc-value-card  { background: #f5f3ff; border: 1px solid #c7d2fe; border-radius: 8px;
+      padding: 12px; text-align: center; }
+    .doc-value-icon  { font-size: 22px; margin-bottom: 4px; }
+    .doc-value-name  { font-size: 13px; font-weight: 700; color: #1e1b4b; }
+    .doc-value-desc  { font-size: 11px; color: #6b7280; margin-top: 4px; line-height: 1.5; }
+
+    /* ÁRBOL */
+    .doc-tree-stats  { font-size: 12px; color: #6b7280; margin-bottom: 20px;
+      font-family: 'Inter', sans-serif; }
+    .doc-gen-block   { margin-bottom: 20px; }
+    .doc-gen-header  { display: flex; align-items: baseline; gap: 10px;
+      border-left: 3px solid; padding-left: 10px; margin-bottom: 6px; }
+    .doc-gen-label   { font-size: 13px; font-weight: 700; font-family: 'Inter', sans-serif; }
+    .doc-gen-period  { font-size: 11px; color: #9ca3af; }
+    .doc-gen-context { font-size: 12px; color: #6b7280; margin: 0 0 10px 13px; font-style: italic; }
+    .doc-members-row { display: flex; flex-wrap: wrap; gap: 8px; padding-left: 13px; }
+    .doc-member-chip { display: flex; align-items: center; gap: 8px;
+      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px 10px; }
+    .doc-member-photo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+    .doc-member-avatar { width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .doc-member-name  { font-size: 12px; font-weight: 600; color: #1f2937;
+      font-family: 'Inter', sans-serif; }
+    .doc-member-years { font-size: 10px; color: #9ca3af; }
+    .doc-member-role  { font-size: 10px; color: #6b7280; }
+
+    /* NARRATIVA */
+    .doc-narrative-entry { margin-bottom: 20px; padding: 14px 16px;
+      border: 1px solid #e5e7eb; border-radius: 8px; break-inside: avoid; }
+    .doc-ne-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .doc-ne-photo  { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #c7d2fe; }
+    .doc-ne-avatar { width: 40px; height: 40px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .doc-ne-name   { font-size: 14px; font-weight: 700; color: #1e1b4b;
+      font-family: 'Inter', sans-serif; }
+    .doc-ne-gen    { font-size: 11px; font-family: 'Inter', sans-serif; }
+    .doc-ne-story  { font-size: 13px; color: #374151; line-height: 1.7; margin-bottom: 6px; }
+    .doc-ne-field  { font-size: 12px; color: #4b5563; margin-top: 4px; }
+    .doc-ne-legado { border-top: 1px solid #e5e7eb; padding-top: 6px; margin-top: 8px; }
+
+    /* PRINCIPIOS */
+    .doc-guidelines { padding-left: 20px; }
+    .doc-guidelines li { font-size: 13px; color: #374151; margin-bottom: 8px; line-height: 1.6; }
+
+    /* PIE */
+    .doc-footer { text-align: center; padding: 20px 0 0; color: #9ca3af; font-size: 12px;
+      font-family: 'Inter', sans-serif; }
+    .doc-footer-seal { font-size: 24px; margin-bottom: 6px; }
+    .doc-footer strong { color: #4338ca; }
+    .doc-footer-code  { letter-spacing: .1em; font-size: 10px; margin-top: 2px; }
+
+    /* ── PRINT ──────────────────────────────────────── */
+    @media print {
+      .doc-overlay, .doc-modal { position: static !important; }
+      .doc-toolbar { display: none !important; }
+      .doc-content { padding: 20px 32px; }
+      .doc-values-grid { grid-template-columns: repeat(3, 1fr); }
+    }
   `]
 })
 export class LineagePageComponent implements OnInit, OnDestroy {
   private svc         = inject(LineageService);
   private familyState = inject(FamilyStateService);
+  private http        = inject(HttpClient);
+  private apiSvc      = inject(ApiService);
+  private router      = inject(Router);
+
+  // ── Legado familiar (cargado cuando se activa el tab) ─────────────────────
+  legadoData  = signal<any>(null);
+  legadoVals  = signal<any[]>([]);
+
+  // ── Miembros registrados de la familia (para vincular) ────────────────────
+  registeredMembers = signal<{ id: number; fullName: string; firstName: string | null;
+    email: string | null; role: string | null; age: number | null }[]>([]);
 
   lineage        = signal<Lineage | null>(null);
   loading        = signal(true);
@@ -1764,11 +2423,12 @@ export class LineagePageComponent implements OnInit, OnDestroy {
     }).filter(Boolean) as { id: string; d: string; isCouple: boolean }[];
   });
 
-  allEvents = computed<{ event: any; memberName: string; memberColor: string }[]>(() => {
+  allEvents = computed<{ event: any; memberId: number; memberName: string; memberColor: string }[]>(() => {
     const members = this.lineage()?.members ?? [];
     return members
       .flatMap(m => (m.events ?? []).map(ev => ({
         event: ev,
+        memberId: m.id,
         memberName: m.fullName,
         memberColor: getGenMeta(m.generation).color
       })))
@@ -1809,8 +2469,95 @@ export class LineagePageComponent implements OnInit, OnDestroy {
     ];
   });
 
+  /** Calcula 0–100 de completitud para un miembro */
+  completeness(m: LineageMember): number {
+    const fields: (string | number | null | undefined | boolean)[] = [
+      m.firstName, m.lastName,          // identidad básica (2)
+      m.birthYear,                       // año nac (1)
+      m.origin,                          // origen (1)
+      m.photoUrl,                        // foto (1)
+      m.story,                           // historia (1)
+      m.valores,                         // valores (1)
+      m.aprendizajes,                    // aprendizajes (1)
+      m.erroresSuperados,                // errores superados (1)
+      m.tradiciones,                     // tradiciones (1)
+      m.misionesCumplidas,               // misiones (1)
+      m.legadoPersonal,                  // legado personal (1)
+    ];
+    const filled = fields.filter(f => f !== null && f !== undefined && f !== '').length;
+    return Math.round((filled / fields.length) * 100);
+  }
+
+  /** Color del anillo de completitud */
+  completenessColor(m: LineageMember): string {
+    const pct = this.completeness(m);
+    if (pct >= 75) return '#22c55e';   // verde
+    if (pct >= 40) return '#f59e0b';   // amarillo
+    return '#ef4444';                  // rojo
+  }
+
+  /** % global del linaje */
+  globalCompleteness = computed(() => {
+    const members = this.lineage()?.members ?? [];
+    if (!members.length) return 0;
+    return Math.round(members.reduce((sum, m) => sum + this.completeness(m), 0) / members.length);
+  });
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────
-  ngOnInit() { this.loadLineage(); }
+  ngOnInit() {
+    this.loadLineage();
+    this.loadLegado();
+    this.loadRegisteredMembers();
+  }
+
+  loadLegado() {
+    const fid = this.familyId;
+    if (!fid) return;
+    this.http.get<any>(`${this.apiSvc.base}/families/${fid}/legacy`)
+      .pipe(catchError(() => of(null)))
+      .subscribe(res => {
+        if (!res) return;
+        this.legadoData.set(res.legacy ?? res);
+        this.legadoVals.set(res.values ?? []);
+      });
+  }
+
+  goToLegado() { this.router.navigate(['/legado']); }
+
+  loadRegisteredMembers() {
+    const fid = this.familyId;
+    if (!fid) return;
+    this.http.get<any>(`${this.apiSvc.base}/members/family/${fid}`)
+      .pipe(catchError(() => of(null)))
+      .subscribe(res => {
+        if (!res) return;
+        const list = Array.isArray(res) ? res : (res.data ?? []);
+        this.registeredMembers.set(list);
+      });
+  }
+
+  /** Devuelve el miembro registrado vinculado a un LineageMember */
+  linkedMember(familyMemberId: number | null) {
+    if (!familyMemberId) return null;
+    return this.registeredMembers().find(m => m.id === familyMemberId) ?? null;
+  }
+
+  /** Al seleccionar un miembro registrado, auto-rellena nombre y rol si están vacíos */
+  onRegisteredMemberSelect(regMemberId: number | string) {
+    const id = typeof regMemberId === 'string' ? parseInt(regMemberId) : regMemberId;
+    if (!id) return;
+    const reg = this.registeredMembers().find(m => m.id === id);
+    if (!reg) return;
+    // Solo auto-rellena si el campo está vacío
+    if (!this.form['firstName'] && reg.firstName) this.form['firstName'] = reg.firstName;
+    if (!this.form['lastName']  && reg.fullName) {
+      const parts = reg.fullName.trim().split(' ');
+      if (parts.length > 1 && !this.form['firstName']) this.form['firstName'] = parts[0];
+      if (!this.form['lastName']) this.form['lastName'] = parts.slice(1).join(' ');
+    }
+    if (!this.form['roleLabel'] && reg.role) this.form['roleLabel'] = reg.role;
+    this.form['familyMemberId'] = id;
+  }
 
   ngOnDestroy() {
     if (this.toastTimer) clearTimeout(this.toastTimer);
@@ -1818,13 +2565,150 @@ export class LineagePageComponent implements OnInit, OnDestroy {
 
   @HostListener('document:keydown.escape')
   onEscape() {
-    if (this.dragId() != null) { this.cancelDrag(); return; }
+    if (this.dragId() != null)        { this.cancelDrag(); return; }
+    if (this.showDocument())          { this.closeDocument(); return; }
+    if (this.showEventModal())        { this.closeEventModal(); return; }
     if (this.showModal())             { this.closeModal(); return; }
     if (this.showEditLineageModal())  { this.showEditLineageModal.set(false); return; }
     if (this.showGenInfoModal())      { this.showGenInfoModal.set(false); return; }
     if (this.showConnectModal())      { this.showConnectModal.set(false); return; }
     if (this.deleteTarget())          { this.deleteTarget.set(null); return; }
     if (this.selectedMember())        { this.clearSelection(); }
+  }
+
+  // ── Gestión de Eventos desde la Línea de Tiempo ──────────────────────────
+  showEventModal = signal(false);
+  editingEvent   = signal<{ event: any; memberId: number } | null>(null);
+  eventForm: {
+    memberId?: number;
+    eventType: string;
+    title: string;
+    eventYear?: string;
+    description?: string;
+    isApproximate: boolean;
+  } = { eventType: 'milestone', title: '', isApproximate: false };
+
+  openAddEvent() {
+    this.editingEvent.set(null);
+    this.eventForm = { eventType: 'milestone', title: '', isApproximate: false };
+    this.showEventModal.set(true);
+  }
+
+  openEditEvent(ev: { event: any; memberId: number; memberName: string; memberColor: string }) {
+    this.editingEvent.set({ event: ev.event, memberId: ev.memberId });
+    this.eventForm = {
+      memberId:      ev.memberId,
+      eventType:     ev.event.eventType ?? 'milestone',
+      title:         ev.event.title,
+      eventYear:     ev.event.eventYear ?? undefined,
+      description:   ev.event.description ?? undefined,
+      isApproximate: !!ev.event.isApproximate,
+    };
+    this.showEventModal.set(true);
+  }
+
+  closeEventModal() { this.showEventModal.set(false); this.editingEvent.set(null); }
+
+  saveEvent() {
+    if (!this.eventForm.title || !this.eventForm.memberId) return;
+    this.saving.set(true);
+    const req = {
+      title:         this.eventForm.title,
+      eventType:     this.eventForm.eventType,
+      eventYear:     this.eventForm.eventYear,
+      description:   this.eventForm.description,
+      isApproximate: this.eventForm.isApproximate,
+    };
+    const editing = this.editingEvent();
+    const obs = editing
+      ? this.svc.updateEvent(this.familyId, editing.memberId, editing.event.id, req)
+      : this.svc.addEvent(this.familyId, this.eventForm.memberId, req);
+
+    obs.pipe(catchError(() => {
+      this.saving.set(false);
+      this.showToast('Error al guardar el evento', true);
+      return of(null);
+    })).subscribe(saved => {
+      if (!saved) return;
+      this.saving.set(false);
+      this.closeEventModal();
+      this.showToast(editing ? 'Evento actualizado' : 'Evento creado');
+      // Actualización optimista en el signal local
+      const lin = this.lineage();
+      if (!lin) return;
+      this.lineage.set({
+        ...lin,
+        members: lin.members.map(m => {
+          if (m.id !== (editing?.memberId ?? this.eventForm.memberId)) return m;
+          const events = m.events ?? [];
+          if (editing) {
+            return { ...m, events: events.map(e => e.id === saved.id ? saved : e) };
+          } else {
+            return { ...m, events: [...events, saved] };
+          }
+        })
+      });
+    });
+  }
+
+  confirmDeleteEvent() {
+    const editing = this.editingEvent();
+    if (!editing) return;
+    this.saving.set(true);
+    this.svc.deleteEvent(this.familyId, editing.memberId, editing.event.id)
+      .pipe(catchError(() => {
+        this.saving.set(false);
+        this.showToast('Error al eliminar el evento', true);
+        return of(null);
+      })).subscribe(() => {
+        this.saving.set(false);
+        this.closeEventModal();
+        this.showToast('Evento eliminado');
+        const lin = this.lineage();
+        if (!lin) return;
+        this.lineage.set({
+          ...lin,
+          members: lin.members.map(m =>
+            m.id !== editing.memberId ? m
+              : { ...m, events: (m.events ?? []).filter(e => e.id !== editing.event.id) }
+          )
+        });
+      });
+  }
+
+  eventTypeLabel(type: string): string {
+    const map: Record<string, string> = {
+      milestone: '🏁', birth: '🐣', death: '🕊️',
+      marriage: '💍', migration: '✈️', achievement: '🏆', trauma: '⚡'
+    };
+    return map[type] ?? '📌';
+  }
+
+  // ── Documento de Constitución Familiar ────────────────────────────────────
+  showDocument = signal(false);
+  currentYear  = new Date().getFullYear();
+
+  openDocument()  { this.showDocument.set(true); }
+  closeDocument() { this.showDocument.set(false); }
+
+  printDocument() {
+    // Imprime solo el área del documento usando estilos de @media print
+    const style = document.createElement('style');
+    style.id = 'print-override';
+    style.textContent = `
+      @media print {
+        body > * { display: none !important; }
+        body > app-root { display: block !important; }
+        app-root > * { display: none !important; }
+        app-root lin-page, app-root .lin-page,
+        .doc-overlay, .doc-modal { display: block !important; position: static !important; }
+        .doc-toolbar { display: none !important; }
+        .lin-page > *:not(.doc-overlay) { display: none !important; }
+      }
+    `;
+    document.head.appendChild(style);
+    window.print();
+    setTimeout(() => { style.remove(); }, 1000);
   }
 
   private get familyId() { return this.familyState.getFamilyId(); }
@@ -1976,8 +2860,29 @@ export class LineagePageComponent implements OnInit, OnDestroy {
   }
 
   // ── Modal generation info ─────────────────────────────────────────────────
-  openGenInfo() {
-    this.genInfoForm = { generationLevel: this.lineage()?.anchorGeneration ?? 0 };
+  /** Retorna el GenerationInfo de un nivel, o null si no existe */
+  genInfoFor(level: number): GenerationInfo | null {
+    return this.lineage()?.generationInfos?.find(i => i.generationLevel === level) ?? null;
+  }
+
+  openGenInfo(level?: number) {
+    const genLevel = level ?? (this.lineage()?.anchorGeneration ?? 0);
+    const existing = this.genInfoFor(genLevel);
+    if (existing) {
+      this.genInfoForm = {
+        generationLevel: existing.generationLevel,
+        generationType:  existing.generationType ?? undefined,
+        title:           existing.title ?? undefined,
+        summary:         existing.summary ?? undefined,
+        context:         existing.context ?? undefined,
+        keyChallenge:    existing.keyChallenge ?? undefined,
+        keyAchievement:  existing.keyAchievement ?? undefined,
+        periodStart:     existing.periodStart ?? undefined,
+        periodEnd:       existing.periodEnd ?? undefined,
+      };
+    } else {
+      this.genInfoForm = { generationLevel: genLevel };
+    }
     this.showGenInfoModal.set(true);
   }
 

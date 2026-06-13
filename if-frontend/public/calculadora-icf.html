@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Calculadora ICF — Integrity Family</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --orange: #f97316; --blue: #4f46e5; --green: #10b981;
+  --red: #ef4444; --purple: #8b5cf6; --teal: #06b6d4;
+  --bg: #0d1117; --bg2: #161b22; --text: #e0e0e0;
+}
+html, body { min-height: 100%; }
+body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+
+nav {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(13,17,23,.96); backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  padding: 13px 28px; display: flex; align-items: center; gap: 12px;
+}
+.nl-icon { width: 30px; height: 30px; border-radius: 7px; background: #fcfbf4; display: flex; align-items: center; justify-content: center; }
+.nl-icon svg { width: 20px; height: 20px; }
+.nl-name { font-size: 13px; font-weight: 800; color: #fff; }
+.nav-sep { width: 1px; height: 16px; background: rgba(255,255,255,.1); }
+.nav-tag { font-size: 11px; color: #64748b; }
+.nav-pill { margin-left: auto; background: rgba(249,115,22,.12); border: 1px solid rgba(249,115,22,.3); color: #fb923c; padding: 4px 12px; border-radius: 20px; font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; }
+
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+
+/* ── HERO ── */
+.hero { padding: 52px 0 36px; text-align: center; }
+.hero-tag { display: inline-flex; align-items: center; gap: 6px; background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.25); color: #fb923c; padding: 5px 14px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 18px; }
+.hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(24px,5vw,42px); color: #fff; margin-bottom: 10px; line-height: 1.2; }
+.hero h1 span { color: var(--orange); }
+.hero-sub { font-size: 14px; color: #64748b; max-width: 480px; margin: 0 auto; }
+
+/* ── MAIN LAYOUT ── */
+.main-grid { display: grid; grid-template-columns: 1fr 280px; gap: 20px; padding-bottom: 60px; }
+@media (max-width: 680px) { .main-grid { grid-template-columns: 1fr; } }
+
+/* ── QUESTIONS ── */
+.dim-block { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.07); border-radius: 16px; padding: 22px; margin-bottom: 14px; }
+.db-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.db-icon   { font-size: 22px; }
+.db-name   { font-size: 15px; font-weight: 800; color: #fff; }
+.db-weight { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-left: auto; }
+
+.question { margin-bottom: 16px; }
+.q-text { font-size: 12px; color: #94a3b8; margin-bottom: 8px; line-height: 1.5; }
+.q-scale { display: flex; gap: 6px; }
+.q-btn {
+  flex: 1; padding: 8px 4px; border-radius: 8px; border: 1px solid rgba(255,255,255,.1);
+  background: rgba(255,255,255,.04); color: rgba(255,255,255,.4);
+  font-size: 12px; font-weight: 700; cursor: pointer; transition: all .15s;
+  text-align: center;
+}
+.q-btn:hover { border-color: rgba(249,115,22,.4); color: #fb923c; background: rgba(249,115,22,.08); }
+.q-btn.selected { background: var(--orange); border-color: var(--orange); color: #fff; }
+.q-labels { display: flex; justify-content: space-between; margin-top: 4px; }
+.q-lbl { font-size: 9px; color: #475569; }
+
+/* ── STICKY PANEL ── */
+.sticky-panel { position: sticky; top: 72px; align-self: start; }
+.score-panel { background: rgba(255,255,255,.03); border: 1px solid rgba(255,255,255,.08); border-radius: 20px; padding: 24px; margin-bottom: 14px; }
+.sp-title { font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 16px; }
+
+.icf-big { text-align: center; margin-bottom: 20px; }
+.icf-number { font-size: 72px; font-weight: 900; line-height: 1; transition: color .5s; }
+.icf-zone-label { font-size: 12px; font-weight: 700; margin-top: 4px; transition: color .5s; }
+
+/* Radar */
+.radar-container { display: flex; justify-content: center; margin-bottom: 16px; }
+
+/* Dim bars */
+.dim-bar-row { margin-bottom: 10px; }
+.dbr-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.dbr-name { font-size: 10px; font-weight: 700; }
+.dbr-val  { font-size: 10px; font-weight: 800; }
+.dbr-track { background: rgba(0,0,0,.3); border-radius: 4px; height: 5px; overflow: hidden; }
+.dbr-fill  { height: 100%; border-radius: 4px; transition: width .5s ease; }
+
+.reset-btn { width: 100%; background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.1); color: rgba(255,255,255,.4); border-radius: 10px; padding: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all .2s; margin-top: 8px; }
+.reset-btn:hover { background: rgba(255,255,255,.09); color: #fff; }
+
+/* progress bar top */
+.progress-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+.prog-label { font-size: 10px; color: #64748b; }
+.prog-count { font-size: 10px; font-weight: 700; color: #f97316; }
+.progress-track { background: rgba(255,255,255,.06); border-radius: 4px; height: 4px; overflow: hidden; margin-bottom: 20px; }
+.progress-fill  { height: 100%; background: linear-gradient(to right,#f97316,#fb923c); border-radius: 4px; transition: width .3s ease; }
+
+/* result card */
+.result-card { display: none; background: linear-gradient(135deg,rgba(249,115,22,.15),rgba(234,88,12,.08)); border: 1px solid rgba(249,115,22,.35); border-radius: 16px; padding: 20px; margin-top: 14px; }
+.result-card.show { display: block; }
+.rc-title { font-size: 11px; font-weight: 800; color: #fb923c; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+.rc-text  { font-size: 12px; color: #e0e0e0; line-height: 1.7; }
+.rc-cta   { display: block; margin-top: 12px; background: linear-gradient(135deg,#f97316,#ea580c); color: #fff; border: none; border-radius: 9px; padding: 11px; font-size: 12px; font-weight: 800; cursor: pointer; text-align: center; width: 100%; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nl-icon"><svg viewBox="0 0 56 56" fill="none"><circle cx="20" cy="28" r="13" stroke="#f97316" stroke-width="3" fill="none"/><circle cx="36" cy="28" r="13" stroke="#4f46e5" stroke-width="3" fill="none"/><circle cx="28" cy="20" r="7" fill="#f97316" opacity=".9"/><circle cx="28" cy="36" r="5" fill="#4f46e5" opacity=".8"/></svg></div>
+  <span class="nl-name">Integrity Family</span>
+  <div class="nav-sep"></div>
+  <span class="nav-tag">Calculadora ICF</span>
+  <div class="nav-pill">⚡ Interactiva</div>
+</nav>
+
+<div class="wrap">
+  <div class="hero">
+    <div class="hero-tag">📊 Diagnóstico rápido · 12 preguntas</div>
+    <h1>¿Cuál es el ICF<br/>de <span>tu familia</span>?</h1>
+    <div class="hero-sub">Responde honestamente. El índice se calcula en tiempo real mientras avanzas.</div>
+  </div>
+
+  <div class="progress-header">
+    <span class="prog-label">Progreso</span>
+    <span class="prog-count" id="prog-count">0 / 12 respondidas</span>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="prog-bar" style="width:0%"></div></div>
+
+  <div class="main-grid">
+    <div id="questions-col">
+
+      <!-- COMUNICACIÓN -->
+      <div class="dim-block">
+        <div class="db-header">
+          <div class="db-icon">🗣️</div>
+          <div class="db-name">Comunicación</div>
+          <div class="db-weight" style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.25);color:#fb923c;">30%</div>
+        </div>
+        <div class="question" data-dim="com" data-q="0">
+          <div class="q-text">¿Con qué frecuencia tu familia tiene conversaciones sobre algo que no sea logística del hogar (horarios, tareas, dinero)?</div>
+          <div class="q-scale">
+            <button class="q-btn" data-val="1">1</button>
+            <button class="q-btn" data-val="2">2</button>
+            <button class="q-btn" data-val="3">3</button>
+            <button class="q-btn" data-val="4">4</button>
+            <button class="q-btn" data-val="5">5</button>
+          </div>
+          <div class="q-labels"><span class="q-lbl">Casi nunca</span><span class="q-lbl">Siempre</span></div>
+        </div>
+        <div class="question" data-dim="com" data-q="1">
+          <div class="q-text">Cuando hay un conflicto en casa, ¿se resuelve hablando sin gritos ni silencios prolongados?</div>
+          <div class="q-scale">
+            <button class="q-btn" data-val="1">1</button>
+            <button class="q-btn" data-val="2">2</button>
+            <button class="q-btn" data-val="3">3</button>
+            <button class="q-btn" data-val="4">4</button>
+            <button class="q-btn" data-val="5">5</button>
+          </div>
+          <div class="q-labels"><span class="q-lbl">Rara vez</span><span class="q-lbl">Siempre</span></div>
+        </div>
+        <div class="question" data-dim="com" data-q="2">
+          <div class="q-text">¿Cada miembro de tu familia siente que puede decir lo que piensa sin miedo a ser juzgado o ignorado?</div>
+          <div class="q-scale">
+            <button class="q-btn" data-val="1">1</button>
+            <button class="q-btn" data-val="2">2</button>
+            <button class="q-btn" data-val="3">3</button>
+            <button class="q-btn" data-val="4">4</button>
+            <button class="q-btn" data-val="5">5</button>
+          </div>
+          <div class="q-labels"><span class="q-lbl">Ninguno</span><span class="q-lbl">Todos</span></div>
+        </div>
+      </div>
+
+      <!-- TIEMPO -->
+      <div class="dim-block">
+        <div class="db-header">
+          <div class="db-icon">📅</div>
+          <div class="db-name">Tiempo de Calidad</div>
+          <div class="db-weight" style="background:rgba(6,182,212,.1);border:1px solid rgba(6,182,212,.25);color:#67e8f9;">25%</div>
+        </div>
+        <div class="question" data-dim="tpo" data-q="0">
+          <div class="q-text">¿Cuántas veces por semana tu familia comparte una actividad sin celulares ni pantallas (comer, pasear, jugar)?</div>
+          <div class="q-scale">
+            <button class="q-btn" data-val="1">1</button>
+            <button class="q-btn" data-val="2">2</button>
+            <button class="q-btn" data-val="3">3</button>
+            <button class="q-btn" data-val="4">4</button>
+            <button class="q-btn" data-val="5">5</button>
+          </div>
+          <div class="q-labels"><span class="q-lbl">0 veces</span><span class="q-lbl">5+ veces</span></div>
+        </div>
+        <div class="question" data-dim="tpo" data-q="1">
+          <div class="q-text">¿Tienen algún ritual fijo que se repita cada semana y que toda la familia espere?</div>
+          <div class="q-scale">
+            <button class="q-btn" data-val="1">1</button>
+            <button class="q-btn" data-val="2">2</button>
+            <button class="q-btn" data-val="3">3</button>
+            <button class="q-btn" data-val="4">4</button>
+            <button class="q-btn" data-val="5">5</button>
+          </div>
+          <div class="q-labels"><span class="q-lbl">Ninguno</span><span class="q-lbl">Varios</span></div>
+        </div>
+        <div class="question" data-dim="tpo" data-q="2">
+          <div class="q-text">Cuando están juntos, ¿están realmente presentes o cada uno está en su propio mundo?</div>
+          <div class="q-scale">
+            <button class="q-btn" data-val="1">1</button>
+            <button class="q-btn" data-val="2">2</button>
+            <button class="q-btn" data-val="3">3</button>
+            <button class="q-btn" data-val="4">4</button>
+            <button class="q-btn" data-val="5">5</button>
+          </div>
+          <div class="q-labels"><span class="q-lbl">Cada uno solo</span><span class="q-lbl">Totalmente juntos</span></div>
+        </div>
+      </div>
+
+      <!-- EMOCIONES -->
+      <div class="dim-block">
+        <div class="db-header">
+          <div class="db-icon">❤️</div>
+          <div class="db-name">Gestión Emocional</div>
+          <div class="db-weight" style="background:rgba(236,72,153,.1);border:1px solid rgba(236,72,153,.25);color:#f9a8d4;">25%</div>
+        </div>
+        <div class="question" data-dim="emo" data-q="0">
+          <div class="q-text">¿Con qué facilidad los miembros de tu familia expresan sus emociones sin que eso genere drama o distancia?</div>
+          <div class="q-scale">
+            <button class="q-btn" data-val="1">1</button>
+            <button class="q-btn" data-val="2">2</button>
+            <button class="q-btn" data-val="3">3</button>
+            <button class="q-btn" data-val="4">4</button>
+            <button class="q-btn" data-val="5">5</button>
+          </div>
+          <div class="q-labels"><span class="q-lbl">Muy difícil</span><span class="q-lbl">Muy fácil</span></div>
+        </div>
+        <div class="question" data-dim="emo" data-q="1">
+          <div class="q-text">Cuando alguien en casa está triste o preocupado, ¿los demás lo notan y responden con apoyo?</div>
+          <div class="q-scale">
+            <button class="q-btn" data-val="1">1</button>
+            <button class="q-btn" data-val="2">2</button>
+            <button class="q-btn" data-val="3">3</button>
+            <button class="q-btn" data-val="4">4</button>
+            <button class="q-btn" data-val="5">5</button>
+          </div>
+          <div class="q-labels"><span class="q-lbl">Nadie nota</span><span class="q-lbl">Siempre apoyan</span></div>
+        </div>
+        <div class="question" data-dim="emo" data-q="2">
+          <div class="q-text">¿Tu familia ha podido pedir disculpas y reparar vínculos después de una pelea fuerte en el último mes?</div>
+          <div class="q-scale">
+            <button class="q-btn" data-val="1">1</button>
+            <button class="q-btn" data-val="2">2</button>
+            <button class="q-btn" data-val="3">3</button>
+            <button class="q-btn" data-val="4">4</button>
+            <button class="q-btn" data-val="5">5</button>
+          </div>
+          <div class="q-labels"><span class="q-lbl">Nunca</span><span class="q-lbl">Siempre</span></div>
+        </div>
+      </div>
+
+      <!-- HÁBITOS -->
+      <div class="dim-block">
+        <div class="db-header">
+          <div class="db-icon">🌱</div>
+          <div class="db-name">Hábitos y Propósito</div>
+          <div class="db-weight" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#6ee7b7;">20%</div>
+        </div>
+        <div class="question" data-dim="hab" data-q="0">
+          <div class="q-text">¿Tu familia tiene valores explícitos (aunque no estén escritos) que guíen las decisiones importantes del hogar?</div>
+          <div class="q-scale">
+            <button class="q-btn" data-val="1">1</button>
+            <button class="q-btn" data-val="2">2</button>
+            <button class="q-btn" data-val="3">3</button>
+            <button class="q-btn" data-val="4">4</button>
+            <button class="q-btn" data-val="5">5</button>
+          </div>
+          <div class="q-labels"><span class="q-lbl">No tenemos</span><span class="q-lbl">Muy claros</span></div>
+        </div>
+        <div class="question" data-dim="hab" data-q="1">
+          <div class="q-text">¿Tienen rutinas diarias que refuercen el sentido de equipo (desayuno juntos, buenas noches, etc.)?</div>
+          <div class="q-scale">
+            <button class="q-btn" data-val="1">1</button>
+            <button class="q-btn" data-val="2">2</button>
+            <button class="q-btn" data-val="3">3</button>
+            <button class="q-btn" data-val="4">4</button>
+            <button class="q-btn" data-val="5">5</button>
+          </div>
+          <div class="q-labels"><span class="q-lbl">Ninguna</span><span class="q-lbl">Varias sólidas</span></div>
+        </div>
+        <div class="question" data-dim="hab" data-q="2">
+          <div class="q-text">¿Tu familia tiene alguna meta o proyecto compartido hacia el que estén trabajando juntos ahora mismo?</div>
+          <div class="q-scale">
+            <button class="q-btn" data-val="1">1</button>
+            <button class="q-btn" data-val="2">2</button>
+            <button class="q-btn" data-val="3">3</button>
+            <button class="q-btn" data-val="4">4</button>
+            <button class="q-btn" data-val="5">5</button>
+          </div>
+          <div class="q-labels"><span class="q-lbl">Ninguna</span><span class="q-lbl">Sí, activa</span></div>
+        </div>
+      </div>
+
+    </div><!-- /questions-col -->
+
+    <!-- ── STICKY PANEL ── -->
+    <div class="sticky-panel">
+      <div class="score-panel">
+        <div class="sp-title">Tu ICF en tiempo real</div>
+        <div class="icf-big">
+          <div class="icf-number" id="icf-number" style="color:#475569;">—</div>
+          <div class="icf-zone-label" id="icf-zone" style="color:#475569;">Responde las preguntas</div>
+        </div>
+
+        <!-- Radar SVG -->
+        <div class="radar-container">
+          <svg id="radar-svg" width="200" height="200" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="80"  fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+            <circle cx="100" cy="100" r="60"  fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+            <circle cx="100" cy="100" r="40"  fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+            <circle cx="100" cy="100" r="20"  fill="none" stroke="rgba(255,255,255,.05)" stroke-width="1"/>
+            <line x1="100" y1="20"  x2="100" y2="180" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+            <line x1="20"  y1="100" x2="180" y2="100" stroke="rgba(255,255,255,.06)" stroke-width="1"/>
+            <polygon id="radar-poly" points="100,100 100,100 100,100 100,100"
+              fill="rgba(249,115,22,.18)" stroke="#f97316" stroke-width="2"/>
+            <text x="100" y="14"  text-anchor="middle" font-size="9" fill="#fb923c" font-family="Inter,sans-serif" font-weight="700">🗣️</text>
+            <text x="186" y="104" text-anchor="start"  font-size="9" fill="#67e8f9" font-family="Inter,sans-serif" font-weight="700">📅</text>
+            <text x="100" y="196" text-anchor="middle" font-size="9" fill="#f9a8d4" font-family="Inter,sans-serif" font-weight="700">❤️</text>
+            <text x="14"  y="104" text-anchor="end"    font-size="9" fill="#6ee7b7" font-family="Inter,sans-serif" font-weight="700">🌱</text>
+          </svg>
+        </div>
+
+        <!-- Dim bars -->
+        <div class="dim-bar-row">
+          <div class="dbr-top"><span class="dbr-name" style="color:#fb923c;">🗣️ Comunicación</span><span class="dbr-val" id="bar-com-val" style="color:#fb923c;">—</span></div>
+          <div class="dbr-track"><div class="dbr-fill" id="bar-com" style="width:0%;background:#f97316;"></div></div>
+        </div>
+        <div class="dim-bar-row">
+          <div class="dbr-top"><span class="dbr-name" style="color:#67e8f9;">📅 Tiempo</span><span class="dbr-val" id="bar-tpo-val" style="color:#67e8f9;">—</span></div>
+          <div class="dbr-track"><div class="dbr-fill" id="bar-tpo" style="width:0%;background:#06b6d4;"></div></div>
+        </div>
+        <div class="dim-bar-row">
+          <div class="dbr-top"><span class="dbr-name" style="color:#f9a8d4;">❤️ Emociones</span><span class="dbr-val" id="bar-emo-val" style="color:#f9a8d4;">—</span></div>
+          <div class="dbr-track"><div class="dbr-fill" id="bar-emo" style="width:0%;background:#ec4899;"></div></div>
+        </div>
+        <div class="dim-bar-row">
+          <div class="dbr-top"><span class="dbr-name" style="color:#6ee7b7;">🌱 Hábitos</span><span class="dbr-val" id="bar-hab-val" style="color:#6ee7b7;">—</span></div>
+          <div class="dbr-track"><div class="dbr-fill" id="bar-hab" style="width:0%;background:#10b981;"></div></div>
+        </div>
+
+        <button class="reset-btn" onclick="resetAll()">↺ Reiniciar</button>
+      </div>
+
+      <div class="result-card" id="result-card">
+        <div class="rc-title">🧠 Análisis Sentinel AI</div>
+        <div class="rc-text" id="result-text"></div>
+        <button class="rc-cta">Comenzar mi proceso →</button>
+      </div>
+    </div>
+
+  </div><!-- /main-grid -->
+</div>
+
+<script>
+const scores = { com: [null,null,null], tpo: [null,null,null], emo: [null,null,null], hab: [null,null,null] };
+const weights = { com: .30, tpo: .25, emo: .25, hab: .20 };
+
+const ZONES = [
+  { min:0,  max:40,  label:'Familia en crisis',     color:'#ef4444' },
+  { min:41, max:65,  label:'Familia en desarrollo', color:'#f97316' },
+  { min:66, max:85,  label:'Familia en cohesión',   color:'#f59e0b' },
+  { min:86, max:100, label:'Familia floreciente',   color:'#10b981' },
+];
+
+const ANALYSIS = {
+  crisis:   'Tu familia atraviesa un momento difícil. Hay patrones que necesitan atención. La buena noticia: el hecho de que estés haciendo esta pregunta ya es el primer paso.',
+  desarrol: 'Hay voluntad y hay amor, pero falta estructura. Tu familia tiene un potencial enorme que aún no ha sido sistematizado. El proceso IF fue diseñado exactamente para familias como la tuya.',
+  cohesion: 'Tu familia tiene vínculos fuertes. Hay rituales y comunicación. El siguiente salto es profundizar el propósito compartido y construir un legado consciente.',
+  floreci:  '¡Tu familia florece! Estás en la zona de mayor cohesión. El reto ahora es preservar esto y convertirlo en un legado que trascienda generaciones.',
+};
+
+function getZone(icf) {
+  return ZONES.find(z => icf >= z.min && icf <= z.max) || ZONES[0];
+}
+
+function dimScore(dim) {
+  const vals = scores[dim].filter(v => v !== null);
+  if (!vals.length) return null;
+  return Math.round((vals.reduce((a,b)=>a+b,0) / vals.length) * 20);
+}
+
+function totalAnswered() {
+  return Object.values(scores).flat().filter(v => v !== null).length;
+}
+
+function calcICF() {
+  let total = 0, weight = 0;
+  for (const [dim, w] of Object.entries(weights)) {
+    const s = dimScore(dim);
+    if (s !== null) { total += s * w; weight += w; }
+  }
+  if (weight === 0) return null;
+  return Math.round(total / weight);
+}
+
+function updateRadar(ds) {
+  const cx = 100, cy = 100, r = 80;
+  const comS = ds.com ?? 0;
+  const tpoS = ds.tpo ?? 0;
+  const emoS = ds.emo ?? 0;
+  const habS = ds.hab ?? 0;
+  const top   = cy - r * (comS / 100);
+  const right = cx + r * (tpoS / 100);
+  const bot   = cy + r * (emoS / 100);
+  const left  = cx - r * (habS / 100);
+  document.getElementById('radar-poly').setAttribute('points',
+    `${cx},${top} ${right},${cy} ${cx},${bot} ${left},${cy}`);
+}
+
+function update() {
+  const answered = totalAnswered();
+  document.getElementById('prog-count').textContent = answered + ' / 12 respondidas';
+  document.getElementById('prog-bar').style.width = (answered / 12 * 100) + '%';
+
+  const ds = {
+    com: dimScore('com'), tpo: dimScore('tpo'),
+    emo: dimScore('emo'), hab: dimScore('hab'),
+  };
+
+  ['com','tpo','emo','hab'].forEach(d => {
+    const v = ds[d];
+    const bar = document.getElementById('bar-'+d);
+    const valEl = document.getElementById('bar-'+d+'-val');
+    if (v !== null) { bar.style.width = v+'%'; valEl.textContent = v; }
+    else { valEl.textContent = '—'; }
+  });
+
+  updateRadar(ds);
+
+  const icf = calcICF();
+  const numEl = document.getElementById('icf-number');
+  const zoneEl = document.getElementById('icf-zone');
+
+  if (icf === null) {
+    numEl.textContent = '—'; numEl.style.color = '#475569';
+    zoneEl.textContent = 'Responde las preguntas'; zoneEl.style.color = '#475569';
+    return;
+  }
+
+  const zone = getZone(icf);
+  numEl.textContent = icf; numEl.style.color = zone.color;
+  zoneEl.textContent = zone.label; zoneEl.style.color = zone.color;
+
+  if (answered === 12) {
+    const card = document.getElementById('result-card');
+    const txt  = document.getElementById('result-text');
+    const key  = icf <= 40 ? 'crisis' : icf <= 65 ? 'desarrol' : icf <= 85 ? 'cohesion' : 'floreci';
+    txt.textContent = ANALYSIS[key];
+    card.classList.add('show');
+  }
+}
+
+// Wire buttons
+document.querySelectorAll('.question').forEach(qEl => {
+  const dim = qEl.dataset.dim;
+  const qi  = parseInt(qEl.dataset.q);
+  qEl.querySelectorAll('.q-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      qEl.querySelectorAll('.q-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      scores[dim][qi] = parseInt(btn.dataset.val);
+      update();
+    });
+  });
+});
+
+function resetAll() {
+  for (const dim of Object.keys(scores)) scores[dim] = [null,null,null];
+  document.querySelectorAll('.q-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('result-card').classList.remove('show');
+  ['com','tpo','emo','hab'].forEach(d => {
+    document.getElementById('bar-'+d).style.width = '0%';
+    document.getElementById('bar-'+d+'-val').textContent = '—';
+  });
+  document.getElementById('radar-poly').setAttribute('points','100,100 100,100 100,100 100,100');
+  document.getElementById('icf-number').textContent = '—';
+  document.getElementById('icf-number').style.color = '#475569';
+  document.getElementById('icf-zone').textContent = 'Responde las preguntas';
+  document.getElementById('icf-zone').style.color = '#475569';
+  document.getElementById('prog-bar').style.width = '0%';
+  document.getElementById('prog-count').textContent = '0 / 12 respondidas';
+}
+</script>
+</body>
+</html>

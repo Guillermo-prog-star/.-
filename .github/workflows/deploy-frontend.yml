@@ -78,3 +78,6 @@ jobs:
         run: |
           echo "✅ Frontend desplegado en Vercel"
           echo "🔗 https://if-full1.vercel.app"
+
+      - name: Echo deployment timestamp
+        run: echo "Deployed at $(date)"

@@ -22,6 +22,25 @@
         <jjwt.version>0.12.6</jjwt.version>
         <springdoc.version>2.8.5</springdoc.version>
         <lombok.version>1.18.36</lombok.version>
+        <jacoco.version>0.8.12</jacoco.version>
+        <sonar.projectKey>integrity-family-backend</sonar.projectKey>
+        <sonar.projectName>Integrity Family — Backend</sonar.projectName>
+        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
+        <sonar.coverage.jacoco.xmlReportPaths>
+            ${project.build.directory}/site/jacoco/jacoco.xml
+        </sonar.coverage.jacoco.xmlReportPaths>
+        <sonar.exclusions>
+            **/domain/**/*,
+            **/config/**/*,
+            **/dto/**/*,
+            **/*Application.java,
+            **/exception/**/*,
+            **/domain/repository/**/*
+        </sonar.exclusions>
+        <sonar.cpd.exclusions>
+            **/dto/**/*,
+            **/domain/**/*
+        </sonar.cpd.exclusions>
     </properties>
 
     <dependencies>
@@ -155,12 +174,98 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <argLine>-Dfile.encoding=UTF-8</argLine>
+                    <!-- argLine se sobreescribe en CI por JaCoCo para inyectar el agente -->
+                    <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
                     <systemPropertyVariables>
                         <spring.profiles.active>test</spring.profiles.active>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
+
+            <!-- ── JaCoCo: cobertura de código ───────────────────────── -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <configuration>
+                    <excludes>
+                        <!-- Excluir clases sin lógica testeable -->
+                        <exclude>**/domain/**/*</exclude>
+                        <exclude>**/config/**/*</exclude>
+                        <exclude>**/dto/**/*</exclude>
+                        <exclude>**/*Application.class</exclude>
+                        <exclude>**/exception/**/*</exclude>
+                        <exclude>**/domain/repository/**/*</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals><goal>prepare-agent</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals><goal>report</goal></goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals><goal>check</goal></goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <!-- Umbral conservador inicial: 40% -->
+                                        <!-- Subir a 60% cuando coverage real lo alcance -->
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.40</minimum>
+                                        </limit>
+                                        <limit>
+                                            <counter>BRANCH</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.30</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                            <!-- Desactivar fallo en local para no bloquear mvn verify rápido -->
+                            <!-- En CI se activa con -Djacoco.skip=false -->
+                            <skip>${jacoco.skip}</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- ── SonarQube Maven plugin ─────────────────────────────── -->
+            <plugin>
+                <groupId>org.sonarsource.scanner.maven</groupId>
+                <artifactId>sonar-maven-plugin</artifactId>
+                <version>4.0.0.4121</version>
+            </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Perfil CI: activa el quality gate de JaCoCo -->
+        <profile>
+            <id>ci</id>
+            <properties>
+                <jacoco.skip>false</jacoco.skip>
+            </properties>
+        </profile>
+        <!-- Perfil local: omite el quality gate para no bloquear dev -->
+        <profile>
+            <id>local</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <jacoco.skip>true</jacoco.skip>
+            </properties>
+        </profile>
+    </profiles>
 </project>

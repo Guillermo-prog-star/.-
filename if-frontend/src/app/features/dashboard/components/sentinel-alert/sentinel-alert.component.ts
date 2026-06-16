@@ -6,8 +6,8 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-    <div *ngIf="active" 
-         class="sentinel-container glass-emergency p-6 rounded-3xl border-2 border-red-500/50 flex flex-col md:flex-row items-center gap-6 animate-pulse-slow shadow-[0_0_50px_rgba(239,68,68,0.2)]">
+    @if (active) {
+    <div class="sentinel-container glass-emergency p-6 rounded-3xl border-2 border-red-500/50 flex flex-col md:flex-row items-center gap-6 animate-pulse-slow shadow-[0_0_50px_rgba(239,68,68,0.2)]">
       
       <div class="flex items-center gap-4">
         <div class="relative">
@@ -38,6 +38,7 @@ import { CommonModule } from '@angular/common';
         </button>
       </div>
     </div>
+    }
   `,
   styles: [`
     .glass-emergency {

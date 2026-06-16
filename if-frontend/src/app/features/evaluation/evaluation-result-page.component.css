@@ -1,1 +1,126 @@
-/* Estilos para evaluation-result-page */
+/* ── Page ── */
+.er-page { max-width: 900px; margin: 0 auto; padding: 24px 20px 80px; color: #e0e0e0; }
+
+/* ── Header ── */
+.er-back { font-size: 12px; color: rgba(255,255,255,0.35); text-decoration: none; display: inline-block; margin-bottom: 16px; transition: color 0.2s; }
+.er-back:hover { color: #818cf8; }
+.er-title-row { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+.er-icon { font-size: 36px; color: #818cf8; }
+.er-title { font-size: 22px; font-weight: 800; color: #fff; margin: 0 0 3px; }
+.er-sub { font-size: 12px; color: rgba(255,255,255,0.4); margin: 0; }
+.er-sub strong { color: #818cf8; }
+
+/* ── Loading / Empty ── */
+.er-loading { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 80px 20px; color: #666; }
+.er-spinner { width: 36px; height: 36px; border: 3px solid rgba(99,102,241,0.2); border-top-color: #6366f1; border-radius: 50%; animation: er-spin 0.8s linear infinite; }
+@keyframes er-spin { to { transform: rotate(360deg); } }
+.er-empty { text-align: center; padding: 60px 20px; }
+.er-empty-icon { font-size: 40px; margin-bottom: 12px; }
+.er-empty p { color: rgba(255,255,255,0.4); margin-bottom: 20px; }
+
+/* ── Pilar banner ── */
+.er-pillar-banner {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 14px 18px; margin-bottom: 24px;
+  border: 1px solid; border-radius: 14px;
+}
+.er-pillar-name { font-size: 13px; font-weight: 800; }
+.er-pillar-hint { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+
+/* ── Grid ── */
+.er-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+@media (max-width: 640px) { .er-grid { grid-template-columns: 1fr; } }
+
+/* ── Cards ── */
+.er-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 18px; padding: 22px;
+}
+.er-col-right { display: flex; flex-direction: column; gap: 14px; }
+
+.er-card-label {
+  font-size: 10px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.1em; color: rgba(255,255,255,0.35);
+  margin-bottom: 16px;
+}
+.er-label-blue { color: #60a5fa; }
+.er-label-purple { color: #a78bfa; }
+
+/* ── ICF circle ── */
+.er-icf-row { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+.er-icf-circle {
+  width: 86px; height: 86px; border-radius: 50%; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border: 3px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+}
+.er-icf-circle.er-icf-bajo  { border-color: #34d399; background: rgba(52,211,153,0.08); }
+.er-icf-circle.er-icf-moderado { border-color: #fbbf24; background: rgba(251,191,36,0.08); }
+.er-icf-circle.er-icf-alto  { border-color: #f87171; background: rgba(248,113,113,0.08); }
+.er-icf-num { font-size: 26px; font-weight: 900; line-height: 1; }
+.er-icf-den { font-size: 10px; color: rgba(255,255,255,0.4); }
+.er-icf-circle.er-icf-bajo  .er-icf-num { color: #34d399; }
+.er-icf-circle.er-icf-moderado .er-icf-num { color: #fbbf24; }
+.er-icf-circle.er-icf-alto  .er-icf-num { color: #f87171; }
+
+/* ── Risk badge ── */
+.er-risk-badge {
+  display: inline-block; padding: 5px 14px; border-radius: 999px;
+  font-size: 13px; font-weight: 800;
+  background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.7);
+}
+.er-risk-badge.er-risk-bajo     { background: rgba(52,211,153,0.12); color: #34d399; }
+.er-risk-badge.er-risk-moderado { background: rgba(251,191,36,0.12); color: #fbbf24; }
+.er-risk-badge.er-risk-alto     { background: rgba(248,113,113,0.12); color: #f87171; }
+.er-consciousness { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 8px; }
+
+/* ── Dimension bars ── */
+.er-dims { display: flex; flex-direction: column; gap: 12px; }
+.er-dim-item {}
+.er-dim-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.er-dim-name { font-size: 12px; font-weight: 700; }
+.er-dim-score { font-size: 12px; }
+.er-dim-bar-track { height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+.er-dim-bar { height: 100%; border-radius: 3px; transition: width 1s ease; }
+
+/* ── Synthesis / Mission ── */
+.er-synthesis-text { font-size: 13px; line-height: 1.75; color: rgba(255,255,255,0.65); margin: 0; white-space: pre-line; }
+.er-mission-text { font-size: 14px; font-weight: 700; color: #c4b5fd; margin: 0; }
+.er-muted { font-size: 13px; color: rgba(255,255,255,0.3); margin: 0; }
+
+/* ── Alerts ── */
+.er-alert {
+  display: flex; gap: 12px; padding: 14px 16px; border-radius: 14px;
+  border: 1px solid;
+}
+.er-alert-warn   { background: rgba(251,191,36,0.07); border-color: rgba(251,191,36,0.25); }
+.er-alert-danger { background: rgba(248,113,113,0.07); border-color: rgba(248,113,113,0.25); }
+.er-alert-icon { font-size: 20px; flex-shrink: 0; }
+.er-alert-title { font-size: 13px; font-weight: 800; color: rgba(255,255,255,0.85); margin-bottom: 4px; }
+.er-alert-body  { font-size: 12px; color: rgba(255,255,255,0.5); margin: 0 0 6px; line-height: 1.5; }
+.er-alert-link  { font-size: 12px; font-weight: 700; color: #818cf8; text-decoration: none; }
+
+/* ── Celebration ── */
+.er-celebration {
+  text-align: center; padding: 32px 24px; margin-bottom: 24px;
+  background: linear-gradient(135deg, rgba(251,191,36,0.08), rgba(245,158,11,0.04));
+  border: 1px solid rgba(251,191,36,0.25); border-radius: 18px;
+}
+.er-cel-icon  { font-size: 44px; margin-bottom: 12px; }
+.er-cel-title { font-size: 18px; font-weight: 800; color: #fbbf24; margin: 0 0 8px; }
+.er-cel-body  { font-size: 13px; color: rgba(255,255,255,0.55); max-width: 500px; margin: 0 auto; line-height: 1.6; }
+
+/* ── Buttons ── */
+.er-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 8px; }
+.er-btn {
+  padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 700;
+  cursor: pointer; border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.65);
+  text-decoration: none; display: inline-flex; align-items: center;
+  transition: all 0.18s;
+}
+.er-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.er-btn-primary { background: linear-gradient(135deg, #6366f1, #818cf8); border-color: transparent; color: #fff; }
+.er-btn-primary:hover { box-shadow: 0 4px 16px rgba(99,102,241,0.4); transform: translateY(-1px); }
+.er-btn-pillar { background: transparent; font-size: 12px; white-space: nowrap; }

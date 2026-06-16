@@ -18,7 +18,7 @@ type PageState = 'FORM' | 'SENT' | 'ERROR';
     <h1 class="fp-title">Recuperar contraseña</h1>
 
     <!-- ── Estado: Formulario ── -->
-    <ng-container *ngIf="state === 'FORM'">
+    @if (state === 'FORM') {
       <p class="fp-desc">
         Ingresa tu correo registrado y te enviaremos un enlace para restablecer tu contraseña.
       </p>
@@ -38,7 +38,9 @@ type PageState = 'FORM' | 'SENT' | 'ERROR';
           />
         </div>
 
-        <div class="err-block" *ngIf="error">{{ error }}</div>
+        @if (error) {
+          <div class="err-block">{{ error }}</div>
+        }
 
         <button
           type="submit"
@@ -47,10 +49,10 @@ type PageState = 'FORM' | 'SENT' | 'ERROR';
           {{ loading ? 'Enviando...' : 'Enviar enlace de recuperación' }}
         </button>
       </form>
-    </ng-container>
+    }
 
     <!-- ── Estado: Enviado con éxito ── -->
-    <ng-container *ngIf="state === 'SENT'">
+    @if (state === 'SENT') {
       <div class="sent-block">
         <div class="sent-icon">✅</div>
         <h2 class="sent-title">Revisa tu correo</h2>
@@ -63,16 +65,16 @@ type PageState = 'FORM' | 'SENT' | 'ERROR';
           Revisa también la carpeta de spam o correo no deseado.
         </p>
       </div>
-    </ng-container>
+    }
 
     <!-- ── Estado: Error de red ── -->
-    <ng-container *ngIf="state === 'ERROR'">
+    @if (state === 'ERROR') {
       <div class="error-block">
         <div class="error-icon">⚠️</div>
         <p>No pudimos procesar tu solicitud. Por favor intenta de nuevo.</p>
         <button class="btn-secondary" (click)="reset()">Volver a intentar</button>
       </div>
-    </ng-container>
+    }
 
     <!-- Volver al login (siempre visible) -->
     <div class="back-link">

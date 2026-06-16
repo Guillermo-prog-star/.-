@@ -8,7 +8,8 @@ import { ParticipationPulseResponse, MemberPulse, DayActivity } from '../../../.
   standalone: true,
   imports: [CommonModule],
   template: `
-<div class="pulse-card" *ngIf="pulse">
+@if (pulse) {
+<div class="pulse-card">
 
   <!-- Header -->
   <div class="pulse-header">
@@ -36,40 +37,51 @@ import { ParticipationPulseResponse, MemberPulse, DayActivity } from '../../../.
 
   <!-- Avatares de miembros -->
   <div class="members-row">
-    <div class="member-avatar-wrap" *ngFor="let m of pulse.members" [title]="memberTooltip(m)">
+    @for (m of pulse.members; track m.name) {
+    <div class="member-avatar-wrap" [title]="memberTooltip(m)">
       <div class="member-avatar" [class.avatar-active]="m.activeThisWeek" [class.avatar-inactive]="!m.activeThisWeek">
         {{ m.initials }}
       </div>
       <div class="avatar-pulse-dot" [class.dot-on]="m.activeThisWeek" [class.dot-off]="!m.activeThisWeek"></div>
       <span class="avatar-name">{{ firstName(m.name) }}</span>
     </div>
+    }
   </div>
 
   <!-- Sparkline semanal -->
   <div class="sparkline-section">
     <div class="sparkline-bars">
-      <div class="bar-col" *ngFor="let day of pulse.weeklyActivity">
+      @for (day of pulse.weeklyActivity; track day.dayLabel) {
+      <div class="bar-col">
         <div class="bar-wrap">
           <div class="bar-fill" [style.height.%]="barHeight(day)" [class.bar-active]="day.eventCount > 0"></div>
         </div>
         <span class="bar-label">{{ day.dayLabel }}</span>
       </div>
+      }
     </div>
   </div>
 
 </div>
+}
 
 <!-- Skeleton mientras carga -->
-<div class="pulse-card skeleton" *ngIf="!pulse && !error">
+@if (!pulse && !error) {
+<div class="pulse-card skeleton">
   <div class="sk-header"></div>
   <div class="sk-track"></div>
   <div class="sk-row">
-    <div class="sk-avatar" *ngFor="let i of [1,2,3,4]"></div>
+    @for (i of [1,2,3,4]; track i) {
+    <div class="sk-avatar"></div>
+    }
   </div>
   <div class="sk-bars">
-    <div class="sk-bar" *ngFor="let i of [1,2,3,4,5,6,7]" [style.height.px]="[20,35,15,40,25,30,10][i-1]"></div>
+    @for (i of [1,2,3,4,5,6,7]; track i) {
+    <div class="sk-bar" [style.height.px]="[20,35,15,40,25,30,10][i-1]"></div>
+    }
   </div>
 </div>
+}
   `,
   styles: [`
     .pulse-card {

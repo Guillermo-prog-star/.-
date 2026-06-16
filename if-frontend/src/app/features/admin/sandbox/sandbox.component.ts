@@ -46,9 +46,11 @@ import { FormsModule } from '@angular/forms';
           </div>
         </div>
 
-        <div *ngIf="logContent" class="mt-8 bg-black/40 rounded-2xl border border-white/5 p-6 font-mono text-[10px] overflow-auto max-h-[250px]">
+        @if (logContent) {
+        <div class="mt-8 bg-black/40 rounded-2xl border border-white/5 p-6 font-mono text-[10px] overflow-auto max-h-[250px]">
           <pre class="text-indigo-300">{{ logContent | json }}</pre>
         </div>
+        }
       </div>
     </div>
   `,

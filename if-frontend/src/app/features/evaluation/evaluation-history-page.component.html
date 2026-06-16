@@ -1,161 +1,131 @@
-<div class="page-header">
-  <div>
-    <h1>Historial de Diagnósticos</h1>
-    <p>Evolución longitudinal de <strong>{{ familyName }}</strong></p>
-  </div>
-  <div style="display:flex;gap:10px;align-items:center;">
-    <a routerLink="/evaluations/start" class="btn btn-primary">+ Nueva Evaluación</a>
-    <a routerLink="/dashboard" class="btn">Panel</a>
-  </div>
-</div>
+<div class="eh-page">
 
-@if (loading()) {
-  <div class="loading">Cargando historial...</div>
-}
-
-@else {
-
-  <!-- ── Evaluaciones en curso ──────────────────────────────────────────── -->
-  @if (started().length) {
-    <div style="margin-bottom:20px;">
-      <h3 style="font-size:14px;font-weight:700;color:#92400E;margin-bottom:10px;
-                 display:flex;align-items:center;gap:6px;">
-        ⏸️ Evaluaciones en curso ({{ started().length }})
-      </h3>
-      @for (e of started(); track e.id) {
-        <div style="padding:14px 18px;background:#FFFBEB;border:1px solid #FCD34D;
-                    border-radius:8px;margin-bottom:8px;
-                    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;">
-          <div>
-            <span style="font-weight:700;color:#92400E;">Evaluación #{{ e.id }}</span>
-            <span style="font-size:13px;color:#B45309;margin-left:10px;">
-              Iniciada el {{ formatDate(e.startedAt) }}
-            </span>
-          </div>
-          <button class="btn btn-primary" style="padding:6px 16px;font-size:13px;"
-                  (click)="resumeEval(e.id)">
-            ▶ Continuar
-          </button>
-        </div>
-      }
+  <!-- Header -->
+  <div class="eh-header">
+    <div>
+      <h1 class="eh-title">Historial de Diagnósticos</h1>
+      <p class="eh-sub">Evolución longitudinal de <strong>{{ familyName }}</strong></p>
     </div>
-  }
-
-  <!-- ── Sparkline + resumen ───────────────────────────────────────────── -->
-  @if (timeline().length >= 2) {
-    <div class="card" style="margin-bottom:20px;padding:20px 24px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
-        <div>
-          <p style="font-size:12px;color:#64748B;text-transform:uppercase;
-                    letter-spacing:.08em;margin-bottom:4px;">Tendencia ICF</p>
-          <p style="font-size:13px;color:#334155;">
-            {{ timeline().length }} evaluación{{ timeline().length > 1 ? 'es' : '' }} finalizada{{ timeline().length > 1 ? 's' : '' }}
-          </p>
-        </div>
-        <svg viewBox="0 0 240 48" width="240" height="48" style="overflow:visible;">
-          <defs>
-            <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%"   stop-color="#6366f1" stop-opacity="0.2"/>
-              <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
-            </linearGradient>
-          </defs>
-          <polyline [attr.points]="sparklinePoints()"
-                    fill="none" stroke="#6366f1" stroke-width="2"
-                    stroke-linejoin="round" stroke-linecap="round"/>
-        </svg>
-      </div>
+    <div class="eh-header-actions">
+      <a routerLink="/evaluations/start" class="eh-btn eh-btn-primary">+ Nueva evaluación</a>
+      <a routerLink="/evaluations/evolution" class="eh-btn">📈 Evolución</a>
     </div>
-  }
+  </div>
 
-  <!-- ── Lista de evaluaciones finalizadas ─────────────────────────────── -->
-  @if (finalized().length === 0) {
-    <div class="card" style="text-align:center;padding:48px 24px;">
-      <p style="font-size:32px;margin-bottom:12px;">📋</p>
-      <p style="color:#64748B;margin-bottom:20px;">
-        Aún no hay evaluaciones finalizadas para esta familia.
-      </p>
-      <button class="btn btn-primary" (click)="startNew()">Iniciar primera evaluación →</button>
+  @if (loading()) {
+    <div class="eh-loading">
+      <div class="eh-spinner"></div>
+      <p>Cargando historial…</p>
     </div>
   }
 
   @else {
-    <div class="card" style="padding:0;overflow:hidden;">
-      <!-- Cabecera de tabla -->
-      <div style="display:grid;grid-template-columns:60px 1fr 100px 100px 130px 100px;
-                  padding:10px 20px;background:#F8FAFC;border-bottom:1px solid #E2E8F0;
-                  font-size:11px;font-weight:700;color:#64748B;text-transform:uppercase;
-                  letter-spacing:.07em;gap:8px;">
-        <span>#</span>
-        <span>Fecha</span>
-        <span style="text-align:center;">ICF</span>
-        <span style="text-align:center;">Riesgo</span>
-        <span>Dimensión crítica</span>
-        <span></span>
-      </div>
 
-      <!-- Filas -->
-      @for (e of finalized(); track e.id; let idx = $index) {
-        <div style="display:grid;grid-template-columns:60px 1fr 100px 100px 130px 100px;
-                    padding:14px 20px;border-bottom:1px solid #F1F5F9;
-                    align-items:center;gap:8px;transition:background .15s;"
-             [style.background]="idx % 2 === 0 ? '#fff' : '#FAFAFA'">
-
-          <!-- ID -->
-          <span style="font-size:13px;font-weight:600;color:#64748B;">#{{ e.id }}</span>
-
-          <!-- Fecha -->
-          <div>
-            <div style="font-size:13px;font-weight:600;color:#1E293B;">
-              {{ formatDate(e.finalizedAt) }}
+    <!-- Evaluaciones en curso -->
+    @if (started().length) {
+      <div class="eh-pending-section">
+        <div class="eh-section-label">⏸️ En curso ({{ started().length }})</div>
+        @for (e of started(); track e.id) {
+          <div class="eh-pending-card">
+            <div class="eh-pending-info">
+              <span class="eh-pending-id">Evaluación #{{ e.id }}</span>
+              <span class="eh-pending-date">Iniciada el {{ formatDate(e.startedAt) }}</span>
             </div>
-            @if (e.memberName) {
-              <div style="font-size:11px;color:#94A3B8;margin-top:2px;">
-                {{ e.memberName }}
-              </div>
-            }
+            <button class="eh-btn eh-btn-resume" (click)="resumeEval(e.id)">▶ Continuar</button>
           </div>
+        }
+      </div>
+    }
 
-          <!-- ICF -->
-          <div style="text-align:center;">
-            @if (e.icf != null) {
-              <span style="display:inline-block;padding:3px 10px;border-radius:20px;
-                           font-size:13px;font-weight:800;"
-                    [style.background]="icfBg(e.icf)"
-                    [style.color]="icfColor(e.icf)">
-                {{ e.icf | number:'1.0-0' }}
-              </span>
-            } @else {
-              <span style="color:#CBD5E1;font-size:13px;">—</span>
-            }
-          </div>
-
-          <!-- Riesgo -->
-          <div style="text-align:center;">
-            @if (e.riskLevel) {
-              <span class="badge" [class]="riskBadgeClass(e.riskLevel)"
-                    style="font-size:11px;padding:3px 10px;border-radius:12px;">
-                {{ riskLabel(e.riskLevel) }}
-              </span>
-            } @else {
-              <span style="color:#CBD5E1;font-size:13px;">—</span>
-            }
-          </div>
-
-          <!-- Dimensión crítica -->
-          <div style="font-size:12px;color:#475569;text-transform:capitalize;">
-            {{ e.criticalDimension ?? '—' }}
-          </div>
-
-          <!-- Acción -->
-          <div style="text-align:right;">
-            <button class="btn" style="padding:5px 14px;font-size:12px;"
-                    (click)="viewResult(e.id)">
-              Ver →
-            </button>
-          </div>
-
+    <!-- Sparkline ICF -->
+    @if (timeline().length >= 2) {
+      <div class="eh-card eh-sparkline-card">
+        <div class="eh-sparkline-left">
+          <div class="eh-section-label">Tendencia ICF</div>
+          <div class="eh-sparkline-count">{{ timeline().length }} evaluación{{ timeline().length > 1 ? 'es' : '' }} finalizada{{ timeline().length > 1 ? 's' : '' }}</div>
         </div>
-      }
-    </div>
+        <svg viewBox="0 0 240 48" width="240" height="48" class="eh-sparkline-svg">
+          <defs>
+            <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#6366f1" stop-opacity="0.3"/>
+              <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <polyline [attr.points]="sparklinePoints()"
+                    fill="none" stroke="#818cf8" stroke-width="2"
+                    stroke-linejoin="round" stroke-linecap="round"/>
+        </svg>
+      </div>
+    }
+
+    <!-- Lista de evaluaciones finalizadas -->
+    @if (finalized().length === 0) {
+      <div class="eh-card eh-empty">
+        <div class="eh-empty-icon">📋</div>
+        <p>Aún no hay evaluaciones finalizadas para esta familia.</p>
+        <button class="eh-btn eh-btn-primary" (click)="startNew()">Iniciar primera evaluación →</button>
+      </div>
+    }
+
+    @else {
+      <div class="eh-card eh-table-card">
+        <!-- Cabecera -->
+        <div class="eh-table-head">
+          <span>#</span>
+          <span>Fecha</span>
+          <span class="eh-center">ICF</span>
+          <span class="eh-center">Riesgo</span>
+          <span>Dimensión crítica</span>
+          <span></span>
+        </div>
+
+        <!-- Filas -->
+        @for (e of finalized(); track e.id) {
+          <div class="eh-table-row">
+            <span class="eh-row-id">#{{ e.id }}</span>
+
+            <div>
+              <div class="eh-row-date">{{ formatDate(e.finalizedAt) }}</div>
+              @if (e.memberName) {
+                <div class="eh-row-member">{{ e.memberName }}</div>
+              }
+            </div>
+
+            <div class="eh-center">
+              @if (e.icf != null) {
+                <span class="eh-icf-badge"
+                      [class.eh-icf-bajo]="e.icf >= 70"
+                      [class.eh-icf-moderado]="e.icf >= 40 && e.icf < 70"
+                      [class.eh-icf-alto]="e.icf < 40">
+                  {{ e.icf | number:'1.0-0' }}
+                </span>
+              } @else {
+                <span class="eh-dash">—</span>
+              }
+            </div>
+
+            <div class="eh-center">
+              @if (e.riskLevel) {
+                <span class="eh-risk-badge"
+                      [class.eh-risk-bajo]="e.riskLevel === 'BAJO'"
+                      [class.eh-risk-moderado]="e.riskLevel === 'MODERADO'"
+                      [class.eh-risk-alto]="e.riskLevel === 'ALTO' || e.riskLevel === 'CRITICO'">
+                  {{ riskLabel(e.riskLevel) }}
+                </span>
+              } @else {
+                <span class="eh-dash">—</span>
+              }
+            </div>
+
+            <div class="eh-row-dim">{{ e.criticalDimension ?? '—' }}</div>
+
+            <div class="eh-row-action">
+              <button class="eh-btn eh-btn-view" (click)="viewResult(e.id)">Ver →</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
   }
-}
+</div>

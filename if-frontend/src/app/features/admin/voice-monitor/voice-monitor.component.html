@@ -71,36 +71,44 @@
       <div class="panel-title">Flujo de Interacciones</div>
       <div class="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-2" scrollPolicy="auto-bottom">
         <!-- Empty State -->
-        <div *ngIf="recentInteractions.length === 0" class="flex flex-col items-center justify-center h-64 text-center">
-          <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 animate-pulse">
-            <span class="text-2xl">🔇</span>
+        @if (recentInteractions.length === 0) {
+          <div class="flex flex-col items-center justify-center h-64 text-center">
+            <div class="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-4 animate-pulse">
+              <span class="text-2xl">🔇</span>
+            </div>
+            <p class="text-white/40 text-[10px] uppercase font-black tracking-widest">Silencio en el Nodo</p>
+            <p class="text-white/20 text-[9px] mt-1 italic">Esperando tráfico de voz institucional...</p>
           </div>
-          <p class="text-white/40 text-[10px] uppercase font-black tracking-widest">Silencio en el Nodo</p>
-          <p class="text-white/20 text-[9px] mt-1 italic">Esperando tráfico de voz institucional...</p>
-        </div>
+        }
 
-        <div class="activity-item group" *ngFor="let item of recentInteractions">
-          <div class="flex gap-4 items-center">
-            <div class="fam-icon-wrapper group-hover:scale-110 transition-transform">
-              <span *ngIf="item.status === 'SUCCESS'">🎙️</span>
-              <span *ngIf="item.status !== 'SUCCESS'">⚠️</span>
+        @for (item of recentInteractions; track item) {
+          <div class="activity-item group">
+            <div class="flex gap-4 items-center">
+              <div class="fam-icon-wrapper group-hover:scale-110 transition-transform">
+                @if (item.status === 'SUCCESS') {
+                  <span>🎙️</span>
+                }
+                @if (item.status !== 'SUCCESS') {
+                  <span>⚠️</span>
+                }
+              </div>
+              <div class="fam-info">
+                <h4>{{ item.family }}</h4>
+                <span class="flex items-center gap-2">
+                  {{ item.municipio }}
+                  <span class="w-1 h-1 bg-white/20 rounded-full"></span>
+                  {{ item.duration }} seg de audio
+                </span>
+              </div>
             </div>
-            <div class="fam-info">
-              <h4>{{ item.family }}</h4>
-              <span class="flex items-center gap-2">
-                {{ item.municipio }} 
-                <span class="w-1 h-1 bg-white/20 rounded-full"></span> 
-                {{ item.duration }} seg de audio
+            <div class="flex flex-col items-end gap-2">
+              <span class="badge" [ngClass]="item.status === 'SUCCESS' ? 'badge-success' : 'badge-error'">
+                {{ item.status }}
               </span>
+              <span class="text-[9px] font-bold text-white/20 uppercase">{{ item.processedAt | date:'HH:mm:ss' }}</span>
             </div>
           </div>
-          <div class="flex flex-col items-end gap-2">
-            <span class="badge" [ngClass]="item.status === 'SUCCESS' ? 'badge-success' : 'badge-error'">
-              {{ item.status }}
-            </span>
-            <span class="text-[9px] font-bold text-white/20 uppercase">{{ item.processedAt | date:'HH:mm:ss' }}</span>
-          </div>
-        </div>
+        }
       </div>
     </div>
   </div>

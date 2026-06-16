@@ -18,26 +18,30 @@ type PageState = 'LOADING' | 'FORM' | 'SUCCESS' | 'INVALID_TOKEN' | 'ERROR';
     <h1 class="rp-title">Nueva contraseña</h1>
 
     <!-- Cargando token -->
-    <div class="loading-state" *ngIf="state === 'LOADING'">
-      <div class="spinner"></div>
-      <p>Verificando enlace...</p>
-    </div>
+    @if (state === 'LOADING') {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <p>Verificando enlace...</p>
+      </div>
+    }
 
     <!-- Token inválido / no presente -->
-    <div class="invalid-state" *ngIf="state === 'INVALID_TOKEN'">
-      <div class="state-icon">⛔</div>
-      <h2>Enlace inválido o expirado</h2>
-      <p>
-        Este enlace de recuperación no es válido o ya fue utilizado.
-        Los enlaces expiran en <strong>30 minutos</strong>.
-      </p>
-      <a routerLink="/auth/forgot-password" class="btn-primary-link">
-        Solicitar nuevo enlace
-      </a>
-    </div>
+    @if (state === 'INVALID_TOKEN') {
+      <div class="invalid-state">
+        <div class="state-icon">⛔</div>
+        <h2>Enlace inválido o expirado</h2>
+        <p>
+          Este enlace de recuperación no es válido o ya fue utilizado.
+          Los enlaces expiran en <strong>30 minutos</strong>.
+        </p>
+        <a routerLink="/auth/forgot-password" class="btn-primary-link">
+          Solicitar nuevo enlace
+        </a>
+      </div>
+    }
 
     <!-- Formulario de nueva contraseña -->
-    <ng-container *ngIf="state === 'FORM'">
+    @if (state === 'FORM') {
       <p class="rp-desc">Elige una contraseña segura para tu cuenta.</p>
 
       <form (ngSubmit)="submit()" #f="ngForm">
@@ -74,12 +78,14 @@ type PageState = 'LOADING' | 'FORM' | 'SUCCESS' | 'INVALID_TOKEN' | 'ERROR';
             required
             autocomplete="new-password"
           />
-          <span class="hint error" *ngIf="confirmPassword && !passwordsMatch()">
-            Las contraseñas no coinciden
-          </span>
+          @if (confirmPassword && !passwordsMatch()) {
+            <span class="hint error">Las contraseñas no coinciden</span>
+          }
         </div>
 
-        <div class="err-block" *ngIf="error">{{ error }}</div>
+        @if (error) {
+          <div class="err-block">{{ error }}</div>
+        }
 
         <button
           type="submit"
@@ -89,26 +95,32 @@ type PageState = 'LOADING' | 'FORM' | 'SUCCESS' | 'INVALID_TOKEN' | 'ERROR';
         </button>
 
       </form>
-    </ng-container>
+    }
 
     <!-- Éxito -->
-    <div class="success-state" *ngIf="state === 'SUCCESS'">
-      <div class="state-icon">🎉</div>
-      <h2>¡Contraseña actualizada!</h2>
-      <p>Tu contraseña fue cambiada exitosamente. Ya puedes iniciar sesión.</p>
-      <a routerLink="/auth/login" class="btn-primary-link">Ir al inicio de sesión</a>
-    </div>
+    @if (state === 'SUCCESS') {
+      <div class="success-state">
+        <div class="state-icon">🎉</div>
+        <h2>¡Contraseña actualizada!</h2>
+        <p>Tu contraseña fue cambiada exitosamente. Ya puedes iniciar sesión.</p>
+        <a routerLink="/auth/login" class="btn-primary-link">Ir al inicio de sesión</a>
+      </div>
+    }
 
     <!-- Error de red -->
-    <div class="error-state" *ngIf="state === 'ERROR'">
-      <div class="state-icon">⚠️</div>
-      <p>Ocurrió un error al procesar tu solicitud. Por favor intenta de nuevo.</p>
-      <button class="btn-secondary" (click)="state = 'FORM'">Volver a intentar</button>
-    </div>
+    @if (state === 'ERROR') {
+      <div class="error-state">
+        <div class="state-icon">⚠️</div>
+        <p>Ocurrió un error al procesar tu solicitud. Por favor intenta de nuevo.</p>
+        <button class="btn-secondary" (click)="state = 'FORM'">Volver a intentar</button>
+      </div>
+    }
 
-    <div class="back-link" *ngIf="state !== 'SUCCESS'">
-      <a routerLink="/auth/login">← Volver al inicio de sesión</a>
-    </div>
+    @if (state !== 'SUCCESS') {
+      <div class="back-link">
+        <a routerLink="/auth/login">← Volver al inicio de sesión</a>
+      </div>
+    }
 
   </div>
 </div>

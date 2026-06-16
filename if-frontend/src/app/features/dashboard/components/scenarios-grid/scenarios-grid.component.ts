@@ -52,7 +52,8 @@ interface ScenarioCard {
       </div>
 
       <!-- Pillar Progress Bar -->
-      <div *ngIf="pillarProgress() !== null" class="mb-6 p-4 bg-white/[0.02] rounded-2xl border border-white/5">
+      @if (pillarProgress() !== null) {
+      <div class="mb-6 p-4 bg-white/[0.02] rounded-2xl border border-white/5">
         <div class="flex justify-between items-center mb-2">
           <span class="text-[9px] font-black uppercase tracking-widest text-white/30">Progreso del Pilar</span>
           <span class="text-xs font-black text-white/70">{{ pillarProgress() }}%</span>
@@ -72,17 +73,22 @@ interface ScenarioCard {
           </a>
         </div>
       </div>
+      }
 
       <!-- Loading skeleton -->
-      <div *ngIf="loading()" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div *ngFor="let _ of [1,2,3,4]"
-             class="h-28 bg-white/[0.02] rounded-2xl border border-white/5 animate-pulse"></div>
+      @if (loading()) {
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        @for (_ of [1,2,3,4]; track _) {
+        <div class="h-28 bg-white/[0.02] rounded-2xl border border-white/5 animate-pulse"></div>
+        }
       </div>
+      }
 
       <!-- Scenarios grid -->
-      <div *ngIf="!loading()" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div *ngFor="let card of cards(); trackBy: trackCard"
-             class="group p-4 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5"
+      @if (!loading()) {
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        @for (card of cards(); track card.title) {
+        <div class="group p-4 rounded-2xl border transition-all duration-300 hover:-translate-y-0.5"
              [ngClass]="cardBg(card.theme)">
 
           <!-- Card header -->
@@ -101,16 +107,18 @@ interface ScenarioCard {
                 </div>
               </div>
             </div>
-            <span *ngIf="card.badge"
-                  class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex-shrink-0"
+            @if (card.badge) {
+            <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex-shrink-0"
                   [ngClass]="badgeClass(card.theme)">
               {{ card.badge }}
             </span>
-            <span *ngIf="card.completed === true"
-                  class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full
+            }
+            @if (card.completed === true) {
+            <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full
                          bg-emerald-500/10 text-emerald-400 flex-shrink-0">
               ✓ Hecho
             </span>
+            }
           </div>
 
           <!-- Description -->
@@ -118,10 +126,11 @@ interface ScenarioCard {
             {{ card.description }}
           </p>
         </div>
+        }
 
         <!-- Empty state -->
-        <div *ngIf="cards().length === 0"
-             class="col-span-2 text-center py-10 text-white/20">
+        @if (cards().length === 0) {
+        <div class="col-span-2 text-center py-10 text-white/20">
           <p class="text-3xl mb-3">🧭</p>
           <p class="text-xs font-bold uppercase tracking-widest">
             Sin proyecciones disponibles
@@ -130,7 +139,9 @@ interface ScenarioCard {
             Completa un diagnóstico para activar el motor IA.
           </p>
         </div>
+        }
       </div>
+      }
     </div>
   `
 })

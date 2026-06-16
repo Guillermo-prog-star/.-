@@ -33,11 +33,12 @@
         <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse relative z-10"></div>
       </button>
 
-      <div *ngIf="sentinel?.hasCriticalAlert()"
-        class="flex items-center gap-3 px-6 py-3 bg-red-500/10 border border-red-500/30 rounded-2xl pulse-red">
-        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
-        <span class="text-xs text-red-400 font-black uppercase tracking-widest">Alerta de Crisis</span>
-      </div>
+      @if (sentinel.hasCriticalAlert()) {
+        <div class="flex items-center gap-3 px-6 py-3 bg-red-500/10 border border-red-500/30 rounded-2xl pulse-red">
+          <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+          <span class="text-xs text-red-400 font-black uppercase tracking-widest">Alerta de Crisis</span>
+        </div>
+      }
 
       <div class="bg-indigo-500/10 border border-indigo-500/20 px-6 py-3 rounded-2xl hidden lg:block">
         <p class="text-[9px] text-indigo-300/60 uppercase font-black tracking-widest mb-0.5">Estado del Sistema</p>
@@ -46,7 +47,7 @@
     </div>
   </header>
 
-  <ng-container *ngIf="stats; else loadingTpl">
+  @if (stats) {
 
     <section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
       <article class="glass-card p-8 group">
@@ -105,19 +106,20 @@
         </div>
 
         <div class="space-y-1 overflow-y-auto custom-scrollbar px-4 pb-8">
-          <div *ngFor="let alert of alerts"
-            class="p-4 rounded-2xl alert-item border border-transparent"
-            [class]="alert.severity === 'CRITICAL' ? 'bg-red-500/5 hover:border-red-500/30' : 'bg-white/5 hover:border-white/10'">
-            <div class="flex justify-between items-start mb-2">
-              <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full" 
-                [class]="alert.severity === 'CRITICAL' ? 'bg-red-500/20 text-red-400' : 'bg-indigo-500/20 text-indigo-400'">
-                {{ alert.category }}
-              </span>
-              <span class="text-[8px] text-white/30 font-bold">{{ alert.createdAt | date:'HH:mm:ss' }}</span>
+          @for (alert of alerts; track alert) {
+            <div class="p-4 rounded-2xl alert-item border border-transparent"
+              [class]="alert.severity === 'CRITICAL' ? 'bg-red-500/5 hover:border-red-500/30' : 'bg-white/5 hover:border-white/10'">
+              <div class="flex justify-between items-start mb-2">
+                <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                  [class]="alert.severity === 'CRITICAL' ? 'bg-red-500/20 text-red-400' : 'bg-indigo-500/20 text-indigo-400'">
+                  {{ alert.category }}
+                </span>
+                <span class="text-[8px] text-white/30 font-bold">{{ alert.createdAt | date:'HH:mm:ss' }}</span>
+              </div>
+              <p class="text-xs text-white font-bold mb-1">{{ alert.title }}</p>
+              <p class="text-[10px] text-white/50 leading-relaxed">{{ alert.message }}</p>
             </div>
-            <p class="text-xs text-white font-bold mb-1">{{ alert.title }}</p>
-            <p class="text-[10px] text-white/50 leading-relaxed">{{ alert.message }}</p>
-          </div>
+          }
         </div>
       </aside>
 
@@ -125,31 +127,35 @@
         <div class="glass-card p-8">
           <h3 class="text-lg font-bold text-white mb-8">AI Sentiment Engine <span class="text-indigo-400 text-sm font-normal ml-2">| Análisis de Tensión</span></h3>
 
-          <div *ngIf="sentiment" class="space-y-10">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-              <div *ngFor="let entry of getSentimentEntries()" class="space-y-3">
-                <div class="flex justify-between items-end">
-                  <p class="text-[9px] text-white/40 uppercase font-black tracking-widest">{{ entry[0] }}</p>
-                  <p class="text-xs text-indigo-400 font-black">{{ entry[1] | number:'1.0-0' }}%</p>
-                </div>
-                <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
-                  <div class="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000" [style.width.%]="entry[1]"></div>
-                </div>
+          @if (sentiment) {
+            <div class="space-y-10">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                @for (entry of getSentimentEntries(); track entry[0]) {
+                  <div class="space-y-3">
+                    <div class="flex justify-between items-end">
+                      <p class="text-[9px] text-white/40 uppercase font-black tracking-widest">{{ entry[0] }}</p>
+                      <p class="text-xs text-indigo-400 font-black">{{ entry[1] | number:'1.0-0' }}%</p>
+                    </div>
+                    <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                      <div class="h-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)] transition-all duration-1000" [style.width.%]="entry[1]"></div>
+                    </div>
+                  </div>
+                }
               </div>
-            </div>
 
-            <div class="relative">
-              <div class="absolute -top-4 -left-4 w-8 h-8 bg-indigo-500/20 rounded-full blur-xl"></div>
-              <div class="prose prose-invert prose-sm max-w-none bg-white/5 p-8 rounded-[32px] border border-white/5 italic text-white/80 leading-relaxed relative z-10 backdrop-blur-sm">
-                <div class="text-indigo-400 mb-3">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V3L14.017 3H21.017V21H14.017ZM3.01703 21L3.01703 18C3.01703 16.8954 3.91246 16 5.01703 16H8.01703C8.56931 16 9.01703 15.5523 9.01703 15V9C9.01703 8.44772 8.56931 8 8.01703 8H5.01703C3.91246 8 3.01703 7.10457 3.01703 6V3L3.01703 3H10.017V21H3.01703Z" />
-                  </svg>
+              <div class="relative">
+                <div class="absolute -top-4 -left-4 w-8 h-8 bg-indigo-500/20 rounded-full blur-xl"></div>
+                <div class="prose prose-invert prose-sm max-w-none bg-white/5 p-8 rounded-[32px] border border-white/5 italic text-white/80 leading-relaxed relative z-10 backdrop-blur-sm">
+                  <div class="text-indigo-400 mb-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C19.5693 16 20.017 15.5523 20.017 15V9C20.017 8.44772 19.5693 8 19.017 8H16.017C14.9124 8 14.017 7.10457 14.017 6V3L14.017 3H21.017V21H14.017ZM3.01703 21L3.01703 18C3.01703 16.8954 3.91246 16 5.01703 16H8.01703C8.56931 16 9.01703 15.5523 9.01703 15V9C9.01703 8.44772 8.56931 8 8.01703 8H5.01703C3.91246 8 3.01703 7.10457 3.01703 6V3L3.01703 3H10.017V21H3.01703Z" />
+                    </svg>
+                  </div>
+                  <p class="whitespace-pre-wrap">{{ sentiment.aiExecutiveSummary }}</p>
                 </div>
-                <p class="whitespace-pre-wrap">{{ sentiment.aiExecutiveSummary }}</p>
               </div>
             </div>
-          </div>
+          }
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -177,9 +183,9 @@
         </div>
       </main>
     </div>
-  </ng-container>
 
-  <ng-template #loadingTpl>
+  } @else {
+
     <div class="animate-pulse flex flex-col gap-8">
       <div class="h-32 bg-white/5 rounded-3xl"></div>
       <div class="grid grid-cols-3 gap-8">
@@ -187,5 +193,6 @@
         <div class="h-96 bg-white/5 rounded-3xl col-span-2"></div>
       </div>
     </div>
-  </ng-template>
+
+  }
 </div>

@@ -38,13 +38,15 @@ import { CognitiveSnapshot } from '../../../../core/models/cognitive.model';
       </div>
 
       <!-- Loading -->
-      <div *ngIf="loading()" class="space-y-3">
+      @if (loading()) {
+      <div class="space-y-3">
         <div class="h-3 bg-white/5 rounded-full w-3/4 animate-pulse"></div>
         <div class="h-3 bg-white/5 rounded-full w-1/2 animate-pulse"></div>
       </div>
+      }
 
       <!-- Datos cognitivos -->
-      <ng-container *ngIf="!loading() && snapshot()">
+      @if (!loading() && snapshot()) {
         <!-- Etapa + Capítulo -->
         <div class="grid grid-cols-2 gap-3 mb-4">
           <div class="p-3 bg-white/[0.02] rounded-2xl border border-white/5">
@@ -62,17 +64,19 @@ import { CognitiveSnapshot } from '../../../../core/models/cognitive.model';
         </div>
 
         <!-- Capítulo activo -->
-        <div *ngIf="snapshot()!.currentChapter"
-             class="mb-4 p-3 bg-indigo-500/5 rounded-2xl border border-indigo-500/10">
+        @if (snapshot()!.currentChapter) {
+        <div class="mb-4 p-3 bg-indigo-500/5 rounded-2xl border border-indigo-500/10">
           <div class="flex items-center justify-between mb-1">
             <span class="text-[9px] text-indigo-400/60 uppercase tracking-widest">
               Cap. {{ snapshot()!.currentChapter!.chapterNumber }} · {{ snapshot()!.currentChapter!.phase }}
             </span>
-            <span *ngIf="snapshot()!.currentChapter!.turningPoint"
-                  class="text-[9px] text-amber-400">⚡ Inflexión</span>
+            @if (snapshot()!.currentChapter!.turningPoint) {
+            <span class="text-[9px] text-amber-400">⚡ Inflexión</span>
+            }
           </div>
           <p class="text-xs font-bold text-white/80">{{ snapshot()!.currentChapter!.title }}</p>
         </div>
+        }
 
         <!-- Salud del grafo -->
         <div class="flex items-center justify-between text-[10px]">
@@ -87,22 +91,25 @@ import { CognitiveSnapshot } from '../../../../core/models/cognitive.model';
         </div>
 
         <!-- Turning points badge -->
-        <div *ngIf="snapshot()!.turningPoints > 0"
-             class="mt-3 flex items-center gap-2">
+        @if (snapshot()!.turningPoints > 0) {
+        <div class="mt-3 flex items-center gap-2">
           <span class="text-[9px] text-amber-400/60 uppercase tracking-widest">
             ⚡ {{ snapshot()!.turningPoints }} punto(s) de inflexión en la historia
           </span>
         </div>
-      </ng-container>
+        }
+      }
 
       <!-- Sin datos -->
-      <div *ngIf="!loading() && !snapshot()" class="text-center py-4">
+      @if (!loading() && !snapshot()) {
+      <div class="text-center py-4">
         <p class="text-white/20 text-xs">Sin datos cognitivos aún.</p>
         <a routerLink="/cognitive"
            class="text-violet-400/60 text-[10px] uppercase tracking-widest mt-2 block hover:text-violet-400">
           Inicializar →
         </a>
       </div>
+      }
     </div>
   `,
   styles: [`.glass-card { background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); }`]

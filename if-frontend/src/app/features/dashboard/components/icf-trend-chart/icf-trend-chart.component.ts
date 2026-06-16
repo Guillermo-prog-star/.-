@@ -32,28 +32,32 @@ import { IcfHistoryPoint } from '../../../../core/models/cognitive.model';
           </div>
         </div>
         <!-- Delta badge -->
-        <div *ngIf="deltaIcf() !== null"
-             class="text-xs font-black px-2.5 py-1 rounded-full"
+        @if (deltaIcf() !== null) {
+        <div class="text-xs font-black px-2.5 py-1 rounded-full"
              [ngClass]="deltaIcf()! >= 0
                ? 'bg-emerald-500/10 text-emerald-400'
                : 'bg-red-500/10 text-red-400'">
           {{ deltaIcf()! >= 0 ? '+' : '' }}{{ deltaIcf()! | number:'1.0-0' }} pts
         </div>
+        }
       </div>
 
       <!-- Loading -->
-      <div *ngIf="loading()" class="h-24 flex items-center justify-center">
+      @if (loading()) {
+      <div class="h-24 flex items-center justify-center">
         <div class="w-6 h-6 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
       </div>
+      }
 
       <!-- Sin datos -->
-      <div *ngIf="!loading() && points().length === 0"
-           class="h-24 flex items-center justify-center">
+      @if (!loading() && points().length === 0) {
+      <div class="h-24 flex items-center justify-center">
         <p class="text-white/20 text-xs">Sin evaluaciones finalizadas.</p>
       </div>
+      }
 
       <!-- Gráfico SVG -->
-      <ng-container *ngIf="!loading() && points().length > 0">
+      @if (!loading() && points().length > 0) {
         <svg [attr.viewBox]="'0 0 ' + W + ' ' + H" class="w-full" [attr.height]="H"
              style="overflow: visible;">
 
@@ -81,21 +85,26 @@ import { IcfHistoryPoint } from '../../../../core/models/cognitive.model';
                 stroke="#ef4444" stroke-width="1" stroke-dasharray="4 3" opacity="0.4"/>
 
           <!-- Puntos con tooltip-like labels -->
-          <g *ngFor="let p of points(); let i = index">
+          @for (p of points(); track p; let i = $index) {
+          <g>
+            @if (p.hasCrisis) {
             <!-- Crisis dot: rojo pulsante -->
-            <circle *ngIf="p.hasCrisis"
-                    [attr.cx]="xFor(i)" [attr.cy]="yFor(p.icf)"
+            <circle [attr.cx]="xFor(i)" [attr.cy]="yFor(p.icf)"
                     r="5" fill="#ef4444" opacity="0.8"/>
+            }
+            @if (!p.hasCrisis) {
             <!-- Normal dot -->
-            <circle *ngIf="!p.hasCrisis"
-                    [attr.cx]="xFor(i)" [attr.cy]="yFor(p.icf)"
+            <circle [attr.cx]="xFor(i)" [attr.cy]="yFor(p.icf)"
                     r="4" fill="#6366f1" stroke="#312e81" stroke-width="1.5"/>
+            }
+            @if (points().length <= 8 || i === 0 || i === points().length - 1) {
             <!-- Etiqueta ICF sobre cada punto -->
-            <text *ngIf="points().length <= 8 || i === 0 || i === points().length - 1"
-                  [attr.x]="xFor(i)" [attr.y]="yFor(p.icf) - 8"
+            <text [attr.x]="xFor(i)" [attr.y]="yFor(p.icf) - 8"
                   text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.5)"
                   font-family="monospace">{{ p.icf | number:'1.0-0' }}</text>
+            }
           </g>
+          }
         </svg>
 
         <!-- Leyenda inferior -->
@@ -125,17 +134,19 @@ import { IcfHistoryPoint } from '../../../../core/models/cognitive.model';
               {{ lastIcf() | number:'1.0-0' }}
             </span>
           </div>
-          <div *ngIf="lastCrisis()" class="mb-1">
+          @if (lastCrisis()) {
+          <div class="mb-1">
             <span class="text-[9px] bg-red-500/10 text-red-400 px-2 py-1 rounded-full uppercase tracking-widest">
               ⚠ Crisis activa
             </span>
           </div>
+          }
           <div class="ml-auto text-right">
             <span class="text-[9px] text-white/25 uppercase tracking-widest block mb-1">Evaluaciones</span>
             <span class="text-lg font-black text-white/60">{{ points().length }}</span>
           </div>
         </div>
-      </ng-container>
+      }
     </div>
   `,
   styles: [`.glass-card { background: rgba(255,255,255,0.02); backdrop-filter: blur(20px); }`]

@@ -1,217 +1,237 @@
 <!-- PANTALLA PRINCIPAL DE DIAGNÓSTICO -->
-<div class="assessment-container" *ngIf="questions && questions.length > 0 && !isLoadingResults; else loadingOrSaving">
+@if (questions && questions.length > 0 && !isLoadingResults) {
 
-  <!-- Banner de Pilar Activo -->
-  <div *ngIf="pillarMeta" class="pillar-banner"
-       [style.border-color]="pillarMeta.color + '40'"
-       [style.background]="pillarMeta.color + '12'">
-    <span class="pb-icon">{{ pillarMeta.icon }}</span>
-    <div class="pb-body">
-      <div class="pb-name" [style.color]="pillarMeta.color">Pilar {{ pillarMeta.name }}</div>
-      <div class="pb-range">{{ pillarMeta.range }} · Sesión de 20 preguntas</div>
-    </div>
-    <div class="pb-counter">
-      <span class="pb-num" [style.color]="pillarMeta.color">{{ currentIndex + 1 }}</span>
-      <span class="pb-den"> / {{ questions.length }}</span>
-    </div>
-  </div>
+  <div class="assessment-container">
 
-  <!-- Encabezado de Progreso Segmentado Premium -->
-  <div class="progress-section">
-    <div class="progress-header">
-      <div class="family-badge">
-        <span class="icon">🏡</span> {{ familyName }}
-      </div>
-      <div class="step-counter">
-        REACTIVO <span class="current">{{ currentIndex + 1 }}</span> DE <span class="total">{{ questions.length }}</span>
-      </div>
-    </div>
-    
-    <!-- Barra de Progreso Segmentada de Alta Fidelidad -->
-    <div class="segmented-track-container">
-      <div class="segmented-track">
-        <div *ngFor="let q of questions; let idx = index" 
-             class="progress-segment"
-             [class.completed]="idx < currentIndex"
-             [class.active]="idx === currentIndex"
-             [style.background-color]="idx < currentIndex ? getDimensionColor(q.dimension) : (idx === currentIndex ? getDimensionColor(questions[currentIndex].dimension) : '')"
-             [style.box-shadow]="idx === currentIndex ? '0 0 12px ' + getDimensionColor(questions[currentIndex].dimension) : ''">
+    <!-- Banner de Pilar Activo -->
+    @if (pillarMeta) {
+      <div class="pillar-banner"
+           [style.border-color]="pillarMeta.color + '40'"
+           [style.background]="pillarMeta.color + '12'">
+        <span class="pb-icon">{{ pillarMeta.icon }}</span>
+        <div class="pb-body">
+          <div class="pb-name" [style.color]="pillarMeta.color">Pilar {{ pillarMeta.name }}</div>
+          <div class="pb-range">{{ pillarMeta.range }} · Sesión de 20 preguntas</div>
+        </div>
+        <div class="pb-counter">
+          <span class="pb-num" [style.color]="pillarMeta.color">{{ currentIndex + 1 }}</span>
+          <span class="pb-den"> / {{ questions.length }}</span>
         </div>
       </div>
-    </div>
-  </div>
+    }
 
-  <!-- Narrative Guidance Engine -->
-  <app-narrative-companion module="evaluations"></app-narrative-companion>
-
-  <!-- Error al finalizar -->
-  <div *ngIf="finalizeError" style="margin:0 0 16px;padding:12px 16px;
-       background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
-       border-radius:12px;color:#fca5a5;font-size:0.85rem;font-weight:600;
-       display:flex;justify-content:space-between;align-items:center;">
-    <span>⚠️ {{ finalizeError }}</span>
-    <button (click)="finalizeError=''" style="background:none;border:none;cursor:pointer;color:inherit;opacity:0.7;font-size:0.8rem;padding:0 4px;">✕</button>
-  </div>
-
-  <!-- Contenedor del Reactivo Actual (con transición de fade) -->
-  <div class="question-container-wrapper" [class.transitioning]="isTransitioning">
-    
-    <!-- Fila de Metadatos Taxonómicos Premium -->
-    <div class="taxonomy-bar">
-      <!-- Badge de Dimensión Dinámico -->
-      <div class="taxonomy-badge dimension-badge" 
-           [style.color]="getDimensionColor(questions[currentIndex].dimension)"
-           [style.border-color]="getDimensionColor(questions[currentIndex].dimension)"
-           [style.background]="getDimensionColorGlow(questions[currentIndex].dimension)">
-        <span class="dot" [style.background-color]="getDimensionColor(questions[currentIndex].dimension)"></span>
-        {{ getDimensionName(questions[currentIndex].dimension) }}
-      </div>
-
-      <!-- Badge de Tipo de Reactivo -->
-      <div class="taxonomy-badge type-badge" [attr.data-type]="questions[currentIndex].type">
-        {{ getQuestionTypeLabel(questions[currentIndex].type) }}
-      </div>
-
-      <!-- Área/Categoría -->
-      <div class="taxonomy-badge area-badge" *ngIf="questions[currentIndex].area">
-        🎯 {{ questions[currentIndex].area }}
-      </div>
-    </div>
-
-    <!-- Tarjeta de Reactivo Principal (Glassmorphism) -->
-    <div class="question-card" [style.border-top]="'4px solid ' + getDimensionColor(questions[currentIndex].dimension)">
-      
-      <!-- Indicadores Clínicos / Alertas del Reactivo -->
-      <div class="clinical-alerts" *ngIf="questions[currentIndex].requiresEvidence || questions[currentIndex].detectsRelapse">
-        <span class="alert-badge evidence" *ngIf="questions[currentIndex].requiresEvidence" title="Este reactivo medirá compromisos reales que requerirán subir evidencias fotográficas o de bitácora en tu plan de transformación.">
-          📷 Requiere Evidencia
-        </span>
-        <span class="alert-badge relapse" *ngIf="questions[currentIndex].detectsRelapse" title="Este reactivo actúa como un sensor clínico para monitorear sostenibilidad y mitigar retrocesos conductuales.">
-          ⚠️ Sensor de Sostenibilidad
-        </span>
-      </div>
-
-      <!-- Enunciado de la Pregunta -->
-      <h2 class="question-text">
-        {{ questions[currentIndex].text }}
-      </h2>
-
-      <!-- Nivel de Severidad / Peso Psicométrico -->
-      <div class="severity-rating">
-        <span class="label">{{ getSeverityLevel(questions[currentIndex].severityWeight) }}</span>
-        <div class="stars">
-          <span *ngFor="let s of getSeverityStars(questions[currentIndex].severityWeight)" class="star" [style.color]="getDimensionColor(questions[currentIndex].dimension)">✦</span>
+    <!-- Encabezado de Progreso Segmentado Premium -->
+    <div class="progress-section">
+      <div class="progress-header">
+        <div class="family-badge">
+          <span class="icon">🏡</span> {{ familyName }}
+        </div>
+        <div class="step-counter">
+          REACTIVO <span class="current">{{ currentIndex + 1 }}</span> DE <span class="total">{{ questions.length }}</span>
         </div>
       </div>
-      
-      <!-- Grilla de Respuestas Rediseñada (Escala de Consciencia de Primera Persona Adaptativa) -->
-      <div class="scale-section">
-        <div class="options-stack">
-          <button *ngFor="let opt of getCustomOptions(questions[currentIndex].dimension)" 
-                  type="button" 
-                  (click)="selectAnswer(opt.score)"
-                  class="option-card"
-                  [class.active]="answers.get(questions[currentIndex].id) === opt.score"
-                  [style.--active-shadow-color]="opt.hexColor"
-                  [style.--active-border-color]="opt.hexColor">
-            <!-- Fila 1: Índice -->
-            <div class="option-indicator" [style.background-color]="opt.hexColor">
-              <span class="level-num">{{ opt.score }}</span>
+
+      <!-- Barra de Progreso Segmentada de Alta Fidelidad -->
+      <div class="segmented-track-container">
+        <div class="segmented-track">
+          @for (q of questions; track q.id; let idx = $index) {
+            <div class="progress-segment"
+                 [class.completed]="idx < currentIndex"
+                 [class.active]="idx === currentIndex"
+                 [style.background-color]="idx < currentIndex ? getDimensionColor(q.dimension) : (idx === currentIndex ? getDimensionColor(questions[currentIndex].dimension) : '')"
+                 [style.box-shadow]="idx === currentIndex ? '0 0 12px ' + getDimensionColor(questions[currentIndex].dimension) : ''">
             </div>
-            
-            <div class="option-content">
-              <!-- Fila 2: Descripción -->
-              <p class="option-first-person">"{{ opt.text }}"</p>
-              
-              <!-- Fila 3 y 4: Estado y Código de Color -->
-              <div class="option-header-row">
-                <span class="level-title" [style.color]="opt.hexColor">{{ opt.label }}</span>
-                <span class="level-badge" [style.background-color]="opt.hexColor + '15'" [style.color]="opt.hexColor">
-                  {{ opt.colorClass }}
-                </span>
-              </div>
-            </div>
-          </button>
-        </div>
-      </div>
-      
-      <!-- Footer de Navegación del Reactivo -->
-      <div class="form-navigation-footer">
-          <button type="button" 
-                  class="nav-btn prev-btn" 
-                  *ngIf="currentIndex > 0" 
-                  (click)="prevQuestion()">
-            ← Volver al reactivo anterior
-          </button>
-          <span class="desc" *ngIf="currentIndex === 0">Selecciona con absoluta honestidad para un diagnóstico asertivo.</span>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- COMPONENTE AUXILIAR: PANTALLA DE CARGA O GUARDADO -->
-<ng-template #loadingOrSaving>
-  
-  <!-- Estado 1: Guardando y calculando ICF / Hoja de Ruta en tiempo real (Premium Overaly) -->
-  <div class="saving-overlay-container" *ngIf="isLoadingResults">
-    <div class="saving-card">
-      <div class="quantum-spinner">
-        <div class="ring outer"></div>
-        <div class="ring middle"></div>
-        <div class="ring inner"></div>
-        <div class="pulse-core"></div>
-      </div>
-      
-      <h2 class="saving-title">Sincronizando Diagnóstico</h2>
-      <p class="saving-subtitle">Procesando con el Nodo Central de Transformación Familiar</p>
-      
-      <div class="processing-steps">
-        <div class="step-item active">
-          <span class="bullet">✓</span>
-          <p>Compilando respuestas psicométricas del hogar...</p>
-        </div>
-        <div class="step-item active">
-          <span class="bullet">✦</span>
-          <p>Calculando Índice de Conectividad Familiar (ICF)...</p>
-        </div>
-        <div class="step-item active">
-          <span class="bullet">✦</span>
-          <p>Analizando brechas y vulnerabilidades estructurales...</p>
-        </div>
-        <div class="step-item">
-          <span class="bullet">✦</span>
-          <p>Orquestando hoja de ruta de 36 meses vía RabbitMQ...</p>
+          }
         </div>
       </div>
     </div>
+
+    <!-- Narrative Guidance Engine -->
+    <app-narrative-companion module="evaluations"></app-narrative-companion>
+
+    <!-- Error al finalizar -->
+    @if (finalizeError) {
+      <div style="margin:0 0 16px;padding:12px 16px;
+           background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);
+           border-radius:12px;color:#fca5a5;font-size:0.85rem;font-weight:600;
+           display:flex;justify-content:space-between;align-items:center;">
+        <span>⚠️ {{ finalizeError }}</span>
+        <button (click)="finalizeError=''" style="background:none;border:none;cursor:pointer;color:inherit;opacity:0.7;font-size:0.8rem;padding:0 4px;">✕</button>
+      </div>
+    }
+
+    <!-- Contenedor del Reactivo Actual (con transición de fade) -->
+    <div class="question-container-wrapper" [class.transitioning]="isTransitioning">
+
+      <!-- Fila de Metadatos Taxonómicos Premium -->
+      <div class="taxonomy-bar">
+        <!-- Badge de Dimensión Dinámico -->
+        <div class="taxonomy-badge dimension-badge"
+             [style.color]="getDimensionColor(questions[currentIndex].dimension)"
+             [style.border-color]="getDimensionColor(questions[currentIndex].dimension)"
+             [style.background]="getDimensionColorGlow(questions[currentIndex].dimension)">
+          <span class="dot" [style.background-color]="getDimensionColor(questions[currentIndex].dimension)"></span>
+          {{ getDimensionName(questions[currentIndex].dimension) }}
+        </div>
+
+        <!-- Badge de Tipo de Reactivo -->
+        <div class="taxonomy-badge type-badge" [attr.data-type]="questions[currentIndex].type">
+          {{ getQuestionTypeLabel(questions[currentIndex].type) }}
+        </div>
+
+        <!-- Área/Categoría -->
+        @if (questions[currentIndex].area) {
+          <div class="taxonomy-badge area-badge">
+            🎯 {{ questions[currentIndex].area }}
+          </div>
+        }
+      </div>
+
+      <!-- Tarjeta de Reactivo Principal (Glassmorphism) -->
+      <div class="question-card" [style.border-top]="'4px solid ' + getDimensionColor(questions[currentIndex].dimension)">
+
+        <!-- Indicadores Clínicos / Alertas del Reactivo -->
+        @if (questions[currentIndex].requiresEvidence || questions[currentIndex].detectsRelapse) {
+          <div class="clinical-alerts">
+            @if (questions[currentIndex].requiresEvidence) {
+              <span class="alert-badge evidence" title="Este reactivo medirá compromisos reales que requerirán subir evidencias fotográficas o de bitácora en tu plan de transformación.">
+                📷 Requiere Evidencia
+              </span>
+            }
+            @if (questions[currentIndex].detectsRelapse) {
+              <span class="alert-badge relapse" title="Este reactivo actúa como un sensor clínico para monitorear sostenibilidad y mitigar retrocesos conductuales.">
+                ⚠️ Sensor de Sostenibilidad
+              </span>
+            }
+          </div>
+        }
+
+        <!-- Enunciado de la Pregunta -->
+        <h2 class="question-text">
+          {{ questions[currentIndex].text }}
+        </h2>
+
+        <!-- Nivel de Severidad / Peso Psicométrico -->
+        <div class="severity-rating">
+          <span class="label">{{ getSeverityLevel(questions[currentIndex].severityWeight) }}</span>
+          <div class="stars">
+            @for (s of getSeverityStars(questions[currentIndex].severityWeight); track s) {
+              <span class="star" [style.color]="getDimensionColor(questions[currentIndex].dimension)">✦</span>
+            }
+          </div>
+        </div>
+
+        <!-- Grilla de Respuestas Rediseñada (Escala de Consciencia de Primera Persona Adaptativa) -->
+        <div class="scale-section">
+          <div class="options-stack">
+            @for (opt of getCustomOptions(questions[currentIndex].dimension); track opt.score) {
+              <button type="button"
+                      (click)="selectAnswer(opt.score)"
+                      class="option-card"
+                      [class.active]="answers.get(questions[currentIndex].id) === opt.score"
+                      [style.--active-shadow-color]="opt.hexColor"
+                      [style.--active-border-color]="opt.hexColor">
+                <!-- Fila 1: Índice -->
+                <div class="option-indicator" [style.background-color]="opt.hexColor">
+                  <span class="level-num">{{ opt.score }}</span>
+                </div>
+
+                <div class="option-content">
+                  <!-- Fila 2: Descripción -->
+                  <p class="option-first-person">"{{ opt.text }}"</p>
+
+                  <!-- Fila 3 y 4: Estado y Código de Color -->
+                  <div class="option-header-row">
+                    <span class="level-title" [style.color]="opt.hexColor">{{ opt.label }}</span>
+                    <span class="level-badge" [style.background-color]="opt.hexColor + '15'" [style.color]="opt.hexColor">
+                      {{ opt.colorClass }}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Footer de Navegación del Reactivo -->
+        <div class="form-navigation-footer">
+          @if (currentIndex > 0) {
+            <button type="button" class="nav-btn prev-btn" (click)="prevQuestion()">
+              ← Volver al reactivo anterior
+            </button>
+          }
+          @if (currentIndex === 0) {
+            <span class="desc">Selecciona con absoluta honestidad para un diagnóstico asertivo.</span>
+          }
+        </div>
+      </div>
+    </div>
+
   </div>
+
+} @else {
+
+  <!-- PANTALLA DE CARGA O GUARDADO -->
+
+  <!-- Estado 1: Guardando y calculando ICF (Premium Overlay) -->
+  @if (isLoadingResults) {
+    <div class="saving-overlay-container">
+      <div class="saving-card">
+        <div class="quantum-spinner">
+          <div class="ring outer"></div>
+          <div class="ring middle"></div>
+          <div class="ring inner"></div>
+          <div class="pulse-core"></div>
+        </div>
+
+        <h2 class="saving-title">Sincronizando Diagnóstico</h2>
+        <p class="saving-subtitle">Procesando con el Nodo Central de Transformación Familiar</p>
+
+        <div class="processing-steps">
+          <div class="step-item active">
+            <span class="bullet">✓</span>
+            <p>Compilando respuestas psicométricas del hogar...</p>
+          </div>
+          <div class="step-item active">
+            <span class="bullet">✦</span>
+            <p>Calculando Índice de Conectividad Familiar (ICF)...</p>
+          </div>
+          <div class="step-item active">
+            <span class="bullet">✦</span>
+            <p>Analizando brechas y vulnerabilidades estructurales...</p>
+          </div>
+          <div class="step-item">
+            <span class="bullet">✦</span>
+            <p>Orquestando hoja de ruta de 36 meses vía RabbitMQ...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
 
   <!-- Estado 2: Cargando (con reintentos automáticos silenciosos) -->
-  <div class="assessment-container initial-loading" *ngIf="!isLoadingResults">
-    <div class="loader-box">
+  @if (!isLoadingResults) {
+    <div class="assessment-container initial-loading">
+      <div class="loader-box">
 
-      <!-- Cargando normalmente -->
-      <ng-container *ngIf="!loadError">
-        <div class="pulse-loader">
-          <div></div><div></div><div></div>
-        </div>
-        <h3 class="loader-title">{{ loadingMessage }}</h3>
-        <p class="loader-desc">Un momento — estamos seleccionando las preguntas más relevantes para tu familia.</p>
-      </ng-container>
+        @if (!loadError) {
+          <div class="pulse-loader">
+            <div></div><div></div><div></div>
+          </div>
+          <h3 class="loader-title">{{ loadingMessage }}</h3>
+          <p class="loader-desc">Un momento — estamos seleccionando las preguntas más relevantes para tu familia.</p>
+        } @else {
+          <div style="font-size:40px;margin-bottom:12px;">🌿</div>
+          <h3 class="loader-title">El servidor tardó más de lo habitual</h3>
+          <p class="loader-desc">Puede ser por mantenimiento. Toca para volver a intentar.</p>
+          <button (click)="loadQuestions()"
+            style="margin-top:20px;padding:12px 28px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:12px;color:white;font-weight:700;font-size:15px;cursor:pointer;">
+            Intentar de nuevo →
+          </button>
+        }
 
-      <!-- Solo tras 75 s sin respuesta: botón de reintento manual -->
-      <ng-container *ngIf="loadError">
-        <div style="font-size:40px;margin-bottom:12px;">🌿</div>
-        <h3 class="loader-title">El servidor tardó más de lo habitual</h3>
-        <p class="loader-desc">Puede ser por mantenimiento. Toca para volver a intentar.</p>
-        <button (click)="loadQuestions()"
-          style="margin-top:20px;padding:12px 28px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border:none;border-radius:12px;color:white;font-weight:700;font-size:15px;cursor:pointer;">
-          Intentar de nuevo →
-        </button>
-      </ng-container>
-
+      </div>
     </div>
-  </div>
+  }
 
-</ng-template>
+}

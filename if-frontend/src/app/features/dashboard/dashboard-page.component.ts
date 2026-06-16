@@ -94,6 +94,16 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
 
   readonly flow = inject(TransformationFlowService);
 
+  get sprintDiasLabel(): string {
+    try {
+      const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+      if (!ctx?.misionId) return `Sprint #${this.flow.currentSprintNumber()}`;
+      const dias = parseInt(localStorage.getItem(`sprint_dias_${ctx.misionId}`) ?? '0', 10);
+      const total = ctx.durationDays ?? 7;
+      return dias >= total ? `🎖️ ${dias}/${total}` : `⚡ ${dias}/${total}`;
+    } catch { return `Sprint #${this.flow.currentSprintNumber()}`; }
+  }
+
   private readonly scrollPolicy = inject(ScrollPolicyService);
 
   constructor(

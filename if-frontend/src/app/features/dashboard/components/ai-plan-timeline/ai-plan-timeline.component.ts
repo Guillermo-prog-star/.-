@@ -12,7 +12,9 @@ import { DashboardDataService } from '../../services/dashboard-data.service';
 export class AiPlanTimelineComponent {
   constructor(private dashboardService: DashboardDataService) {}
   
-  @Input() actions: any[] = [];
+  private _actions: any[] = [];
+  @Input() set actions(val: any[]) { this._actions = val ?? []; }
+  get actions(): any[] { return this._actions; }
 
   getIconForDimension(dimension: string): string {
     const dim = dimension?.toLowerCase() || '';

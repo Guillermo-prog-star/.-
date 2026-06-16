@@ -55,7 +55,7 @@ interface StageConfig {
 
       <!-- Etapas narrativas -->
       <div class="flex items-center gap-0 mb-6">
-        <ng-container *ngFor="let stage of stages; let i = index; let last = last">
+        @for (stage of stages; track stage.key; let i = $index; let last = $last) {
 
           <!-- Nodo de etapa -->
           <div class="flex flex-col items-center flex-shrink-0 cursor-default"
@@ -69,14 +69,14 @@ interface StageConfig {
                  [style.box-shadow]="isActive(stage.key) ? '0 0 20px ' + stage.glow : 'none'">
               {{ stage.icon }}
               <!-- Pulso si es la etapa activa -->
-              <span *ngIf="isActive(stage.key)"
-                    class="absolute -top-1 -right-1 w-3 h-3 rounded-full animate-ping"
+              @if (isActive(stage.key)) {
+              <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full animate-ping"
                     [style.background]="stage.color">
               </span>
-              <span *ngIf="isActive(stage.key)"
-                    class="absolute -top-1 -right-1 w-3 h-3 rounded-full"
+              <span class="absolute -top-1 -right-1 w-3 h-3 rounded-full"
                     [style.background]="stage.color">
               </span>
+              }
             </div>
 
             <!-- Label -->
@@ -90,12 +90,14 @@ interface StageConfig {
           </div>
 
           <!-- Conector -->
-          <div *ngIf="!last" class="flex-1 h-px mx-2 mt-[-20px]"
+          @if (!last) {
+          <div class="flex-1 h-px mx-2 mt-[-20px]"
                [style.background]="stageOrder(stage.key) < stageOrder(safeNarrativeStage)
                  ? 'linear-gradient(90deg, ' + stage.color + '80, ' + stages[i+1].color + '80)'
                  : 'rgba(255,255,255,0.06)'">
           </div>
-        </ng-container>
+          }
+        }
       </div>
 
       <!-- Progreso dentro de la etapa actual -->
@@ -111,12 +113,13 @@ interface StageConfig {
 
         <!-- Mini-fases dentro de la etapa -->
         <div class="flex gap-1.5">
-          <div *ngFor="let phase of currentStageConfig.phases"
-               class="flex-1 h-1.5 rounded-full transition-all duration-700"
+          @for (phase of currentStageConfig.phases; track phase) {
+          <div class="flex-1 h-1.5 rounded-full transition-all duration-700"
                [style.background]="isPhaseReached(phase)
                  ? currentStageConfig.color
                  : 'rgba(255,255,255,0.06)'">
           </div>
+          }
         </div>
 
         <div class="text-[10px] text-white/40 mt-1">
@@ -125,26 +128,30 @@ interface StageConfig {
       </div>
 
       <!-- Señales de alerta -->
-      <div *ngIf="communicationCollapseActive || consecutiveDeteriorations >= 3 || inActiveCrisis"
-           class="mt-4 space-y-2">
-        <div *ngIf="inActiveCrisis"
-             class="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20">
+      @if (communicationCollapseActive || consecutiveDeteriorations >= 3 || inActiveCrisis) {
+      <div class="mt-4 space-y-2">
+        @if (inActiveCrisis) {
+        <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20">
           <span class="text-sm">🆘</span>
           <span class="text-[10px] text-red-400 font-semibold">Crisis activa — evolución pausada</span>
         </div>
-        <div *ngIf="communicationCollapseActive && !inActiveCrisis"
-             class="flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
+        }
+        @if (communicationCollapseActive && !inActiveCrisis) {
+        <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-orange-500/10 border border-orange-500/20">
           <span class="text-sm">⚠️</span>
           <span class="text-[10px] text-orange-400 font-semibold">Colapso comunicacional activo</span>
         </div>
-        <div *ngIf="consecutiveDeteriorations >= 3 && !inActiveCrisis"
-             class="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+        }
+        @if (consecutiveDeteriorations >= 3 && !inActiveCrisis) {
+        <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
           <span class="text-sm">📉</span>
           <span class="text-[10px] text-amber-400 font-semibold">
             {{ consecutiveDeteriorations }} entradas de deterioro consecutivas
           </span>
         </div>
+        }
       </div>
+      }
 
     </div>
   `,

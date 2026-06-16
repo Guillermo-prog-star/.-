@@ -30,21 +30,25 @@
   </div>
 
   <!-- ── Formulario: Nueva Regla ── -->
-  <div class="rule-form glass" *ngIf="showForm()">
-    <div class="form-header">
-      <h3>Nueva Regla EEDSL</h3>
-      <button class="btn-ghost" (click)="cancelCreate()">✕ Cancelar</button>
+  @if (showForm()) {
+    <div class="rule-form glass">
+      <div class="form-header">
+        <h3>Nueva Regla EEDSL</h3>
+        <button class="btn-ghost" (click)="cancelCreate()">✕ Cancelar</button>
+      </div>
+      <ng-container *ngTemplateOutlet="ruleFormTpl"></ng-container>
     </div>
-    <ng-container *ngTemplateOutlet="ruleFormTpl"></ng-container>
-  </div>
+  }
 
   <!-- ── Carga ── -->
-  <div class="loading-state" *ngIf="loading()">
-    <div class="spinner"></div>
-    <p>Cargando reglas del motor emocional...</p>
-  </div>
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando reglas del motor emocional...</p>
+    </div>
+  }
 
-  <ng-container *ngIf="!loading()">
+  @if (!loading()) {
 
     <!-- ── Filtros ── -->
     <div class="filter-bar glass">
@@ -59,123 +63,142 @@
       <div class="filter-group">
         <span class="filter-label">Rol</span>
         <div class="filter-pills">
-          <button class="pill" *ngFor="let r of roles"
-                  [class.active]="filterRole() === r"
-                  (click)="filterRole.set(r)">{{ roleLabel(r) }}</button>
+          @for (r of roles; track r) {
+            <button class="pill"
+                    [class.active]="filterRole() === r"
+                    (click)="filterRole.set(r)">{{ roleLabel(r) }}</button>
+          }
         </div>
       </div>
       <span class="filter-count">{{ filtered().length }} resultado{{ filtered().length !== 1 ? 's' : '' }}</span>
     </div>
 
     <!-- ── Lista de reglas ── -->
-    <div class="rules-list" *ngIf="filtered().length > 0">
-      <div class="rule-card glass" *ngFor="let rule of filtered()"
-           [class.inactive]="!rule.active"
-           [class.editing]="editingId() === rule.id">
+    @if (filtered().length > 0) {
+      <div class="rules-list">
+        @for (rule of filtered(); track rule.id) {
+          <div class="rule-card glass"
+               [class.inactive]="!rule.active"
+               [class.editing]="editingId() === rule.id">
 
-        <!-- Cabecera de la tarjeta -->
-        <div class="rule-card-header">
-          <div class="rule-meta" (click)="toggleExpand(rule.id)" style="cursor:pointer; flex:1">
-            <div class="rule-key-row">
-              <code class="rule-key">{{ rule.ruleKey }}</code>
-              <span class="version-badge">v{{ rule.version }}</span>
-              <span class="by-badge" [ngClass]="createdByClass(rule.createdBy)">{{ rule.createdBy }}</span>
-            </div>
-            <div class="rule-tags">
-              <span class="badge" [ngClass]="riskClass(rule.riskOutput)">{{ rule.riskOutput ?? '—' }}</span>
-              <span class="role-badge">{{ roleLabel(rule.memberRole) }}</span>
-              <span class="scope-badge">{{ rule.milestoneScope }}</span>
-              <span class="window-badge">⏱ {{ rule.temporalWindowDays }}d</span>
-              <span class="conf-value" [style.color]="confidenceColor(rule.confidenceBase)">
-                🎯 {{ confidencePct(rule.confidenceBase) }}
-              </span>
-            </div>
-          </div>
-
-          <!-- Acciones -->
-          <div class="rule-actions">
-            <button class="btn-edit" *ngIf="editingId() !== rule.id" (click)="openEdit(rule)">✏️</button>
-            <ng-container *ngIf="pendingToggleRule?.id === rule.id; else toggleBtn">
-              <div class="toggle-confirm">
-                <span class="tc-label">{{ pendingToggleRule!.active ? '¿Desactivar regla?' : '¿Activar regla?' }}</span>
-                <button class="tc-yes" (click)="confirmToggle()">Sí</button>
-                <button class="tc-no" (click)="cancelToggle()">No</button>
-              </div>
-            </ng-container>
-            <ng-template #toggleBtn>
-              <div class="toggle-wrapper" (click)="toggle(rule)" [title]="rule.active ? 'Desactivar' : 'Activar'">
-                <div class="toggle-track" [class.on]="rule.active">
-                  <div class="toggle-thumb"></div>
+            <!-- Cabecera de la tarjeta -->
+            <div class="rule-card-header">
+              <div class="rule-meta" (click)="toggleExpand(rule.id)" style="cursor:pointer; flex:1">
+                <div class="rule-key-row">
+                  <code class="rule-key">{{ rule.ruleKey }}</code>
+                  <span class="version-badge">v{{ rule.version }}</span>
+                  <span class="by-badge" [ngClass]="createdByClass(rule.createdBy)">{{ rule.createdBy }}</span>
                 </div>
-                <span class="toggle-label">{{ rule.active ? 'Activa' : 'Inactiva' }}</span>
-              </div>
-            </ng-template>
-          </div>
-        </div>
-
-        <!-- Señales requeridas (siempre visibles) -->
-        <div class="signals-row" *ngIf="rule.requiredSignals.length > 0">
-          <span class="signals-label">Señales:</span>
-          <span class="signal-chip" *ngFor="let s of rule.requiredSignals">{{ s }}</span>
-        </div>
-
-        <!-- Proyección (siempre visible si existe) -->
-        <div class="projection-row" *ngIf="rule.projectionLabel">
-          <span class="projection-label">Proyección:</span>
-          <span class="projection-value">{{ rule.projectionLabel }}</span>
-        </div>
-
-        <!-- Formulario de edición inline -->
-        <div class="rule-edit-form" *ngIf="editingId() === rule.id">
-          <div class="form-divider"></div>
-          <ng-container *ngTemplateOutlet="ruleFormTpl"></ng-container>
-          <div class="form-actions">
-            <button class="btn-save" (click)="save()" [disabled]="saving()">
-              {{ saving() ? 'Guardando...' : '✓ Guardar cambios' }}
-            </button>
-            <button class="btn-ghost" (click)="cancelEdit()">Cancelar</button>
-          </div>
-        </div>
-
-        <!-- Detalle expandido -->
-        <div class="rule-detail" *ngIf="expandedId() === rule.id && editingId() !== rule.id">
-          <div class="detail-grid">
-            <div class="detail-item">
-              <span class="detail-label">Hito scope</span>
-              <span class="detail-value">{{ rule.milestoneScope }}</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Ventana temporal</span>
-              <span class="detail-value">{{ rule.temporalWindowDays }} días</span>
-            </div>
-            <div class="detail-item">
-              <span class="detail-label">Confianza base</span>
-              <div class="conf-bar-wrapper">
-                <div class="conf-bar-track">
-                  <div class="conf-bar-fill" [style.width]="confidencePct(rule.confidenceBase)"
-                       [style.background]="confidenceColor(rule.confidenceBase)"></div>
+                <div class="rule-tags">
+                  <span class="badge" [ngClass]="riskClass(rule.riskOutput)">{{ rule.riskOutput ?? '—' }}</span>
+                  <span class="role-badge">{{ roleLabel(rule.memberRole) }}</span>
+                  <span class="scope-badge">{{ rule.milestoneScope }}</span>
+                  <span class="window-badge">⏱ {{ rule.temporalWindowDays }}d</span>
+                  <span class="conf-value" [style.color]="confidenceColor(rule.confidenceBase)">
+                    🎯 {{ confidencePct(rule.confidenceBase) }}
+                  </span>
                 </div>
-                <span [style.color]="confidenceColor(rule.confidenceBase)">{{ confidencePct(rule.confidenceBase) }}</span>
+              </div>
+
+              <!-- Acciones -->
+              <div class="rule-actions">
+                @if (editingId() !== rule.id) {
+                  <button class="btn-edit" (click)="openEdit(rule)">✏️</button>
+                }
+                @if (pendingToggleRule?.id === rule.id) {
+                  <div class="toggle-confirm">
+                    <span class="tc-label">{{ pendingToggleRule!.active ? '¿Desactivar regla?' : '¿Activar regla?' }}</span>
+                    <button class="tc-yes" (click)="confirmToggle()">Sí</button>
+                    <button class="tc-no" (click)="cancelToggle()">No</button>
+                  </div>
+                } @else {
+                  <div class="toggle-wrapper" (click)="toggle(rule)" [title]="rule.active ? 'Desactivar' : 'Activar'">
+                    <div class="toggle-track" [class.on]="rule.active">
+                      <div class="toggle-thumb"></div>
+                    </div>
+                    <span class="toggle-label">{{ rule.active ? 'Activa' : 'Inactiva' }}</span>
+                  </div>
+                }
               </div>
             </div>
-            <div class="detail-item">
-              <span class="detail-label">Creado</span>
-              <span class="detail-value">{{ formatDate(rule.createdAt) }}</span>
-            </div>
-          </div>
-        </div>
 
+            <!-- Señales requeridas (siempre visibles) -->
+            @if (rule.requiredSignals.length > 0) {
+              <div class="signals-row">
+                <span class="signals-label">Señales:</span>
+                @for (s of rule.requiredSignals; track s) {
+                  <span class="signal-chip">{{ s }}</span>
+                }
+              </div>
+            }
+
+            <!-- Proyección (siempre visible si existe) -->
+            @if (rule.projectionLabel) {
+              <div class="projection-row">
+                <span class="projection-label">Proyección:</span>
+                <span class="projection-value">{{ rule.projectionLabel }}</span>
+              </div>
+            }
+
+            <!-- Formulario de edición inline -->
+            @if (editingId() === rule.id) {
+              <div class="rule-edit-form">
+                <div class="form-divider"></div>
+                <ng-container *ngTemplateOutlet="ruleFormTpl"></ng-container>
+                <div class="form-actions">
+                  <button class="btn-save" (click)="save()" [disabled]="saving()">
+                    {{ saving() ? 'Guardando...' : '✓ Guardar cambios' }}
+                  </button>
+                  <button class="btn-ghost" (click)="cancelEdit()">Cancelar</button>
+                </div>
+              </div>
+            }
+
+            <!-- Detalle expandido -->
+            @if (expandedId() === rule.id && editingId() !== rule.id) {
+              <div class="rule-detail">
+                <div class="detail-grid">
+                  <div class="detail-item">
+                    <span class="detail-label">Hito scope</span>
+                    <span class="detail-value">{{ rule.milestoneScope }}</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Ventana temporal</span>
+                    <span class="detail-value">{{ rule.temporalWindowDays }} días</span>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Confianza base</span>
+                    <div class="conf-bar-wrapper">
+                      <div class="conf-bar-track">
+                        <div class="conf-bar-fill" [style.width]="confidencePct(rule.confidenceBase)"
+                             [style.background]="confidenceColor(rule.confidenceBase)"></div>
+                      </div>
+                      <span [style.color]="confidenceColor(rule.confidenceBase)">{{ confidencePct(rule.confidenceBase) }}</span>
+                    </div>
+                  </div>
+                  <div class="detail-item">
+                    <span class="detail-label">Creado</span>
+                    <span class="detail-value">{{ formatDate(rule.createdAt) }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+
+          </div>
+        }
       </div>
-    </div>
+    }
 
     <!-- ── Sin resultados ── -->
-    <div class="empty-state glass" *ngIf="filtered().length === 0">
-      <div class="empty-icon">🔬</div>
-      <h3>Sin reglas para este filtro</h3>
-      <p>Cambia el filtro o crea una nueva regla EEDSL.</p>
-    </div>
+    @if (filtered().length === 0) {
+      <div class="empty-state glass">
+        <div class="empty-icon">🔬</div>
+        <h3>Sin reglas para este filtro</h3>
+        <p>Cambia el filtro o crea una nueva regla EEDSL.</p>
+      </div>
+    }
 
-  </ng-container>
+  }
 
 </div>
 
@@ -194,13 +217,17 @@
     <div class="form-field">
       <label>Rol del miembro</label>
       <select [(ngModel)]="form.memberRole" class="inp">
-        <option *ngFor="let r of roles" [value]="r">{{ roleLabel(r) }}</option>
+        @for (r of roles; track r) {
+          <option [value]="r">{{ roleLabel(r) }}</option>
+        }
       </select>
     </div>
     <div class="form-field">
       <label>Riesgo inferido</label>
       <select [(ngModel)]="form.riskOutput" class="inp">
-        <option *ngFor="let r of riskOptions" [value]="r">{{ r }}</option>
+        @for (r of riskOptions; track r) {
+          <option [value]="r">{{ r }}</option>
+        }
       </select>
     </div>
     <div class="form-field">
@@ -224,18 +251,24 @@
                class="inp signals-inp" />
         <button class="btn-add-signal" (click)="addSignal()">+ Añadir</button>
       </div>
-      <div class="signal-chips" *ngIf="form.requiredSignals && form.requiredSignals.length > 0">
-        <div class="signal-chip removable" *ngFor="let s of form.requiredSignals">
-          {{ s }}
-          <button class="chip-remove" (click)="removeSignal(s)">✕</button>
+      @if (form.requiredSignals && form.requiredSignals.length > 0) {
+        <div class="signal-chips">
+          @for (s of form.requiredSignals; track s) {
+            <div class="signal-chip removable">
+              {{ s }}
+              <button class="chip-remove" (click)="removeSignal(s)">✕</button>
+            </div>
+          }
         </div>
-      </div>
+      }
     </div>
   </div>
-  <div class="form-actions" *ngIf="showForm()">
-    <button class="btn-save" (click)="save()" [disabled]="saving() || !form.ruleKey.trim()">
-      {{ saving() ? 'Guardando...' : '✓ Crear Regla' }}
-    </button>
-    <button class="btn-ghost" (click)="cancelCreate()">Cancelar</button>
-  </div>
+  @if (showForm()) {
+    <div class="form-actions">
+      <button class="btn-save" (click)="save()" [disabled]="saving() || !form.ruleKey.trim()">
+        {{ saving() ? 'Guardando...' : '✓ Crear Regla' }}
+      </button>
+      <button class="btn-ghost" (click)="cancelCreate()">Cancelar</button>
+    </div>
+  }
 </ng-template>

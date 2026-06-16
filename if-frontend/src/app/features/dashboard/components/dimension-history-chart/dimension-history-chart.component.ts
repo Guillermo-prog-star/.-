@@ -60,19 +60,23 @@ interface PlottedLine {
       </div>
 
       <!-- Loading -->
-      <div *ngIf="loading()" class="h-28 flex items-center justify-center">
+      @if (loading()) {
+      <div class="h-28 flex items-center justify-center">
         <div class="w-5 h-5 rounded-full border-2 border-indigo-500/30 border-t-indigo-500 animate-spin"></div>
       </div>
+      }
 
       <!-- No data -->
-      <div *ngIf="!loading() && points().length === 0"
-           class="h-28 flex flex-col items-center justify-center gap-2 text-white/20">
+      @if (!loading() && points().length === 0) {
+      <div class="h-28 flex flex-col items-center justify-center gap-2 text-white/20">
         <span class="text-2xl">📊</span>
         <span class="text-[10px] uppercase tracking-widest">Sin evaluaciones todavía</span>
       </div>
+      }
 
       <!-- SVG chart -->
-      <div *ngIf="!loading() && points().length > 0" class="relative">
+      @if (!loading() && points().length > 0) {
+      <div class="relative">
         <svg [attr.viewBox]="'0 0 ' + W + ' ' + H"
              class="w-full h-auto overflow-visible">
 
@@ -84,7 +88,7 @@ interface PlottedLine {
                 fill="#10b981" font-size="5" opacity="0.5">70</text>
 
           <!-- Lines for each dimension -->
-          <ng-container *ngFor="let line of lines()">
+          @for (line of lines(); track line.key) {
             <polyline [attr.points]="line.polyline"
                       [attr.stroke]="line.stroke"
                       stroke-width="1.5"
@@ -93,51 +97,54 @@ interface PlottedLine {
                       stroke-linejoin="round"
                       opacity="0.8"/>
 
+            @if (line.last !== null) {
             <!-- End-of-line label -->
-            <text *ngIf="line.last !== null"
-                  [attr.x]="line.lastX + 4"
+            <text [attr.x]="line.lastX + 4"
                   [attr.y]="line.lastY + 3"
                   [attr.fill]="line.color"
                   font-size="5.5" font-weight="bold" opacity="0.9">
               {{ line.last }}
             </text>
-
             <!-- Dot on last point -->
-            <circle *ngIf="line.last !== null"
-                    [attr.cx]="line.lastX"
+            <circle [attr.cx]="line.lastX"
                     [attr.cy]="line.lastY"
                     r="2.5"
                     [attr.fill]="line.color"
                     stroke="#0f172a" stroke-width="1"/>
-          </ng-container>
+            }
+          }
 
         </svg>
 
         <!-- Legend -->
         <div class="flex items-center justify-center flex-wrap gap-x-4 gap-y-1.5 mt-3">
-          <div *ngFor="let dim of DIMENSIONS"
-               class="flex items-center gap-1.5">
+          @for (dim of DIMENSIONS; track dim.key) {
+          <div class="flex items-center gap-1.5">
             <span class="w-3 h-0.5 rounded-full inline-block"
                   [style.background]="dim.color"></span>
             <span class="text-[9px] font-bold text-white/40 uppercase tracking-wider">
               {{ dim.label }}
             </span>
           </div>
+          }
         </div>
       </div>
+      }
 
       <!-- Last values row -->
-      <div *ngIf="!loading() && lastValues() as lv" class="mt-4 grid grid-cols-4 gap-2">
-        <ng-container *ngFor="let dim of DIMENSIONS">
-          <div class="text-center p-2 bg-white/[0.02] rounded-xl border border-white/5">
-            <span class="text-[8px] uppercase tracking-widest block mb-0.5"
-                  [style.color]="dim.color" style="opacity:0.7">{{ dim.label }}</span>
-            <span class="text-sm font-black text-white/80">
-              {{ lv[dim.key] !== undefined ? lv[dim.key] : '—' }}
-            </span>
-          </div>
-        </ng-container>
+      @if (!loading() && lastValues(); as lv) {
+      <div class="mt-4 grid grid-cols-4 gap-2">
+        @for (dim of DIMENSIONS; track dim.key) {
+        <div class="text-center p-2 bg-white/[0.02] rounded-xl border border-white/5">
+          <span class="text-[8px] uppercase tracking-widest block mb-0.5"
+                [style.color]="dim.color" style="opacity:0.7">{{ dim.label }}</span>
+          <span class="text-sm font-black text-white/80">
+            {{ lv[dim.key] !== undefined ? lv[dim.key] : '—' }}
+          </span>
+        </div>
+        }
       </div>
+      }
     </div>
   `
 })

@@ -28,7 +28,8 @@ interface RuleDisplay {
   imports: [CommonModule],
   template: `
     <!-- Solo visible cuando el Motor Inferencial tiene reglas activas -->
-    <div *ngIf="visible" class="causal-panel glass-premium rounded-3xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
+    @if (visible) {
+    <div class="causal-panel glass-premium rounded-3xl border border-white/5 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-700">
 
       <!-- Header -->
       <div class="p-5 border-b border-white/5" [style.background]="headerBg">
@@ -58,8 +59,8 @@ interface RuleDisplay {
 
       <!-- Reglas activas -->
       <div class="p-4 space-y-3">
-        <div *ngFor="let rule of activeRules"
-             class="flex items-start gap-3 p-3.5 rounded-2xl border transition-all"
+        @for (rule of activeRules; track rule.code) {
+        <div class="flex items-start gap-3 p-3.5 rounded-2xl border transition-all"
              [style.background]="rule.color + '0a'"
              [style.border-color]="rule.color + '30'">
           <div class="text-xl flex-shrink-0 mt-0.5">{{ rule.icon }}</div>
@@ -75,43 +76,49 @@ interface RuleDisplay {
             <p class="text-[11px] text-white/50 leading-relaxed">{{ rule.explanation }}</p>
           </div>
         </div>
+        }
       </div>
 
       <!-- Explicaciones adicionales -->
-      <div *ngIf="explanations.length > 0"
-           class="px-4 pb-4">
+      @if (explanations.length > 0) {
+      <div class="px-4 pb-4">
         <div class="p-3 rounded-xl bg-white/[0.02] border border-white/5">
           <div class="text-[9px] font-black uppercase tracking-widest text-white/20 mb-2">
             Análisis causal detallado
           </div>
-          <div *ngFor="let exp of explanations"
-               class="text-[11px] text-white/50 mb-1 flex items-start gap-1.5">
+          @for (exp of explanations; track exp) {
+          <div class="text-[11px] text-white/50 mb-1 flex items-start gap-1.5">
             <span class="text-white/20 flex-shrink-0 mt-0.5">›</span>
             <span>{{ exp }}</span>
           </div>
+          }
         </div>
       </div>
+      }
 
       <!-- Dimensión crítica -->
-      <div *ngIf="criticalDimension"
-           class="px-4 pb-4">
+      @if (criticalDimension) {
+      <div class="px-4 pb-4">
         <div class="flex items-center gap-2 text-[11px] text-white/40">
           <span class="text-base">🎯</span>
           <span>Dimensión más crítica: <strong class="text-white/70 capitalize">{{ criticalDimension }}</strong></span>
         </div>
       </div>
+      }
 
     </div>
+    }
 
     <!-- Estado estable — sin reglas activas -->
-    <div *ngIf="!visible && showStableState"
-         class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
+    @if (!visible && showStableState) {
+    <div class="flex items-center gap-3 px-4 py-3 rounded-2xl bg-emerald-500/5 border border-emerald-500/10">
       <span class="text-base">✅</span>
       <div>
         <div class="text-[10px] font-bold text-emerald-500 uppercase tracking-wider">Motor Inferencial · Sistema Estable</div>
         <div class="text-[11px] text-white/30">Ninguna regla causal activa · La familia está en equilibrio dinámico</div>
       </div>
     </div>
+    }
   `,
   styles: [`.causal-panel { transition: all 0.3s ease; }`]
 })

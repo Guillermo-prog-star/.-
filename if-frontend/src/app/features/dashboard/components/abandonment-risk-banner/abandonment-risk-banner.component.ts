@@ -19,8 +19,8 @@ import { ReflectionResponse, AbandonmentLevel } from '../../../../core/models/co
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Sólo visible si hay datos y el riesgo es alto -->
-    <div *ngIf="shouldShow()"
-         class="rounded-3xl p-5 border animate-in slide-in-from-top duration-500"
+    @if (shouldShow()) {
+    <div class="rounded-3xl p-5 border animate-in slide-in-from-top duration-500"
          [ngClass]="bannerClass()">
 
       <!-- Icono + título + badge -->
@@ -69,15 +69,17 @@ import { ReflectionResponse, AbandonmentLevel } from '../../../../core/models/co
       </div>
 
       <!-- Señales de riesgo -->
-      <div *ngIf="(reflection()?.abandonmentSignals?.length ?? 0) > 0"
-           class="mt-4 flex flex-wrap gap-2">
+      @if ((reflection()?.abandonmentSignals?.length ?? 0) > 0) {
+      <div class="mt-4 flex flex-wrap gap-2">
         <span class="text-[9px] text-white/30 uppercase tracking-widest self-center">Señales:</span>
-        <span *ngFor="let signal of reflection()!.abandonmentSignals"
-              class="px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg"
+        @for (signal of reflection()!.abandonmentSignals; track signal) {
+        <span class="px-2 py-1 text-[10px] font-bold uppercase tracking-widest rounded-lg"
               [ngClass]="signalClass()">
           {{ signalLabel(signal) }}
         </span>
+        }
       </div>
+      }
 
       <!-- CTA -->
       <div class="mt-4 flex items-center gap-3 flex-wrap">
@@ -93,11 +95,14 @@ import { ReflectionResponse, AbandonmentLevel } from '../../../../core/models/co
                        transition-all">
           Ocultar
         </button>
-        <span *ngIf="reflection()!.lessonLearned" class="text-[10px] text-white/30 italic flex-1">
+        @if (reflection()!.lessonLearned) {
+        <span class="text-[10px] text-white/30 italic flex-1">
           💡 {{ reflection()!.lessonLearned }}
         </span>
+        }
       </div>
     </div>
+    }
   `
 })
 export class AbandonmentRiskBannerComponent implements OnInit {

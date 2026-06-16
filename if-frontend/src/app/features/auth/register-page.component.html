@@ -18,12 +18,14 @@
     <form (ngSubmit)="submit()">
 
       <!-- [NEW_FAMILY] Nombre de familia -->
-      <div *ngIf="mode === 'NEW_FAMILY'" class="form-group">
-        <label>Nombre de tu Familia</label>
-        <input [(ngModel)]="familyName" name="fnm" required
-               placeholder="Ej: Familia García-Morales"/>
-        <small class="hint">Este nombre identificará a tu núcleo familiar en la plataforma.</small>
-      </div>
+      @if (mode === 'NEW_FAMILY') {
+        <div class="form-group">
+          <label>Nombre de tu Familia</label>
+          <input [(ngModel)]="familyName" name="fnm" required
+                 placeholder="Ej: Familia García-Morales"/>
+          <small class="hint">Este nombre identificará a tu núcleo familiar en la plataforma.</small>
+        </div>
+      }
 
       <!-- Nombre completo -->
       <div class="form-group">
@@ -38,15 +40,17 @@
       </div>
 
       <!-- [VOUCHER] Código de inmersión -->
-      <div *ngIf="mode === 'VOUCHER'" class="form-group">
-        <div class="label-row">
-          <label style="margin-bottom:0">Voucher de Inmersión</label>
-          <span class="badge-alfa">Fase Alfa</span>
+      @if (mode === 'VOUCHER') {
+        <div class="form-group">
+          <div class="label-row">
+            <label style="margin-bottom:0">Voucher de Inmersión</label>
+            <span class="badge-alfa">Fase Alfa</span>
+          </div>
+          <input [(ngModel)]="voucher" name="vc"
+                 placeholder="Ej: ALFA-XXXXXX"/>
+          <small class="hint">Ingresa tu código único para activar tu acceso familiar.</small>
         </div>
-        <input [(ngModel)]="voucher" name="vc"
-               placeholder="Ej: ALFA-XXXXXX"/>
-        <small class="hint">Ingresa tu código único para activar tu acceso familiar.</small>
-      </div>
+      }
 
       <!-- Contraseña -->
       <div class="form-group">
@@ -57,44 +61,49 @@
       </div>
 
       <!-- [NEW_FAMILY] Confirmar contraseña -->
-      <div *ngIf="mode === 'NEW_FAMILY'" class="form-group">
-        <label>Confirmar Contraseña</label>
-        <input [(ngModel)]="confirmPassword" name="cpw" type="password" required
-               placeholder="Repite tu contraseña"/>
-      </div>
+      @if (mode === 'NEW_FAMILY') {
+        <div class="form-group">
+          <label>Confirmar Contraseña</label>
+          <input [(ngModel)]="confirmPassword" name="cpw" type="password" required
+                 placeholder="Repite tu contraseña"/>
+        </div>
+      }
 
       <!-- [NEW_FAMILY] Ubicación -->
-      <div *ngIf="mode === 'NEW_FAMILY'" class="form-group">
-        <label>Municipio</label>
-        <input [(ngModel)]="municipio" name="mun" required
-               placeholder="Ej: Bogotá"/>
-      </div>
-
-      <div *ngIf="mode === 'NEW_FAMILY'" class="form-group">
-        <label>Código de Departamento</label>
-        <input [(ngModel)]="departmentCode" name="dpt" required
-               placeholder="Ej: 11"/>
-      </div>
-
-      <div *ngIf="mode === 'NEW_FAMILY'" class="form-group">
-        <label>Código de País</label>
-        <input [(ngModel)]="countryCode" name="cty"
-               placeholder="CO"/>
-      </div>
+      @if (mode === 'NEW_FAMILY') {
+        <div class="form-group">
+          <label>Municipio</label>
+          <input [(ngModel)]="municipio" name="mun" required
+                 placeholder="Ej: Bogotá"/>
+        </div>
+        <div class="form-group">
+          <label>Código de Departamento</label>
+          <input [(ngModel)]="departmentCode" name="dpt" required
+                 placeholder="Ej: 11"/>
+        </div>
+        <div class="form-group">
+          <label>Código de País</label>
+          <input [(ngModel)]="countryCode" name="cty"
+                 placeholder="CO"/>
+        </div>
+      }
 
       <!-- Error -->
-      <div *ngIf="error" class="err-box">
-        <span>⚠️</span> {{ error }}
-      </div>
+      @if (error) {
+        <div class="err-box">
+          <span>⚠️</span> {{ error }}
+        </div>
+      }
 
       <!-- Submit -->
       <button type="submit" class="btn-primary" [disabled]="loading">
-        <span *ngIf="!loading">
-          {{ mode === 'VOUCHER' ? '✓ Activar mi acceso' : '🏠 Registrar mi Familia' }}
-        </span>
-        <span *ngIf="loading" class="btn-loading">
-          <span class="spinner"></span> Sincronizando...
-        </span>
+        @if (!loading) {
+          <span>{{ mode === 'VOUCHER' ? '✓ Activar mi acceso' : '🏠 Registrar mi Familia' }}</span>
+        } @else {
+          <span class="btn-loading">
+            <span class="spinner"></span> Sincronizando...
+          </span>
+        }
       </button>
     </form>
 

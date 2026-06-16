@@ -16,13 +16,15 @@
   </header>
 
   <!-- Estado de Carga -->
-  <div class="loading-state" *ngIf="loading()">
-    <div class="spinner"></div>
-    <p>Sincronizando registros históricos del Nodo Central...</p>
-  </div>
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Sincronizando registros históricos del Nodo Central...</p>
+    </div>
+  }
 
   <!-- Contenido Principal -->
-  <ng-container *ngIf="!loading()">
+  @if (!loading()) {
     <!-- Grid de Métricas Clave (KPIs) -->
     <div class="kpi-grid">
       <div class="kpi-card glass">
@@ -91,18 +93,22 @@
           <p class="chart-sub text-purple">Sintonía global calculada en las últimas {{ chronologicalTimeline().length }} evaluaciones finalizadas</p>
         </div>
         <!-- Tooltip Flotante Integrado -->
-        <div class="chart-tooltip" *ngIf="hoveredPoint()">
-          <span class="tt-eval">Evaluación #{{ hoveredPoint()!.data.evaluationId }}</span>
-          <span class="tt-date">{{ formatDate(hoveredPoint()!.data.finalizedAt) }}</span>
-          <span class="tt-score" [style.color]="icfColor(hoveredPoint()!.data.healthyIndex)">ICF: {{ hoveredPoint()!.data.healthyIndex }}%</span>
-          <span class="tt-risk" [ngClass]="riskBadgeClass(hoveredPoint()!.data.riskLevel)">{{ riskLabel(hoveredPoint()!.data.riskLevel) }}</span>
-          <span class="tt-state" [style.color]="operationalStateColor(hoveredPoint()!.data.operationalState)">
-            ◆ {{ operationalStateLabel(hoveredPoint()!.data.operationalState) }}
-          </span>
-          <span class="tt-uncertainty" *ngIf="hoveredPoint()!.data.uncertaintyTotal != null">
-            ⬦ Incert. {{ ((hoveredPoint()!.data.uncertaintyTotal ?? 0) * 100) | number:'1.0-0' }}%
-          </span>
-        </div>
+        @if (hoveredPoint()) {
+          <div class="chart-tooltip">
+            <span class="tt-eval">Evaluación #{{ hoveredPoint()!.data.evaluationId }}</span>
+            <span class="tt-date">{{ formatDate(hoveredPoint()!.data.finalizedAt) }}</span>
+            <span class="tt-score" [style.color]="icfColor(hoveredPoint()!.data.healthyIndex)">ICF: {{ hoveredPoint()!.data.healthyIndex }}%</span>
+            <span class="tt-risk" [ngClass]="riskBadgeClass(hoveredPoint()!.data.riskLevel)">{{ riskLabel(hoveredPoint()!.data.riskLevel) }}</span>
+            <span class="tt-state" [style.color]="operationalStateColor(hoveredPoint()!.data.operationalState)">
+              ◆ {{ operationalStateLabel(hoveredPoint()!.data.operationalState) }}
+            </span>
+            @if (hoveredPoint()!.data.uncertaintyTotal != null) {
+              <span class="tt-uncertainty">
+                ⬦ Incert. {{ ((hoveredPoint()!.data.uncertaintyTotal ?? 0) * 100) | number:'1.0-0' }}%
+              </span>
+            }
+          </div>
+        }
       </div>
 
       <!-- Lienzo SVG Interactivo -->
@@ -129,31 +135,38 @@
           <line [attr.x1]="padX" [attr.y1]="svgHeight - padY - (1.00 * (svgHeight - padY * 2))" [attr.x2]="svgWidth - padX" [attr.y2]="svgHeight - padY - (1.00 * (svgHeight - padY * 2))" class="grid-line" />
 
           <!-- Trazado de Gradiente de Área -->
-          <path *ngIf="trendAreaPath()" [attr.d]="trendAreaPath()" fill="url(#areaGrad)" />
+          @if (trendAreaPath()) {
+            <path [attr.d]="trendAreaPath()" fill="url(#areaGrad)" />
+          }
 
           <!-- Trazado de Línea Principal -->
-          <path *ngIf="trendLinePath()" [attr.d]="trendLinePath()" fill="none" stroke="url(#lineGrad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+          @if (trendLinePath()) {
+            <path [attr.d]="trendLinePath()" fill="none" stroke="url(#lineGrad)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" />
+          }
 
           <!-- Puntos Nodales del Historial -->
-          <g *ngFor="let p of chartPoints(); let i = index">
-            <!-- Aura brillante en Hover -->
-            <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="hoveredPointIndex() === i ? 12 : 0" fill="#818cf8" fill-opacity="0.3" class="node-aura" />
-            <!-- Punto sólido central — stroke colorea el estado operacional IF-TOS -->
-            <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="hoveredPointIndex() === i ? 7 : 5"
-                    [attr.fill]="icfColor(p.data.healthyIndex)"
-                    [attr.stroke]="operationalStateColor(p.data.operationalState)"
-                    stroke-width="3" class="node-dot" />
-            <!-- Capturador de Evento de Mouse Más Grande e Invisible (Mobile-friendly) -->
-            <circle [attr.cx]="p.x" [attr.cy]="p.y" r="22" fill="transparent" style="cursor: pointer;" (mouseenter)="hoveredPointIndex.set(i)" (mouseleave)="hoveredPointIndex.set(null)" />
-          </g>
+          @for (p of chartPoints(); track p; let i = $index) {
+            <g>
+              <!-- Aura brillante en Hover -->
+              <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="hoveredPointIndex() === i ? 12 : 0" fill="#818cf8" fill-opacity="0.3" class="node-aura" />
+              <!-- Punto sólido central — stroke colorea el estado operacional IF-TOS -->
+              <circle [attr.cx]="p.x" [attr.cy]="p.y" [attr.r]="hoveredPointIndex() === i ? 7 : 5"
+                      [attr.fill]="icfColor(p.data.healthyIndex)"
+                      [attr.stroke]="operationalStateColor(p.data.operationalState)"
+                      stroke-width="3" class="node-dot" />
+              <!-- Capturador de Evento de Mouse Más Grande e Invisible (Mobile-friendly) -->
+              <circle [attr.cx]="p.x" [attr.cy]="p.y" r="22" fill="transparent" style="cursor: pointer;" (mouseenter)="hoveredPointIndex.set(i)" (mouseleave)="hoveredPointIndex.set(null)" />
+            </g>
+          }
 
           <!-- Textos de Fecha y Evaluación en el eje X -->
-          <g *ngFor="let p of chartPoints(); let i = index">
-            <!-- Dibujar texto en puntos clave para evitar encimamiento -->
-            <text *ngIf="chartPoints().length < 8 || i === 0 || i === chartPoints().length - 1 || i % 2 === 1" [attr.x]="p.x" [attr.y]="svgHeight - 8" class="axis-label" text-anchor="middle">
-              {{ formatDate(p.data.finalizedAt) }}
-            </text>
-          </g>
+          @for (p of chartPoints(); track p; let i = $index) {
+            @if (chartPoints().length < 8 || i === 0 || i === chartPoints().length - 1 || i % 2 === 1) {
+              <text [attr.x]="p.x" [attr.y]="svgHeight - 8" class="axis-label" text-anchor="middle">
+                {{ formatDate(p.data.finalizedAt) }}
+              </text>
+            }
+          }
         </svg>
       </div>
     </div>
@@ -262,12 +275,12 @@
       <div class="companion-content">
         <h4>Guía de Convi para la Evolución Consciente</h4>
         <p>
-          "El camino del crecimiento es orgánico y ascendente. Veo que han finalizado {{ chronologicalTimeline().length }} evaluaciones, mostrando un delta general de 
-          <strong [style.color]="deltaIcf() >= 0 ? '#34d399' : '#f87171'">{{ deltaIcf() >= 0 ? '+' : '' }}{{ deltaIcf() }} puntos ICF</strong>. 
-          Tu foco de atención actual para acelerar la sintonía reside en fortalecer la dimensión de <strong>{{ latestCriticalDimension() }}</strong>. 
+          "El camino del crecimiento es orgánico y ascendente. Veo que han finalizado {{ chronologicalTimeline().length }} evaluaciones, mostrando un delta general de
+          <strong [style.color]="deltaIcf() >= 0 ? '#34d399' : '#f87171'">{{ deltaIcf() >= 0 ? '+' : '' }}{{ deltaIcf() }} puntos ICF</strong>.
+          Tu foco de atención actual para acelerar la sintonía reside en fortalecer la dimensión de <strong>{{ latestCriticalDimension() }}</strong>.
           Revisa las misiones diarias propuestas en tu Panóptico para continuar profundizando la cohesión."
         </p>
       </div>
     </div>
-  </ng-container>
+  }
 </div>

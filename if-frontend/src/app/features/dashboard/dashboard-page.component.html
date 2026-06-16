@@ -1,4 +1,4 @@
-<ng-container *ngIf="state$ | async as data; else loadingTemplate">
+@if (state$ | async; as data) {
   <div class="dashboard-root min-h-screen p-6 lg:p-12 space-y-12">
 
     <!-- ── MOTOR DE EXPERIENCIA: Banner contextual adaptativo ── -->
@@ -46,8 +46,7 @@
       <!-- Sprint + actions -->
       <div class="th-right">
         <div class="th-sprint">
-          <span class="th-sprint-icon">⚡</span>
-          <span class="th-sprint-label">Sprint #{{ flow.currentSprintNumber() }}</span>
+          <span class="th-sprint-label">{{ sprintDiasLabel }}</span>
         </div>
         <div class="th-actions">
           <a routerLink="/logbook" [queryParams]="{tab:'SPRINT'}" class="th-btn primary">📔 Daily</a>
@@ -61,10 +60,10 @@
     <!-- ── EL HOGAR VIVO — Visualización emocional del estado familiar ── -->
     <app-hogar-vivo
       [scores]="{
-        comunicacion: data.dimensionScores?.comunicacion ?? 3,
-        habitos:      data.dimensionScores?.habitos      ?? 2,
-        tiempos:      data.dimensionScores?.tiempos      ?? 4,
-        emociones:    data.dimensionScores?.emociones    ?? 2
+        comunicacion: data.dimensionScores.comunicacion,
+        habitos:      data.dimensionScores.habitos,
+        tiempos:      data.dimensionScores.tiempos,
+        emociones:    data.dimensionScores.emociones
       }">
     </app-hogar-vivo>
 
@@ -72,73 +71,73 @@
     <app-narrative-companion module="dashboard"></app-narrative-companion>
 
     <!-- GUARDIÁN FAMILIAR — Dinamizador del núcleo familiar -->
-    <app-guardian-panel
-      *ngIf="guardianFamilyId > 0"
-      [familyId]="guardianFamilyId"
-      [currentMemberId]="guardianMemberId">
-    </app-guardian-panel>
+    @if (guardianFamilyId > 0) {
+      <app-guardian-panel
+        [familyId]="guardianFamilyId"
+        [currentMemberId]="guardianMemberId">
+      </app-guardian-panel>
 
-    <!-- PULSO DE PARTICIPACIÓN — Actividad familiar de los últimos 7 días -->
-    <app-participation-pulse
-      *ngIf="guardianFamilyId > 0"
-      [familyId]="guardianFamilyId">
-    </app-participation-pulse>
+      <!-- PULSO DE PARTICIPACIÓN — Actividad familiar de los últimos 7 días -->
+      <app-participation-pulse
+        [familyId]="guardianFamilyId">
+      </app-participation-pulse>
+    }
 
     <!-- [SDD Analytics v2] ABANDONMENT RISK BANNER — visible sólo si HIGH/CRITICAL -->
     <app-abandonment-risk-banner></app-abandonment-risk-banner>
 
     <!-- [SDD Spec] MILESTONE ADVANCE REINFORCEMENT -->
-    <!-- Activación determinista: Solo visible si el motor de validación aprueba el avance -->
-    <div *ngIf="readyToAdvance$ | async" 
-         class="glass-premium border-emerald-500/50 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-top duration-700 bg-emerald-500/5">
-      <div class="flex items-center gap-6">
-        <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-2xl animate-bounce">
-          🏆
+    @if (readyToAdvance$ | async) {
+      <div class="glass-premium border-emerald-500/50 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-top duration-700 bg-emerald-500/5">
+        <div class="flex items-center gap-6">
+          <div class="w-12 h-12 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-2xl animate-bounce">
+            🏆
+          </div>
+          <div>
+            <h3 class="text-xl font-bold text-white/90">¡Hito Completado!</h3>
+            <p class="text-white/60 text-sm">Habéis demostrado la coherencia necesaria. El nodo familiar está listo para evolucionar.</p>
+          </div>
         </div>
-        <div>
-          <h3 class="text-xl font-bold text-white/90">¡Hito Completado!</h3>
-          <p class="text-white/60 text-sm">Habéis demostrado la coherencia necesaria. El nodo familiar está listo para evolucionar.</p>
-        </div>
+        <button (click)="advanceMilestone()"
+                class="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-xs rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_10px_30px_rgba(16,185,129,0.3)]">
+          Evolucionar Nodo
+        </button>
       </div>
-      <button (click)="advanceMilestone()" 
-              class="px-8 py-4 bg-emerald-500 hover:bg-emerald-400 text-black font-black uppercase tracking-widest text-xs rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_10px_30px_rgba(16,185,129,0.3)]">
-        Evolucionar Nodo
-      </button>
-    </div>
+    }
 
     <!-- STATS GRID -->
     <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <app-icf-stat-card 
-        label="Índice de Conciencia (ICF)" 
-        [value]="data.latestGlobalScore" 
+      <app-icf-stat-card
+        label="Índice de Conciencia (ICF)"
+        [value]="data.latestGlobalScore"
         [status]="data.latestConsciousnessLabel"
         theme="theme-harmony">
       </app-icf-stat-card>
-      
-      <app-icf-stat-card 
-        label="Progreso del Pilar" 
-        [value]="data.pillarProgress" 
+
+      <app-icf-stat-card
+        label="Progreso del Pilar"
+        [value]="data.pillarProgress"
         status="EN RUTA DE TRANSFORMACIÓN"
         theme="theme-growth">
       </app-icf-stat-card>
 
-      <app-icf-stat-card 
-        label="Crecimiento de Conciencia" 
-        [value]="data.awarenessGrowth" 
+      <app-icf-stat-card
+        label="Crecimiento de Conciencia"
+        [value]="data.awarenessGrowth"
         status="EVOLUCIÓN SEMANAL"
         theme="theme-peace">
       </app-icf-stat-card>
 
-      <app-icf-stat-card 
-        label="Observación Consciente (IOC)" 
-        [value]="(iocScore$ | async) ?? 50" 
+      <app-icf-stat-card
+        label="Observación Consciente (IOC)"
+        [value]="(iocScore$ | async) ?? 50"
         status="SINTONÍA EMOCIONAL IA"
         theme="theme-growth">
       </app-icf-stat-card>
     </section>
 
     <!-- [IF-TOS] ESTADO OPERACIONAL DEL SCANNER -->
-    <ng-container *ngIf="operationalState$ | async as tosState">
+    @if (operationalState$ | async; as tosState) {
       <div class="tos-banner glass-premium animate-in fade-in slide-in-from-bottom-4 duration-700"
            [attr.data-state]="tosState.operationalState">
         <div class="tos-left">
@@ -162,115 +161,122 @@
           </a>
         </div>
       </div>
-    </ng-container>
+    }
 
     <!-- [IF-ALT] ALERTAS CLÍNICAS ACTIVAS -->
-    <ng-container *ngIf="alerts$ | async as alerts">
-      <div *ngIf="alerts.length > 0"
-           class="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <h4 class="text-white/30 uppercase tracking-widest text-[10px] font-black flex items-center gap-2">
-          <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.7)]"></span>
-          IF-ALT · {{ alerts.length }} Alerta{{ alerts.length === 1 ? '' : 's' }} Clínica{{ alerts.length === 1 ? '' : 's' }} Activa{{ alerts.length === 1 ? '' : 's' }}
-        </h4>
-        <div *ngFor="let alert of alerts"
-             class="flex items-start gap-4 p-4 rounded-2xl border animate-in fade-in duration-500"
-             [ngStyle]="{
-               'background': alertSeverityColor(alert.severity) + '0d',
-               'border-color': alertSeverityColor(alert.severity) + '30'
-             }">
-          <span class="text-lg flex-shrink-0 mt-0.5">{{ alertSeverityIcon(alert.severity) }}</span>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
-                    [ngStyle]="{'color': alertSeverityColor(alert.severity), 'background': alertSeverityColor(alert.severity) + '18'}">
-                {{ alert.severity }}
-              </span>
-              <span class="text-white/70 text-xs font-semibold">{{ alert.title }}</span>
+    @if (alerts$ | async; as alerts) {
+      @if (alerts.length > 0) {
+        <div class="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <h4 class="text-white/30 uppercase tracking-widest text-[10px] font-black flex items-center gap-2">
+            <span class="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_6px_rgba(239,68,68,0.7)]"></span>
+            IF-ALT · {{ alerts.length }} Alerta{{ alerts.length === 1 ? '' : 's' }} Clínica{{ alerts.length === 1 ? '' : 's' }} Activa{{ alerts.length === 1 ? '' : 's' }}
+          </h4>
+          @for (alert of alerts; track alert) {
+            <div class="flex items-start gap-4 p-4 rounded-2xl border animate-in fade-in duration-500"
+                 [ngStyle]="{
+                   'background': alertSeverityColor(alert.severity) + '0d',
+                   'border-color': alertSeverityColor(alert.severity) + '30'
+                 }">
+              <span class="text-lg flex-shrink-0 mt-0.5">{{ alertSeverityIcon(alert.severity) }}</span>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full"
+                        [ngStyle]="{'color': alertSeverityColor(alert.severity), 'background': alertSeverityColor(alert.severity) + '18'}">
+                    {{ alert.severity }}
+                  </span>
+                  <span class="text-white/70 text-xs font-semibold">{{ alert.title }}</span>
+                </div>
+                @if (alert.detail) {
+                  <p class="text-white/40 text-[11px] leading-snug">{{ alert.detail }}</p>
+                }
+              </div>
+              <button (click)="resolveAlert(alert)"
+                      class="flex-shrink-0 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg border transition-all hover:opacity-80"
+                      [ngStyle]="{
+                        'color': alertSeverityColor(alert.severity),
+                        'border-color': alertSeverityColor(alert.severity) + '40'
+                      }">
+                Resolver
+              </button>
             </div>
-            <p *ngIf="alert.detail" class="text-white/40 text-[11px] leading-snug">{{ alert.detail }}</p>
-          </div>
-          <button (click)="resolveAlert(alert)"
-                  class="flex-shrink-0 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider rounded-lg border transition-all hover:opacity-80"
-                  [ngStyle]="{
-                    'color': alertSeverityColor(alert.severity),
-                    'border-color': alertSeverityColor(alert.severity) + '40'
-                  }">
-            Resolver
-          </button>
+          }
         </div>
-      </div>
-    </ng-container>
+      }
+    }
 
     <!-- MOTOR INFERENCIAL CAUSAL — Explicabilidad de reglas R1-R7 -->
-    <app-causal-rules-panel
-      *ngIf="causalInference$ | async as inference"
-      [inference]="inference"
-      [showStableState]="false">
-    </app-causal-rules-panel>
+    @if (causalInference$ | async; as inference) {
+      <app-causal-rules-panel
+        [inference]="inference"
+        [showStableState]="false">
+      </app-causal-rules-panel>
+    }
 
     <!-- [SDD Spec] PROGRESS SNAPSHOT -->
-    <section *ngIf="data.progress" class="glass-premium p-8 rounded-[2rem] border border-white/5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-      <div class="flex flex-col md:flex-row justify-between gap-8">
-        <div class="flex-1">
-          <h4 class="text-white/30 uppercase tracking-widest text-[10px] font-black mb-3 flex items-center gap-2">
-            <span class="w-2 h-2 bg-teal-500 rounded-full shadow-lg shadow-teal-500/50"></span>
-            Evolución de Conciencia (ΔICF)
-          </h4>
-          <div class="flex items-baseline gap-2">
-            <span class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
-              {{ data.progress.deltaIcf >= 0 ? '+' : '' }}{{ data.progress.deltaIcf | number:'1.0-0' }}
-            </span>
-            <span class="text-sm font-bold text-teal-500 uppercase tracking-wide">puntos</span>
-          </div>
-          <span class="inline-block mt-3 px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full" 
-                [ngClass]="{
-                  'bg-emerald-500/10 text-emerald-500': data.progress.classification === 'MEJORA_FUERTE',
-                  'bg-teal-500/10 text-teal-500': data.progress.classification === 'MEJORA_LEVE',
-                  'bg-amber-500/10 text-amber-500': data.progress.classification === 'ESTANCAMIENTO',
-                  'bg-red-500/10 text-red-500': data.progress.classification === 'DETERIORO',
-                  'bg-indigo-500/10 text-indigo-500': data.progress.classification === 'INICIAL'
-                }">
-            {{ data.progress.classification }}
-          </span>
-          <p class="text-white/60 text-sm mt-5 leading-relaxed font-medium">
-            {{ data.progress.interpretation }}
-          </p>
-        </div>
-        
-        <div class="flex-1 md:border-l md:border-white/5 md:pl-8">
-          <h4 class="text-white/30 uppercase tracking-widest text-[10px] font-black mb-4">Evolución por Dimensiones</h4>
-          <div class="space-y-2.5">
-            <div *ngFor="let dim of data.progress.dimensionEvolution | keyvalue" class="flex justify-between items-center bg-white/[0.02] p-3 rounded-xl border border-white/5 hover:bg-white/[0.05] transition-colors">
-              <span class="text-white/80 text-sm capitalize font-medium">{{ dim.key }}</span>
-              <span class="px-3 py-1 text-xs font-bold rounded-full" 
-                    [ngClass]="dim.value >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'">
-                {{ dim.value >= 0 ? '+' : '' }}{{ dim.value | number:'1.0-0' }}
+    @if (data.progress) {
+      <section class="glass-premium p-8 rounded-[2rem] border border-white/5 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+        <div class="flex flex-col md:flex-row justify-between gap-8">
+          <div class="flex-1">
+            <h4 class="text-white/30 uppercase tracking-widest text-[10px] font-black mb-3 flex items-center gap-2">
+              <span class="w-2 h-2 bg-teal-500 rounded-full shadow-lg shadow-teal-500/50"></span>
+              Evolución de Conciencia (ΔICF)
+            </h4>
+            <div class="flex items-baseline gap-2">
+              <span class="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
+                {{ data.progress.deltaIcf >= 0 ? '+' : '' }}{{ data.progress.deltaIcf | number:'1.0-0' }}
               </span>
+              <span class="text-sm font-bold text-teal-500 uppercase tracking-wide">puntos</span>
+            </div>
+            <span class="inline-block mt-3 px-3 py-1 text-[10px] font-black uppercase tracking-wider rounded-full"
+                  [ngClass]="{
+                    'bg-emerald-500/10 text-emerald-500': data.progress.classification === 'MEJORA_FUERTE',
+                    'bg-teal-500/10 text-teal-500': data.progress.classification === 'MEJORA_LEVE',
+                    'bg-amber-500/10 text-amber-500': data.progress.classification === 'ESTANCAMIENTO',
+                    'bg-red-500/10 text-red-500': data.progress.classification === 'DETERIORO',
+                    'bg-indigo-500/10 text-indigo-500': data.progress.classification === 'INICIAL'
+                  }">
+              {{ data.progress.classification }}
+            </span>
+            <p class="text-white/60 text-sm mt-5 leading-relaxed font-medium">
+              {{ data.progress.interpretation }}
+            </p>
+          </div>
+
+          <div class="flex-1 md:border-l md:border-white/5 md:pl-8">
+            <h4 class="text-white/30 uppercase tracking-widest text-[10px] font-black mb-4">Evolución por Dimensiones</h4>
+            <div class="space-y-2.5">
+              @for (dim of data.progress.dimensionEvolution | keyvalue; track dim.key) {
+                <div class="flex justify-between items-center bg-white/[0.02] p-3 rounded-xl border border-white/5 hover:bg-white/[0.05] transition-colors">
+                  <span class="text-white/80 text-sm capitalize font-medium">{{ dim.key }}</span>
+                  <span class="px-3 py-1 text-xs font-bold rounded-full"
+                        [ngClass]="dim.value >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'">
+                    {{ dim.value >= 0 ? '+' : '' }}{{ dim.value | number:'1.0-0' }}
+                  </span>
+                </div>
+              }
+            </div>
+
+            <div class="mt-4 p-4 bg-white/[0.02] rounded-xl border-l-2 border-teal-500 text-xs text-white/70">
+              <strong class="text-white/40 uppercase tracking-widest text-[9px] block mb-1">Acción sugerida</strong>
+              {{ data.progress.recommendedAction }}
             </div>
           </div>
-          
-          <div class="mt-4 p-4 bg-white/[0.02] rounded-xl border-l-2 border-teal-500 text-xs text-white/70">
-            <strong class="text-white/40 uppercase tracking-widest text-[9px] block mb-1">Acción sugerida</strong>
-            {{ data.progress.recommendedAction }}
-          </div>
         </div>
-      </div>
-    </section>
+      </section>
+    }
 
-    <!-- TRAYECTO DE TRANSFORMACIÓN — RECONOCIMIENTO → AMOR → ENTREGA (GAP 4 resuelto) -->
-    <!-- Prioriza datos del endpoint /longitudinal-state; fallback al DashboardDTO -->
-    <ng-container *ngIf="longitudinal$ | async as ls; else evolutionFallback">
+    <!-- TRAYECTO DE TRANSFORMACIÓN — RECONOCIMIENTO → AMOR → ENTREGA -->
+    @if (longitudinal$ | async; as ls) {
       <app-evolution-path
         [narrativeStage]="ls.narrativeStage || data.narrativeStage || 'RECONOCIMIENTO'"
         [evolutionPhase]="ls.evolutionPhase || data.evolutionPhase || 'inconsciente'"
-        [icfDelta30d]="+(ls.icfDelta30d ?? data.icfDelta30d ?? 0)"
+        [icfDelta30d]="+ls.icfDelta30d"
         [riskTrend]="ls.riskTrend || data.riskTrend || 'STABLE'"
         [communicationCollapseActive]="!!(ls.communicationCollapseActive || data.communicationCollapseActive)"
-        [consecutiveDeteriorations]="+(ls.consecutiveDeteriorations ?? data.consecutiveDeteriorations ?? 0)"
+        [consecutiveDeteriorations]="+ls.consecutiveDeteriorations"
         [inActiveCrisis]="!!(ls.inActiveCrisis || data.inActiveCrisis)">
       </app-evolution-path>
-    </ng-container>
-    <ng-template #evolutionFallback>
+    } @else {
       <app-evolution-path
         [narrativeStage]="data.narrativeStage || 'RECONOCIMIENTO'"
         [evolutionPhase]="data.evolutionPhase || 'inconsciente'"
@@ -280,7 +286,7 @@
         [consecutiveDeteriorations]="+(data.consecutiveDeteriorations || 0)"
         [inActiveCrisis]="!!(data.inActiveCrisis)">
       </app-evolution-path>
-    </ng-template>
+    }
 
     <!-- [SDD Spec] LOGBOOK HIGHLIGHTS -->
     <section class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
@@ -296,7 +302,7 @@
       </div>
 
       <div class="glass-premium p-8 rounded-[2rem] border-white/5 flex items-center gap-8 group hover:border-amber-500/30 transition-all">
-        <div class="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl shadow-2xl transition-transform group-hover:scale-110" 
+        <div class="w-20 h-20 rounded-3xl flex items-center justify-center text-4xl shadow-2xl transition-transform group-hover:scale-110"
              [ngClass]="data.openLogbookEntriesCount && data.openLogbookEntriesCount > 0 ? 'bg-amber-500/10 text-amber-500' : 'bg-emerald-500/10 text-emerald-500'">
           {{ data.openLogbookEntriesCount && data.openLogbookEntriesCount > 0 ? '🚨' : '🛡️' }}
         </div>
@@ -320,35 +326,37 @@
 
       <div class="xl:col-span-8 space-y-8">
         <!-- [SDD Spec] IA COGNITIVE INSIGHT -->
-        <app-ai-insight-panel 
+        <app-ai-insight-panel
           [recommendation]="data.aiRecommendation"
           [trend]="data.riskTrend">
         </app-ai-insight-panel>
 
         <!-- [SDD Spec] IA CRITICAL ANALYSIS (COLLAPSIBLE) -->
-        <div *ngIf="data.planAiReport" class="glass-premium p-6 rounded-3xl border border-white/10 shadow-[0_8px_32px_0_rgba(99,102,241,0.05)] bg-gradient-to-br from-indigo-500/5 to-purple-500/5 hover:from-indigo-500/10 hover:to-purple-500/10 transition-all duration-500">
-          <details class="group">
-            <summary class="flex justify-between items-center cursor-pointer list-none">
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-indigo-500/20">
-                  🧠
+        @if (data.planAiReport) {
+          <div class="glass-premium p-6 rounded-3xl border border-white/10 shadow-[0_8px_32px_0_rgba(99,102,241,0.05)] bg-gradient-to-br from-indigo-500/5 to-purple-500/5 hover:from-indigo-500/10 hover:to-purple-500/10 transition-all duration-500">
+            <details class="group">
+              <summary class="flex justify-between items-center cursor-pointer list-none">
+                <div class="flex items-center gap-4">
+                  <div class="w-12 h-12 bg-gradient-to-tr from-indigo-600 to-purple-600 rounded-2xl flex items-center justify-center text-xl shadow-lg shadow-indigo-500/20">
+                    🧠
+                  </div>
+                  <div>
+                    <h4 class="text-sm font-bold text-white tracking-wide">Auditoría y Análisis Crítico IA</h4>
+                    <p class="text-white/50 text-xs mt-0.5 font-medium">Haz clic para ver el razonamiento estratégico</p>
+                  </div>
                 </div>
-                <div>
-                  <h4 class="text-sm font-bold text-white tracking-wide">Auditoría y Análisis Crítico IA</h4>
-                  <p class="text-white/50 text-xs mt-0.5 font-medium">Haz clic para ver el razonamiento estratégico</p>
+                <div class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center group-open:bg-white/10 transition-colors">
+                  <span class="text-white/60 text-xs group-open:rotate-180 transition-transform duration-300">▼</span>
+                </div>
+              </summary>
+              <div class="mt-6 text-white/80 text-sm leading-relaxed whitespace-pre-line border-t border-white/5 pt-5">
+                <div class="bg-white/[0.02] p-5 rounded-2xl border border-white/5 backdrop-blur-sm">
+                  {{ data.planAiReport }}
                 </div>
               </div>
-              <div class="w-8 h-8 bg-white/5 rounded-full flex items-center justify-center group-open:bg-white/10 transition-colors">
-                <span class="text-white/60 text-xs group-open:rotate-180 transition-transform duration-300">▼</span>
-              </div>
-            </summary>
-            <div class="mt-6 text-white/80 text-sm leading-relaxed whitespace-pre-line border-t border-white/5 pt-5">
-              <div class="bg-white/[0.02] p-5 rounded-2xl border border-white/5 backdrop-blur-sm">
-                {{ data.planAiReport }}
-              </div>
-            </div>
-          </details>
-        </div>
+            </details>
+          </div>
+        }
 
         <app-ai-plan-timeline [actions]="data.suggestedActions"></app-ai-plan-timeline>
 
@@ -438,7 +446,7 @@
         <span class="ml-auto text-white/20 group-hover:text-amber-400 text-xl transition-colors">→</span>
       </a>
 
-      <!-- ── ÁRBOL DE EVOLUCIÓN Y LEGADO (nuevo) ─────────────── -->
+      <!-- ── ÁRBOL DE EVOLUCIÓN Y LEGADO ─────────────── -->
       <a routerLink="/lineage" class="glass-premium p-6 rounded-[1.5rem] border border-amber-900/30 flex items-center gap-5 group hover:border-amber-500/50 transition-all cursor-pointer no-underline" style="background: linear-gradient(135deg, rgba(120,53,15,0.12) 0%, rgba(30,20,5,0.0) 100%);">
         <div class="w-14 h-14 rounded-2xl bg-amber-900/30 flex items-center justify-center text-3xl flex-shrink-0 group-hover:scale-110 transition-transform">🌳</div>
         <div class="flex-1 min-w-0">
@@ -469,86 +477,88 @@
     </footer>
 
     <!-- [WHATSAPP-ACTIVATION-MODAL] -->
-    <div class="whatsapp-modal-overlay" *ngIf="showWhatsappModal()">
-      <div class="whatsapp-modal-card glass-premium animate-in fade-in zoom-in duration-500">
-        <div class="modal-icon-wrapper">
-          <span class="lock-icon">🔒</span>
-        </div>
-        
-        <h3>Mantén protegida tu familia</h3>
-        
-        <p class="modal-intro">
-          Activa las alertas automáticas y mantén sincronizada la seguridad emocional de tu hogar.
-        </p>
-
-        <ul class="benefits-list">
-          <li>
-            <span class="check-icon">✓</span>
-            <div>
-              <strong>Alertas de seguridad:</strong>
-              Notificaciones al instante sobre riesgos críticos detectados en el núcleo familiar.
-            </div>
-          </li>
-          <li>
-            <span class="check-icon">✓</span>
-            <div>
-              <strong>Acompañamiento emocional:</strong>
-              Sugerencias y dinámicas recomendadas por Claude según el clima de convivencia.
-            </div>
-          </li>
-          <li>
-            <span class="check-icon">✓</span>
-            <div>
-              <strong>Recuperación de acceso:</strong>
-              Restablecimiento del PIN familiar de forma segura y directa por chat.
-            </div>
-          </li>
-        </ul>
-
-        <div class="input-section">
-          <label>Número de WhatsApp</label>
-          <div class="phone-input-wrapper">
-            <span class="country-prefix">+57</span>
-            <input 
-              type="tel" 
-              [(ngModel)]="whatsappNumber" 
-              name="waNum" 
-              placeholder="300 123 4567" 
-              maxlength="10"
-              (input)="whatsappError.set('')"
-              class="inp"
-            />
+    @if (showWhatsappModal()) {
+      <div class="whatsapp-modal-overlay">
+        <div class="whatsapp-modal-card glass-premium animate-in fade-in zoom-in duration-500">
+          <div class="modal-icon-wrapper">
+            <span class="lock-icon">🔒</span>
           </div>
-          <div class="error-msg" *ngIf="whatsappError()">
-            {{ whatsappError() }}
-          </div>
-        </div>
 
-        <div class="modal-actions">
-          <button 
-            (click)="activateWhatsapp()" 
-            class="btn-activate btn-primary"
-            [disabled]="savingWhatsapp() || whatsappNumber.trim().length < 10"
-          >
-            {{ savingWhatsapp() ? 'Activando...' : '✓ Activar WhatsApp' }}
-          </button>
-          <button 
-            (click)="dismissWhatsappModal()" 
-            class="btn-dismiss btn-ghost"
-            [disabled]="savingWhatsapp()"
-          >
-            Ahora no
-          </button>
+          <h3>Mantén protegida tu familia</h3>
+
+          <p class="modal-intro">
+            Activa las alertas automáticas y mantén sincronizada la seguridad emocional de tu hogar.
+          </p>
+
+          <ul class="benefits-list">
+            <li>
+              <span class="check-icon">✓</span>
+              <div>
+                <strong>Alertas de seguridad:</strong>
+                Notificaciones al instante sobre riesgos críticos detectados en el núcleo familiar.
+              </div>
+            </li>
+            <li>
+              <span class="check-icon">✓</span>
+              <div>
+                <strong>Acompañamiento emocional:</strong>
+                Sugerencias y dinámicas recomendadas por Claude según el clima de convivencia.
+              </div>
+            </li>
+            <li>
+              <span class="check-icon">✓</span>
+              <div>
+                <strong>Recuperación de acceso:</strong>
+                Restablecimiento del PIN familiar de forma segura y directa por chat.
+              </div>
+            </li>
+          </ul>
+
+          <div class="input-section">
+            <label>Número de WhatsApp</label>
+            <div class="phone-input-wrapper">
+              <span class="country-prefix">+57</span>
+              <input
+                type="tel"
+                [(ngModel)]="whatsappNumber"
+                name="waNum"
+                placeholder="300 123 4567"
+                maxlength="10"
+                (input)="whatsappError.set('')"
+                class="inp"
+              />
+            </div>
+            @if (whatsappError()) {
+              <div class="error-msg">
+                {{ whatsappError() }}
+              </div>
+            }
+          </div>
+
+          <div class="modal-actions">
+            <button
+              (click)="activateWhatsapp()"
+              class="btn-activate btn-primary"
+              [disabled]="savingWhatsapp() || whatsappNumber.trim().length < 10"
+            >
+              {{ savingWhatsapp() ? 'Activando...' : '✓ Activar WhatsApp' }}
+            </button>
+            <button
+              (click)="dismissWhatsappModal()"
+              class="btn-dismiss btn-ghost"
+              [disabled]="savingWhatsapp()"
+            >
+              Ahora no
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    }
 
   </div>
-</ng-container>
-
-<ng-template #loadingTemplate>
+} @else {
   <div class="flex flex-col items-center justify-center min-h-[60vh]">
     <div class="w-16 h-16 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mb-4"></div>
     <p class="text-white/40 text-sm font-medium animate-pulse">Sincronizando con el Santuario de Conciencia...</p>
   </div>
-</ng-template>
+}

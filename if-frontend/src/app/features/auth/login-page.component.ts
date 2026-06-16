@@ -1,6 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 @Component({
@@ -13,6 +13,7 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
 export class LoginPageComponent {
   private auth   = inject(AuthService);
   private router = inject(Router);
+  private route  = inject(ActivatedRoute);
   email = ''; password = '';
   showPassword = false; rememberMe = true;
   loading = false; error = '';
@@ -47,7 +48,11 @@ export class LoginPageComponent {
         this.loading = false;
         // El token JWT ya queda guardado por AuthService — no se necesita flag adicional
         const user = this.auth.user();
-        if (user && user.familyId) {
+        const params = new URLSearchParams(window.location.search);
+        const returnUrl = params.get('returnUrl') || this.route.snapshot.queryParams['returnUrl'];
+        if (returnUrl) {
+          this.router.navigateByUrl(returnUrl);
+        } else if (user && user.familyId) {
           this.router.navigate(['/dashboard']);
         } else {
           this.router.navigate(['/families/create']);

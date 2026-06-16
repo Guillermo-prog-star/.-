@@ -140,16 +140,14 @@ class GuardianIntegrationTest {
     // ════════════════════════════════════════════════════════════════════════
 
     @Test @Order(2)
-    @DisplayName("PASO 2: Primer voto queda registrado correctamente")
+    @DisplayName("PASO 2: Un voto (1/3) no es suficiente para elegir guardián")
     void paso2_un_voto_no_resuelve_guardian() {
-        // member2 vota por member1
+        // member2 vota por member1 — solo 1 de 3 miembros ha votado
         GuardianStatusResponse status = guardianService.vote(familyId,
             new VoteRequest(member2Id, member1Id));
 
         assertThat(status.totalVotes()).isEqualTo(1);
-        // Nota: la familia.getMembers() no se carga en la transacción del servicio
-        // (lazy + detached), por lo que totalMembers=0 → 1 voto puede resolver mayoría.
-        // Verificamos solo que el voto se registró correctamente.
+        assertThat(status.hasGuardian()).isFalse();  // 1/3 no es mayoría simple
         assertThat(status.voteCounts()).hasSize(1);
         assertThat(status.voteCounts().get(0).memberId()).isEqualTo(member1Id);
         assertThat(status.voteCounts().get(0).votes()).isEqualTo(1);
@@ -160,14 +158,13 @@ class GuardianIntegrationTest {
     // ════════════════════════════════════════════════════════════════════════
 
     @Test @Order(3)
-    @DisplayName("PASO 3: Segundo voto acumula totales y guardián ya está resuelto")
+    @DisplayName("PASO 3: Mayoría simple (2/3) resuelve guardián automáticamente")
     void paso3_mayoria_resuelve_guardian_automaticamente() {
-        // member3 también vota por member1 → 2 votos acumulados
+        // member3 también vota por member1 → 2 de 3 miembros = mayoría simple
         GuardianStatusResponse status = guardianService.vote(familyId,
             new VoteRequest(member3Id, member1Id));
 
         assertThat(status.totalVotes()).isEqualTo(2);
-        // El guardián fue resuelto desde el primer voto (members lazy, totalMembers=0 por defecto)
         assertThat(status.hasGuardian()).isTrue();
         assertThat(status.guardianMemberId()).isEqualTo(member1Id);
         assertThat(status.guardianFullName()).isEqualTo("Ana García");

@@ -195,7 +195,7 @@ public class GuardianService {
         List<Object[]> votes = voteRepository.countVotesByFamilyGroupedByNominated(family.getId());
         if (votes.isEmpty()) return;
 
-        long totalMembers = family.getMembers() != null ? family.getMembers().size() : 1;
+        long totalMembers = memberRepository.countByFamilyId(family.getId());
         Object[] top = votes.get(0);
         long topVotes = (Long) top[1];
 

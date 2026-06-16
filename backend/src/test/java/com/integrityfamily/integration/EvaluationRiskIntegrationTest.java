@@ -164,8 +164,9 @@ class EvaluationRiskIntegrationTest {
 
         assertThat(snap.getRiskLevel()).isEqualTo("CRITICO");
         assertThat(snap.getHasCrisis()).isTrue();
-        // Nota: RiskService modifica family.sentinelActive en memoria pero no lo persiste explícitamente.
-        // Verificamos el estado en el objeto retornado (snapshot), no re-cargando la familia.
+        // Con el bug corregido, sentinelActive=true queda persistido en BD
+        Family updated = familyRepository.findById(familyNuevaId).orElseThrow();
+        assertThat(updated.getSentinelActive()).isTrue();
     }
 
     // ════════════════════════════════════════════════════════════════════════

@@ -166,9 +166,10 @@ class GuardianServiceTest {
             when(voteRepository.findByFamilyIdAndVoterId(10L, 1L)).thenReturn(Optional.empty());
             when(voteRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-            // Simular conteo: memberB tiene 2 votos
+            // Simular conteo: memberB tiene 2 votos de 3 → mayoría simple
             when(voteRepository.countVotesByFamilyGroupedByNominated(10L))
                     .thenReturn(Collections.singletonList(new Object[]{2L, 2L}));  // nominatedId=2, votes=2
+            when(memberRepository.countByFamilyId(10L)).thenReturn(3L);  // 2 de 3 → mayoría
             when(voteRepository.countByFamilyId(10L)).thenReturn(2L);
             when(voteRepository.existsByFamilyIdAndVoterId(10L, 1L)).thenReturn(false);
             when(missionRepository.findTopByFamilyIdAndStatusOrderByActivatedAtDesc(10L, MissionStatus.ACTIVE))
@@ -198,6 +199,7 @@ class GuardianServiceTest {
             when(voteRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
             when(voteRepository.countVotesByFamilyGroupedByNominated(10L))
                     .thenReturn(Collections.singletonList(new Object[]{2L, 1L}));  // 1 solo voto
+            when(memberRepository.countByFamilyId(10L)).thenReturn(3L);  // 1 de 3 → no mayoría
             when(voteRepository.countByFamilyId(10L)).thenReturn(1L);
             when(voteRepository.existsByFamilyIdAndVoterId(10L, 1L)).thenReturn(false);
             when(missionRepository.findTopByFamilyIdAndStatusOrderByActivatedAtDesc(10L, MissionStatus.ACTIVE))

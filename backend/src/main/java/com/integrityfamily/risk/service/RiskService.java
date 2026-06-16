@@ -3,6 +3,7 @@ package com.integrityfamily.risk.service;
 import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.RiskSnapshot;
+import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.RiskSnapshotRepository;
 import com.integrityfamily.admin.service.SecurityWatchdogService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ import java.util.List;
 public class RiskService {
 
     private final RiskSnapshotRepository riskSnapshotRepository;
+    private final FamilyRepository familyRepository;
     private final SecurityWatchdogService watchdogService;
 
     public List<RiskSnapshot> findAll() {
@@ -58,10 +60,12 @@ public class RiskService {
         // SDD: OrquestaciÃƒÂ³n del estado de alerta
         if ("CRITICO".equals(riskLevel) || hasCrisis) {
             family.setSentinelActive(true);
-            log.warn("Ã°Å¸Å¡Â¨ [SENTINEL] Activado para: {}", family.getName());
+            familyRepository.save(family);
+            log.warn("[SENTINEL] Activado para: {}", family.getName());
             watchdogService.scanForAnomalies();
         } else {
             family.setSentinelActive(false);
+            familyRepository.save(family);
         }
 
         return riskSnapshotRepository.save(RiskSnapshot.builder()

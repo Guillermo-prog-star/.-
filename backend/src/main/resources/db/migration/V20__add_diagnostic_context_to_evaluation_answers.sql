@@ -31,8 +31,12 @@ BEGIN
     END IF;
 
     -- 3. Actualización retroactiva de diagnostic_dimension cruzando con la tabla de preguntas
+    -- COLLATE explícito para evitar mezcla de colaciones entre tablas creadas con diferentes defaults
     UPDATE evaluation_answers ea
-    INNER JOIN questions q ON (ea.question_id = q.id OR ea.question_key = q.question_key)
+    INNER JOIN questions q ON (
+        ea.question_id = q.id
+        OR ea.question_key COLLATE utf8mb4_unicode_ci = q.question_key COLLATE utf8mb4_unicode_ci
+    )
     SET ea.diagnostic_dimension = q.dimension
     WHERE ea.diagnostic_dimension IS NULL;
 

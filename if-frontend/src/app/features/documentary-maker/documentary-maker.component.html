@@ -1,0 +1,163 @@
+<div class="maker-container">
+  <header class="maker-header">
+    <h1>🎬 Motor de Ensamblaje Documental</h1>
+    <p>Convierte la cápsula familiar en una obra maestra narrativa.</p>
+  </header>
+
+  <div class="maker-content">
+    
+    <!-- PASO 1: SETUP -->
+    <div class="maker-section">
+      <h2>1. Seleccionar Alcance</h2>
+      <div class="form-group row">
+        <div class="col">
+          <label>Alcance</label>
+          <select [(ngModel)]="newScope" class="form-control">
+            <option value="MISSION">Misión</option>
+            <option value="SPRINT">Sprint Semanal</option>
+            <option value="PILLAR">Pilar de Vida</option>
+            <option value="MONTH">Mes</option>
+            <option value="ROUTE_36">Ruta 36 Meses</option>
+          </select>
+        </div>
+        <div class="col">
+          <label>Título del Documental</label>
+          <input type="text" [(ngModel)]="newTitle" placeholder="Ej: Las vacaciones inolvidables" class="form-control">
+        </div>
+        <div class="col-auto d-flex align-items-end">
+          <button class="btn btn-primary" (click)="createDraft()" [disabled]="!newTitle || loading()">
+            Crear Borrador
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LISTA DE PRODUCCIONES -->
+    @if (productions().length > 0) {
+    <div class="productions-list">
+      <h2>Tus Producciones</h2>
+      <div class="prod-cards">
+        @for (p of productions(); track p.id) {
+        <div class="prod-card" 
+             [class.active]="selectedProduction()?.id === p.id"
+             (click)="selectProduction(p)">
+          <div class="prod-badge {{p.status.toLowerCase()}}">{{p.status}}</div>
+          <h3>{{p.title}}</h3>
+          <p>{{p.scope}}</p>
+        </div>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- MESA DE EDICIÓN (CURADURÍA) -->
+    @if (selectedProduction()?.status === 'DRAFT' || selectedProduction()?.status === 'CURATED') {
+    <div class="maker-section curation-section">
+      <h2>2. Mesa de Edición (Curaduría)</h2>
+      <p>Selecciona las evidencias que formarán parte del documental final.</p>
+      <div class="curation-tools">
+        <input type="text" placeholder="🔍 Buscar evidencias por título o tipo..." 
+               class="form-control search-bar"
+               [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event)">
+        <button class="btn btn-primary btn-sm" (click)="showUploadModal.set(true)">
+          ➕ Captura Rápida
+        </button>
+      </div>
+      
+      <div class="gallery-grid">
+        @for (ev of filteredEvidences(); track ev.id) {
+        <div class="evidence-card"
+             [class.selected]="selectedEvidenceIds().has(ev.id)"
+             (click)="toggleEvidence(ev.id)">
+          <div class="ev-type-icon">{{ ev.type || ev.evidenceType }}</div>
+          <div class="ev-content">
+            @if (ev.mediaData && (ev.mediaMime || '').startsWith('image')) {
+            <img [src]="'data:' + ev.mediaMime + ';base64,' + ev.mediaData">
+            }
+            @if (ev.mediaData && (ev.mediaMime || '').startsWith('video')) {
+            <video [src]="'data:' + ev.mediaMime + ';base64,' + ev.mediaData"></video>
+            }
+            @if (ev.textContent) {
+            <p class="ev-text">{{ev.textContent | slice:0:50}}...</p>
+            }
+          </div>
+          <div class="ev-label">{{ev.title || ev.label}}</div>
+          <div class="selection-indicator">✓</div>
+        </div>
+        }
+      </div>
+      
+      <button class="btn btn-success mt-3" (click)="saveCuration()" [disabled]="selectedEvidenceIds().size === 0 || loading()">
+        Guardar Curaduría
+      </button>
+
+      @if (selectedProduction()?.status === 'CURATED') {
+      <button class="btn btn-warning mt-3 ms-2" (click)="generateScript()" [disabled]="loading()">
+        🤖 Generar Guion con Sentinel AI
+      </button>
+      }
+    </div>
+    }
+
+    <!-- GUION GENERADO -->
+    @if (selectedProduction()?.status === 'GENERATED' || selectedProduction()?.status === 'REVIEWED') {
+    <div class="maker-section script-section">
+      <h2>3. Guion Generado</h2>
+      <div class="script-preview">
+        <pre>{{ selectedProduction()?.scriptData }}</pre>
+      </div>
+      <button class="btn btn-primary" (click)="approve()" [disabled]="loading()">Aprobar Producción Final</button>
+    </div>
+    }
+
+    <!-- PRODUCCIÓN FINALIZADA -->
+    @if (selectedProduction()?.status === 'APPROVED' || selectedProduction()?.status === 'PUBLISHED') {
+    <div class="maker-section approved-section">
+      <h2>🎉 ¡Documental Aprobado!</h2>
+      <div class="script-preview finalized">
+        <pre>{{ selectedProduction()?.scriptData }}</pre>
+      </div>
+      <!-- Acciones Finales -->
+      <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+        <button class="btn btn-primary" (click)="playDocumentary()" style="flex: 1; font-size: 1.1rem; padding: 12px; background: linear-gradient(135deg, #7c3aed, #4f46e5); border: none;">
+          🎬 Reproducir Documental
+        </button>
+        <button class="btn btn-secondary" disabled style="flex: 1;">Exportar a PDF (Próximamente)</button>
+      </div>
+    </div>
+    }
+
+  </div>
+</div>
+
+<!-- MODAL CAPTURA RÁPIDA -->
+@if (showUploadModal()) {
+<div class="modal-backdrop">
+  <div class="modal-content">
+    <h3>Subir Nueva Evidencia</h3>
+    <div class="form-group">
+      <label>Título (Ej. Diploma de Grado)</label>
+      <input type="text" class="form-control" [(ngModel)]="uploadTitle">
+    </div>
+    <div class="form-group">
+      <label>Tipo de Evidencia</label>
+      <select class="form-control" [(ngModel)]="uploadType">
+        <option value="PHOTO">Foto / Imagen</option>
+        <option value="DOCUMENT">Documento (PDF, etc)</option>
+        <option value="AUDIO">Audio</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Archivo</label>
+      <input type="file" class="form-control" (change)="onFileSelected($event)">
+    </div>
+    
+    <div class="modal-actions">
+      <button class="btn btn-secondary" (click)="showUploadModal.set(false)">Cancelar</button>
+      <button class="btn btn-primary" (click)="submitQuickUpload()" [disabled]="!uploadTitle || !uploadFileBase64 || loading()">
+        Subir y Agregar
+      </button>
+    </div>
+  </div>
+</div>
+}

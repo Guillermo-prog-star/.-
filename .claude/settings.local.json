@@ -6,7 +6,8 @@
       "Read(//c/Proyectos/if-full/if-frontend/src/app/core/models/**)",
       "Bash(xargs grep -l \"component\\\\|Component\")",
       "Bash(find C:/Proyectos/if-full/if-frontend/src/app -name \"*.routes.ts\" -o -name \"app.routes.ts\" | head -5 *)",
-      "Bash(mkdir -p \"C:/Proyectos/if-full/if-frontend/src/app/features/cognitive\")"
+      "Bash(mkdir -p \"C:/Proyectos/if-full/if-frontend/src/app/features/cognitive\")",
+      "Bash(mvn test *)"
     ]
   }
 }

@@ -90,3 +90,6 @@ maven_build_error.log
 **/__pycache__/
 *.pyc
 *.pyo
+
+# MySQL backups (no versionar dumps)
+backups/

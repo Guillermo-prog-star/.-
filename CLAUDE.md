@@ -144,6 +144,8 @@ families
 - `V65` — `task_evidences.task_id` pasó a NULLABLE (evidencias sin tarea)
 - `V66` — nueva tabla `family_documentaries`
 - `V67` — `task_evidences.documentary_id` FK nullable
+- `V68` — formaliza 11 columnas de `families` que solo existían vía ddl-auto=update
+- `V69` — snapshot idempotente del schema completo de producción 2026-06-16 (99 tablas)
 
 ---
 
@@ -179,7 +181,16 @@ class NombreServicioTest {
 mvn test                          # todos los tests
 mvn test -Dtest=SprintServiceTest # test específico
 mvn verify -P ci                  # tests + JaCoCo quality gate (igual que CI)
+
+# Test de integración E2E (requiere Docker integrity-db en puerto 3307)
+mvn test -Dtest=FamilyLifecycleIntegrationTest
 ```
+
+**Test E2E — `FamilyLifecycleIntegrationTest`:**
+- Perfil: `integration-test` (MySQL real, RabbitMQ mockeado, ddl-auto=update)
+- BD: `integrity_family_e2e_test` — se crea y destruye automáticamente
+- Flujo: Familia → Evaluación ICF → Plan → Sprint → Evidencia → Documental (6 pasos)
+- Prerrequisito: `docker compose up -d db` (MySQL en localhost:3307)
 
 ---
 
@@ -253,13 +264,15 @@ Dashboard: https://sonarcloud.io/project/overview?id=Guillermo-prog-star_if-full
 - Siempre agregar `NULL` explícito o `DEFAULT` en columnas nuevas para no bloquear registros existentes
 - Antes de agregar FK: verificar que la tabla referenciada ya existe (respetar orden de migraciones)
 - FK nullable (`NULL ok`) cuando la relación es opcional (ej: V65, V67)
-- Próximo número disponible: **V68**
+- `ADD COLUMN IF NOT EXISTS` es MariaDB — en MySQL 8.x usar procedure con `information_schema` (ver V68)
+- V69 es un snapshot idempotente de producción 2026-06-16 con `CREATE TABLE IF NOT EXISTS`
+- Próximo número disponible: **V70**
 
 ---
 
 ## Git
 
-**Rama activa:** `principal` (40+ commits adelante de `origin/principal`)
+**Rama activa:** `principal` (sincronizada con `origin/principal`)
 **Rama de producción:** `main`
 **Autor:** William Lopez / Guillermo-prog-star
 

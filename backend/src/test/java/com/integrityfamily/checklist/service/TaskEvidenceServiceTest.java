@@ -44,6 +44,7 @@ class TaskEvidenceServiceTest {
     @Mock FamilyRepository       familyRepository;
     @Mock RabbitTemplate         rabbitTemplate;
     @Mock ParticipationService   participationService;
+    @Mock com.integrityfamily.auth.service.AuditService auditService;
 
     @InjectMocks TaskEvidenceService service;
 

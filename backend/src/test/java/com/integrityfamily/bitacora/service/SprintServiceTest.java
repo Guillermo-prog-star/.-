@@ -50,6 +50,13 @@ class SprintServiceTest {
     @Mock private AiProvider        aiProvider;
     @Mock private ContextSynthesizer contextSynthesizer;
 
+    // ── Audit ────────────────────────────────────────────────────────────────
+    @Mock private com.integrityfamily.auth.service.AuditService auditService;
+
+    // ── Evidence ────────────────────────────────────────────────────────────
+    @Mock private com.integrityfamily.domain.repository.TaskEvidenceRepository taskEvidenceRepository;
+    @Mock private com.integrityfamily.domain.repository.PlanTaskRepository     planTaskRepository;
+
     @InjectMocks
     private SprintService service;
 
@@ -372,6 +379,13 @@ class SprintServiceTest {
 
         /** misiones completadas, misiones totales, dailies registrados */
         private void mockSprintData(int completedMissions, int totalMissions, int dailyCount) {
+            // SprintService requiere dailies O evidencias para cerrar el sprint
+            // Si no hay dailies, simulamos que hay evidencia vía missionTaskId
+            if (dailyCount == 0) {
+                activeSprint.setMissionTaskId(1L);
+                com.integrityfamily.domain.TaskEvidence ev = com.integrityfamily.domain.TaskEvidence.builder().id(1L).build();
+                when(taskEvidenceRepository.findByTaskId(1L)).thenReturn(List.of(ev));
+            }
             when(sprintRepository.findById(10L)).thenReturn(Optional.of(activeSprint));
 
             List<SprintMission> missions = new java.util.ArrayList<>();

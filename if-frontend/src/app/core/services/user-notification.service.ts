@@ -49,6 +49,10 @@ export class UserNotificationService {
          : type === 'MILESTONE_UP'        ? '🎉'
          : type === 'PLAN_ASSIGNED'       ? '📋'
          : type === 'CRISIS_ALERT'        ? '🚨'
+         : type === 'SPRINT_COMPLETED'    ? '🎖️'
+         : type === 'CAPSULA_CREATED'     ? '💾'
+         : type === 'MISSION_COMPLETED'   ? '🏆'
+         : type === 'DIMENSION_UNLOCKED'  ? '🔓'
          : '🔔';
   }
 }

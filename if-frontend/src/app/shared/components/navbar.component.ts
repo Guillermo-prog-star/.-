@@ -1,6 +1,6 @@
 import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { SentinelCoreService } from '../../core/services/sentinel-core.service';
@@ -14,7 +14,7 @@ import { TransformationFlowService } from '../../core/services/transformation-fl
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterLink],
   styles: [`
     .topbar {
       display: flex;
@@ -252,8 +252,11 @@ import { TransformationFlowService } from '../../core/services/transformation-fl
             </span>
 
             <!-- Sprint badge (si hay misión activa) -->
-            @if (flow.activeMissionId()) {
-              <span class="nb-sprint-chip">⚡ Sprint #{{ flow.currentSprintNumber() }}</span>
+            @if (flow.activeMissionId() || sprintDiasNavbar) {
+              <span class="nb-sprint-chip" [routerLink]="['/logbook']" [queryParams]="{tab:'SPRINT'}"
+                    style="cursor:pointer;text-decoration:none;">
+                {{ sprintDiasNavbar || ('⚡ Sprint #' + flow.currentSprintNumber()) }}
+              </span>
             }
 
             <!-- Progreso -->
@@ -315,7 +318,7 @@ import { TransformationFlowService } from '../../core/services/transformation-fl
           </button>
         }
 
-        <span class="chip">👤 {{ userName }}</span>
+        <a routerLink="/profile" class="chip" style="text-decoration:none;cursor:pointer;" title="Ver mi perfil">👤 {{ userName }}</a>
         @if (showLogoutConfirm()) {
           <div class="logout-inline">
             <span class="confirm-label">¿Cerrar sesión?</span>
@@ -350,12 +353,22 @@ export class NavbarComponent {
   /**
    * Recupera el nombre de la familia seleccionada reactivamente desde el signal.
    */
-  get familyName(): string | null { 
-    return this.familyState.currentFamilyName() || null; 
+  get familyName(): string | null {
+    return this.familyState.currentFamilyName() || null;
   }
 
   get userName(): string {
     return this.auth.user()?.fullName || 'Usuario';
+  }
+
+  get sprintDiasNavbar(): string {
+    try {
+      const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+      if (!ctx?.misionId) return '';
+      const dias = parseInt(localStorage.getItem(`sprint_dias_${ctx.misionId}`) ?? '0', 10);
+      const completado = ctx.completado === true || dias >= 7;
+      return completado ? '🎖️ 7/7' : `⚡ ${dias}/7`;
+    } catch { return ''; }
   }
 
   logout(): void {

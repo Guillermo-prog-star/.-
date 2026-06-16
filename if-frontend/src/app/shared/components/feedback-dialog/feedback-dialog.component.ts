@@ -9,48 +9,53 @@ import { FamilyStateService } from '../../../core/services/family-state.service'
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" *ngIf="visible">
+    @if (visible) {
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div class="glass-premium p-8 rounded-[2rem] border border-white/10 w-full max-w-md shadow-2xl relative animate-fade-in">
         <button (click)="close()" class="absolute top-6 right-6 text-white/40 hover:text-white">✕</button>
-        
+
         <h2 class="text-2xl font-black text-white mb-2">Voz del Beta-Tester</h2>
         <p class="text-xs text-white/40 mb-6 uppercase tracking-widest font-bold">Ayúdanos a evolucionar el sistema</p>
 
         <div class="space-y-6">
           <!-- Type Toggle -->
           <div class="flex gap-2 p-1 bg-white/5 rounded-xl border border-white/5">
-            <button 
-                *ngFor="let t of types" 
+            @for (t of types; track t.id) {
+            <button
                 (click)="type = t.id"
                 [ngClass]="type === t.id ? 'bg-indigo-600 text-white' : 'text-white/40'"
                 class="flex-1 py-2 text-[10px] font-bold rounded-lg transition-all uppercase">
               {{ t.label }}
             </button>
+            }
           </div>
 
           <!-- Stars -->
           <div class="flex justify-center gap-4 text-3xl">
-            <button 
-                *ngFor="let s of [1,2,3,4,5]" 
+            @for (s of [1,2,3,4,5]; track s) {
+            <button
                 (click)="score = s"
                 [ngClass]="score >= s ? 'text-yellow-400' : 'text-white/10'"
                 class="hover:scale-125 transition-transform">
               ★
             </button>
+            }
           </div>
 
           <!-- Comment -->
-          <textarea 
+          <textarea
             [(ngModel)]="comment"
             placeholder="¿Qué podríamos mejorar? ¿Algún error detectado?"
             class="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white text-sm outline-none focus:border-indigo-500 min-h-[100px]"
           ></textarea>
 
-          <div *ngIf="feedbackMsg" [style]="feedbackSuccess
+          @if (feedbackMsg) {
+          <div [style]="feedbackSuccess
               ? 'padding:10px 14px;background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.3);border-radius:12px;color:#6ee7b7;font-size:0.82rem;font-weight:600;text-align:center;'
               : 'padding:10px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;color:#fca5a5;font-size:0.82rem;font-weight:600;text-align:center;'">
             {{ feedbackMsg }}
           </div>
+          }
 
           <button
             (click)="submit()"
@@ -61,6 +66,7 @@ import { FamilyStateService } from '../../../core/services/family-state.service'
         </div>
       </div>
     </div>
+    }
 
     <!-- Floating Trigger -->
     <button (click)="visible = true" class="fixed bottom-8 right-8 w-14 h-14 bg-yellow-500 rounded-2xl flex items-center justify-center text-2xl shadow-xl hover:scale-110 active:scale-95 transition-all z-40 group">

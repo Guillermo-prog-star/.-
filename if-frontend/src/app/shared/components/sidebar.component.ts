@@ -148,6 +148,9 @@ import { filter } from 'rxjs/operators';
           <a routerLink="/rituals"   class="nav-item nav-ritual" routerLinkActive="active">
             <span class="nav-icon">🕯️</span><span class="nav-text">Motor de Rituales</span>
           </a>
+          <a routerLink="/documentary-maker" class="nav-item nav-ritual" routerLinkActive="active">
+            <span class="nav-icon">🎬</span><span class="nav-text">Ensamblaje Documental</span>
+          </a>
           <a routerLink="/gratitude" class="nav-item" routerLinkActive="active">
             <span class="nav-icon">💖</span><span class="nav-text">Gratitud Familiar</span>
           </a>

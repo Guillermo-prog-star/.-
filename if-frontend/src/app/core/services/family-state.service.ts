@@ -50,7 +50,7 @@ export class FamilyStateService {
     if (!family || !family.id) return;
     
     this.familyIdSignal.set(family.id);
-    const familyName = family.name || 'Familia';
+    const familyName = family.name ?? 'Familia';
     const familyCode = family.familyCode || '';
     this.familyNameSignal.set(familyName);
     this.familyCodeSignal.set(familyCode);

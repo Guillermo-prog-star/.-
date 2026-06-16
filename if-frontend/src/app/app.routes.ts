@@ -101,6 +101,7 @@ export const routes: Routes = [
       { path: 'checklist', loadComponent: () => import('./features/checklist/checklist-page.component').then(m => m.ChecklistPageComponent) },
       { path: 'evidence/capture', title: 'Cápsula Familiar', loadComponent: () => import('./features/evidence-capture/evidence-capture.component').then(m => m.EvidenceCaptureComponent) },
       { path: 'evidence/documentary', title: 'Mini Documental Familiar', loadComponent: () => import('./features/evidence-capture/mision-documentary.component').then(m => m.MisionDocumentaryComponent) },
+      { path: 'documentary-maker', title: 'Motor de Ensamblaje Documental', loadComponent: () => import('./features/documentary-maker/documentary-maker.component').then(m => m.DocumentaryMakerComponent) },
       { path: 'rituals', title: 'Motor de Rituales', loadComponent: () => import('./features/ritual-engine/ritual-engine.component').then(m => m.RitualEngineComponent) },
       { path: 'family-tree', title: 'Árbol Generacional', loadComponent: () => import('./features/family-tree/family-tree.component').then(m => m.FamilyTreeComponent) },
       { path: 'family-pulse',   title: 'Pulso Familiar',   loadComponent: () => import('./features/family-pulse/family-pulse.component').then(m => m.FamilyPulseComponent) },

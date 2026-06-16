@@ -398,26 +398,28 @@ import { NarrativeGuidanceService, UserRole, EmotionalState, NarrativeContent } 
           <!-- Role selector -->
           <div class="selector-group">
             <span class="group-title">Rol Familiar</span>
-            <button 
-              *ngFor="let r of roles"
-              class="pill-btn" 
-              [class.active]="currentRole === r.value"
-              (click)="changeRole(r.value)">
-              {{ r.label }}
-            </button>
+            @for (r of roles; track r.value) {
+              <button
+                class="pill-btn"
+                [class.active]="currentRole === r.value"
+                (click)="changeRole(r.value)">
+                {{ r.label }}
+              </button>
+            }
           </div>
 
           <!-- Emotion selector -->
           <div class="selector-group">
             <span class="group-title">Emoción</span>
-            <button 
-              *ngFor="let e of emotions"
-              class="pill-btn"
-              [ngClass]="getEmotionClass(e.value)"
-              [class.active]="currentEmotion === e.value"
-              (click)="changeEmotion(e.value)">
-              {{ e.label }}
-            </button>
+            @for (e of emotions; track e.value) {
+              <button
+                class="pill-btn"
+                [ngClass]="getEmotionClass(e.value)"
+                [class.active]="currentEmotion === e.value"
+                (click)="changeEmotion(e.value)">
+                {{ e.label }}
+              </button>
+            }
           </div>
         </div>
       }

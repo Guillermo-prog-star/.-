@@ -1,17 +1,15 @@
-const backendHost = process.env.BACKEND_URL || 'localhost';
+// C:\Proyectos\if-full\if-frontend\proxy.conf.js
 
 const PROXY_CONFIG = {
   "/api": {
-    "target": `http://${backendHost}:8080`,
+    "target": "http://127.0.0.1:8080",
     "secure": false,
-    "changeOrigin": true
-  },
-  "/ws": {
-    "target": `ws://${backendHost}:8080`,
-    "secure": false,
-    "ws": true
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "onError": function (err, req, res) {
+      console.error(`[Proxy Error] Falla en ${req.url}:`, err.message);
+    }
   }
 };
 
 module.exports = PROXY_CONFIG;
-

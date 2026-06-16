@@ -5,7 +5,7 @@ import { Observable } from 'rxjs';
 export type EvidenceType = 'PHOTO' | 'VIDEO' | 'AUDIO' | 'BITACORA' | 'CHECKLIST' | 'SELF_REFLECTION' | 'DOCUMENT' | 'FAMILY_SIGNATURE';
 
 export interface SubmitEvidenceRequest {
-  taskId: number;
+  taskId?: number | null;
   familyId: number;
   evidenceType: EvidenceType;
   title: string;
@@ -20,6 +20,17 @@ export interface SubmitEvidenceRequest {
   memberName?: string;
   mediaData?: string;   // base64
   mediaMime?: string;   // image/jpeg | audio/webm
+}
+
+export interface SubmitDocumentaryRequest {
+  familyId: number;
+  taskId?: number | null;
+  sprintId?: number | null;
+  pillarId?: number | null;
+  title: string;
+  content: string;
+  sourceType: string;
+  evidenceIds: number[];
 }
 
 export interface EvidenceResponse {
@@ -45,6 +56,14 @@ export class EvidenceService {
 
   submit(req: SubmitEvidenceRequest): Observable<{ data: EvidenceResponse }> {
     return this.http.post<{ data: EvidenceResponse }>('/api/evidences/submit', req);
+  }
+
+  submitDocumentary(req: SubmitDocumentaryRequest): Observable<{ data: any }> {
+    return this.http.post<{ data: any }>('/api/documentaries', req);
+  }
+
+  getDocumentaries(familyId: number): Observable<any> {
+    return this.http.get<any>(`/api/documentaries/family/${familyId}`);
   }
 
   getByFamily(familyId: number): Observable<{ data: EvidenceResponse[] }> {

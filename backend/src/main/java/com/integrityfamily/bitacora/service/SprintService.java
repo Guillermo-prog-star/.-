@@ -30,6 +30,9 @@ public class SprintService {
     private final SprintMissionRepository missionRepository;
     private final SprintDailyRepository dailyRepository;
     private final SprintRetrospectiveRepository retrospectiveRepository;
+    private final PlanTaskRepository planTaskRepository;
+    private final com.integrityfamily.auth.service.AuditService auditService;
+    private final TaskEvidenceRepository taskEvidenceRepository;
     
     private final AiProvider aiProvider;
     private final ContextSynthesizer contextSynthesizer;
@@ -147,6 +150,11 @@ public class SprintService {
                 .build();
 
         SprintDaily savedDaily = dailyRepository.save(daily);
+
+        auditService.registerSystemEvent("family_" + sprint.getFamily().getId() + "@integrityfamily.com",
+                AuditEventType.DAILY_CREATED,
+                "{\"sprintId\": " + sprintId + ", \"memberName\": \"" + request.memberName() + "\"}");
+
         return mapToSprintDailyResponse(savedDaily);
     }
 
@@ -163,6 +171,15 @@ public class SprintService {
 
         List<SprintMission> missions = missionRepository.findBySprintId(sprintId);
         List<SprintDaily> dailies = dailyRepository.findBySprintIdOrderByCheckinDateDesc(sprintId);
+
+        // Validacion estricta de evidencia
+        List<com.integrityfamily.domain.TaskEvidence> taskEvidences = sprint.getMissionTaskId() != null 
+            ? taskEvidenceRepository.findByTaskId(sprint.getMissionTaskId()) 
+            : new ArrayList<>();
+
+        if (dailies.isEmpty() && taskEvidences.isEmpty()) {
+            throw new BusinessException("No puede existir avance familiar ni cierre de misión sin evidencia persistida. Debes registrar al menos un Daily Check-in o subir Evidencia Multimedia.", "NO_EVIDENCE_FOR_CLOSURE", HttpStatus.BAD_REQUEST);
+        }
 
         // 1. Calcular Consistencia Evolutiva (1-10)
         int completedMissionsCount = (int) missions.stream().filter(m -> "COMPLETED".equals(m.getStatus())).count();
@@ -206,6 +223,22 @@ public class SprintService {
         sprint.setStatus("COMPLETED");
         sprint.setEndDate(LocalDate.now());
         sprintRepository.save(sprint);
+
+        // Actualizar la tarea origen en el plan si existe
+        if (sprint.getMissionTaskId() != null) {
+            planTaskRepository.findById(sprint.getMissionTaskId()).ifPresent(task -> {
+                task.setCompleted(true);
+                planTaskRepository.save(task);
+
+                auditService.registerSystemEvent("family_" + sprint.getFamily().getId() + "@integrityfamily.com",
+                    AuditEventType.MISSION_COMPLETED,
+                    "{\"taskId\": " + task.getId() + ", \"sprintId\": " + sprintId + "}");
+            });
+        }
+
+        auditService.registerSystemEvent("family_" + sprint.getFamily().getId() + "@integrityfamily.com",
+            AuditEventType.SPRINT_CLOSED,
+            "{\"sprintId\": " + sprintId + ", \"dailiesCount\": " + dailies.size() + ", \"consistencyScore\": " + consistencyScore + "}");
 
         return mapToSprintResponse(sprint);
     }

@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 public class TaskEvidenceDtos {
 
     public record SubmitRequest(
-        @NotNull Long taskId,
+        Long taskId,
         @NotNull Long familyId,
         @NotNull EvidenceType evidenceType,
         @NotBlank String title,
@@ -65,7 +65,8 @@ public class TaskEvidenceDtos {
         Double longitude,
         String memberName,
         String mediaData,
-        String mediaMime
+        String mediaMime,
+        Long documentaryId
     ) {
         public static TaskEvidenceResponse fromEntity(TaskEvidence entity) {
             if (entity == null) return null;
@@ -90,7 +91,8 @@ public class TaskEvidenceDtos {
                 entity.getLongitude(),
                 entity.getMemberName(),
                 entity.getMediaData(),
-                entity.getMediaMime()
+                entity.getMediaMime(),
+                entity.getDocumentary() != null ? entity.getDocumentary().getId() : null
             );
         }
     }

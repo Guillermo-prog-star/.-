@@ -2,6 +2,7 @@ package com.integrityfamily.lineage.initializer;
 
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.repository.FamilyRepository;
+import com.integrityfamily.domain.repository.MemberRepository;
 import com.integrityfamily.lineage.domain.*;
 import com.integrityfamily.lineage.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -36,9 +37,9 @@ import java.util.List;
 @Order(10)
 public class LineageDataInitializer implements CommandLineRunner {
 
-    private static final long FAMILY_ID = 2L; // families.id = 2 → "Lopez Blanco" IF-2026-0002
-
+    // Dynamic family retrieval or creation (mirrors LegadoDataInitializer)
     private final FamilyRepository               familyRepo;
+    private final MemberRepository               familyMemberRepo; // para resolver familyMemberId por email
     private final FamilyLineageRepository        lineageRepo;
     private final LineageMemberRepository        memberRepo;
     private final LineageRelationshipRepository  relRepo;
@@ -49,17 +50,26 @@ public class LineageDataInitializer implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
 
-        // ── GUARDIA IDEMPOTENTE ────────────────────────────────────────────
-        if (lineageRepo.existsByFamilyId(FAMILY_ID)) {
-            log.info(">>>> [LINAJE] Linaje López Blanco ya existe. Omitiendo sembrado.");
+        // ── Obtain or create the Family dynamically ────────────────────────
+        Family family = familyRepo.findAll().stream()
+                .filter(f -> f.getName().contains("Blanco") || f.getName().contains("López") || f.getName().contains("Lpez"))
+                .findFirst()
+                .orElseGet(() -> {
+                    Family newFamily = new Family();
+                    newFamily.setName("López Blanco");
+                    return familyRepo.save(newFamily);
+                });
+
+        // ── GUARDIA IDEMPOTENTE (doble verificación) ──────────────────────
+        // Cubre dos escenarios:
+        //   1. La familia ya tiene un linaje registrado (vínculo por familyId)
+        //   2. El código único del linaje ya existe, independiente del familyId
+        if (lineageRepo.existsByFamilyId(family.getId())
+                || lineageRepo.existsByLineageCode("IF-LIN-LOPBLA-0001")) {
+            log.info(">>>> [LINAJE] Linaje ya existe. Omitiendo sembrado para evitar duplicados.");
             return;
         }
 
-        Family family = familyRepo.findById(FAMILY_ID).orElse(null);
-        if (family == null) {
-            log.warn(">>>> [LINAJE] Familia ID {} no encontrada. Backend arrancó antes que Flyway?", FAMILY_ID);
-            return;
-        }
 
         log.info(">>>> [LINAJE] Sembrando árbol generacional: {} ({})", family.getName(), family.getFamilyCode());
 
@@ -277,7 +287,7 @@ public class LineageDataInitializer implements CommandLineRunner {
                 .roleLabel("Patriarca")
                 .confidenceLevel(100)
                 .dataSource("Registro oficial")
-                .familyMemberId(1L)       // family_members.id = 1 "Jesus Maria" PADRE
+                .familyMemberId(resolveByEmail("willibla1957@gmail.com"))
                 .story(
                     "Jesús María López García, nacido en 1957. Patriarca de la familia López Blanco. " +
                     "Esposo de Mariana Blanco Enríquez, padre de 5 hijos. " +
@@ -310,7 +320,7 @@ public class LineageDataInitializer implements CommandLineRunner {
                 .roleLabel("Matrona")
                 .confidenceLevel(95)
                 .dataSource("Registro familiar")
-                .familyMemberId(2L)       // family_members.id = 2 "Mariana Blanco Enriquez" MADRE
+                .familyMemberId(resolveByEmail("mariana@example.com"))
                 .story(
                     "Mariana Blanco Enríquez, matrona de la familia López Blanco. " +
                     "Compañera de vida de Jesús María. Co-artífice del hogar y de los 5 hijos.")
@@ -333,7 +343,7 @@ public class LineageDataInitializer implements CommandLineRunner {
                 .roleLabel("Guardián del Legado")
                 .confidenceLevel(95)
                 .dataSource("Registro familiar")
-                .familyMemberId(3L)       // family_members.id = 3
+                .familyMemberId(resolveByEmail("william@integrity.family"))
                 .story(
                     "William López Blanco, hijo primogénito de Jesús María y Mariana. " +
                     "Responsable de implementar el sistema Integrity Family en la familia. " +
@@ -354,7 +364,7 @@ public class LineageDataInitializer implements CommandLineRunner {
                 .roleLabel("Hija")
                 .confidenceLevel(95)
                 .dataSource("Registro familiar")
-                .familyMemberId(4L)       // family_members.id = 4
+                .familyMemberId(resolveByEmail("luzmarina@integrity.family"))
                 .story("Luz Marina López Blanco, hija de Jesús María y Mariana.")
                 .build());
 
@@ -370,7 +380,7 @@ public class LineageDataInitializer implements CommandLineRunner {
                 .roleLabel("Hijo")
                 .confidenceLevel(95)
                 .dataSource("Registro familiar")
-                .familyMemberId(5L)       // family_members.id = 5
+                .familyMemberId(resolveByEmail("jesusmaria@integrity.family"))
                 .story("Jesús María López Blanco, hijo de Jesús María y Mariana. Porta el nombre del padre.")
                 .build());
 
@@ -386,7 +396,7 @@ public class LineageDataInitializer implements CommandLineRunner {
                 .roleLabel("Hija")
                 .confidenceLevel(95)
                 .dataSource("Registro familiar")
-                .familyMemberId(6L)       // family_members.id = 6
+                .familyMemberId(resolveByEmail("sandra@integrity.family"))
                 .story("Sandra Patricia López Blanco, hija de Jesús María y Mariana.")
                 .build());
 
@@ -402,28 +412,78 @@ public class LineageDataInitializer implements CommandLineRunner {
                 .roleLabel("Hija")
                 .confidenceLevel(95)
                 .dataSource("Registro familiar")
-                .familyMemberId(7L)       // family_members.id = 7
+                .familyMemberId(resolveByEmail("martha@integrity.family"))
                 .story("Martha Cecilia López Blanco, hija menor de Jesús María y Mariana.")
                 .build());
 
-        // ── GEN +2: NIETOS ────────────────────────────────────────────────
-        // Los nietos se agregarán progresivamente desde la interfaz de Integrity Family
-        // a medida que la familia los incorpore al árbol.
+        // ── GEN +2: NIETOS (placeholders — completar con nombres reales) ──
+        // Patrón: un nodo por cada hijo de Gen +1.
+        // Para activar un nieto real: setFirstName, setLastName, birthYear, story.
+        // avatarColor #92400e = paleta nietos (marrón claro).
+
+        LineageMember nietoDeWilliam = saveMember(lineage, LineageMember.builder()
+                .firstName("?").lastName("López")
+                .avatarInitials("?W").avatarColor("#92400e")
+                .generation(2).generationType("future").status("future")
+                .origin("Colombia").roleLabel("Nieto/a de William")
+                .confidenceLevel(50).dataSource("Proyectado")
+                .story("Futuro nieto/a de William López Blanco. Por registrar.")
+                .build());
+
+        LineageMember nietosDeLuzMarina = saveMember(lineage, LineageMember.builder()
+                .firstName("?").lastName("López")
+                .avatarInitials("?L").avatarColor("#92400e")
+                .generation(2).generationType("future").status("future")
+                .origin("Colombia").roleLabel("Nieto/a de Luz Marina")
+                .confidenceLevel(50).dataSource("Proyectado")
+                .story("Futuro nieto/a de Luz Marina López Blanco. Por registrar.")
+                .build());
+
+        LineageMember nietoDeJesusMarijaHijo = saveMember(lineage, LineageMember.builder()
+                .firstName("?").lastName("López")
+                .avatarInitials("?J").avatarColor("#92400e")
+                .generation(2).generationType("future").status("future")
+                .origin("Colombia").roleLabel("Nieto/a de Jesús María hijo")
+                .confidenceLevel(50).dataSource("Proyectado")
+                .story("Futuro nieto/a de Jesús María López Blanco (hijo). Por registrar.")
+                .build());
+
+        LineageMember nietoDeSandraPatricia = saveMember(lineage, LineageMember.builder()
+                .firstName("?").lastName("López")
+                .avatarInitials("?S").avatarColor("#92400e")
+                .generation(2).generationType("future").status("future")
+                .origin("Colombia").roleLabel("Nieto/a de Sandra Patricia")
+                .confidenceLevel(50).dataSource("Proyectado")
+                .story("Futuro nieto/a de Sandra Patricia López Blanco. Por registrar.")
+                .build());
+
+        LineageMember nietosDeMarthaCecilia = saveMember(lineage, LineageMember.builder()
+                .firstName("?").lastName("López")
+                .avatarInitials("?M").avatarColor("#92400e")
+                .generation(2).generationType("future").status("future")
+                .origin("Colombia").roleLabel("Nieto/a de Martha Cecilia")
+                .confidenceLevel(50).dataSource("Proyectado")
+                .story("Futuro nieto/a de Martha Cecilia López Blanco. Por registrar.")
+                .build());
 
         // ── EVENTOS CLAVE ─────────────────────────────────────────────────
         seedEvents(bisAbueloPatLopez, bisAbuelaPatLopez,
                    abueloPatJesus, abuelaPatJesus,
                    jesusMariaLopez, marianaBlanco,
-                   william, luzMarina, jesusMarijaHijo, sandraPatricia, marthaCecilia);
+                   william, luzMarina, jesusMarijaHijo, sandraPatricia, marthaCecilia,
+                   nietoDeWilliam, nietosDeLuzMarina, nietoDeJesusMarijaHijo,
+                   nietoDeSandraPatricia, nietosDeMarthaCecilia);
 
-        log.info(">>>> [LINAJE] 15 miembros sembrados en 5 generaciones.");
+        log.info(">>>> [LINAJE] 20 miembros sembrados en 5 generaciones (5 nietos placeholder en Gen +2).");
         return List.of(
                 bisAbueloPatLopez, bisAbuelaPatLopez,
                 bisAbueloMatBlanco, bisAbuelaMatEnriquez,
                 abueloPatJesus, abuelaPatJesus,
                 abueloMatBlanco, abuelaMatEnriquez,
                 jesusMariaLopez, marianaBlanco,
-                william, luzMarina, jesusMarijaHijo, sandraPatricia, marthaCecilia
+                william, luzMarina, jesusMarijaHijo, sandraPatricia, marthaCecilia,
+                nietoDeWilliam, nietosDeLuzMarina, nietoDeJesusMarijaHijo,
+                nietoDeSandraPatricia, nietosDeMarthaCecilia
         );
     }
 
@@ -438,6 +498,9 @@ public class LineageDataInitializer implements CommandLineRunner {
     // 10=william             11=luzMarina
     // 12=jesusMariaHijo      13=sandraPatricia
     // 14=marthaCecilia
+    // 15=nietoDeWilliam      16=nietosDeLuzMarina
+    // 17=nietoDeJesusMarijaHijo  18=nietoDeSandraPatricia
+    // 19=nietosDeMarthaCecilia
     // ══════════════════════════════════════════════════════════════════════
 
     private void seedRelationships(FamilyLineage lineage, List<LineageMember> m) {
@@ -466,6 +529,12 @@ public class LineageDataInitializer implements CommandLineRunner {
         saveRel(lineage, m.get(9),  m.get(12), "biological", false); // Mariana → Jesús María hijo
         saveRel(lineage, m.get(9),  m.get(13), "biological", false); // Mariana → Sandra Patricia
         saveRel(lineage, m.get(9),  m.get(14), "biological", false); // Mariana → Martha Cecilia
+        // Gen +1 → Gen +2: Nietos placeholder
+        saveRel(lineage, m.get(10), m.get(15), "biological", false); // William → nietoDeWilliam
+        saveRel(lineage, m.get(11), m.get(16), "biological", false); // Luz Marina → nietosDeLuzMarina
+        saveRel(lineage, m.get(12), m.get(17), "biological", false); // JesúsMaríaHijo → nietoDeJesusMarijaHijo
+        saveRel(lineage, m.get(13), m.get(18), "biological", false); // Sandra Patricia → nietoDeSandraPatricia
+        saveRel(lineage, m.get(14), m.get(19), "biological", false); // Martha Cecilia → nietosDeMarthaCecilia
     }
 
     // ══════════════════════════════════════════════════════════════════════
@@ -474,12 +543,15 @@ public class LineageDataInitializer implements CommandLineRunner {
 
     @SuppressWarnings("java:S107")   // más de 7 parámetros es aceptable aquí
     private void seedEvents(
-            LineageMember bisAbueloPatLopez, LineageMember bisAbuelaPatLopez,
-            LineageMember abueloPatJesus,    LineageMember abuelaPatJesus,
-            LineageMember jesusMariaLopez,   LineageMember marianaBlanco,
-            LineageMember william,           LineageMember luzMarina,
-            LineageMember jesusMariaHijo,    LineageMember sandraPatricia,
-            LineageMember marthaCecilia) {
+            LineageMember bisAbueloPatLopez,       LineageMember bisAbuelaPatLopez,
+            LineageMember abueloPatJesus,          LineageMember abuelaPatJesus,
+            LineageMember jesusMariaLopez,         LineageMember marianaBlanco,
+            LineageMember william,                 LineageMember luzMarina,
+            LineageMember jesusMariaHijo,          LineageMember sandraPatricia,
+            LineageMember marthaCecilia,
+            LineageMember nietoDeWilliam,          LineageMember nietosDeLuzMarina,
+            LineageMember nietoDeJesusMarijaHijo,  LineageMember nietoDeSandraPatricia,
+            LineageMember nietosDeMarthaCecilia) {
 
         // ── Gen -2: Bisabuelos ─────────────────────────────────────────────
         addEvents(bisAbueloPatLopez,
@@ -576,9 +648,45 @@ public class LineageDataInitializer implements CommandLineRunner {
                 ev("~1988", "Nacimiento — La pequeña del hogar",
                         "Martha Cecilia López Blanco, quinta e última hija. " +
                         "Completó el círculo familiar de Jesús María y Mariana.", "birth", 1));
+
+        // ── Gen +2: Nietos (proyectados — completar cuando se conozcan) ────
+        addEvents(nietoDeWilliam,
+                ev("~2010s", "Nacimiento proyectado",
+                        "Futuro nieto/a de William López Blanco. " +
+                        "Nodo placeholder — actualizar con nombre y datos reales.", "birth", 1));
+
+        addEvents(nietosDeLuzMarina,
+                ev("~2010s", "Nacimiento proyectado",
+                        "Futuro nieto/a de Luz Marina López Blanco. " +
+                        "Nodo placeholder — actualizar con nombre y datos reales.", "birth", 1));
+
+        addEvents(nietoDeJesusMarijaHijo,
+                ev("~2010s", "Nacimiento proyectado",
+                        "Futuro nieto/a de Jesús María López Blanco (hijo). " +
+                        "Nodo placeholder — actualizar con nombre y datos reales.", "birth", 1));
+
+        addEvents(nietoDeSandraPatricia,
+                ev("~2010s", "Nacimiento proyectado",
+                        "Futuro nieto/a de Sandra Patricia López Blanco. " +
+                        "Nodo placeholder — actualizar con nombre y datos reales.", "birth", 1));
+
+        addEvents(nietosDeMarthaCecilia,
+                ev("~2010s", "Nacimiento proyectado",
+                        "Futuro nieto/a de Martha Cecilia López Blanco. " +
+                        "Nodo placeholder — actualizar con nombre y datos reales.", "birth", 1));
     }
 
     // ── HELPERS ────────────────────────────────────────────────────────────
+
+    /**
+     * Resuelve el ID de un FamilyMember por email de forma segura.
+     * Retorna null si el miembro no existe aún — sin crash, sin FK violation.
+     */
+    private Long resolveByEmail(String email) {
+        return familyMemberRepo.findByEmail(email)
+                .map(fm -> fm.getId())
+                .orElse(null);
+    }
 
     private LineageEvent ev(String year, String title, String description, String type, int order) {
         return LineageEvent.builder()

@@ -39,6 +39,7 @@ public class TaskEvidenceService {
     private final FamilyRepository familyRepository;
     private final RabbitTemplate rabbitTemplate;
     private final ParticipationService participationService;
+    private final com.integrityfamily.auth.service.AuditService auditService;
 
     public List<TaskEvidence> getFamilyEvidences(Long familyId) {
         return taskEvidenceRepository.findByFamilyId(familyId);
@@ -61,8 +62,11 @@ public class TaskEvidenceService {
                                         String emotion, Double latitude, Double longitude,
                                         String memberName, String mediaData, String mediaMime) {
 
-        PlanTask task = planTaskRepository.findById(taskId)
-                .orElseThrow(() -> new BusinessException("Tarea no encontrada", "TASK_NOT_FOUND", HttpStatus.NOT_FOUND));
+        PlanTask task = null;
+        if (taskId != null) {
+            task = planTaskRepository.findById(taskId)
+                    .orElseThrow(() -> new BusinessException("Tarea no encontrada", "TASK_NOT_FOUND", HttpStatus.NOT_FOUND));
+        }
 
         Family family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new BusinessException("Familia no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
@@ -93,6 +97,10 @@ public class TaskEvidenceService {
                 title, submittedBy, taskId);
 
         TaskEvidence saved = taskEvidenceRepository.save(evidence);
+
+        auditService.registerSystemEvent("family_" + familyId + "@integrityfamily.com",
+                com.integrityfamily.domain.AuditEventType.EVIDENCE_CREATED,
+                "{\"taskId\": " + taskId + ", \"evidenceId\": " + saved.getId() + "}");
 
         participationService.record(familyId, null, ParticipationEventType.EVIDENCE_SUBMITTED);
 

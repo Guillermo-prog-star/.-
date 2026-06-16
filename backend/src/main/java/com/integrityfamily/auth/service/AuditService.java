@@ -30,6 +30,16 @@ public class AuditService {
                 .build());
     }
 
+    public void registerSystemEvent(String userEmail, com.integrityfamily.domain.AuditEventType eventType, String metadataJson) {
+        auditEventRepository.save(AuditEvent.builder()
+                .actorEmail(userEmail)
+                .eventType(eventType)
+                .ipAddress("SYSTEM")
+                .userAgent("SYSTEM")
+                .metadataJson(metadataJson)
+                .build());
+    }
+
     private String extractIp(HttpServletRequest request) {
         String forwarded = request.getHeader("X-Forwarded-For");
 

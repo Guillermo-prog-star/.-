@@ -1,32 +1,42 @@
 package com.integrityfamily.plan.messaging;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.integrityfamily.ai.service.AiService;
 import com.integrityfamily.analytics.dto.DashboardSummaryResponse;
 import com.integrityfamily.common.config.RabbitConfig;
 import com.integrityfamily.common.exception.BusinessException;
+import com.integrityfamily.domain.Family;
+import com.integrityfamily.domain.repository.FamilyRepository;
+import com.integrityfamily.plan.dto.PlanDtos.AiMissionProposal;
 import com.integrityfamily.plan.service.PlanTaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
  * SDD-PLAN-01: Consumidor Asíncrono de Planes de Acción.
  * Procesa la recomendación de la IA y la convierte en tareas estructuradas.
+ *
+ * Política de reintentos:
+ *   - Errores recuperables (ej: BD caída) → RuntimeException → RabbitMQ reencola.
+ *   - Errores irrecuperables (ej: JSON inválido de IA) → AmqpRejectAndDontRequeueException → descarta el mensaje.
  */
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class PlanConsumer {
 
-    private final PlanTaskService planTaskService;
-    private final com.integrityfamily.ai.service.AiService aiService;
-    private final com.integrityfamily.domain.repository.FamilyRepository familyRepository;
-    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+    private final PlanTaskService    planTaskService;
+    private final AiService          aiService;
+    private final FamilyRepository   familyRepository;
+    private final ObjectMapper       objectMapper;
 
     @RabbitListener(queues = RabbitConfig.SUGGESTED_TASKS_QUEUE)
     @Transactional
@@ -35,17 +45,25 @@ public class PlanConsumer {
 
         try {
             // 1. Obtener la familia
-            com.integrityfamily.domain.Family family = familyRepository.findById(summary.familyId())
-                    .orElseThrow(() -> new BusinessException("Familia no encontrada: " + summary.familyId(), "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
+            Family family = familyRepository.findById(summary.familyId())
+                    .orElseThrow(() -> new BusinessException(
+                            "Familia no encontrada: " + summary.familyId(),
+                            "FAMILY_NOT_FOUND",
+                            HttpStatus.NOT_FOUND));
 
             // 2. Generar misiones estructuradas usando la IA
             String jsonMissions = aiService.generateMissions(family);
-            
-            // 3. Parsear el JSON
-            List<com.integrityfamily.plan.dto.PlanDtos.AiMissionProposal> proposals = objectMapper.readValue(
-                    jsonMissions, 
-                    new com.fasterxml.jackson.core.type.TypeReference<List<com.integrityfamily.plan.dto.PlanDtos.AiMissionProposal>>() {}
-            );
+
+            // 3. Parsear el JSON — fallo aquí es irrecuperable: descartar mensaje
+            List<AiMissionProposal> proposals;
+            try {
+                proposals = objectMapper.readValue(
+                        jsonMissions,
+                        new TypeReference<List<AiMissionProposal>>() {});
+            } catch (Exception parseEx) {
+                log.error("❌ [PLAN-CONSUMER] JSON de IA inválido — descartando mensaje sin reintentar: {}", parseEx.getMessage());
+                throw new AmqpRejectAndDontRequeueException("Payload de IA no parseable", parseEx);
+            }
 
             if (proposals.isEmpty()) {
                 log.warn("⚠️ [PLAN-CONSUMER] La IA no generó misiones válidas.");
@@ -58,37 +76,13 @@ public class PlanConsumer {
             log.info("✅ [PLAN-CONSUMER] Sincronización exitosa: {} nuevas misiones estructuradas para la familia.",
                     proposals.size());
 
+        } catch (AmqpRejectAndDontRequeueException e) {
+            // Re-lanzar sin envolver — ya es el tipo correcto
+            throw e;
         } catch (Exception e) {
+            // Error recuperable (BD, red, etc.) → RabbitMQ reencola automáticamente
             log.error("❌ [PLAN-CONSUMER] Fallo crítico en el procesamiento de mensajes: {}", e.getMessage());
             throw new RuntimeException("Fallo en PlanConsumer al procesar recomendaciones de la IA", e);
         }
-    }
-
-    /**
-     * Extrae líneas que parecen acciones (viñetas markdown o párrafos con contenido significativo).
-     * Soporta tanto el formato estructurado de Claude como el texto libre del modo simulación.
-     */
-    private List<String> parseAiRecommendation(String text) {
-        if (text == null || text.isBlank())
-            return List.of();
-
-        List<String> bulleted = Arrays.stream(text.split("\n"))
-                .map(String::trim)
-                .filter(line -> line.startsWith("-") || line.startsWith("*") || line.matches("^\\d+\\..*"))
-                .map(line -> line.replaceAll("^[-*\\d.]+\\s*", ""))
-                .filter(line -> line.length() > 5)
-                .toList();
-
-        // Si Claude encontró viñetas, usarlas directamente
-        if (!bulleted.isEmpty()) {
-            return bulleted;
-        }
-
-        // Fallback: parsear párrafos (modo simulación sin Claude)
-        return Arrays.stream(text.split("[.!?]"))
-                .map(String::trim)
-                .filter(sentence -> sentence.length() > 20) // Oración suficientemente larga
-                .limit(3)                                    // Máximo 3 tareas por ciclo
-                .toList();
     }
 }

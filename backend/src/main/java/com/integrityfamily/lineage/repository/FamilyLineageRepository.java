@@ -13,6 +13,8 @@ public interface FamilyLineageRepository extends JpaRepository<FamilyLineage, Lo
 
     boolean existsByFamilyId(Long familyId);
 
+    boolean existsByLineageCode(String lineageCode);
+
     @Query("SELECT fl FROM FamilyLineage fl LEFT JOIN FETCH fl.members WHERE fl.family.id = :familyId")
     Optional<FamilyLineage> findWithMembersByFamilyId(@Param("familyId") Long familyId);
 }

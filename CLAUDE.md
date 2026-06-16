@@ -233,6 +233,15 @@ docker compose up -d db rabbitmq
 | Push → `main` con cambios en `if-frontend/` | `deploy-frontend.yml` | Deploy a Vercel |
 
 **Secret requerido para SonarCloud:** `SONAR_TOKEN` en GitHub → Settings → Secrets.
+
+---
+
+## Backup — estado verificado
+
+- Último backup probado: `2026-06-16` — `if_backup_20260616_140811.sql.gz` (9.6 MB)
+- Restore verificado con `COUNT(*)` exacto en 8 tablas críticas: 100% coincidencia
+- Método: restore en BD temporal `integrity_family_test_restore`, comparación, eliminación
+- Próxima verificación recomendada: mensual
 Dashboard: https://sonarcloud.io/project/overview?id=Guillermo-prog-star_if-full
 
 ---

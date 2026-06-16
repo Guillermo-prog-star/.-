@@ -5,11 +5,11 @@ SET FOREIGN_KEY_CHECKS = 0;
 INSERT INTO roles (name) VALUES ('ROLE_ADMIN') ON DUPLICATE KEY UPDATE name=VALUES(name);
 INSERT INTO roles (name) VALUES ('ROLE_USER') ON DUPLICATE KEY UPDATE name=VALUES(name);
 
--- 2. Usuario Maestro
+-- 2. Usuario Maestro (family_id=1 desde el insert para garantizar el vínculo)
 -- Password: admin123
 INSERT INTO users (full_name, email, password_hash, enabled, created_at, family_id) 
 VALUES ('William Lopez', 'william@integrity.family', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xdqD1884W6G6G2DW', true, NOW(), 1)
-ON DUPLICATE KEY UPDATE full_name=VALUES(full_name), password_hash=VALUES(password_hash);
+ON DUPLICATE KEY UPDATE full_name=VALUES(full_name), password_hash=VALUES(password_hash), family_id=1;
 
 -- Vinculacion de Rol
 INSERT INTO user_roles (user_id, role_id) 
@@ -22,7 +22,7 @@ INSERT INTO families (id, name, family_code, current_milestone, icf_score, total
 VALUES (1, 'Familia Lopez Rivera', 'IF-CO-QUI-2026-0004', 'MES_00_DIAGNOSTICO_BASE', 75, 12, 8, false, 1, NOW())
 ON DUPLICATE KEY UPDATE name=VALUES(name), family_code=VALUES(family_code);
 
--- 4. Miembros de Familia
+-- 4. Miembro PADRE vinculado al usuario william (email consistente)
 INSERT INTO family_members (full_name, first_name, password, role, email, family_id, user_id)
 SELECT 'William Lopez', 'William', '$2a$10$8.UnVuG9HHgffUDAlk8qfOuVGkqRzgVymGe07xdqD1884W6G6G2DW', 'PADRE', 'william@integrity.family', 1, u.id
 FROM users u WHERE u.email = 'william@integrity.family'

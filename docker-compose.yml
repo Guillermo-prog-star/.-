@@ -50,6 +50,7 @@ services:
       SPRING_RABBITMQ_PORT: 5672
       SPRING_RABBITMQ_USERNAME: guest
       SPRING_RABBITMQ_PASSWORD: guest
+      CLAUDE_API_KEY: ${CLAUDE_API_KEY}
     ports:
       - "8080:8080"
     logging:

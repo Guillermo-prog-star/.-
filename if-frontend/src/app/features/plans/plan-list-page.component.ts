@@ -6,12 +6,15 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../core/services/api.service';
 import { Plan } from '../../core/models/models';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { AuthService } from '../../core/services/auth.service';
 import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { TelemetryService } from '../../core/services/telemetry.service';
 import { PlanTransformacion, Mision } from '../../core/models/plan-transformacion.model';
 import { PLANES_MOCK } from '../../data/planes-transformacion.mock';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
 import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
+import { SprintService } from '../family-logbook/sprint.service';
+import { catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-plan-list-page', 
@@ -21,19 +24,31 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
   styleUrls: ['./plan-list-page.component.css']
 })
 export class PlanListPageComponent implements OnInit, OnDestroy {
-  private http = inject(HttpClient); 
+  private http = inject(HttpClient);
   private api = inject(ApiService);
   private familyState = inject(FamilyStateService);
+  private auth        = inject(AuthService);
   private flow        = inject(TransformationFlowService);
   private router = inject(Router);
   private telemetry    = inject(TelemetryService);
   private scrollPolicy = inject(ScrollPolicyService);
+  private sprintService = inject(SprintService);
 
-  plans: Plan[] = []; 
-  planes: PlanTransformacion[] = []; 
+  get currentUserName(): string { return this.auth.user()?.fullName || 'Familia'; }
+
+  plans: Plan[] = [];
+  planes: PlanTransformacion[] = [];
   evidences: any[] = [];
   loading = false;
   isWaitingForPlan = false;
+
+  /** Banner de celebración cuando una dimensión se completa y la siguiente se desbloquea */
+  dimensionCompletadaBanner: {
+    dimensionCompletada: string;
+    dimensionDesbloqueada: string | null;
+    emoji: string;
+  } | null = null;
+  private _bannerTimer: ReturnType<typeof setTimeout> | null = null;
   terminalLogs: string[] = [];
   selectedTaskId: number | null = null;
   isCliCollapsed = false;
@@ -150,6 +165,185 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
     this.selectedTaskId = this.selectedTaskId === taskId ? null : taskId;
   }
 
+  // ── Desbloqueo secuencial: misión N bloqueada hasta que N-1 esté Completada
+  isMisionLocked(plan: PlanTransformacion, mision: Mision): boolean {
+    const idx = plan.misiones.indexOf(mision);
+    if (idx <= 0) return false;
+    return plan.misiones[idx - 1].estado !== 'Completada';
+  }
+
+  getMisionSequenceLabel(plan: PlanTransformacion, mision: Mision): string {
+    const idx = plan.misiones.indexOf(mision);
+    if (idx === 0) return 'Misión 1 · IA';
+    if (idx === 1) return 'Misión 2 · IA';
+    return 'Misión 3 · Creativa';
+  }
+
+  // ── Desbloqueo secuencial entre planes/dimensiones ─────────────────────────
+  /** Orden canónico de dimensiones. Un plan se desbloquea cuando el anterior está completo. */
+  private readonly DIMENSION_ORDER = ['plan-emociones', 'plan-comunicacion', 'plan-habitos', 'plan-tiempos'];
+
+  isPlanLocked(plan: PlanTransformacion): boolean {
+    const idx = this.DIMENSION_ORDER.indexOf(plan.id);
+    if (idx <= 0) return false; // EMOCIONES siempre desbloqueado
+    const prevId = this.DIMENSION_ORDER[idx - 1];
+    const prevPlan = this.planes.find(p => p.id === prevId);
+    if (!prevPlan) return false;
+    return !this.isPlanCompleted(prevPlan);
+  }
+
+  isPlanCompleted(plan: PlanTransformacion): boolean {
+    return plan.misiones.length > 0 && plan.misiones.every(m => m.estado === 'Completada');
+  }
+
+  getPlanUnlockLabel(plan: PlanTransformacion): string {
+    const idx = this.DIMENSION_ORDER.indexOf(plan.id);
+    if (idx <= 0) return '';
+    const prevId = this.DIMENSION_ORDER[idx - 1];
+    const prevPlan = this.planes.find(p => p.id === prevId);
+    return prevPlan?.titulo ?? '';
+  }
+
+  /** Sincroniza sprint_dias_{misionId} con el backend al cargar la página */
+  private syncSprintDesdeBackend(): void {
+    if (!this.familyId) return;
+    this.sprintService.getActiveSprint(this.familyId)
+      .pipe(catchError(() => of(null)))
+      .subscribe(sprint => {
+        if (!sprint) return;
+        try {
+          const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+          if (!ctx?.misionId) return;
+          if (ctx.sprintId && ctx.sprintId !== sprint.id) return;
+          const diasReales = sprint.dailies?.length ?? 0;
+          localStorage.setItem(`sprint_dias_${ctx.misionId}`, String(diasReales));
+          if (diasReales >= sprint.durationDays && !ctx.completado) {
+            ctx.completado = true;
+            localStorage.setItem('active_sprint_mision', JSON.stringify(ctx));
+          }
+        } catch { /* ignorar */ }
+      });
+  }
+
+  // ── Sprint 7 días: persistido en localStorage por misionId
+  getSprintDiasCompletados(misionId: string): number {
+    try {
+      const raw = localStorage.getItem(`sprint_dias_${misionId}`);
+      return raw ? parseInt(raw, 10) : 0;
+    } catch { return 0; }
+  }
+
+  isSprintTerminado(misionId: string): boolean {
+    try {
+      const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+      if (ctx?.misionId !== misionId) return false;
+      return ctx?.completado === true || this.getSprintDiasCompletados(misionId) >= 7;
+    } catch { return false; }
+  }
+
+  isSprintActivo(misionId: string): boolean {
+    try { return localStorage.getItem(`sprint_activo_${misionId}`) === '1'; } catch { return false; }
+  }
+
+  getPreviousMisionTitulo(plan: PlanTransformacion, mision: Mision): string {
+    const idx = plan.misiones.indexOf(mision);
+    return idx > 0 ? (plan.misiones[idx - 1]?.titulo ?? '') : '';
+  }
+
+  /**
+   * Cierra el ciclo Sprint → Cápsula → Misión Completa en un solo clic.
+   * Requiere que el sprint de 7 días esté terminado y que la misión tenga backendTaskId.
+   */
+  completarMisionConCapsula(plan: PlanTransformacion, mision: Mision): void {
+    if (!mision.backendTaskId) {
+      // Sin task en backend: abrir el modal de evidencia normal pre-relleno
+      this.openEvidenceModal({ id: 0, title: mision.titulo }, 'BITACORA');
+      return;
+    }
+
+    const taskId = mision.backendTaskId;
+    this.terminalLogs.push(`🎖️ Completando misión "${mision.titulo}" con la Cápsula del sprint...`);
+    this.scrollToBottom();
+
+    // Construir evidencia resumen del sprint desde localStorage
+    let textContent = `✅ Sprint 7 días completado — ${mision.titulo}\n\nLa familia completó los 7 días de práctica continua para esta misión.`;
+    try {
+      const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+      if (ctx?.misionTitulo) textContent = `✅ Sprint completado — ${ctx.misionTitulo}\n\nDimensión: ${plan.titulo}\nDías completados: 7/7\n\nLa Cápsula Familiar documenta el logro de esta misión.`;
+    } catch { /* ignorar */ }
+
+    const evidencePayload = {
+      taskId,
+      familyId: this.familyId,
+      evidenceType: 'BITACORA',
+      title: `🎖️ Cápsula — ${mision.titulo}`,
+      description: `Sprint de 7 días completado en la dimensión ${plan.titulo}.`,
+      textContent,
+      submittedBy: this.currentUserName || 'Familia',
+    };
+
+    this.http.post<any>(`${this.api.base}/evidences/submit`, evidencePayload).subscribe({
+      next: () => {
+        this.http.put<any>(`${this.api.base}/plans/tasks/${taskId}/complete`, { completed: true })
+          .subscribe({
+            next: () => {
+              this.terminalLogs.push(`✅ Misión "${mision.titulo}" completada. ¡Cápsula archivada!`);
+              this.scrollToBottom();
+              // Limpiar estado del sprint en localStorage
+              try {
+                const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+                if (ctx?.misionId === mision.id) {
+                  localStorage.removeItem('active_sprint_mision');
+                  localStorage.removeItem(`sprint_activo_${mision.id}`);
+                  localStorage.removeItem(`sprint_dias_${mision.id}`);
+                }
+              } catch { /* ignorar */ }
+              this.load(true);
+              this.loadDashboard();
+              setTimeout(() => this.avanzarSiguienteMision(taskId), 700);
+            },
+            error: () => {
+              this.terminalLogs.push(`ℹ️ Cápsula guardada. Marca la misión completa manualmente si es necesario.`);
+              this.scrollToBottom();
+              this.load(true);
+            }
+          });
+      },
+      error: () => {
+        // Si falla la evidencia, al menos completar la misión
+        this.http.put<any>(`${this.api.base}/plans/tasks/${taskId}/complete`, { completed: true })
+          .subscribe({
+            next: () => {
+              this.terminalLogs.push(`✅ Misión completada.`);
+              this.load(true);
+              this.loadDashboard();
+              setTimeout(() => this.avanzarSiguienteMision(taskId), 700);
+            },
+            error: () => {
+              this.terminalLogs.push(`⚠️ No se pudo completar. Intenta de nuevo.`);
+              this.scrollToBottom();
+            }
+          });
+      }
+    });
+  }
+
+  iniciarSprintMision(plan: PlanTransformacion, mision: Mision) {
+    try {
+      localStorage.setItem(`sprint_activo_${mision.id}`, '1');
+      if (!localStorage.getItem(`sprint_dias_${mision.id}`)) {
+        localStorage.setItem(`sprint_dias_${mision.id}`, '0');
+      }
+      localStorage.setItem('active_sprint_mision', JSON.stringify({
+        misionId: mision.id, 
+        misionTitulo: mision.titulo, 
+        pilar: plan.pilar,
+        backendTaskId: mision.backendTaskId
+      }));
+    } catch {}
+    this.router.navigate(['/logbook'], { queryParams: { tab: 'SPRINT', mision: mision.id } });
+  }
+
   toggleCli() {
     this.isCliCollapsed = !this.isCliCollapsed;
     if (!this.isCliCollapsed) {
@@ -167,6 +361,7 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
       this.loadMilestones();
       this.loadDashboard();
       this.loadMembers();
+      this.syncSprintDesdeBackend(); // Sincronizar contador de días real desde el backend
       
       this.isWaitingForPlan = true;
       let attempts = 0;
@@ -191,6 +386,7 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearLoadingInterval();
+    if (this._bannerTimer) { clearTimeout(this._bannerTimer); this._bannerTimer = null; }
     this.closeContemplation();
     Object.keys(this.inlineMapInstances).forEach(id => {
       this.closeInlineContemplation(Number(id));
@@ -614,7 +810,8 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
             
             // Recorrer los planes del Mock y mapear tareas del backend de manera inteligente y multidimensional
             this.planes.forEach(plan => {
-              const matchedTasks = planTasks.filter((t: any) => t.dimension.toUpperCase() === plan.pilar.toUpperCase());
+              // Ya no filtramos por dimensión porque la IA a veces cataloga la tarea en otro pilar.
+              const matchedTasks = planTasks;
 
               // Mantener un conjunto de IDs de tareas del backend mapeadas/excluidas
               const mappedTaskIds = new Set<number>();
@@ -630,15 +827,22 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
 
               // 1. Sincronizar misiones predefinidas en el mock con tareas que coincidan por título o contexto de hito
               plan.misiones.forEach(mision => {
-                const titleLower = mision.titulo.toLowerCase();
+                const removeAccents = (str: string) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                const titleLower = removeAccents(mision.titulo.toLowerCase());
                 const matchedTask = matchedTasks.find(t => {
                   if (mappedTaskIds.has(t.id)) return false; // excluye genéricas y ya usadas
 
-                  const tTitle = t.title.toLowerCase();
+                  const tTitle = removeAccents(t.title.toLowerCase());
+                  
+                  // Si la tarea del backend es la de IA específica, emparejarla con la misión IA del mock
+                  if (mision.id.includes('-ia-') && tTitle.includes('[ia]')) {
+                    return true;
+                  }
+
                   return tTitle.includes(titleLower) ||
                          titleLower.includes(tTitle) ||
-                         (titleLower.includes('semáforo') && tTitle.includes('gratitud')) ||
-                         (titleLower.includes('cena') && tTitle.includes('diálogo')) ||
+                         (titleLower.includes('semaforo') && tTitle.includes('gratitud')) ||
+                         (titleLower.includes('cena') && tTitle.includes('dialogo')) ||
                          (titleLower.includes('descanso') && tTitle.includes('responsabilidades'));
                 });
 
@@ -647,6 +851,10 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
                   mision.estado = matchedTask.completed ? 'Completada' : 'En_Progreso';
                   mision.titulo = matchedTask.title;
                   mision.descripcionGeneral = matchedTask.description;
+                  
+                  // Si el backend tiene paso a paso explícito en 'accion_concreta' o similar, podríamos mapearlo aquí,
+                  // pero por ahora mantenemos el paso a paso del mock o de la propuesta.
+                  
                   mappedTaskIds.add(matchedTask.id);
                 } else {
                   mision.backendTaskId = undefined;
@@ -657,8 +865,8 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
               // 2. El mock es la fuente de verdad (6 misiones fijas: 2 clínicas + 2 IA + 2 iniciativas).
               // No se inyectan tareas del backend — el paso 1 ya sincronizó los estados de completado.
               
-              // 3. Calcular progreso dinámico del pilar real
-              const completedTasks = matchedTasks.filter((t: any) => t.completed).length;
+              // 3. Calcular progreso dinámico del pilar real basado en las misiones mapeadas de este plan
+              const completedTasks = plan.misiones.filter(m => m.estado === 'Completada').length;
               plan.misionesLogradas = completedTasks;
               plan.misionesTotales = plan.misiones.length;
               plan.progresoPilar = plan.misionesTotales > 0 ? Math.round((completedTasks / plan.misionesTotales) * 100) : 0;
@@ -667,8 +875,8 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
             // Proponer 2 misiones clínicas proporcionadas por la IA adaptadas al diagnóstico
             this.proposedMissions = [];
             
-            const hasReactividadMission = planTasks.some((t: any) => t.title.includes('[IA] Escucha Activa Contra Reactividad'));
-            const hasDigitalMission = planTasks.some((t: any) => t.title.includes('[IA] Receso Digital y Conexión Activa'));
+            const hasReactividadMission = planTasks.some((t: any) => t.title.includes('[IA] Escucha Activa'));
+            const hasDigitalMission = planTasks.some((t: any) => t.title.includes('[IA] Receso Digital'));
 
             if (!hasReactividadMission) {
               this.proposedMissions.push({
@@ -793,24 +1001,59 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
         }
       }
 
-      // ¿Hay otra dimensión (plan) con misiones pendientes?
+      // Dimensión actual completada → buscar la siguiente según orden canónico
+      const idxDimension = this.DIMENSION_ORDER.indexOf(plan.id);
+      const nextDimId    = idxDimension >= 0 ? this.DIMENSION_ORDER[idxDimension + 1] : null;
+      const nextPlan     = nextDimId ? this.planes.find(p => p.id === nextDimId) : null;
+      const pendiente    = nextPlan?.misiones.find((m: any) => m.estado !== 'Completada');
+
+      if (pendiente && nextPlan) {
+        this._mostrarCelebracionDimension(plan.titulo, nextPlan.titulo);
+        this.terminalLogs.push(`🔓 Dimensión "${plan.titulo}" completada → desbloqueando "${nextPlan.titulo}"`);
+        this.scrollToBottom();
+        setTimeout(() => this.comenzarMision(nextPlan, pendiente), 1800);
+        return;
+      }
+
+      // ¿Algún otro plan con misiones pendientes (por si acaso no hay orden canónico)?
       for (const otroPlan of this.planes) {
-        if (otroPlan.pilar === plan.pilar) continue;
-        const pendiente = otroPlan.misiones.find((m: any) => m.estado !== 'Completada');
-        if (pendiente) {
-          this.terminalLogs.push(`🔀 Pasando a la dimensión "${otroPlan.pilar}": misión "${pendiente.titulo}"`);
-          this.scrollToBottom();
-          setTimeout(() => this.comenzarMision(otroPlan, pendiente), 900);
+        if (otroPlan.id === plan.id) continue;
+        const pend = otroPlan.misiones.find((m: any) => m.estado !== 'Completada');
+        if (pend) {
+          this._mostrarCelebracionDimension(plan.titulo, otroPlan.titulo);
+          setTimeout(() => this.comenzarMision(otroPlan, pend), 1800);
           return;
         }
       }
 
       // Todas las misiones completadas → avanzar al siguiente pilar
+      this._mostrarCelebracionDimension(plan.titulo, null);
       this.terminalLogs.push(`🏆 ¡Todas las misiones del pilar completadas! Avanzando al siguiente pilar...`);
       this.scrollToBottom();
-      setTimeout(() => this.avanzarPilar(), 1200);
+      setTimeout(() => this.avanzarPilar(), 2000);
       return;
     }
+  }
+
+  private _mostrarCelebracionDimension(completada: string, desbloqueada: string | null): void {
+    const emojis: Record<string, string> = {
+      'Regulación & Clima Emocional':        '💛',
+      'Comunicación Asertiva':               '💬',
+      'Hábitos & Convivencia Colectiva':     '🌿',
+      'Tiempos de Conexión Activa':          '⏰',
+    };
+    this.dimensionCompletadaBanner = {
+      dimensionCompletada:  completada,
+      dimensionDesbloqueada: desbloqueada,
+      emoji: emojis[completada] ?? '🏆',
+    };
+    if (this._bannerTimer) clearTimeout(this._bannerTimer);
+    this._bannerTimer = setTimeout(() => { this.dimensionCompletadaBanner = null; }, 9000);
+  }
+
+  cerrarBannerDimension(): void {
+    this.dimensionCompletadaBanner = null;
+    if (this._bannerTimer) { clearTimeout(this._bannerTimer); this._bannerTimer = null; }
   }
 
   /** Llama al backend para avanzar el hito/pilar y genera la Película Familiar automáticamente. */

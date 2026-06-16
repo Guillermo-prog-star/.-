@@ -15,10 +15,12 @@
     <div class="phone-content">
 
       <!-- Toast de error -->
-      <div class="error-toast" *ngIf="errorMessage">
-        <span>⚠️ {{ errorMessage }}</span>
-        <button class="toast-close" (click)="errorMessage = ''">✕</button>
-      </div>
+      @if (errorMessage) {
+        <div class="error-toast">
+          <span>⚠️ {{ errorMessage }}</span>
+          <button class="toast-close" (click)="errorMessage = ''">✕</button>
+        </div>
+      }
 
       <!-- Narrative Guidance Engine -->
       <div style="padding: 0;">
@@ -26,15 +28,15 @@
       </div>
 
       <!-- ── Loading skeleton ── -->
-      <ng-container *ngIf="loading">
+      @if (loading) {
         <div class="skeleton-hero"></div>
         <div class="skeleton-card"></div>
         <div class="skeleton-card short"></div>
         <div class="skeleton-card"></div>
-      </ng-container>
+      }
 
       <!-- ── Contenido real (visible cuando no carga) ── -->
-      <ng-container *ngIf="!loading">
+      @if (!loading) {
 
         <!-- Cabecera de identidad familiar -->
         <section class="user-hero">
@@ -47,10 +49,12 @@
             <span class="role-pill">{{ roleBadge }}</span>
           </div>
 
-          <div class="milestone-indicator" *ngIf="stats?.currentMilestone">
-            <span class="milestone-tag">🚀 HITO ACTIVO</span>
-            <p class="milestone-name">{{ stats.currentMilestone }}</p>
-          </div>
+          @if (stats?.currentMilestone) {
+            <div class="milestone-indicator">
+              <span class="milestone-tag">🚀 HITO ACTIVO</span>
+              <p class="milestone-name">{{ stats.currentMilestone }}</p>
+            </div>
+          }
         </section>
 
         <!-- ── Anillo de progreso diario ── -->
@@ -68,16 +72,25 @@
           </div>
           <div class="progress-info">
             <h3>Sintonía Diaria</h3>
-            <p *ngIf="checklistItems.length">
-              {{ completedCount }} de {{ checklistItems.length }} micro-acciones completadas.
-            </p>
-            <p *ngIf="!checklistItems.length">No hay acciones registradas para hoy.</p>
-            <div class="icf-mini" *ngIf="stats?.latestGlobalScore">
-              <span class="icf-dot">◉</span> ICF: <strong>{{ stats.latestGlobalScore | number:'1.0-0' }}</strong>
-              <span class="trend-icon" *ngIf="stats.riskTrend === 'DOWN'">📉</span>
-              <span class="trend-icon" *ngIf="stats.riskTrend === 'UP'">📈</span>
-              <span class="trend-icon" *ngIf="stats.riskTrend === 'STABLE'">➡️</span>
-            </div>
+            @if (checklistItems.length) {
+              <p>{{ completedCount }} de {{ checklistItems.length }} micro-acciones completadas.</p>
+            } @else {
+              <p>No hay acciones registradas para hoy.</p>
+            }
+            @if (stats?.latestGlobalScore) {
+              <div class="icf-mini">
+                <span class="icf-dot">◉</span> ICF: <strong>{{ stats.latestGlobalScore | number:'1.0-0' }}</strong>
+                @if (stats.riskTrend === 'DOWN') {
+                  <span class="trend-icon">📉</span>
+                }
+                @if (stats.riskTrend === 'UP') {
+                  <span class="trend-icon">📈</span>
+                }
+                @if (stats.riskTrend === 'STABLE') {
+                  <span class="trend-icon">➡️</span>
+                }
+              </div>
+            }
           </div>
         </section>
 
@@ -107,15 +120,32 @@
           <div class="tc-phase">{{ flow.currentPhaseLabel() }}</div>
 
           <!-- Sprint activo (si existe) -->
-          <div class="tc-sprint" *ngIf="activeSprint">
-            <div class="tc-sprint-label">SPRINT ACTIVO</div>
-            <div class="tc-sprint-obj">{{ activeSprint.objective }}</div>
-            <div class="tc-sprint-meta">
-              <span>{{ activeSprint.durationDays }}d</span>
-              <span>·</span>
-              <span>{{ (activeSprint.missions | slice:0:999)?.length ?? 0 }} misiones</span>
+          @if (activeSprint) {
+            <div class="tc-sprint">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <div class="tc-sprint-label" [style.color]="sprintTerminado ? '#10b981' : '#818cf8'">
+                  {{ sprintTerminado ? '🎖️ SPRINT COMPLETADO' : 'SPRINT ACTIVO' }}
+                </div>
+                <span style="font-size:11px;font-weight:800;color:#e2e8f0;">
+                  {{ sprintDiasCompletados }}/{{ activeSprint.durationDays }} días
+                </span>
+              </div>
+              <div class="tc-sprint-obj">{{ sprintMisionTitulo || activeSprint.objective }}</div>
+              <!-- Mini barra de 7 días -->
+              <div style="display:flex;gap:3px;margin:8px 0 4px;">
+                @for (d of [1,2,3,4,5,6,7]; track d) {
+                  <div style="flex:1;height:5px;border-radius:3px;transition:background .3s;"
+                       [style.background]="d <= sprintDiasCompletados ? (sprintTerminado ? '#10b981' : '#6366f1') : 'rgba(255,255,255,0.08)'">
+                  </div>
+                }
+              </div>
+              @if (sprintTerminado) {
+                <div style="font-size:10px;color:#10b981;font-weight:700;margin-top:4px;">
+                  Cápsula Familiar creada · Cierra el sprint en el Diario
+                </div>
+              }
             </div>
-          </div>
+          }
 
           <!-- Acciones rápidas -->
           <div class="tc-actions">
@@ -138,19 +168,23 @@
         </section>
 
         <!-- ── Panel del Guardián Familiar ── -->
-        <section class="guardian-section" *ngIf="familyId > 0">
-          <app-guardian-panel
-            [familyId]="guardianFamilyId"
-            [currentMemberId]="guardianMemberId">
-          </app-guardian-panel>
-        </section>
+        @if (familyId > 0) {
+          <section class="guardian-section">
+            <app-guardian-panel
+              [familyId]="guardianFamilyId"
+              [currentMemberId]="guardianMemberId">
+            </app-guardian-panel>
+          </section>
+        }
 
         <!-- ── Checklist de micro-acciones ── -->
         <section class="checklist-section">
           <div class="section-header">
             <div class="section-title-row">
               <h2>📝 Acciones de Hoy</h2>
-              <span class="badge" *ngIf="checklistItems.length">{{ checklistItems.length }}</span>
+              @if (checklistItems.length) {
+                <span class="badge">{{ checklistItems.length }}</span>
+              }
             </div>
             <button class="btn-sentinel-inject" (click)="injectSentinelMission()">
               ✨ Propuesta IA
@@ -158,148 +192,176 @@
           </div>
 
           <div class="checklist-container">
-            <div class="checklist-item"
-                 *ngFor="let item of checklistItems"
-                 [class.item-completed]="item.completed"
-                 (click)="toggleChecklistItem(item)">
-              <div class="checkbox-circle">
-                <span class="check-icon" *ngIf="item.completed">✓</span>
-              </div>
-              <div class="item-details">
-                <p class="item-text">{{ item.taskDescription || item.description }}</p>
-                <div class="item-meta">
-                  <span class="dimension-badge">{{ item.dimension || 'Vínculo' }}</span>
-                  <span class="completed-by" *ngIf="item.completed">✓ {{ item.completedBy }}</span>
+            @for (item of checklistItems; track item.id) {
+              <div class="checklist-item"
+                   [class.item-completed]="item.completed"
+                   (click)="toggleChecklistItem(item)">
+                <div class="checkbox-circle">
+                  @if (item.completed) {
+                    <span class="check-icon">✓</span>
+                  }
+                </div>
+                <div class="item-details">
+                  <p class="item-text">{{ item.taskDescription || item.description }}</p>
+                  <div class="item-meta">
+                    <span class="dimension-badge">{{ item.dimension || 'Vínculo' }}</span>
+                    @if (item.completed) {
+                      <span class="completed-by">✓ {{ item.completedBy }}</span>
+                    }
+                  </div>
                 </div>
               </div>
-            </div>
+            }
 
-            <div class="empty-actions" *ngIf="checklistItems.length === 0">
-              <span>🎉</span>
-              <p>¡Sin acciones pendientes hoy! Sigan vibrado en armonía.</p>
-            </div>
+            @if (checklistItems.length === 0) {
+              <div class="empty-actions">
+                <span>🎉</span>
+                <p>¡Sin acciones pendientes hoy! Sigan vibrado en armonía.</p>
+              </div>
+            }
           </div>
         </section>
 
         <!-- ── IVR: Sensor de reparación ── -->
-        <section class="ivr-glass-card" *ngIf="ivrSummary">
-          <div class="ivr-card-header">
-            <div>
-              <span class="ivr-subtitle">⚡ SENSOR DE REPARACIÓN</span>
-              <h2>Índice IVR Familiar</h2>
+        @if (ivrSummary) {
+          <section class="ivr-glass-card">
+            <div class="ivr-card-header">
+              <div>
+                <span class="ivr-subtitle">⚡ SENSOR DE REPARACIÓN</span>
+                <h2>Índice IVR Familiar</h2>
+              </div>
+              <button class="btn-friction-trigger" (click)="openFrictionModal()">
+                ⚠️ Reportar Fricción
+              </button>
             </div>
-            <button class="btn-friction-trigger" (click)="openFrictionModal()">
-              ⚠️ Reportar Fricción
-            </button>
-          </div>
 
-          <div class="ivr-card-body">
-            <div class="ivr-gauge-box">
-              <svg class="ivr-radial-svg" viewBox="0 0 100 100">
-                <circle class="ivr-circle-bg" cx="50" cy="50" r="40" />
-                <circle class="ivr-circle-progress" cx="50" cy="50" r="40"
-                        [attr.stroke-dashoffset]="251.2 - (251.2 * ivrSummary.ivrScore / 100)"
-                        [style.stroke]="ivrSummary.ivrScore >= 80 ? '#10b981' : ivrSummary.ivrScore >= 50 ? '#f59e0b' : '#ef4444'" />
-              </svg>
-              <div class="ivr-gauge-text">
-                <span class="ivr-score-value">{{ ivrSummary.ivrScore | number:'1.0-0' }}%</span>
-                <span class="ivr-score-label">COHESIÓN</span>
+            <div class="ivr-card-body">
+              <div class="ivr-gauge-box">
+                <svg class="ivr-radial-svg" viewBox="0 0 100 100">
+                  <circle class="ivr-circle-bg" cx="50" cy="50" r="40" />
+                  <circle class="ivr-circle-progress" cx="50" cy="50" r="40"
+                          [attr.stroke-dashoffset]="251.2 - (251.2 * ivrSummary.ivrScore / 100)"
+                          [style.stroke]="ivrSummary.ivrScore >= 80 ? '#10b981' : ivrSummary.ivrScore >= 50 ? '#f59e0b' : '#ef4444'" />
+                </svg>
+                <div class="ivr-gauge-text">
+                  <span class="ivr-score-value">{{ ivrSummary.ivrScore | number:'1.0-0' }}%</span>
+                  <span class="ivr-score-label">COHESIÓN</span>
+                </div>
+              </div>
+
+              <div class="ivr-stats-grid">
+                <div class="ivr-stat-pill">
+                  <span class="stat-number">{{ ivrSummary.repairedConflicts }}/{{ ivrSummary.totalConflicts }}</span>
+                  <span class="stat-label">Reparados</span>
+                </div>
+                <div class="ivr-stat-pill">
+                  <span class="stat-number">{{ ivrRepairHours }}h</span>
+                  <span class="stat-label">Latencia Prom.</span>
+                </div>
               </div>
             </div>
 
-            <div class="ivr-stats-grid">
-              <div class="ivr-stat-pill">
-                <span class="stat-number">{{ ivrSummary.repairedConflicts }}/{{ ivrSummary.totalConflicts }}</span>
-                <span class="stat-label">Reparados</span>
-              </div>
-              <div class="ivr-stat-pill">
-                <span class="stat-number">{{ ivrRepairHours }}h</span>
-                <span class="stat-label">Latencia Prom.</span>
-              </div>
+            <div class="ivr-clinical-guideline">
+              @if (ivrSummary.ivrScore >= 80) {
+                <p class="guideline-good">
+                  💚 Regulación Óptima: velocidad de reparación mantiene vínculos seguros.
+                </p>
+              } @else if (ivrSummary.ivrScore >= 50) {
+                <p class="guideline-warning">
+                  💛 Atención Requerida: fricciones con latencia prolongada. Dialoguen hoy.
+                </p>
+              } @else {
+                <p class="guideline-danger">
+                  ❤️ Alerta de Distanciamiento: reparaciones nulas. Busquen al consultor.
+                </p>
+              }
             </div>
-          </div>
-
-          <div class="ivr-clinical-guideline" [ngSwitch]="true">
-            <p *ngSwitchCase="ivrSummary.ivrScore >= 80" class="guideline-good">
-              💚 Regulación Óptima: velocidad de reparación mantiene vínculos seguros.
-            </p>
-            <p *ngSwitchCase="ivrSummary.ivrScore >= 50" class="guideline-warning">
-              💛 Atención Requerida: fricciones con latencia prolongada. Dialoguen hoy.
-            </p>
-            <p *ngSwitchDefault class="guideline-danger">
-              ❤️ Alerta de Distanciamiento: reparaciones nulas. Busquen al consultor.
-            </p>
-          </div>
-        </section>
+          </section>
+        }
 
         <!-- ── Línea de convivencia (fricciones) ── -->
         <section class="friction-timeline-section">
           <div class="section-header">
             <h2>📊 Línea de Convivencia</h2>
-            <span class="badge badge-indigo" *ngIf="behavioralEvents.length">{{ behavioralEvents.length }}</span>
+            @if (behavioralEvents.length) {
+              <span class="badge badge-indigo">{{ behavioralEvents.length }}</span>
+            }
           </div>
 
-          <div class="timeline-container" *ngIf="behavioralEvents.length">
-            <div class="timeline-node" *ngFor="let ev of behavioralEvents" [class.node-repaired]="ev.repairedAt">
-              <div class="node-line-indicator">
-                <div class="node-dot" [class.dot-danger]="!ev.repairedAt"></div>
-              </div>
-              <div class="node-card">
-                <div class="node-header">
-                  <span class="severity-badge" [ngClass]="'severity-' + ev.severity">Sev. {{ ev.severity }}</span>
-                  <span class="node-date">{{ ev.occurredAt | date:'d MMM · HH:mm' }}</span>
-                </div>
-                <p class="node-description">"{{ ev.description }}"</p>
-                <div class="repair-detail-box" *ngIf="ev.repairedAt">
-                  <div class="repair-header">
-                    <span class="repair-check">✓ Reparado</span>
-                    <span class="repair-date">{{ ev.repairedAt | date:'d MMM · HH:mm' }}</span>
+          @if (behavioralEvents.length) {
+            <div class="timeline-container">
+              @for (ev of behavioralEvents; track ev.id) {
+                <div class="timeline-node" [class.node-repaired]="ev.repairedAt">
+                  <div class="node-line-indicator">
+                    <div class="node-dot" [class.dot-danger]="!ev.repairedAt"></div>
                   </div>
-                  <p class="repair-desc">"{{ ev.repairDescription }}"</p>
+                  <div class="node-card">
+                    <div class="node-header">
+                      <span class="severity-badge" [ngClass]="'severity-' + ev.severity">Sev. {{ ev.severity }}</span>
+                      <span class="node-date">{{ ev.occurredAt | date:'d MMM · HH:mm' }}</span>
+                    </div>
+                    <p class="node-description">"{{ ev.description }}"</p>
+                    @if (ev.repairedAt) {
+                      <div class="repair-detail-box">
+                        <div class="repair-header">
+                          <span class="repair-check">✓ Reparado</span>
+                          <span class="repair-date">{{ ev.repairedAt | date:'d MMM · HH:mm' }}</span>
+                        </div>
+                        <p class="repair-desc">"{{ ev.repairDescription }}"</p>
+                      </div>
+                    }
+                    @if (!ev.repairedAt) {
+                      <button class="btn-repair-action" (click)="openRepairModal(ev)">
+                        🛠️ Reparar este Incidente
+                      </button>
+                    }
+                  </div>
                 </div>
-                <button class="btn-repair-action" *ngIf="!ev.repairedAt" (click)="openRepairModal(ev)">
-                  🛠️ Reparar este Incidente
-                </button>
-              </div>
+              }
             </div>
-          </div>
-
-          <div class="empty-timeline-card" *ngIf="!behavioralEvents.length">
-            <span>🛡️</span>
-            <p>Sin fricciones registradas. Homeostasis del hogar en equilibrio.</p>
-          </div>
+          } @else {
+            <div class="empty-timeline-card">
+              <span>🛡️</span>
+              <p>Sin fricciones registradas. Homeostasis del hogar en equilibrio.</p>
+            </div>
+          }
         </section>
 
         <!-- ── Destello de amor (gratitud) ── -->
         <section class="quick-gratitude-section">
           <h2>💖 Enviar Destello de Amor</h2>
 
-          <div class="success-toast" *ngIf="gratitudeSuccess">
-            <span>✨ ¡Destello compartido en el Muro!</span>
-          </div>
+          @if (gratitudeSuccess) {
+            <div class="success-toast">
+              <span>✨ ¡Destello compartido en el Muro!</span>
+            </div>
+          }
 
           <div class="gratitude-mini-form">
 
             <!-- Selector de miembros (si los hay) -->
-            <div class="member-selector" *ngIf="members.length > 0">
-              <p class="member-selector-label">¿Para quién?</p>
-              <div class="member-chips">
-                <button
-                  type="button"
-                  class="member-chip"
-                  *ngFor="let m of members"
-                  [class.chip-selected]="gratitudeForm.toMember === m.fullName"
-                  (click)="selectGratitudeMember(m.fullName)">
-                  <span class="chip-avatar">{{ m.fullName[0] }}</span>
-                  {{ m.fullName.split(' ')[0] }}
-                </button>
+            @if (members.length > 0) {
+              <div class="member-selector">
+                <p class="member-selector-label">¿Para quién?</p>
+                <div class="member-chips">
+                  @for (m of members; track m.fullName) {
+                    <button
+                      type="button"
+                      class="member-chip"
+                      [class.chip-selected]="gratitudeForm.toMember === m.fullName"
+                      (click)="selectGratitudeMember(m.fullName)">
+                      <span class="chip-avatar">{{ m.fullName[0] }}</span>
+                      {{ m.fullName.split(' ')[0] }}
+                    </button>
+                  }
+                </div>
               </div>
-            </div>
-
-            <!-- Fallback: campo libre si no hay miembros cargados -->
-            <div class="input-container" *ngIf="members.length === 0">
-              <input [(ngModel)]="gratitudeForm.toMember" placeholder="¿Para quién? Ej: Mamá, Sofía..." />
-            </div>
+            } @else {
+              <!-- Fallback: campo libre si no hay miembros cargados -->
+              <div class="input-container">
+                <input [(ngModel)]="gratitudeForm.toMember" placeholder="¿Para quién? Ej: Mamá, Sofía..." />
+              </div>
+            }
 
             <div class="input-container">
               <textarea
@@ -316,104 +378,114 @@
         </section>
 
         <!-- ── Feed de gratitud ── -->
-        <section class="gratitude-feed-section" *ngIf="gratitudeEntries.length">
-          <div class="section-header">
-            <h2>🌟 Muro de Luz Reciente</h2>
-          </div>
-          <div class="feed-grid">
-            <div class="feed-card" *ngFor="let entry of gratitudeEntries">
-              <div class="feed-header">
-                <span class="to">Para: <strong>{{ entry.toMember }}</strong></span>
-                <span class="heart">♥</span>
-              </div>
-              <p class="feed-text">"{{ entry.description }}"</p>
-              <div class="feed-footer">
-                <span>De: <strong class="author">{{ entry.fromMember }}</strong></span>
-                <span>{{ entry.createdAt | date:'HH:mm' }}</span>
-              </div>
+        @if (gratitudeEntries.length) {
+          <section class="gratitude-feed-section">
+            <div class="section-header">
+              <h2>🌟 Muro de Luz Reciente</h2>
             </div>
-          </div>
-        </section>
+            <div class="feed-grid">
+              @for (entry of gratitudeEntries; track $index) {
+                <div class="feed-card">
+                  <div class="feed-header">
+                    <span class="to">Para: <strong>{{ entry.toMember }}</strong></span>
+                    <span class="heart">♥</span>
+                  </div>
+                  <p class="feed-text">"{{ entry.description }}"</p>
+                  <div class="feed-footer">
+                    <span>De: <strong class="author">{{ entry.fromMember }}</strong></span>
+                    <span>{{ entry.createdAt | date:'HH:mm' }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          </section>
+        }
 
-      </ng-container><!-- /!loading -->
+      }<!-- /!loading -->
 
     </div><!-- /phone-content -->
 
     <!-- ── Modal de reparación conductual ── -->
-    <div class="glass-modal-overlay" *ngIf="showRepairModal" (click)="closeRepairModal()">
-      <div class="glass-modal-container" (click)="$event.stopPropagation()">
-        <div class="modal-drag-handle"></div>
-        <header class="modal-header">
-          <span class="modal-icon">🛠️</span>
-          <div>
-            <h3>Registrar Reparación</h3>
-            <p>Selle con madurez el acuerdo de reconciliación.</p>
+    @if (showRepairModal) {
+      <div class="glass-modal-overlay" (click)="closeRepairModal()">
+        <div class="glass-modal-container" (click)="$event.stopPropagation()">
+          <div class="modal-drag-handle"></div>
+          <header class="modal-header">
+            <span class="modal-icon">🛠️</span>
+            <div>
+              <h3>Registrar Reparación</h3>
+              <p>Selle con madurez el acuerdo de reconciliación.</p>
+            </div>
+          </header>
+          <div class="modal-body">
+            <div class="modal-reference-card">
+              <strong>Fricción original:</strong>
+              <p>"{{ selectedEventForRepair?.description }}"</p>
+            </div>
+            <div class="input-container">
+              <label class="modal-label">¿Cómo lo resolvieron?</label>
+              <textarea [(ngModel)]="repairForm.description"
+                        placeholder="Detalle los compromisos y acuerdos alcanzados..."></textarea>
+            </div>
           </div>
-        </header>
-        <div class="modal-body">
-          <div class="modal-reference-card">
-            <strong>Fricción original:</strong>
-            <p>"{{ selectedEventForRepair?.description }}"</p>
-          </div>
-          <div class="input-container">
-            <label class="modal-label">¿Cómo lo resolvieron?</label>
-            <textarea [(ngModel)]="repairForm.description"
-                      placeholder="Detalle los compromisos y acuerdos alcanzados..."></textarea>
-          </div>
+          <footer class="modal-footer">
+            <button class="btn-modal-cancel" (click)="closeRepairModal()">Cancelar</button>
+            <button class="btn-modal-submit btn-repair-confirm"
+                    (click)="submitRepair()"
+                    [disabled]="submittingRepair || !repairForm.description.trim()">
+              {{ submittingRepair ? 'Guardando...' : 'Sellar Reconciliación 💖' }}
+            </button>
+          </footer>
         </div>
-        <footer class="modal-footer">
-          <button class="btn-modal-cancel" (click)="closeRepairModal()">Cancelar</button>
-          <button class="btn-modal-submit btn-repair-confirm"
-                  (click)="submitRepair()"
-                  [disabled]="submittingRepair || !repairForm.description.trim()">
-            {{ submittingRepair ? 'Guardando...' : 'Sellar Reconciliación 💖' }}
-          </button>
-        </footer>
       </div>
-    </div>
+    }
 
     <!-- ── Modal de nueva fricción ── -->
-    <div class="glass-modal-overlay" *ngIf="showFrictionModal" (click)="closeFrictionModal()">
-      <div class="glass-modal-container glass-modal-danger" (click)="$event.stopPropagation()">
-        <div class="modal-drag-handle"></div>
-        <header class="modal-header">
-          <span class="modal-icon">⚠️</span>
-          <div>
-            <h3>Registrar Fricción</h3>
-            <p>Documente el incidente. El sistema guiará la autorregulación.</p>
-          </div>
-        </header>
-        <div class="modal-body">
-          <div class="input-container">
-            <label class="modal-label">¿Qué sucedió?</label>
-            <textarea [(ngModel)]="frictionForm.description"
-                      placeholder="Describa el incidente con asertividad..."></textarea>
-          </div>
-          <div class="input-container">
-            <label class="modal-label">Nivel de Impacto:</label>
-            <div class="severity-selector-grid">
-              <button *ngFor="let lvl of [1,2,3,4,5]"
-                      type="button"
-                      class="btn-severity-option"
-                      [class.active-severity]="frictionForm.severity === lvl"
-                      [ngClass]="'severity-lvl-' + lvl"
-                      (click)="frictionForm.severity = lvl">
-                {{ lvl }}
-              </button>
+    @if (showFrictionModal) {
+      <div class="glass-modal-overlay" (click)="closeFrictionModal()">
+        <div class="glass-modal-container glass-modal-danger" (click)="$event.stopPropagation()">
+          <div class="modal-drag-handle"></div>
+          <header class="modal-header">
+            <span class="modal-icon">⚠️</span>
+            <div>
+              <h3>Registrar Fricción</h3>
+              <p>Documente el incidente. El sistema guiará la autorregulación.</p>
             </div>
-            <div class="severity-labels"><span>Leve</span><span>Crítico</span></div>
+          </header>
+          <div class="modal-body">
+            <div class="input-container">
+              <label class="modal-label">¿Qué sucedió?</label>
+              <textarea [(ngModel)]="frictionForm.description"
+                        placeholder="Describa el incidente con asertividad..."></textarea>
+            </div>
+            <div class="input-container">
+              <label class="modal-label">Nivel de Impacto:</label>
+              <div class="severity-selector-grid">
+                @for (lvl of [1,2,3,4,5]; track lvl) {
+                  <button
+                    type="button"
+                    class="btn-severity-option"
+                    [class.active-severity]="frictionForm.severity === lvl"
+                    [ngClass]="'severity-lvl-' + lvl"
+                    (click)="frictionForm.severity = lvl">
+                    {{ lvl }}
+                  </button>
+                }
+              </div>
+              <div class="severity-labels"><span>Leve</span><span>Crítico</span></div>
+            </div>
           </div>
+          <footer class="modal-footer">
+            <button class="btn-modal-cancel" (click)="closeFrictionModal()">Cancelar</button>
+            <button class="btn-modal-submit btn-friction-confirm"
+                    (click)="submitFriction()"
+                    [disabled]="submittingFriction || !frictionForm.description.trim()">
+              {{ submittingFriction ? 'Enviando...' : 'Registrar Incidente ⚠️' }}
+            </button>
+          </footer>
         </div>
-        <footer class="modal-footer">
-          <button class="btn-modal-cancel" (click)="closeFrictionModal()">Cancelar</button>
-          <button class="btn-modal-submit btn-friction-confirm"
-                  (click)="submitFriction()"
-                  [disabled]="submittingFriction || !frictionForm.description.trim()">
-            {{ submittingFriction ? 'Enviando...' : 'Registrar Incidente ⚠️' }}
-          </button>
-        </footer>
       </div>
-    </div>
+    }
 
     <!-- ── Nav bar inferior funcional ── -->
     <footer class="phone-nav-bar">
@@ -436,4 +508,4 @@
     </footer>
 
   </div><!-- /phone-simulator -->
-</div><!-- /portal-wrapper -->
+</div>

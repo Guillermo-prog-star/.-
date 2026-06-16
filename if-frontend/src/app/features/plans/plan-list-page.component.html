@@ -1,5 +1,53 @@
 <div class="dashboard-container">
-  
+
+  <!-- ── Banner: Dimensión completada / desbloqueada ── -->
+  @if (dimensionCompletadaBanner) {
+    <div style="
+        position: fixed; top: 80px; left: 50%; transform: translateX(-50%); z-index: 9999;
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);
+        border: 1px solid rgba(99,102,241,0.5);
+        border-radius: 24px; padding: 22px 32px; min-width: 340px; max-width: 480px;
+        box-shadow: 0 24px 64px rgba(79,70,229,0.45), 0 0 0 1px rgba(99,102,241,0.2);
+        animation: dimBannerIn 0.5s cubic-bezier(0.34,1.56,0.64,1);">
+      <button (click)="cerrarBannerDimension()"
+              style="position:absolute;top:12px;right:16px;background:none;border:none;
+                     color:rgba(255,255,255,0.35);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="font-size:44px;flex-shrink:0;filter:drop-shadow(0 0 12px rgba(251,191,36,0.6));">
+          {{ dimensionCompletadaBanner.emoji }}
+        </div>
+        <div>
+          <p style="margin:0 0 4px 0;font-size:11px;font-weight:800;color:#818cf8;
+                    text-transform:uppercase;letter-spacing:0.1em;">
+            ¡Dimensión completada!
+          </p>
+          <p style="margin:0 0 8px 0;font-size:17px;font-weight:900;color:#fff;line-height:1.2;">
+            {{ dimensionCompletadaBanner.dimensionCompletada }}
+          </p>
+          @if (dimensionCompletadaBanner.dimensionDesbloqueada) {
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;
+                        background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);
+                        border-radius:10px;">
+              <span style="font-size:14px;">🔓</span>
+              <span style="font-size:12px;font-weight:700;color:#34d399;">
+                {{ dimensionCompletadaBanner.dimensionDesbloqueada }} — desbloqueada
+              </span>
+            </div>
+          } @else {
+            <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;
+                        background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.25);
+                        border-radius:10px;">
+              <span style="font-size:14px;">🎬</span>
+              <span style="font-size:12px;font-weight:700;color:#fbbf24;">
+                ¡Plan completo! Generando Película Familiar...
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+
   <!-- Encabezado del Dashboard -->
   <div class="dashboard-header">
     <div class="dashboard-title-group">
@@ -221,7 +269,8 @@
       </button>
     </div>
     
-    <div class="timeline-roadmap-container" *ngIf="showFullTimeline" style="animation: fadeIn 0.4s ease-out; margin-top: 24px;">
+    @if (showFullTimeline) {
+    <div class="timeline-roadmap-container" style="animation: fadeIn 0.4s ease-out; margin-top: 24px;">
       <div class="timeline-vertical-line"></div>
       
       <div class="timeline-items-wrapper">
@@ -309,6 +358,7 @@
         }
       </div>
     </div>
+    }
   </div>
 
 
@@ -371,7 +421,40 @@
     @if (planes.length > 0) {
       <div class="missions-list">
         @for (plan of planes; track plan.id) {
-          <div class="misiones-container">
+          <div class="misiones-container" [style.position]="'relative'">
+
+            <!-- ── OVERLAY PLAN BLOQUEADO ── -->
+            @if (isPlanLocked(plan)) {
+              <div style="
+                  position: absolute; inset: 0; z-index: 20;
+                  background: rgba(8,12,24,0.82);
+                  border-radius: inherit;
+                  backdrop-filter: blur(3px);
+                  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+                  cursor: not-allowed; padding: 32px 24px; text-align: center;">
+                <div style="font-size: 40px; opacity: 0.75;">🔒</div>
+                <div>
+                  <p style="margin: 0 0 6px 0; font-size: 15px; font-weight: 800; color: #e2e8f0;">
+                    {{ plan.titulo }} — Bloqueado
+                  </p>
+                  <p style="margin: 0; font-size: 12.5px; color: #64748b; line-height: 1.6; max-width: 320px;">
+                    Completa todas las misiones de
+                    <strong style="color: #94a3b8;">{{ getPlanUnlockLabel(plan) }}</strong>
+                    para desbloquear esta dimensión.
+                  </p>
+                </div>
+                <div style="
+                    padding: 8px 18px;
+                    background: rgba(99,102,241,0.08);
+                    border: 1px solid rgba(99,102,241,0.2);
+                    border-radius: 20px;
+                    font-size: 11px; font-weight: 700;
+                    color: #818cf8; text-transform: uppercase; letter-spacing: 0.08em;">
+                  ⛓️ Progresión Secuencial
+                </div>
+              </div>
+            }
+
             <div class="plan-header">
               <h3>📌 {{ plan.titulo }}</h3>
               <span class="badge-pilar">Pilar Activo: {{ plan.pilar }}</span>
@@ -393,10 +476,28 @@
 
             <div class="misiones-grid">
               @for (mision of plan.misiones; track mision.id) {
-                <!-- Tarjeta normal; si es la misión llave del Bloque Dorado, resalta con borde y sombra dorados -->
                 <div class="card-mision"
-                     [style.borderColor]="mision.id === 'mis-tiempos-1' ? 'rgba(245,176,65,0.55)' : ''"
-                     [style.boxShadow]="mision.id === 'mis-tiempos-1' ? '0 0 22px rgba(245,176,65,0.1), 0 0 0 1px rgba(245,176,65,0.2)' : ''">
+                     [style.borderColor]="isMisionLocked(plan, mision) ? 'rgba(255,255,255,0.06)' : (mision.id === 'mis-tiempos-1' ? 'rgba(245,176,65,0.55)' : '')"
+                     [style.boxShadow]="isMisionLocked(plan, mision) ? 'none' : (mision.id === 'mis-tiempos-1' ? '0 0 22px rgba(245,176,65,0.1), 0 0 0 1px rgba(245,176,65,0.2)' : '')"
+                     [style.opacity]="isMisionLocked(plan, mision) ? '0.55' : '1'">
+
+                  <!-- ── OVERLAY DE BLOQUEO SECUENCIAL ── -->
+                  @if (isMisionLocked(plan, mision)) {
+                    <div style="
+                        position: absolute; inset: 0; z-index: 10;
+                        background: rgba(10,14,26,0.72);
+                        border-radius: inherit;
+                        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+                        backdrop-filter: blur(2px); cursor: not-allowed;">
+                      <div style="font-size: 32px; opacity: 0.7;">🔒</div>
+                      <div style="text-align: center; padding: 0 24px;">
+                        <p style="margin: 0 0 4px 0; font-size: 13px; font-weight: 700; color: #e2e8f0;">{{ getMisionSequenceLabel(plan, mision) }}</p>
+                        <p style="margin: 0; font-size: 11.5px; color: #64748b; line-height: 1.5;">
+                          Completa <strong style="color: #94a3b8;">{{ getPreviousMisionTitulo(plan, mision) }}</strong> al 100% para desbloquear.
+                        </p>
+                      </div>
+                    </div>
+                  }
 
                   <!-- ── BANNER LLAVE DEL BLOQUE DORADO (solo para mis-tiempos-1) ── -->
                   @if (mision.id === 'mis-tiempos-1') {
@@ -424,16 +525,16 @@
 
                   <div class="card-header">
                     <div style="display: flex; flex-direction: column; gap: 4px;">
+                      <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; margin-bottom: 2px;">
+                        {{ getMisionSequenceLabel(plan, mision) }}
+                      </div>
                       <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #fff;">{{ mision.titulo }}</h4>
                       <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; flex-wrap: wrap;">
                         @if (mision.isAi) {
-                          <span style="font-size: 9px; padding: 2px 6px; background: rgba(56, 139, 253, 0.15); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.3); border-radius: 4px; font-weight: 700; text-transform: uppercase;">🧠 IA: Diagnóstico</span>
+                          <span style="font-size: 9px; padding: 2px 6px; background: rgba(56, 139, 253, 0.15); color: #58a6ff; border: 1px solid rgba(56, 139, 253, 0.3); border-radius: 4px; font-weight: 700; text-transform: uppercase;">🧠 Generada por IA</span>
                         } @else if (mision.esIniciativaFamiliar) {
-                          <span style="font-size: 9px; padding: 2px 6px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 4px; font-weight: 700; text-transform: uppercase;">🎨 Iniciativa Familiar</span>
-                        } @else {
-                          <span style="font-size: 9px; padding: 2px 6px; background: rgba(255, 255, 255, 0.06); color: #8b949e; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 4px; font-weight: 700; text-transform: uppercase;">⚙️ Plan Clínico</span>
+                          <span style="font-size: 9px; padding: 2px 6px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 4px; font-weight: 700; text-transform: uppercase;">🎨 Creativa · Opcional</span>
                         }
-                        <!-- Badge adicional exclusivo para la misión llave -->
                         @if (mision.id === 'mis-tiempos-1') {
                           <span style="font-size: 9px; padding: 2px 6px; background: rgba(245,176,65,0.15); color: #f5b041; border: 1px solid rgba(245,176,65,0.4); border-radius: 4px; font-weight: 700; text-transform: uppercase;">🔑 Llave del Bloque Dorado</span>
                         }
@@ -449,34 +550,41 @@
                   <p class="desc-general" style="margin-bottom: 12px; color: #cbd5e1; font-size: 13px;">{{ mision.descripcionGeneral }}</p>
 
                   <!-- Sección: ¿Qué busca? -->
-                  <div *ngIf="mision.queBusca" style="margin-bottom: 12px; padding: 8px 12px; background: rgba(168, 85, 247, 0.03); border-left: 3px solid #a855f7; border-radius: 4px; font-size: 12px; color: #cbd5e1;">
-                    <strong style="color: #c084fc; display: block; margin-bottom: 2px;">👁️ ¿Qué busca?</strong>
-                    {{ mision.queBusca }}
-                  </div>
+                  @if (mision.queBusca) {
+                    <div style="margin-bottom: 12px; padding: 8px 12px; background: rgba(168, 85, 247, 0.03); border-left: 3px solid #a855f7; border-radius: 4px; font-size: 12px; color: #cbd5e1;">
+                      <strong style="color: #c084fc; display: block; margin-bottom: 2px;">👁️ ¿Qué busca?</strong>
+                      {{ mision.queBusca }}
+                    </div>
+                  }
 
                   <!-- Botón para Personalizar Iniciativas Familiares (Misiones 4-6) -->
-                  <div *ngIf="mision.esIniciativaFamiliar" style="margin-bottom: 12px;">
-                    <button (click)="openCreativeModal(plan, mision)" style="width: 100%; background: rgba(168, 85, 247, 0.08); border: 1px dashed rgba(168, 85, 247, 0.4); color: #c084fc; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
-                      <span>🎨</span> {{ mision.titulo.includes('Iniciativa') && !mision.queBusca ? 'Definir Iniciativa Personalizada' : 'Editar Diseño Creativo' }}
-                    </button>
-                  </div>
+                  @if (mision.esIniciativaFamiliar) {
+                    <div style="margin-bottom: 12px;">
+                      <button (click)="openCreativeModal(plan, mision)" style="width: 100%; background: rgba(168, 85, 247, 0.08); border: 1px dashed rgba(168, 85, 247, 0.4); color: #c084fc; padding: 6px 12px; border-radius: 6px; font-size: 11.5px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
+                        <span>🎨</span> {{ mision.titulo.includes('Iniciativa') && !mision.queBusca ? 'Definir Iniciativa Personalizada' : 'Editar Diseño Creativo' }}
+                      </button>
+                    </div>
+                  }
 
                   <!-- Paso a Paso interactivo (Ruta de Ejecución) -->
-                  <div *ngIf="mision.pasoAPaso" style="margin-bottom: 16px; background: rgba(255,255,255,0.01); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
-                    <strong style="font-size: 10.5px; text-transform: uppercase; color: #8b949e; display: block; margin-bottom: 8px; letter-spacing: 0.5px;">🐾 Ruta de Ejecución:</strong>
-                    <div style="display: flex; flex-direction: column; gap: 8px; padding-left: 4px; position: relative;">
-                      @for (step of mision.pasoAPaso; track step; let idx = $index) {
-                        <div style="display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; line-height: 1.4;">
-                          <div [ngStyle]="{'background': mision.estado === 'Completada' ? '#10b981' : (mision.backendTaskId ? '#38bdf8' : 'rgba(255,255,255,0.1)'), 'color': mision.estado === 'Completada' || mision.backendTaskId ? '#000' : '#8b949e'}" style="width: 16px; height: 16px; border-radius: 50%; font-weight: bold; font-size: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;">
-                            {{ idx + 1 }}
+                  @if (mision.pasoAPaso) {
+                    <div style="margin-bottom: 16px; background: rgba(255,255,255,0.01); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
+                      <strong style="font-size: 10.5px; text-transform: uppercase; color: #8b949e; display: block; margin-bottom: 8px; letter-spacing: 0.5px;">🐾 Ruta de Ejecución:</strong>
+                      <div style="display: flex; flex-direction: column; gap: 8px; padding-left: 4px; position: relative;">
+                        @for (step of mision.pasoAPaso; track step; let idx = $index) {
+                          <div style="display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; line-height: 1.4;">
+                            <div [ngStyle]="{'background': mision.estado === 'Completada' ? '#10b981' : (mision.backendTaskId ? '#38bdf8' : 'rgba(255,255,255,0.1)'), 'color': mision.estado === 'Completada' || mision.backendTaskId ? '#000' : '#8b949e'}" style="width: 16px; height: 16px; border-radius: 50%; font-weight: bold; font-size: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;">
+                              {{ idx + 1 }}
+                            </div>
+                            <span [style.color]="mision.estado === 'Completada' ? '#8b949e' : (mision.backendTaskId ? '#f0f6fc' : '#8b949e')">{{ step }}</span>
                           </div>
-                          <span [style.color]="mision.estado === 'Completada' ? '#8b949e' : (mision.backendTaskId ? '#f0f6fc' : '#8b949e')">{{ step }}</span>
-                        </div>
-                      }
+                        }
+                      </div>
                     </div>
-                  </div>
+                  }
 
-                  <ul class="microacciones-list" *ngIf="!mision.pasoAPaso">
+                  @if (!mision.pasoAPaso) {
+                  <ul class="microacciones-list">
                     @for (acc of mision.microacciones; track acc.id) {
                       <li>
                         <span class="emoji-icon">{{ getEmoji(acc.icono) }}</span>
@@ -484,6 +592,7 @@
                       </li>
                     }
                   </ul>
+                  }
 
                   <!-- CLOSED-LOOP EVIDENCE CARD -->
                   @if (mision.backendTaskId && getTaskEvidence(mision.backendTaskId); as evidence) {
@@ -670,20 +779,89 @@
                     </div>
                   }
 
+                  <!-- ── SPRINT 7 DÍAS ── -->
+                  @if (!isMisionLocked(plan, mision)) {
+                    <div style="margin: 16px 0 0 0; padding: 12px 14px; background: rgba(99,102,241,0.05); border: 1px solid rgba(99,102,241,0.18); border-radius: 10px;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #818cf8; text-transform: uppercase; letter-spacing: 0.5px;">
+                          📅 Sprint 7 días
+                        </span>
+                        <span style="font-size: 11px; font-weight: 700; color: #e2e8f0;">
+                          {{ getSprintDiasCompletados(mision.id) }}/7 días
+                        </span>
+                      </div>
+                      <!-- Barra de progreso de los 7 días -->
+                      <div style="display: flex; gap: 4px; margin-bottom: 10px;">
+                        @for (day of [1,2,3,4,5,6,7]; track day) {
+                          <div style="flex: 1; height: 6px; border-radius: 3px; transition: background 0.3s;"
+                               [style.background]="day <= getSprintDiasCompletados(mision.id) ? '#6366f1' : 'rgba(255,255,255,0.08)'"></div>
+                        }
+                      </div>
+                      <!-- Indicadores de día -->
+                      <div style="display: flex; gap: 4px; margin-bottom: 10px;">
+                        @for (day of [1,2,3,4,5,6,7]; track day) {
+                          <div style="flex: 1; text-align: center; font-size: 9px; font-weight: 600;"
+                               [style.color]="day <= getSprintDiasCompletados(mision.id) ? '#818cf8' : '#374151'">
+                            D{{ day }}
+                          </div>
+                        }
+                      </div>
+                      <!-- CTA Sprint: 3 estados -->
+                      @if (mision.estado === 'Completada') {
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px 12px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 8px; margin-bottom: 8px;">
+                          <span style="font-size: 16px;">✅</span>
+                          <span style="font-size: 11px; color: #10b981; font-weight: 700;">Misión cerrada funcionalmente</span>
+                        </div>
+                        <button (click)="iniciarSprintMision(plan, mision)" style="width: 100%; padding: 9px 14px; background: rgba(16,185,129,0.1); border: 1px dashed rgba(16,185,129,0.4); color: #34d399; border-radius: 7px; font-size: 11.5px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
+                          📝 Consultar o Agregar Evidencia Tardía
+                        </button>
+                      } @else if (isSprintTerminado(mision.id)) {
+                        <div style="padding: 12px 14px; background: linear-gradient(135deg, rgba(79,70,229,0.15) 0%, rgba(16,185,129,0.08) 100%); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px;">
+                          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="font-size: 20px;">🎖️</span>
+                            <div>
+                              <div style="font-size: 12px; font-weight: 800; color: #34d399;">¡7 días completados!</div>
+                              <div style="font-size: 10px; color: rgba(255,255,255,0.45);">Cápsula Familiar archivada</div>
+                            </div>
+                          </div>
+                          <!-- Botón principal: cierra el ciclo en 1 clic -->
+                          @if (mision.backendTaskId) {
+                            <button (click)="completarMisionConCapsula(plan, mision)"
+                                    style="width:100%; padding:10px 14px; background:linear-gradient(135deg,#059669,#10b981); border:none; color:#fff; border-radius:8px; font-size:12px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; margin-bottom:8px; letter-spacing:0.02em; box-shadow:0 4px 14px rgba(16,185,129,0.3);">
+                              ✅ Completar misión con Cápsula
+                            </button>
+                          }
+                          <a routerLink="/family-logbook" [queryParams]="{ tab: 'SPRINT' }"
+                             style="display:block; text-align:center; padding:7px; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.25); color:#818cf8; border-radius:6px; font-size:10px; font-weight:700; text-decoration:none;">
+                            📋 Ver retrospectiva en el Diario
+                          </a>
+                        </div>
+                      } @else {
+                        <button (click)="iniciarSprintMision(plan, mision)"
+                                style="width: 100%; padding: 9px 14px; background: linear-gradient(135deg, rgba(99,102,241,0.2) 0%, rgba(139,92,246,0.15) 100%); border: 1px solid rgba(99,102,241,0.4); color: #a5b4fc; border-radius: 7px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s;">
+                          {{ isSprintActivo(mision.id) ? '▶ Continuar Sprint' : '🚀 Iniciar Sprint 7 días' }}
+                        </button>
+                      }
+                    </div>
+                  }
+
                   <div class="actions-footer">
-                    <button class="btn-comenzar" 
+                    <button class="btn-comenzar"
                             (click)="comenzarMision(plan, mision)"
+                            [disabled]="isMisionLocked(plan, mision)"
                             [style.background]="mision.estado === 'Completada' ? 'rgba(255,255,255,0.05)' : 'rgba(56, 189, 248, 0.1)'"
                             [style.color]="mision.estado === 'Completada' ? '#8b949e' : '#38bdf8'"
                             [style.borderColor]="mision.estado === 'Completada' ? 'rgba(255,255,255,0.1)' : 'rgba(56, 189, 248, 0.3)'"
-                            style="border: 1px solid; padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;">
+                            [style.opacity]="isMisionLocked(plan, mision) ? '0.4' : '1'"
+                            [style.cursor]="isMisionLocked(plan, mision) ? 'not-allowed' : 'pointer'"
+                            style="border: 1px solid; padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; transition: all 0.2s;">
                       {{ mision.estado === 'Completada' ? 'Desmarcar' : (mision.backendTaskId ? 'Completar' : 'Comenzar') }}
                     </button>
                     <button class="btn-evidencia"
-                            [disabled]="!mision.backendTaskId"
+                            [disabled]="!mision.backendTaskId || isMisionLocked(plan, mision)"
                             (click)="openMisionEvidence(mision)"
-                            [style.opacity]="mision.backendTaskId ? 1 : 0.5"
-                            [style.cursor]="mision.backendTaskId ? 'pointer' : 'not-allowed'"
+                            [style.opacity]="(mision.backendTaskId && !isMisionLocked(plan, mision)) ? 1 : 0.5"
+                            [style.cursor]="(mision.backendTaskId && !isMisionLocked(plan, mision)) ? 'pointer' : 'not-allowed'"
                             style="background: rgba(168, 85, 247, 0.1); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3); padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; transition: all 0.2s;">
                       ✍️ Evidencia
                     </button>

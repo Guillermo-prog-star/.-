@@ -21,97 +21,105 @@ const MISSION_TEMPLATES: MissionTemplate[] = [
   standalone: true,
   imports: [CommonModule, GuardianBriefingComponent],
   template: `
-<div class="guardian-panel" *ngIf="status">
+@if (status) {
+  <div class="guardian-panel">
 
-  <!-- Sin Guardián -->
-  <ng-container *ngIf="!status.hasGuardian">
-    <div class="no-guardian">
-      <span class="no-guardian-icon">🌱</span>
-      <div class="no-guardian-text">
-        <strong>Guardián Familiar no elegido</strong>
-        <p>Elige quién guiará la evolución de tu familia</p>
+    <!-- Sin Guardián -->
+    @if (!status.hasGuardian) {
+      <div class="no-guardian">
+        <span class="no-guardian-icon">🌱</span>
+        <div class="no-guardian-text">
+          <strong>Guardián Familiar no elegido</strong>
+          <p>Elige quién guiará la evolución de tu familia</p>
+        </div>
+        <button class="btn-elect" (click)="goToElection()">Elegir →</button>
       </div>
-      <button class="btn-elect" (click)="goToElection()">Elegir →</button>
-    </div>
-  </ng-container>
+    }
 
-  <!-- Con Guardián -->
-  <ng-container *ngIf="status.hasGuardian">
-    <div class="guardian-header">
-      <div class="guardian-avatar">{{ getInitials(status.guardianFullName || '') }}</div>
-      <div class="guardian-info">
-        <span class="role-label">🌱 Guardián Familiar</span>
-        <span class="guardian-name">{{ status.guardianFullName }}</span>
-        <span class="guardian-since" *ngIf="status.guardianSince">
-          Desde {{ status.guardianSince | date:'mediumDate' }}
-        </span>
-      </div>
-      <div class="score-badge">
-        <span class="score-value">{{ status.participationScore }}</span>
-        <span class="score-label">pts</span>
-      </div>
-    </div>
-
-    <!-- Misión activa -->
-    <div class="mission-block" *ngIf="status.activeMission">
-      <div class="mission-header">
-        <span class="mission-emoji">🎯</span>
-        <span class="mission-tag">Misión activa</span>
-      </div>
-      <div class="mission-title">{{ status.activeMission.title }}</div>
-      <div class="mission-desc">{{ status.activeMission.description }}</div>
-      <div class="mission-meta">
-        <span class="mission-cat">{{ categoryLabel(status.activeMission.category) }}</span>
-        <span class="mission-dur">⏱ {{ status.activeMission.durationMinutes }} min</span>
-      </div>
-      <button
-        class="btn-complete"
-        *ngIf="isGuardian && status.activeMission"
-        [disabled]="completing"
-        (click)="completeMission()">
-        {{ completing ? '...' : '✅ Marcar completada (+10 pts)' }}
-      </button>
-    </div>
-
-    <!-- Sin misión: sugerir una -->
-    <div class="no-mission" *ngIf="!status.activeMission && isGuardian">
-      <p>No hay misión activa. ¿Activamos una?</p>
-      <div class="templates-grid">
-        <button
-          class="template-btn"
-          *ngFor="let t of visibleTemplates"
-          (click)="activateTemplate(t)">
-          {{ t.emoji }} {{ t.title }}
-        </button>
-        <button class="template-btn see-more" (click)="showMore = !showMore">
-          {{ showMore ? 'Ver menos' : 'Ver más...' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Progreso familiar -->
-    <div class="progress-block">
-      <div class="progress-header">
-        <span>Evolución familiar</span>
-        <span class="missions-count">{{ status.completedMissions }} misiones completadas</span>
-      </div>
-      <div class="evolution-bar">
-        <div class="evolution-step" *ngFor="let step of evolutionSteps; let i = index"
-             [class.reached]="i <= currentStep">
-          <div class="step-dot"></div>
-          <span class="step-label">{{ step }}</span>
+    <!-- Con Guardián -->
+    @if (status.hasGuardian) {
+      <div class="guardian-header">
+        <div class="guardian-avatar">{{ getInitials(status.guardianFullName || '') }}</div>
+        <div class="guardian-info">
+          <span class="role-label">🌱 Guardián Familiar</span>
+          <span class="guardian-name">{{ status.guardianFullName }}</span>
+          @if (status.guardianSince) {
+            <span class="guardian-since">Desde {{ status.guardianSince | date:'mediumDate' }}</span>
+          }
+        </div>
+        <div class="score-badge">
+          <span class="score-value">{{ status.participationScore }}</span>
+          <span class="score-label">pts</span>
         </div>
       </div>
-    </div>
 
-    <!-- Briefing diario: solo visible para el propio Guardián -->
-    <div class="briefing-section" *ngIf="isGuardian">
-      <app-guardian-briefing [familyId]="familyId"></app-guardian-briefing>
-    </div>
+      <!-- Misión activa -->
+      @if (status.activeMission) {
+        <div class="mission-block">
+          <div class="mission-header">
+            <span class="mission-emoji">🎯</span>
+            <span class="mission-tag">Misión activa</span>
+          </div>
+          <div class="mission-title">{{ status.activeMission.title }}</div>
+          <div class="mission-desc">{{ status.activeMission.description }}</div>
+          <div class="mission-meta">
+            <span class="mission-cat">{{ categoryLabel(status.activeMission.category) }}</span>
+            <span class="mission-dur">⏱ {{ status.activeMission.durationMinutes }} min</span>
+          </div>
+          @if (isGuardian && status.activeMission) {
+            <button
+              class="btn-complete"
+              [disabled]="completing"
+              (click)="completeMission()">
+              {{ completing ? '...' : '✅ Marcar completada (+10 pts)' }}
+            </button>
+          }
+        </div>
+      }
 
-  </ng-container>
+      <!-- Sin misión: sugerir una -->
+      @if (!status.activeMission && isGuardian) {
+        <div class="no-mission">
+          <p>No hay misión activa. ¿Activamos una?</p>
+          <div class="templates-grid">
+            @for (t of visibleTemplates; track t.title) {
+              <button class="template-btn" (click)="activateTemplate(t)">
+                {{ t.emoji }} {{ t.title }}
+              </button>
+            }
+            <button class="template-btn see-more" (click)="showMore = !showMore">
+              {{ showMore ? 'Ver menos' : 'Ver más...' }}
+            </button>
+          </div>
+        </div>
+      }
 
-</div>
+      <!-- Progreso familiar -->
+      <div class="progress-block">
+        <div class="progress-header">
+          <span>Evolución familiar</span>
+          <span class="missions-count">{{ status.completedMissions }} misiones completadas</span>
+        </div>
+        <div class="evolution-bar">
+          @for (step of evolutionSteps; track step; let i = $index) {
+            <div class="evolution-step" [class.reached]="i <= currentStep">
+              <div class="step-dot"></div>
+              <span class="step-label">{{ step }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- Briefing diario: solo visible para el propio Guardián -->
+      @if (isGuardian) {
+        <div class="briefing-section">
+          <app-guardian-briefing [familyId]="familyId"></app-guardian-briefing>
+        </div>
+      }
+    }
+
+  </div>
+}
   `,
   styles: [`
     .guardian-panel {

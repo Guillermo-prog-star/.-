@@ -1,6 +1,6 @@
 <!-- PORTAL DE HISTORIAS INVISIBLES -->
-<div class="stories-container" *ngIf="familyId > 0; else noFamily">
-  
+@if (familyId > 0) {
+
   <!-- Encabezado Premium -->
   <div class="stories-header">
     <div class="back-link" (click)="goToPortal()">
@@ -14,228 +14,236 @@
   <app-narrative-companion module="portal-familiar"></app-narrative-companion>
 
   <!-- Error Alert -->
-  <div class="alert-error" *ngIf="errorMessage">
-    🚨 {{ errorMessage }}
-  </div>
+  @if (errorMessage) {
+    <div class="alert-error">
+      🚨 {{ errorMessage }}
+    </div>
+  }
 
   <!-- GRILLA PRINCIPAL: ESTÍMULO + BITÁCORA -->
-  <div class="stories-grid" *ngIf="!success && !submitting">
-    
-    <!-- COLUMNA 1: ESTÍMULO REFLEXIVO -->
-    <div class="grid-card media-section">
-      <div class="card-header">
-        <span class="badge-category">COEXISTENCIA VS PRESENCIA</span>
-        <h3>1. Disparador Cognitivo</h3>
-      </div>
-      
-      <!-- Contenedor del Reproductor Estilizado (Mockup de Video Holográfico) -->
-      <div class="video-mockup">
-        <div class="video-overlay">
-          <div class="play-btn-wrapper">
-            <span class="play-icon">▶</span>
-          </div>
-          <div class="video-meta">
-            <h4>Cortometraje: Historias Invisibles</h4>
-            <p>Duración: 2:45 min · Cada persona vive la casa distinto</p>
-          </div>
+  @if (!success && !submitting) {
+    <div class="stories-grid">
+
+      <!-- COLUMNA 1: ESTÍMULO REFLEXIVO -->
+      <div class="grid-card media-section">
+        <div class="card-header">
+          <span class="badge-category">COEXISTENCIA VS PRESENCIA</span>
+          <h3>1. Disparador Cognitivo</h3>
         </div>
-        <!-- Imagen de respaldo evocativa para el reproductor -->
-        <div class="video-placeholder"></div>
+
+        <!-- Contenedor del Reproductor Estilizado (Mockup de Video Holográfico) -->
+        <div class="video-mockup">
+          <div class="video-overlay">
+            <div class="play-btn-wrapper">
+              <span class="play-icon">▶</span>
+            </div>
+            <div class="video-meta">
+              <h4>Cortometraje: Historias Invisibles</h4>
+              <p>Duración: 2:45 min · Cada persona vive la casa distinto</p>
+            </div>
+          </div>
+          <!-- Imagen de respaldo evocativa para el reproductor -->
+          <div class="video-placeholder"></div>
+        </div>
+
+        <div class="video-quote">
+          <blockquote>
+            "Detrás de cada silencio, de cada pantalla encendida o de cada mirada esquiva en el hogar, hay una historia invisible cargada de vivencias que aún no te has detenido a escuchar."
+          </blockquote>
+        </div>
       </div>
 
-      <div class="video-quote">
-        <blockquote>
-          "Detrás de cada silencio, de cada pantalla encendida o de cada mirada esquiva en el hogar, hay una historia invisible cargada de vivencias que aún no te has detenido a escuchar."
-        </blockquote>
+      <!-- COLUMNA 2: FORMULARIO DE INTROSPECCIÓN -->
+      <div class="grid-card form-section">
+        <div class="card-header">
+          <span class="badge-category">BITÁCORA DE CONSCIENCIA</span>
+          <h3>2. Tu Reflexión de Presencia</h3>
+        </div>
+
+        <!-- Selector de Miembro -->
+        <div class="form-group">
+          <label class="section-title">¿Quién realiza esta introspección?</label>
+          <div class="member-selector-list">
+            @for (m of members; track m.id) {
+              <label class="selector-label"
+                     [class.selector-active]="selectedMemberId === m.id">
+                <input type="radio"
+                       [value]="m.id"
+                       [(ngModel)]="selectedMemberId"
+                       name="memberRef"
+                       class="custom-radio"/>
+                <div>
+                  <div class="member-name">{{ m.fullName }}</div>
+                  <div class="member-info">{{ m.role | titlecase }} · {{ m.age }} años</div>
+                </div>
+              </label>
+            }
+          </div>
+        </div>
+
+        <!-- Barra de Escala de Presencia Autodeclarada -->
+        <div class="form-group">
+          <label class="section-title">¿Cómo calificarías tu nivel de presencia en el hogar hoy?</label>
+          <div class="presence-rating-bar">
+            @for (i of [1, 2, 3, 4, 5]; track i) {
+              <button type="button"
+                      class="rating-btn"
+                      [class.active]="emotionalScore === i"
+                      (click)="setScore(i)">
+                <span class="score-num">{{ i }}</span>
+                <span class="score-lbl">
+                  {{ i === 1 ? 'Inconsciente' : (i === 2 ? 'Reactivo' : (i === 3 ? 'Consciente' : (i === 4 ? 'Intencional' : 'Pleno'))) }}
+                </span>
+              </button>
+            }
+          </div>
+        </div>
+
+        <!-- Cuadro de Reflexión Textual -->
+        <div class="form-group">
+          <label class="section-title" for="reflection-text">¿Qué lograste descubrir hoy en alguien de tu hogar que antes te pasaba desapercibido?</label>
+          <textarea id="reflection-text"
+                    class="reflection-textarea"
+                    placeholder="Ej: Hoy noté que mi hijo estaba muy callado en la mesa. En lugar de llamarle la atención o ignorarlo para ver mi celular, decidí sentarme a su lado y preguntarle con tranquilidad cómo se sentía, y descubrí que está muy cansado de la escuela..."
+                    [(ngModel)]="reflectionText"
+                    rows="5">
+          </textarea>
+
+          <!-- Validador de longitud de la reflexión -->
+          <div class="reflection-validator">
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" [style.width.%]="completionPercentage"></div>
+            </div>
+            <span class="validator-text">
+              {{ reflectionText.length < 20 ? 'Escribe al menos 20 caracteres para procesar (' + reflectionText.length + '/20)' : 'Reflexión lista para el análisis cognitivo ✓' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Botón de Envío -->
+        <button class="btn-submit"
+                [disabled]="reflectionText.length < 20 || !selectedMemberId || submitting"
+                (click)="submitReflection()">
+          INICIAR INFERENCIA COGNITIVA CON CLAUDE →
+        </button>
       </div>
     </div>
+  }
 
-    <!-- COLUMNA 2: FORMULARIO DE INTROSPECCIÓN -->
-    <div class="grid-card form-section">
-      <div class="card-header">
-        <span class="badge-category">BITÁCORA DE CONSCIENCIA</span>
-        <h3>2. Tu Reflexión de Presencia</h3>
-      </div>
-
-      <!-- Selector de Miembro -->
-      <div class="form-group">
-        <label class="section-title">¿Quién realiza esta introspección?</label>
-        <div class="member-selector-list">
-          <label *ngFor="let m of members" 
-                 class="selector-label" 
-                 [class.selector-active]="selectedMemberId === m.id">
-            <input type="radio" 
-                   [value]="m.id" 
-                   [(ngModel)]="selectedMemberId" 
-                   name="memberRef" 
-                   class="custom-radio"/>
-            <div>
-              <div class="member-name">{{ m.fullName }}</div>
-              <div class="member-info">{{ m.role | titlecase }} · {{ m.age }} años</div>
-            </div>
-          </label>
+  <!-- PANTALLA DE CARGA: QUANTUM LOADER OVERLAY -->
+  @if (submitting) {
+    <div class="quantum-loader-overlay">
+      <div class="loader-card">
+        <div class="quantum-spinner">
+          <div class="ring ring-outer"></div>
+          <div class="ring ring-middle"></div>
+          <div class="ring ring-inner"></div>
+          <div class="spinner-core"></div>
+        </div>
+        <h2>Sentinel AI</h2>
+        <p class="loader-status">{{ loaderSteps[loaderStep] }}</p>
+        <div class="loader-bar-track">
+          <div class="loader-bar-fill" [style.width.%]="(loaderStep / loaderSteps.length) * 100"></div>
         </div>
       </div>
+    </div>
+  }
 
-      <!-- Barra de Escala de Presencia Autodeclarada -->
-      <div class="form-group">
-        <label class="section-title">¿Cómo calificarías tu nivel de presencia en el hogar hoy?</label>
-        <div class="presence-rating-bar">
-          <button type="button" 
-                  *ngFor="let i of [1, 2, 3, 4, 5]" 
-                  class="rating-btn" 
-                  [class.active]="emotionalScore === i"
-                  (click)="setScore(i)">
-            <span class="score-num">{{ i }}</span>
-            <span class="score-lbl">
-              {{ i === 1 ? 'Inconsciente' : (i === 2 ? 'Reactivo' : (i === 3 ? 'Consciente' : (i === 4 ? 'Intencional' : 'Pleno'))) }}
-            </span>
+  <!-- PANTALLA DE RESULTADOS: VEREDICTO DE CLAUDE -->
+  @if (success && inferenceResult && !submitting) {
+    <div class="results-container">
+
+      <div class="results-card glass-glow">
+        <div class="results-header">
+          <div class="sparkle-icon">✨</div>
+          <h2>Análisis Cognitivo Revelado</h2>
+          <p>Inferencia Cualitativa de Consciencia Relacional · Claude AI</p>
+        </div>
+
+        <!-- Sección de Feedback Cualitativo -->
+        <div class="feedback-block">
+          <div class="clinical-tag">ACOMPAÑAMIENTO REFLEXIVO</div>
+          <p class="clinical-feedback">
+            "{{ inferenceResult.feedback }}"
+          </p>
+        </div>
+
+        <!-- Grilla de Indicadores Numéricos Analizados -->
+        <div class="metrics-section">
+          <h3>Indicadores Clínicos de Consciencia</h3>
+          <div class="indicators-grid">
+
+            <!-- Indicador 1: Presencia Activa -->
+            <div class="indicator-item">
+              <div class="indicator-header">
+                <span class="title">Presencia Activa (Atención Plena)</span>
+                <span class="value">{{ inferenceResult.activePresence }}/5</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill color-green" [style.width.%]="(inferenceResult.activePresence / 5) * 100"></div>
+              </div>
+            </div>
+
+            <!-- Indicador 2: Empatía -->
+            <div class="indicator-item">
+              <div class="indicator-header">
+                <span class="title">Empatía (Lectura del Otro)</span>
+                <span class="value">{{ inferenceResult.empathy }}/5</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill color-purple" [style.width.%]="(inferenceResult.empathy / 5) * 100"></div>
+              </div>
+            </div>
+
+            <!-- Indicador 3: Reactividad -->
+            <div class="indicator-item">
+              <div class="indicator-header">
+                <span class="title">Reactividad (Impulsividad Defensiva)</span>
+                <span class="value">{{ inferenceResult.reactivity }}/5</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill color-red" [style.width.%]="(inferenceResult.reactivity / 5) * 100"></div>
+              </div>
+            </div>
+
+            <!-- Indicador 4: Desconexión Emocional -->
+            <div class="indicator-item">
+              <div class="indicator-header">
+                <span class="title">Desconexión (Aislamiento Pasivo)</span>
+                <span class="value">{{ inferenceResult.disconnection }}/5</span>
+              </div>
+              <div class="bar-track">
+                <div class="bar-fill color-yellow" [style.width.%]="(inferenceResult.disconnection / 5) * 100"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Caja de Acción Sugerida (Micro-Misión) -->
+        <div class="mission-block">
+          <div class="mission-tag">MICRO-MISIÓN DE SINTONÍA PROPUESTA</div>
+          <div class="mission-content">
+            <span class="mission-icon">🎯</span>
+            <p class="mission-text">{{ inferenceResult.recommendedAction }}</p>
+          </div>
+        </div>
+
+        <!-- Footer de Acciones -->
+        <div class="results-actions">
+          <button class="btn-reset" (click)="resetForm()">
+            🔄 REALIZAR OTRA INTROSPECCIÓN
+          </button>
+          <button class="btn-dashboard" (click)="goToPortal()">
+            🏡 IR AL PORTAL FAMILIAR
           </button>
         </div>
       </div>
-
-      <!-- Cuadro de Reflexión Textual -->
-      <div class="form-group">
-        <label class="section-title" for="reflection-text">¿Qué lograste descubrir hoy en alguien de tu hogar que antes te pasaba desapercibido?</label>
-        <textarea id="reflection-text"
-                  class="reflection-textarea"
-                  placeholder="Ej: Hoy noté que mi hijo estaba muy callado en la mesa. En lugar de llamarle la atención o ignorarlo para ver mi celular, decidí sentarme a su lado y preguntarle con tranquilidad cómo se sentía, y descubrí que está muy cansado de la escuela..."
-                  [(ngModel)]="reflectionText"
-                  rows="5">
-        </textarea>
-        
-        <!-- Validador de longitud de la reflexión -->
-        <div class="reflection-validator">
-          <div class="progress-bar-container">
-            <div class="progress-bar-fill" [style.width.%]="completionPercentage"></div>
-          </div>
-          <span class="validator-text">
-            {{ reflectionText.length < 20 ? 'Escribe al menos 20 caracteres para procesar (' + reflectionText.length + '/20)' : 'Reflexión lista para el análisis cognitivo ✓' }}
-          </span>
-        </div>
-      </div>
-
-      <!-- Botón de Envío -->
-      <button class="btn-submit"
-              [disabled]="reflectionText.length < 20 || !selectedMemberId || submitting"
-              (click)="submitReflection()">
-        INICIAR INFERENCIA COGNITIVA CON CLAUDE →
-      </button>
     </div>
-  </div>
+  }
 
-  <!-- PANTALLA DE CARGA: QUANTUM LOADER OVERLAY -->
-  <div class="quantum-loader-overlay" *ngIf="submitting">
-    <div class="loader-card">
-      <div class="quantum-spinner">
-        <div class="ring ring-outer"></div>
-        <div class="ring ring-middle"></div>
-        <div class="ring ring-inner"></div>
-        <div class="spinner-core"></div>
-      </div>
-      <h2>Sentinel AI</h2>
-      <p class="loader-status">{{ loaderSteps[loaderStep] }}</p>
-      <div class="loader-bar-track">
-        <div class="loader-bar-fill" [style.width.%]="(loaderStep / loaderSteps.length) * 100"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- PANTALLA DE RESULTADOS: VEREDICTO DE CLAUDE -->
-  <div class="results-container" *ngIf="success && inferenceResult && !submitting">
-    
-    <div class="results-card glass-glow">
-      <div class="results-header">
-        <div class="sparkle-icon">✨</div>
-        <h2>Análisis Cognitivo Revelado</h2>
-        <p>Inferencia Cualitativa de Consciencia Relacional · Claude AI</p>
-      </div>
-
-      <!-- Sección de Feedback Cualitativo -->
-      <div class="feedback-block">
-        <div class="clinical-tag">ACOMPAÑAMIENTO REFLEXIVO</div>
-        <p class="clinical-feedback">
-          "{{ inferenceResult.feedback }}"
-        </p>
-      </div>
-
-      <!-- Grilla de Indicadores Numéricos Analizados -->
-      <div class="metrics-section">
-        <h3>Indicadores Clínicos de Consciencia</h3>
-        <div class="indicators-grid">
-          
-          <!-- Indicador 1: Presencia Activa -->
-          <div class="indicator-item">
-            <div class="indicator-header">
-              <span class="title">Presencia Activa (Atención Plena)</span>
-              <span class="value">{{ inferenceResult.activePresence }}/5</span>
-            </div>
-            <div class="bar-track">
-              <div class="bar-fill color-green" [style.width.%]="(inferenceResult.activePresence / 5) * 100"></div>
-            </div>
-          </div>
-
-          <!-- Indicador 2: Empatía -->
-          <div class="indicator-item">
-            <div class="indicator-header">
-              <span class="title">Empatía (Lectura del Otro)</span>
-              <span class="value">{{ inferenceResult.empathy }}/5</span>
-            </div>
-            <div class="bar-track">
-              <div class="bar-fill color-purple" [style.width.%]="(inferenceResult.empathy / 5) * 100"></div>
-            </div>
-          </div>
-
-          <!-- Indicador 3: Reactividad -->
-          <div class="indicator-item">
-            <div class="indicator-header">
-              <span class="title">Reactividad (Impulsividad Defensiva)</span>
-              <span class="value">{{ inferenceResult.reactivity }}/5</span>
-            </div>
-            <div class="bar-track">
-              <div class="bar-fill color-red" [style.width.%]="(inferenceResult.reactivity / 5) * 100"></div>
-            </div>
-          </div>
-
-          <!-- Indicador 4: Desconexión Emocional -->
-          <div class="indicator-item">
-            <div class="indicator-header">
-              <span class="title">Desconexión (Aislamiento Pasivo)</span>
-              <span class="value">{{ inferenceResult.disconnection }}/5</span>
-            </div>
-            <div class="bar-track">
-              <div class="bar-fill color-yellow" [style.width.%]="(inferenceResult.disconnection / 5) * 100"></div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-
-      <!-- Caja de Acción Sugerida (Micro-Misión) -->
-      <div class="mission-block">
-        <div class="mission-tag">MICRO-MISIÓN DE SINTONÍA PROPUESTA</div>
-        <div class="mission-content">
-          <span class="mission-icon">🎯</span>
-          <p class="mission-text">{{ inferenceResult.recommendedAction }}</p>
-        </div>
-      </div>
-
-      <!-- Footer de Acciones -->
-      <div class="results-actions">
-        <button class="btn-reset" (click)="resetForm()">
-          🔄 REALIZAR OTRA INTROSPECCIÓN
-        </button>
-        <button class="btn-dashboard" (click)="goToPortal()">
-          🏡 IR AL PORTAL FAMILIAR
-        </button>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- Fallback: No Family Selected -->
-<ng-template #noFamily>
+} @else {
+  <!-- Fallback: No Family Selected -->
   <div class="warning-container" style="max-width:600px; margin: 40px auto; text-align: center;">
     <div class="warning-icon">🚨</div>
     <h3>No se ha seleccionado ninguna familia</h3>
@@ -244,4 +252,4 @@
       IR A SELECCIONAR FAMILIA →
     </button>
   </div>
-</ng-template>
+}

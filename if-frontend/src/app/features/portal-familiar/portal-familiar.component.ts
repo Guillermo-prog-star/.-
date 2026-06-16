@@ -102,6 +102,30 @@ export class PortalFamiliarComponent implements OnInit, OnDestroy {
     return Math.round((this.completedCount / this.checklistItems.length) * 100);
   }
 
+  // ── Sprint: días completados desde localStorage ──────────────────────────
+  get sprintDiasCompletados(): number {
+    try {
+      const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+      if (!ctx?.misionId) return this.activeSprint?.dailies?.length ?? 0;
+      const raw = localStorage.getItem(`sprint_dias_${ctx.misionId}`);
+      return raw ? parseInt(raw, 10) : (this.activeSprint?.dailies?.length ?? 0);
+    } catch { return 0; }
+  }
+
+  get sprintMisionTitulo(): string {
+    try {
+      const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+      return ctx?.misionTitulo ?? this.activeSprint?.objective ?? '';
+    } catch { return this.activeSprint?.objective ?? ''; }
+  }
+
+  get sprintTerminado(): boolean {
+    try {
+      const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+      return ctx?.completado === true || this.sprintDiasCompletados >= (this.activeSprint?.durationDays ?? 7);
+    } catch { return false; }
+  }
+
   // ── Horas con 1 decimal ───────────────────────────────────────────────────
   get ivrRepairHours(): string {
     const h = this.ivrSummary?.averageRepairTimeHours ?? 0;

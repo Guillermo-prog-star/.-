@@ -15,63 +15,71 @@
   </header>
 
   <!-- Session Context Strip -->
-  <div *ngIf="sessionContext" class="flex items-center gap-2 mb-4 px-1 shrink-0">
-    <span class="text-[9px] text-white/30 uppercase tracking-widest font-black">Sesión activa</span>
-    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-indigo-500/10 text-indigo-300 border-indigo-500/40">
-      {{ goalLabel(sessionContext.goal) }}
-    </span>
-    <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-black/20"
-          [ngClass]="arcColor(sessionContext.emotionalArc)">
-      {{ arcLabel(sessionContext.emotionalArc) }}
-    </span>
-    <span class="text-[9px] text-white/20 ml-auto">{{ sessionContext.turnCount }} turnos</span>
-  </div>
+  @if (sessionContext) {
+    <div class="flex items-center gap-2 mb-4 px-1 shrink-0">
+      <span class="text-[9px] text-white/30 uppercase tracking-widest font-black">Sesión activa</span>
+      <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-indigo-500/10 text-indigo-300 border-indigo-500/40">
+        {{ goalLabel(sessionContext.goal) }}
+      </span>
+      <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full border bg-black/20"
+            [ngClass]="arcColor(sessionContext.emotionalArc)">
+        {{ arcLabel(sessionContext.emotionalArc) }}
+      </span>
+      <span class="text-[9px] text-white/20 ml-auto">{{ sessionContext.turnCount }} turnos</span>
+    </div>
+  }
 
   <!-- Messages Area -->
   <div class="chat-messages overflow-y-auto mb-4 pr-2 space-y-4 custom-scrollbar" scrollPolicy="auto-bottom">
-    <div *ngFor="let msg of messages" 
-         class="flex flex-col" 
-         [ngClass]="msg.isAi ? 'items-start' : 'items-end'">
-      
-      <div class="max-w-[80%] p-4 rounded-2xl shadow-xl transition-all duration-300"
-           [ngClass]="msg.isAi ? 'bg-indigo-950/40 border border-indigo-500/30 text-indigo-50 rounded-tl-none' : 'bg-white/10 border border-white/10 text-white rounded-tr-none'">
-        <div class="text-sm leading-relaxed prose-ai" *ngIf="msg.isAi" [innerHTML]="msg.content | markdown"></div>
-        <p class="text-sm leading-relaxed" *ngIf="!msg.isAi">{{ msg.content }}</p>
-        <span class="text-[9px] mt-2 block opacity-40">{{ msg.createdAt | date:'shortTime' }}</span>
+    @for (msg of messages; track $index) {
+      <div class="flex flex-col" [ngClass]="msg.isAi ? 'items-start' : 'items-end'">
+        <div class="max-w-[80%] p-4 rounded-2xl shadow-xl transition-all duration-300"
+             [ngClass]="msg.isAi ? 'bg-indigo-950/40 border border-indigo-500/30 text-indigo-50 rounded-tl-none' : 'bg-white/10 border border-white/10 text-white rounded-tr-none'">
+          @if (msg.isAi) {
+            <div class="text-sm leading-relaxed prose-ai" [innerHTML]="msg.content | markdown"></div>
+          } @else {
+            <p class="text-sm leading-relaxed">{{ msg.content }}</p>
+          }
+          <span class="text-[9px] mt-2 block opacity-40">{{ msg.createdAt | date:'shortTime' }}</span>
+        </div>
       </div>
-    </div>
+    }
 
     <!-- Loading Spike -->
-    <div *ngIf="loading" class="flex items-center gap-2 text-indigo-400 p-2">
-      <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-      <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-      <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
-      <span class="text-[10px] font-bold uppercase ml-2">El Mentor está analizando...</span>
-    </div>
-    
+    @if (loading) {
+      <div class="flex items-center gap-2 text-indigo-400 p-2">
+        <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+        <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+        <div class="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
+        <span class="text-[10px] font-bold uppercase ml-2">El Mentor está analizando...</span>
+      </div>
+    }
+
     <div #anchor></div>
   </div>
 
   <!-- Mic error -->
-  <div *ngIf="micError" style="margin-bottom:8px;padding:8px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;color:#fca5a5;font-size:0.82rem;font-weight:600;">
-    🎙️ {{ micError }}
-  </div>
+  @if (micError) {
+    <div style="margin-bottom:8px;padding:8px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:10px;color:#fca5a5;font-size:0.82rem;font-weight:600;">
+      🎙️ {{ micError }}
+    </div>
+  }
 
   <!-- Input Area -->
   <footer class="shrink-0 relative">
     <div class="relative overflow-hidden rounded-3xl border border-white/10 transition-all focus-within:border-indigo-500/50 shadow-2xl bg-white/5">
-      <textarea 
+      <textarea
         [(ngModel)]="inputText"
         (keydown.enter)="$event.preventDefault(); send()"
         [placeholder]="recording ? 'Grabando audio...' : 'Escribe tu duda familiar aquí...'"
         [disabled]="loading || recording"
         class="w-full bg-transparent text-white p-4 outline-none resize-none h-16 text-sm placeholder:text-white/20"
       ></textarea>
-      
+
       <div class="absolute bottom-4 right-4 flex gap-2">
         <!-- Mic Button -->
-        <button 
-          (click)="toggleRecording()" 
+        <button
+          (click)="toggleRecording()"
           [class.bg-red-500]="recording"
           [class.animate-pulse]="recording"
           class="w-12 h-12 bg-white/10 hover:bg-white/20 rounded-2xl flex items-center justify-center transition-all shadow-lg active:scale-95 text-white">
@@ -79,8 +87,8 @@
         </button>
 
         <!-- Send Button -->
-        <button 
-          (click)="send()" 
+        <button
+          (click)="send()"
           [disabled]="loading || !inputText.trim() || recording"
           class="w-12 h-12 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-20 disabled:hover:bg-indigo-600 rounded-2xl flex items-center justify-center transition-all shadow-lg active:scale-95 text-white">
           <span class="text-xl">🚀</span>

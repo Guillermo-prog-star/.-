@@ -28,9 +28,10 @@ interface NavItem {
 
       <!-- ── Sidebar ──────────────────────────────────────────────────────── -->
       <!-- Mobile overlay -->
-      <div *ngIf="sidebarOpen()"
-           class="sidebar-overlay lg:hidden"
-           (click)="closeSidebar()"></div>
+      @if (sidebarOpen()) {
+        <div class="sidebar-overlay lg:hidden"
+             (click)="closeSidebar()"></div>
+      }
 
       <aside class="sidebar" [class.sidebar--open]="sidebarOpen()">
 
@@ -119,14 +120,16 @@ interface NavItem {
                 <span class="nav-label">Crisis</span>
               </a>
             </li>
-            <li *ngIf="familyId > 0">
-              <a [routerLink]="['/guardian', familyId, 'election']"
-                 routerLinkActive="nav-link--active"
-                 class="nav-link" (click)="closeSidebar()">
-                <span class="nav-icon">🛡️</span>
-                <span class="nav-label">Guardián</span>
-              </a>
-            </li>
+            @if (familyId > 0) {
+              <li>
+                <a [routerLink]="['/guardian', familyId, 'election']"
+                   routerLinkActive="nav-link--active"
+                   class="nav-link" (click)="closeSidebar()">
+                  <span class="nav-icon">🛡️</span>
+                  <span class="nav-label">Guardián</span>
+                </a>
+              </li>
+            }
           </ul>
 
           <!-- Diagnóstico -->
@@ -156,7 +159,7 @@ interface NavItem {
           </ul>
 
           <!-- Admin (role-gated) -->
-          <ng-container *ngIf="isAdmin">
+          @if (isAdmin) {
             <p class="nav-section-label nav-section-label--admin">Admin</p>
             <ul class="nav-list">
               <li>
@@ -174,7 +177,7 @@ interface NavItem {
                 </a>
               </li>
             </ul>
-          </ng-container>
+          }
 
         </nav>
 
@@ -185,15 +188,16 @@ interface NavItem {
             <span class="nav-icon">👤</span>
             <span class="nav-label footer-name">{{ firstName }}</span>
           </a>
-          <div *ngIf="showLogoutConfirm(); else logoutIconBtn">
-            <button class="logout-btn logout-btn--confirm" (click)="confirmLogout()">✓</button>
-            <button class="logout-btn" (click)="cancelLogout()">✕</button>
-          </div>
-          <ng-template #logoutIconBtn>
+          @if (showLogoutConfirm()) {
+            <div>
+              <button class="logout-btn logout-btn--confirm" (click)="confirmLogout()">✓</button>
+              <button class="logout-btn" (click)="cancelLogout()">✕</button>
+            </div>
+          } @else {
             <button class="logout-btn" (click)="onLogout()">
               <span>⏏</span>
             </button>
-          </ng-template>
+          }
         </div>
 
       </aside>

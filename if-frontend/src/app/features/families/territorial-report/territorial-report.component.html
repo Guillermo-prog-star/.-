@@ -1,64 +1,120 @@
-<div class="p-6 bg-gray-50 min-h-screen">
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Reporte de Evolución Territorial</h1>
-    <p class="text-gray-600" *ngIf="reportData">
-      Familia: <span class="font-semibold text-gray-800">{{ reportData.referenceName }}</span> ({{ reportData.familyCode }})
-    </p>
-  </div>
+<div class="tr-page">
 
-  <!-- Loading State -->
-  <div *ngIf="loading" class="flex justify-center items-center p-10">
-    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-indigo-600"></div>
-    <span class="ml-3 text-gray-600">Cargando reporte...</span>
-  </div>
-
-  <div *ngIf="!loading && reportData">
-    <!-- Gráfica de Evolución -->
-    <div class="bg-white p-6 rounded-xl shadow-sm mb-6 border border-gray-100">
-      <div #chartContainer style="height: 350px;"></div>
+  <!-- Header -->
+  <div class="tr-header">
+    <div>
+      <h1 class="tr-title">Reporte de Evolución Territorial</h1>
+      @if (reportData) {
+        <p class="tr-sub">
+          Familia: <strong class="tr-family">{{ reportData.referenceName }}</strong>
+          <span class="tr-code">{{ reportData.familyCode }}</span>
+        </p>
+      }
     </div>
+    <a routerLink="/families" class="tr-back">← Familias</a>
+  </div>
 
-    <!-- Tabla de Detalle -->
-    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-      <h2 class="text-xl font-bold text-gray-800 mb-4">Detalle por Hitos</h2>
-      <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
-          <thead>
-            <tr class="bg-gray-50 text-gray-600 text-sm leading-normal">
-              <th class="py-3 px-6 font-semibold">Hito</th>
-              <th class="py-3 px-6 font-semibold">Fecha</th>
-              <th class="py-3 px-6 font-semibold">ICF %</th>
-              <th class="py-3 px-6 font-semibold">Nivel de Riesgo</th>
-              <th class="py-3 px-6 font-semibold">Dimensión Crítica</th>
-              <th class="py-3 px-6 font-semibold">Checklist</th>
-            </tr>
-          </thead>
-          <tbody class="text-gray-600 text-sm font-light">
-            <tr *ngFor="let m of reportData.milestones" class="border-b border-gray-100 hover:bg-gray-50">
-              <td class="py-3 px-6 font-medium text-gray-800">{{ m.hitoKey }}</td>
-              <td class="py-3 px-6">{{ m.evaluatedAt | date:'shortDate' }}</td>
-              <td class="py-3 px-6 font-semibold text-indigo-600">{{ m.icfPercent }}%</td>
-              <td class="py-3 px-6">
-                <span class="px-2 py-1 rounded-full text-xs font-semibold" [ngClass]="{
-                  'bg-green-100 text-green-700': m.riskLevel === 'BAJO',
-                  'bg-yellow-100 text-yellow-700': m.riskLevel === 'MEDIO' || m.riskLevel === 'MODERADO',
-                  'bg-red-100 text-red-700': m.riskLevel === 'CRITICO' || m.riskLevel === 'ALTO'
-                }">{{ m.riskLevel }}</span>
-              </td>
-              <td class="py-3 px-6 capitalize">{{ m.criticalDimension }}</td>
-              <td class="py-3 px-6">
-                <div class="flex items-center">
-                  <span class="mr-2">{{ m.checklist.doneItems }}/{{ m.checklist.totalItems }}</span>
-                  <div class="w-24 bg-gray-200 rounded-full h-1.5">
-                    <div class="bg-indigo-600 h-1.5 rounded-full" [style.width.%]="m.checklist.completionPercent"></div>
-                  </div>
-                  <span class="ml-2 text-xs text-gray-500">{{ m.checklist.completionPercent }}%</span>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+  <!-- Loading -->
+  @if (loading) {
+    <div class="tr-loading">
+      <div class="tr-spinner"></div>
+      <p>Cargando reporte territorial…</p>
+    </div>
+  }
+
+  @else if (!reportData) {
+    <div class="tr-empty">
+      <div class="tr-empty-icon">📊</div>
+      <p>No se encontraron datos para esta familia.</p>
+    </div>
+  }
+
+  @else {
+
+    <!-- KPI row -->
+    @if (reportData.milestones?.length) {
+      <div class="tr-kpi-row">
+        <div class="tr-kpi-card">
+          <div class="tr-kpi-label">Hitos evaluados</div>
+          <div class="tr-kpi-value">{{ reportData.milestones.length }}</div>
+        </div>
+        <div class="tr-kpi-card">
+          <div class="tr-kpi-label">ICF Último</div>
+          <div class="tr-kpi-value"
+               [class.tr-kpi-green]="lastMilestone.icfPercent >= 70"
+               [class.tr-kpi-amber]="lastMilestone.icfPercent >= 40 && lastMilestone.icfPercent < 70"
+               [class.tr-kpi-red]="lastMilestone.icfPercent < 40">
+            {{ lastMilestone.icfPercent }}%
+          </div>
+        </div>
+        <div class="tr-kpi-card">
+          <div class="tr-kpi-label">Riesgo actual</div>
+          <div class="tr-kpi-value">
+            <span class="tr-risk-badge"
+                  [class.tr-risk-bajo]="lastMilestone.riskLevel === 'BAJO'"
+                  [class.tr-risk-moderado]="lastMilestone.riskLevel === 'MEDIO' || lastMilestone.riskLevel === 'MODERADO'"
+                  [class.tr-risk-alto]="lastMilestone.riskLevel === 'CRITICO' || lastMilestone.riskLevel === 'ALTO'">
+              {{ lastMilestone.riskLevel }}
+            </span>
+          </div>
+        </div>
+        <div class="tr-kpi-card">
+          <div class="tr-kpi-label">Checklist global</div>
+          <div class="tr-kpi-value tr-kpi-neutral">{{ avgChecklist | number:'1.0-0' }}%</div>
+        </div>
       </div>
+    }
+
+    <!-- Chart -->
+    <div class="tr-card tr-chart-card">
+      <div class="tr-card-label">📈 Evolución del ICF % por Hito</div>
+      <div #chartContainer class="tr-chart-container"></div>
     </div>
-  </div>
+
+    <!-- Table -->
+    <div class="tr-card tr-table-card">
+      <div class="tr-card-label">🔍 Detalle por Hitos</div>
+
+      <div class="tr-table-head">
+        <span>Hito</span>
+        <span>Fecha</span>
+        <span class="tr-center">ICF %</span>
+        <span class="tr-center">Riesgo</span>
+        <span>Dimensión crítica</span>
+        <span>Checklist</span>
+      </div>
+
+      @for (m of reportData.milestones; track m.hitoKey) {
+        <div class="tr-table-row">
+          <span class="tr-row-hito">{{ m.hitoKey }}</span>
+          <span class="tr-row-date">{{ m.evaluatedAt | date:'dd/MM/yy' }}</span>
+          <div class="tr-center">
+            <span class="tr-icf-badge"
+                  [class.tr-icf-bajo]="m.icfPercent >= 70"
+                  [class.tr-icf-moderado]="m.icfPercent >= 40 && m.icfPercent < 70"
+                  [class.tr-icf-alto]="m.icfPercent < 40">
+              {{ m.icfPercent }}%
+            </span>
+          </div>
+          <div class="tr-center">
+            <span class="tr-risk-badge"
+                  [class.tr-risk-bajo]="m.riskLevel === 'BAJO'"
+                  [class.tr-risk-moderado]="m.riskLevel === 'MEDIO' || m.riskLevel === 'MODERADO'"
+                  [class.tr-risk-alto]="m.riskLevel === 'CRITICO' || m.riskLevel === 'ALTO'">
+              {{ m.riskLevel }}
+            </span>
+          </div>
+          <span class="tr-row-dim">{{ m.criticalDimension || '—' }}</span>
+          <div class="tr-checklist-cell">
+            <span class="tr-check-nums">{{ m.checklist.doneItems }}/{{ m.checklist.totalItems }}</span>
+            <div class="tr-check-bar-track">
+              <div class="tr-check-bar" [style.width.%]="m.checklist.completionPercent"></div>
+            </div>
+            <span class="tr-check-pct">{{ m.checklist.completionPercent }}%</span>
+          </div>
+        </div>
+      }
+    </div>
+
+  }
 </div>

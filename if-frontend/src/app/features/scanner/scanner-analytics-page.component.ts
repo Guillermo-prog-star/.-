@@ -447,6 +447,4 @@ export class ScannerAnalyticsPageComponent implements OnInit {
     });
   }
 
-  trackByEvalId(_: number, item: { evalId: number }) { return item.evalId; }
-  trackByKey(_: number, item: { key: string }) { return item.key; }
 }

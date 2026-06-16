@@ -551,18 +551,24 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
         } @else {
           <div class="timeline">
             @for (ev of allEvents(); track ev.event.id) {
-              <div class="tl-item" (click)="openEditEvent(ev)" title="Clic para editar">
+              <div class="tl-item" (click)="ev.isDoc ? viewDocumentary(ev.docId!) : openEditEvent(ev)" title="Clic para ver detalle">
                 <div class="tl-year">{{ ev.event.isApproximate ? '~' : '' }}{{ ev.event.eventYear || '?' }}</div>
                 <div class="tl-dot" [style.background]="ev.memberColor" [style.box-shadow]="'0 0 8px ' + ev.memberColor + '80'"></div>
                 <div class="tl-body">
                   <div class="tl-member" [style.color]="ev.memberColor">{{ ev.memberName }}</div>
                   <div class="tl-title">
-                    <span class="tl-type-badge">{{ eventTypeLabel(ev.event.eventType) }}</span>
+                    <span class="tl-type-badge" [style.background]="ev.isDoc ? '#7c3aed' : ''" [style.color]="ev.isDoc ? '#fff' : ''">
+                      {{ ev.isDoc ? 'DOCUMENTAL' : eventTypeLabel(ev.event.eventType) }}
+                    </span>
                     {{ ev.event.title }}
                   </div>
                   @if (ev.event.description) { <p class="tl-desc">{{ ev.event.description }}</p> }
+                  @if (ev.isDoc) {
+                    <button class="tl-edit-btn doc-btn" (click)="viewDocumentary(ev.docId!); $event.stopPropagation()" title="Ver Documental">🎬 Ver</button>
+                  } @else {
+                    <button class="tl-edit-btn" (click)="openEditEvent(ev); $event.stopPropagation()" title="Editar">✏️</button>
+                  }
                 </div>
-                <button class="tl-edit-btn" (click)="openEditEvent(ev); $event.stopPropagation()" title="Editar">✏️</button>
               </div>
             }
           </div>
@@ -1149,7 +1155,7 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
               <blockquote class="doc-vision">"{{ lineage()!.visionStatement }}"</blockquote>
             }
             @if (legadoData()?.tagline) {
-              <p class="doc-tagline">{{ legadoData()!.tagline }}</p>
+              <p class="doc-tagline">{{ legadoData()?.tagline }}</p>
             }
             <div class="doc-year">{{ currentYear }}</div>
           </div>
@@ -1464,7 +1470,14 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     .sp-name     { font-size: 15px; font-weight: 700; color: #fbbf24; }
     .sp-gen-badge{ font-size: 11px; margin-top: 2px; font-weight: 600; }
     .anchor-tag  { margin-left: 6px; font-size: 10px; color: #d97706; }
-    .sp-status   { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+    .sp-status       { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+    .sp-linked       { font-size: 11px; color: #6366f1; margin-top: 4px;
+      display: flex; flex-direction: column; gap: 1px; }
+    .sp-linked span  { font-weight: 600; color: #a5b4fc; }
+    .sp-linked-email { font-weight: 400 !important; color: #6b7280 !important; font-size: 10px !important; }
+    /* Badge de vínculo en el modal */
+    .link-badge { font-size: 11px; color: #6ee7b7; margin-top: 6px;
+      background: #064e3b20; border: 1px solid #065f4640; border-radius: 6px; padding: 4px 8px; }
     .sp-tabs     { display: flex; border-bottom: 1px solid #1f2937; }
     .sp-tab      {
       flex: 1; padding: 8px 4px; font-size: 11px; font-weight: 600;
@@ -1663,7 +1676,7 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     .tl-edit-btn { background: none; border: none; cursor: pointer; font-size: 13px;
       opacity: 0; transition: opacity .15s; padding: 2px 4px; align-self: flex-start; }
 
-    /* Narrative */
+    .tl-edit-btn.doc-btn { opacity: 1 !important; font-size: 14px; padding: 4px 10px; border-radius: 8px; background: rgba(124,58,237,0.15); border: 1px solid rgba(124,58,237,0.4); margin-top: 8px; color: #c4b5fd; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; } .tl-edit-btn.doc-btn:hover { background: rgba(124,58,237,0.3); transform: scale(1.05); color: #fff; } /* Narrative */
     .vision-block {
       display: flex; gap: 12px; align-items: flex-start;
       background: #111827; border-left: 3px solid #f59e0b;
@@ -2423,16 +2436,31 @@ export class LineagePageComponent implements OnInit, OnDestroy {
     }).filter(Boolean) as { id: string; d: string; isCouple: boolean }[];
   });
 
-  allEvents = computed<{ event: any; memberId: number; memberName: string; memberColor: string }[]>(() => {
+  allEvents = computed<{ event: any; memberId: number; memberName: string; memberColor: string; isDoc?: boolean; docId?: string }[]>(() => {
     const members = this.lineage()?.members ?? [];
-    return members
+    const memberEvents = members
       .flatMap(m => (m.events ?? []).map(ev => ({
         event: ev,
         memberId: m.id,
         memberName: m.fullName,
-        memberColor: getGenMeta(m.generation).color
+        memberColor: getGenMeta(m.generation).color,
+        isDoc: false
       })))
-      .filter(x => x.event.eventYear)
+      .filter(x => x.event.eventYear);
+
+    const docEvents = this.documentaries().map(d => {
+      const year = new Date(d.createdAt).getFullYear().toString();
+      return {
+        event: { id: 'doc-' + d.id, eventYear: year, title: d.title, description: 'Mini Documental (' + d.scope + ')', eventType: 'milestone' },
+        memberId: 0,
+        memberName: 'Memoria Familiar',
+        memberColor: '#7c3aed',
+        isDoc: true,
+        docId: d.id
+      };
+    });
+
+    return [...memberEvents, ...docEvents]
       .sort((a, b) => {
         const parseYear = (y: string) => parseInt(y.replace(/[^0-9-]/g, '')) || 0;
         return parseYear(a.event.eventYear ?? '0') - parseYear(b.event.eventYear ?? '0');
@@ -2508,6 +2536,7 @@ export class LineagePageComponent implements OnInit, OnDestroy {
     this.loadLineage();
     this.loadLegado();
     this.loadRegisteredMembers();
+    this.loadDocumentaries();
   }
 
   loadLegado() {
@@ -2520,6 +2549,43 @@ export class LineagePageComponent implements OnInit, OnDestroy {
         this.legadoData.set(res.legacy ?? res);
         this.legadoVals.set(res.values ?? []);
       });
+  }
+
+  documentaries = signal<any[]>([]);
+
+  loadDocumentaries() {
+    const fid = this.familyId;
+    if (!fid) return;
+
+    // Modern
+    this.http.get<any>(`/api/documentary-productions/family/${fid}`)
+      .pipe(catchError(() => of({ data: [] })))
+      .subscribe(res => {
+        const current = this.documentaries();
+        this.documentaries.set([...current, ...(res.data || [])]);
+      });
+
+    // Legacy
+    this.http.get<any>(`${this.apiSvc.base}/evidences/family/${fid}`)
+      .pipe(catchError(() => of({ data: [] })))
+      .subscribe(res => {
+        const allLegacy = res.data || [];
+        const masters = allLegacy.filter((e: any) =>
+          e.evidenceType === 'BITACORA' && e.title?.startsWith('🎬 Mini Documental:')
+        );
+        const legacyDocs = masters.map((master: any) => ({
+          id: master.id.toString(),
+          createdAt: master.createdAt,
+          title: master.title.replace('🎬 Mini Documental:', '').trim(),
+          scope: 'LEGACY'
+        }));
+        const current = this.documentaries();
+        this.documentaries.set([...current, ...legacyDocs]);
+      });
+  }
+
+  viewDocumentary(docId: string) {
+    this.router.navigate(['/evidence/capture'], { queryParams: { doc: docId } });
   }
 
   goToLegado() { this.router.navigate(['/legado']); }
@@ -2903,3 +2969,5 @@ export class LineagePageComponent implements OnInit, OnDestroy {
       });
   }
 }
+
+// force rebuild

@@ -82,18 +82,18 @@ const RITUAL_CONFIG: Record<RitualType, { icon: string; color: string; bg: strin
                 }
 
                 <!-- Pasos guiados -->
-                @if (r.guidedSteps?.length) {
+                @if (r.guidedSteps.length) {
                   <div class="rc-steps">
                     <div class="steps-label">Pasos guiados</div>
                     @for (step of r.guidedSteps; track $index) {
-                      <div class="step-item" [class.done]="completedSteps()[r.id]?.has($index)">
+                      <div class="step-item" [class.done]="completedSteps()[r.id] && completedSteps()[r.id].has($index)">
                         <button
                           class="step-check"
                           [style.border-color]="color(r.ritualType)"
-                          [style.background]="completedSteps()[r.id]?.has($index) ? color(r.ritualType) : 'transparent'"
+                          [style.background]="completedSteps()[r.id] && completedSteps()[r.id].has($index) ? color(r.ritualType) : 'transparent'"
                           (click)="toggleStep(r.id, $index)"
                         >
-                          @if (completedSteps()[r.id]?.has($index)) { ✓ }
+                          @if (completedSteps()[r.id] && completedSteps()[r.id].has($index)) { ✓ }
                         </button>
                         <span class="step-text">{{ step }}</span>
                       </div>

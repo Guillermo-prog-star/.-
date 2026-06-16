@@ -42,13 +42,17 @@
   <app-narrative-companion module="my-space"></app-narrative-companion>
 
   <!-- ── Toasts ── -->
-  <div class="ms-toast ms-toast-error" *ngIf="errorMessage">
-    <span>⚠️ {{ errorMessage }}</span>
-    <button (click)="errorMessage = ''">✕</button>
-  </div>
-  <div class="ms-toast ms-toast-success" *ngIf="successMessage">
-    <span>{{ successMessage }}</span>
-  </div>
+  @if (errorMessage) {
+    <div class="ms-toast ms-toast-error">
+      <span>⚠️ {{ errorMessage }}</span>
+      <button (click)="errorMessage = ''">✕</button>
+    </div>
+  }
+  @if (successMessage) {
+    <div class="ms-toast ms-toast-success">
+      <span>{{ successMessage }}</span>
+    </div>
+  }
 
   <!-- ── Layout dos columnas ── -->
   <div class="ms-grid">
@@ -78,7 +82,9 @@
         <div class="ms-field">
           <label for="ms-category">Categoría</label>
           <select id="ms-category" [(ngModel)]="newEntry.category" name="category">
-            <option *ngFor="let cat of categories" [value]="cat.value">{{ cat.label }}</option>
+            @for (cat of categories; track cat.value) {
+              <option [value]="cat.value">{{ cat.label }}</option>
+            }
           </select>
         </div>
 
@@ -86,16 +92,17 @@
         <div class="ms-field">
           <label>¿Cómo te sientes hoy?</label>
           <div class="emotion-grid">
-            <button
-              type="button"
-              *ngFor="let state of emotionalStates"
-              class="emotion-btn"
-              [class.emotion-selected]="newEntry.emotionalState === state.value"
-              (click)="newEntry.emotionalState = state.value"
-              [title]="state.label">
-              <span class="emotion-icon">{{ state.icon }}</span>
-              <span class="emotion-label">{{ state.label }}</span>
-            </button>
+            @for (state of emotionalStates; track state.value) {
+              <button
+                type="button"
+                class="emotion-btn"
+                [class.emotion-selected]="newEntry.emotionalState === state.value"
+                (click)="newEntry.emotionalState = state.value"
+                [title]="state.label">
+                <span class="emotion-icon">{{ state.icon }}</span>
+                <span class="emotion-label">{{ state.label }}</span>
+              </button>
+            }
           </div>
         </div>
 
@@ -122,131 +129,149 @@
     <div class="ms-entries-col">
       <div class="ms-entries-header">
         <h2>Mis Reflexiones</h2>
-        <span class="ms-count" *ngIf="entries.length">{{ entries.length }}</span>
+        @if (entries.length) {
+          <span class="ms-count">{{ entries.length }}</span>
+        }
       </div>
 
       <!-- Loading skeleton -->
-      <ng-container *ngIf="loading">
-        <div class="ms-skeleton" *ngFor="let i of [1,2,3]"></div>
-      </ng-container>
+      @if (loading) {
+        @for (i of [1,2,3]; track i) {
+          <div class="ms-skeleton"></div>
+        }
+      }
 
       <!-- Empty state -->
-      <div class="ms-empty" *ngIf="!loading && entries.length === 0">
-        <span class="ms-empty-icon">🍃</span>
-        <p>Aún no has escrito nada.</p>
-        <p class="ms-empty-sub">Este es un espacio seguro solo para ti.</p>
-      </div>
+      @if (!loading && entries.length === 0) {
+        <div class="ms-empty">
+          <span class="ms-empty-icon">🍃</span>
+          <p>Aún no has escrito nada.</p>
+          <p class="ms-empty-sub">Este es un espacio seguro solo para ti.</p>
+        </div>
+      }
 
       <!-- Lista de entradas -->
-      <div class="ms-entry-list" *ngIf="!loading && entries.length > 0">
-        <div class="ms-entry-card" *ngFor="let entry of entries">
+      @if (!loading && entries.length > 0) {
+        <div class="ms-entry-list">
+          @for (entry of entries; track entry.id) {
+            <div class="ms-entry-card">
 
-          <div class="ms-entry-top">
-            <div class="ms-entry-title-row">
-              <span class="ms-entry-emotion">{{ getEmotionIcon(entry.emotionalState) }}</span>
-              <h3 class="ms-entry-title">{{ entry.title }}</h3>
-            </div>
-            <span class="ms-entry-date">{{ entry.createdAt | date:'d MMM · HH:mm' }}</span>
-          </div>
-
-          <span class="ms-cat-badge" [ngClass]="'cat-' + (entry.category || 'reflexion').toLowerCase()">
-            {{ getCategoryLabel(entry.category) }}
-          </span>
-
-          <p class="ms-entry-body">{{ entry.content }}</p>
-
-          <div class="ms-entry-footer">
-            <ng-container *ngIf="pendingDeleteId === entry.id; else deleteBtn">
-              <div class="ms-confirm-inline">
-                <span class="ms-confirm-text">¿Eliminar esta reflexión?</span>
-                <button type="button" class="ms-confirm-yes" (click)="confirmDelete()">Sí, eliminar</button>
-                <button type="button" class="ms-confirm-no" (click)="cancelDelete()">No</button>
+              <div class="ms-entry-top">
+                <div class="ms-entry-title-row">
+                  <span class="ms-entry-emotion">{{ getEmotionIcon(entry.emotionalState) }}</span>
+                  <h3 class="ms-entry-title">{{ entry.title }}</h3>
+                </div>
+                <span class="ms-entry-date">{{ entry.createdAt | date:'d MMM · HH:mm' }}</span>
               </div>
-            </ng-container>
-            <ng-template #deleteBtn>
-              <button type="button" class="ms-btn-delete" (click)="deleteEntry(entry.id)">
-                🗑 Eliminar
-              </button>
-            </ng-template>
-          </div>
 
+              <span class="ms-cat-badge" [ngClass]="'cat-' + (entry.category || 'reflexion').toLowerCase()">
+                {{ getCategoryLabel(entry.category) }}
+              </span>
+
+              <p class="ms-entry-body">{{ entry.content }}</p>
+
+              <div class="ms-entry-footer">
+                @if (pendingDeleteId === entry.id) {
+                  <div class="ms-confirm-inline">
+                    <span class="ms-confirm-text">¿Eliminar esta reflexión?</span>
+                    <button type="button" class="ms-confirm-yes" (click)="confirmDelete()">Sí, eliminar</button>
+                    <button type="button" class="ms-confirm-no" (click)="cancelDelete()">No</button>
+                  </div>
+                } @else {
+                  <button type="button" class="ms-btn-delete" (click)="deleteEntry(entry.id)">
+                    🗑 Eliminar
+                  </button>
+                }
+              </div>
+
+            </div>
+          }
         </div>
-      </div>
+      }
 
     </div>
 
   </div>
 
   <!-- ── Perfil de Identidad Conversacional ── -->
-  <section *ngIf="identityProfile && identityProfile.communicationStyle"
-           class="ms-identity-card">
-    <div class="ms-card-header">
-      <span class="ms-card-icon">🧬</span>
-      <h2>Tu Perfil de Identidad</h2>
-      <span class="ms-identity-hint">Inferido por el Mentor IA a partir de tus conversaciones</span>
-    </div>
-
-    <div class="ms-identity-grid">
-
-      <!-- Estilo de comunicación -->
-      <div class="ms-identity-item">
-        <span class="ms-identity-label">Estilo de comunicación</span>
-        <span class="ms-identity-value ms-identity-primary">{{ identityProfile.communicationStyle }}</span>
+  @if (identityProfile && identityProfile.communicationStyle) {
+    <section class="ms-identity-card">
+      <div class="ms-card-header">
+        <span class="ms-card-icon">🧬</span>
+        <h2>Tu Perfil de Identidad</h2>
+        <span class="ms-identity-hint">Inferido por el Mentor IA a partir de tus conversaciones</span>
       </div>
 
-      <!-- Reflexividad -->
-      <div class="ms-identity-item">
-        <span class="ms-identity-label">Reflexividad</span>
-        <div class="ms-identity-bar-wrap">
-          <div class="ms-identity-bar">
-            <div class="ms-identity-bar-fill ms-bar-indigo"
-                 [style.width.%]="identityProfile.reflexivityLevel * 20"></div>
+      <div class="ms-identity-grid">
+
+        <!-- Estilo de comunicación -->
+        <div class="ms-identity-item">
+          <span class="ms-identity-label">Estilo de comunicación</span>
+          <span class="ms-identity-value ms-identity-primary">{{ identityProfile.communicationStyle }}</span>
+        </div>
+
+        <!-- Reflexividad -->
+        <div class="ms-identity-item">
+          <span class="ms-identity-label">Reflexividad</span>
+          <div class="ms-identity-bar-wrap">
+            <div class="ms-identity-bar">
+              <div class="ms-identity-bar-fill ms-bar-indigo"
+                   [style.width.%]="identityProfile.reflexivityLevel * 20"></div>
+            </div>
+            <span class="ms-identity-value">{{ reflexivityLabel(identityProfile.reflexivityLevel) }}</span>
           </div>
-          <span class="ms-identity-value">{{ reflexivityLabel(identityProfile.reflexivityLevel) }}</span>
         </div>
-      </div>
 
-      <!-- Sensibilidad emocional -->
-      <div class="ms-identity-item">
-        <span class="ms-identity-label">Sensibilidad emocional</span>
-        <div class="ms-identity-bar-wrap">
-          <div class="ms-identity-bar">
-            <div class="ms-identity-bar-fill ms-bar-pink"
-                 [style.width.%]="identityProfile.emotionalSensitivity * 20"></div>
+        <!-- Sensibilidad emocional -->
+        <div class="ms-identity-item">
+          <span class="ms-identity-label">Sensibilidad emocional</span>
+          <div class="ms-identity-bar-wrap">
+            <div class="ms-identity-bar">
+              <div class="ms-identity-bar-fill ms-bar-pink"
+                   [style.width.%]="identityProfile.emotionalSensitivity * 20"></div>
+            </div>
+            <span class="ms-identity-value">{{ sensitivityLabel(identityProfile.emotionalSensitivity) }}</span>
           </div>
-          <span class="ms-identity-value">{{ sensitivityLabel(identityProfile.emotionalSensitivity) }}</span>
         </div>
-      </div>
 
-      <!-- Resistencia al cambio -->
-      <div class="ms-identity-item">
-        <span class="ms-identity-label">Resistencia al cambio</span>
-        <span class="ms-identity-value" [ngClass]="resistanceColor(identityProfile.changeResistance)">
-          {{ resistanceLabel(identityProfile.changeResistance) }}
-        </span>
-      </div>
-
-      <!-- Motivadores -->
-      <div class="ms-identity-item ms-identity-wide" *ngIf="parseJsonArray(identityProfile.motivators).length > 0">
-        <span class="ms-identity-label">Tus motivadores</span>
-        <div class="ms-tag-list">
-          <span *ngFor="let m of parseJsonArray(identityProfile.motivators)" class="ms-tag ms-tag-green">{{ m }}</span>
+        <!-- Resistencia al cambio -->
+        <div class="ms-identity-item">
+          <span class="ms-identity-label">Resistencia al cambio</span>
+          <span class="ms-identity-value" [ngClass]="resistanceColor(identityProfile.changeResistance)">
+            {{ resistanceLabel(identityProfile.changeResistance) }}
+          </span>
         </div>
+
+        <!-- Motivadores -->
+        @if (parseJsonArray(identityProfile.motivators).length > 0) {
+          <div class="ms-identity-item ms-identity-wide">
+            <span class="ms-identity-label">Tus motivadores</span>
+            <div class="ms-tag-list">
+              @for (m of parseJsonArray(identityProfile.motivators); track m) {
+                <span class="ms-tag ms-tag-green">{{ m }}</span>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Patrones de evasión -->
+        @if (parseJsonArray(identityProfile.evasionPatterns).length > 0) {
+          <div class="ms-identity-item ms-identity-wide">
+            <span class="ms-identity-label">Temas que sueles evitar</span>
+            <div class="ms-tag-list">
+              @for (e of parseJsonArray(identityProfile.evasionPatterns); track e) {
+                <span class="ms-tag ms-tag-amber">{{ e }}</span>
+              }
+            </div>
+          </div>
+        }
+
       </div>
 
-      <!-- Patrones de evasión -->
-      <div class="ms-identity-item ms-identity-wide" *ngIf="parseJsonArray(identityProfile.evasionPatterns).length > 0">
-        <span class="ms-identity-label">Temas que sueles evitar</span>
-        <div class="ms-tag-list">
-          <span *ngFor="let e of parseJsonArray(identityProfile.evasionPatterns)" class="ms-tag ms-tag-amber">{{ e }}</span>
-        </div>
-      </div>
-
-    </div>
-
-    <p class="ms-identity-footer">
-      Actualizado: {{ identityProfile.lastUpdated | date:'d MMM yyyy · HH:mm' }}
-    </p>
-  </section>
+      <p class="ms-identity-footer">
+        Actualizado: {{ identityProfile.lastUpdated | date:'d MMM yyyy · HH:mm' }}
+      </p>
+    </section>
+  }
 
 </div>

@@ -28,18 +28,22 @@ import { MarkdownPipe } from '../../shared/pipes/markdown.pipe';
   </div>
 
   <!-- Loading -->
-  <div class="loading-block" *ngIf="loading && !briefing">
+  @if (loading && !briefing) {
+  <div class="loading-block">
     <div class="pulse-dot"></div>
     <span>El Mentor está analizando tu familia...</span>
   </div>
+  }
 
   <!-- Error -->
-  <div class="error-block" *ngIf="error && !loading">
+  @if (error && !loading) {
+  <div class="error-block">
     <span>No se pudo cargar el briefing. Intenta más tarde.</span>
   </div>
+  }
 
   <!-- Contenido principal -->
-  <ng-container *ngIf="briefing && !loading">
+  @if (briefing && !loading) {
 
     <!-- Participación -->
     <div class="participation-bar">
@@ -61,35 +65,40 @@ import { MarkdownPipe } from '../../shared/pipes/markdown.pipe';
 
     <!-- Lista de miembros -->
     <div class="members-list">
-      <div class="member-row" *ngFor="let m of briefing.members"
-           [class.member-inactive]="!m.activeThisWeek">
+      @for (m of briefing.members; track m.memberId) {
+      <div class="member-row" [class.member-inactive]="!m.activeThisWeek">
         <div class="member-dot" [class.dot-active]="m.activeThisWeek" [class.dot-inactive]="!m.activeThisWeek"></div>
         <span class="member-name">{{ m.name }}</span>
 
-        <ng-container *ngIf="!m.activeThisWeek">
-          <span class="member-days" *ngIf="m.daysSinceLastActivity < 999">
-            {{ m.daysSinceLastActivity }}d sin actividad
-          </span>
-          <span class="member-days first-time" *ngIf="m.daysSinceLastActivity >= 999">
-            Sin registro aún
-          </span>
+        @if (!m.activeThisWeek) {
+          @if (m.daysSinceLastActivity < 999) {
+          <span class="member-days">{{ m.daysSinceLastActivity }}d sin actividad</span>
+          }
+          @if (m.daysSinceLastActivity >= 999) {
+          <span class="member-days first-time">Sin registro aún</span>
+          }
           <button class="reengage-btn"
                   [disabled]="reengaging[m.memberId]"
                   (click)="requestReengage(m.memberId, m.name)"
                   title="Generar mensaje de invitación">
             {{ reengaging[m.memberId] ? '...' : '💌' }}
           </button>
-        </ng-container>
+        }
 
-        <span class="member-active" *ngIf="m.activeThisWeek">Activo ✓</span>
+        @if (m.activeThisWeek) {
+        <span class="member-active">Activo ✓</span>
+        }
       </div>
+      }
     </div>
 
     <!-- Hito del plan -->
-    <div class="milestone-row" *ngIf="briefing.currentMilestone">
+    @if (briefing.currentMilestone) {
+    <div class="milestone-row">
       <span class="milestone-icon">🗺️</span>
       <span class="milestone-text">Hito actual: <strong>{{ briefing.currentMilestone }}</strong></span>
     </div>
+    }
 
     <!-- Mensaje IA (Markdown) -->
     <div class="ai-message">
@@ -97,34 +106,42 @@ import { MarkdownPipe } from '../../shared/pipes/markdown.pipe';
       <div class="ai-text" [innerHTML]="briefing.aiMessage | markdown"></div>
     </div>
 
-  </ng-container>
+  }
 
 </div>
 
 <!-- Modal de mensaje de re-invitación -->
-<div class="modal-overlay" *ngIf="reengageModal" (click)="closeModal()">
+@if (reengageModal) {
+<div class="modal-overlay" (click)="closeModal()">
   <div class="modal-card" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <span>💌 Mensaje para {{ reengageModal.name }}</span>
       <button class="modal-close" (click)="closeModal()">✕</button>
     </div>
     <div class="modal-body">
-      <div class="modal-loading" *ngIf="reengageModal.loading">
+      @if (reengageModal.loading) {
+      <div class="modal-loading">
         <div class="pulse-dot"></div>
         <span>Generando mensaje...</span>
       </div>
-      <div class="modal-message" *ngIf="!reengageModal.loading && reengageModal.message">
+      }
+      @if (!reengageModal.loading && reengageModal.message) {
+      <div class="modal-message">
         <p>{{ reengageModal.message }}</p>
       </div>
+      }
     </div>
-    <div class="modal-footer" *ngIf="!reengageModal.loading && reengageModal.message">
+    @if (!reengageModal.loading && reengageModal.message) {
+    <div class="modal-footer">
       <button class="btn-copy" (click)="copyMessage()" [class.copied]="copied">
         {{ copied ? '✓ Copiado' : '📋 Copiar mensaje' }}
       </button>
       <span class="copy-hint">Envíalo por WhatsApp o mensaje directo</span>
     </div>
+    }
   </div>
 </div>
+}
   `,
   styles: [`
     .briefing-card {

@@ -136,7 +136,7 @@ const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: st
               <div class="dq-label">{{ q }}</div>
               <textarea class="dq-input" rows="2"
                 placeholder="Tu respuesta…"
-                [value]="dailyAnswers()[q] ?? ''"
+                [value]="dailyAnswers()[q]"
                 (input)="setDailyAnswer(q, $any($event.target).value)">
               </textarea>
             </div>
@@ -210,7 +210,7 @@ const WEEK_PHASES: Array<{ key: WeekPhase; label: string; icon: string; desc: st
 })
 export class WeeklyPlanComponent implements OnInit {
   protected familyState = inject(FamilyStateService);
-  private flow          = inject(TransformationFlowService);
+  protected flow = inject(TransformationFlowService);
   private http          = inject(HttpClient);
   private api           = inject(ApiService);
   private sprintService = inject(SprintService);

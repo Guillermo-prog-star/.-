@@ -284,7 +284,7 @@ const MSG_ICONS: Record<string, string> = {
               <textarea class="field-textarea" [(ngModel)]="newMsg.content"
                 placeholder="Escribe lo que quieres que las próximas generaciones sepan, sientan o recuerden..."
                 rows="8" maxlength="3000"></textarea>
-              <div class="char-count">{{ newMsg.content?.length || 0 }} / 3000</div>
+              <div class="char-count">{{ newMsg.content.length || 0 }} / 3000</div>
             </div>
 
             <div class="field-group">

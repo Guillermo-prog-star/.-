@@ -562,7 +562,7 @@ export class ProfilePageComponent implements OnInit {
   loadFamilyStats(): void {
     const fid = this.familyState.currentFamilyId();
     if (!fid) return;
-    this.http.get<any>(`${this.api.base}/analytics/dashboard/${fid}`)
+    this.http.get<any>(`${this.api.base}/analytics/dashboard/family/${fid}`)
       .pipe(catchError(() => of(null)))
       .subscribe(res => this.familyStats.set(res?.data ?? res));
   }

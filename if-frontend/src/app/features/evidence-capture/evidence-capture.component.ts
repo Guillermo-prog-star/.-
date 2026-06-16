@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy, inject, signal, Input } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { EvidenceService, SubmitEvidenceRequest } from '../../core/services/evidence.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { ApiService } from '../../core/services/api.service';
-import { catchError, of } from 'rxjs';
+import { catchError, of, forkJoin } from 'rxjs';
 
 type CaptureMode = 'menu' | 'photo' | 'audio' | 'text' | 'location' | 'preview';
 type MainTab    = 'capture' | 'gallery';
@@ -130,135 +131,103 @@ const EMOTIONS = [
           </div>
         }
 
-        <!-- ── VISOR DE DOCUMENTAL COMPLETO ───────────────────────────── -->
-        @if (viewingDoc(); as doc) {
-          <div class="doc-viewer">
-
-            <!-- Botón volver -->
-            <button class="btn-back-gallery" (click)="viewingDoc.set(null)">← Volver a documentales</button>
-
-            <!-- Sello misión cumplida -->
-            <div class="dv-seal">
-              <span>🏆</span>
-              <div>
-                <div class="dv-seal-label">MISIÓN CUMPLIDA</div>
-                <div class="dv-seal-date">{{ formatDocDate(doc.date) }}</div>
-              </div>
-            </div>
-
-            <!-- Portada cinematográfica -->
-            <div class="dv-cover">
-              @if (doc.coverData && doc.coverMime) {
-                <img [src]="'data:' + doc.coverMime + ';base64,' + doc.coverData"
-                     class="dv-cover-img" alt="Portada" />
-              }
-              <div class="dv-cover-gradient"></div>
-              <div class="dv-cover-overlay">
-                <div class="dv-mission-tag">🎯 {{ doc.missionTitle }}</div>
-                <h1 class="dv-title">{{ doc.title }}</h1>
-                <div class="dv-meta">{{ doc.items.length }} evidencias · {{ submitterFromDoc(doc) }}</div>
-              </div>
-            </div>
-
-            <!-- Narrativa IA -->
-            @if (doc.aiNarrative) {
-              <div class="dv-narrative">
-                <div class="dv-nar-badge">🧠 Narrativa · Sentinel AI</div>
-                <p class="dv-nar-text">{{ doc.aiNarrative }}</p>
-              </div>
-            }
-
-            <!-- Galería de evidencias -->
-            <div class="dv-section-title">📸 Evidencias de la misión</div>
-            <div class="dv-gallery">
-              @for (item of doc.items; track item.id) {
-
-                @if (item.type === 'PHOTO' && item.mediaData && item.mediaMime) {
-                  <div class="dv-polaroid">
-                    <img [src]="'data:' + item.mediaMime + ';base64,' + item.mediaData"
-                         class="dv-polaroid-img" alt="Foto" />
-                    <div class="dv-polaroid-caption">{{ cleanLabel(item.label) }}</div>
+        <!-- 📽️ VISOR DE DOCUMENTAL COMPLETO 
+==================================================================== -->
+          @if (viewingDoc(); as doc) {
+            <div class="doc-viewer">
+              <div class="dv-inner">
+                <!-- Botón volver -->
+                <button class="btn-back-gallery" (click)="viewingDoc.set(null)">← Volver a documentales</button>
+  
+                <!-- Sello misión cumplida -->
+                <div class="dv-seal">
+                  <span>🏆</span>
+                  <div>
+                    <div class="dv-seal-label">MISIÓN CUMPLIDA</div>
+                    <div class="dv-seal-date">{{ formatDocDate(doc.date) }}</div>
+                  </div>
+                </div>
+  
+                <!-- Portada cinematográfica -->
+                <div class="dv-cover">
+                  @if (doc.coverData && doc.coverMime) {
+                    <img [src]="'data:' + doc.coverMime + ';base64,' + doc.coverData"
+                         class="dv-cover-img" alt="Portada" />
+                  }
+                  <div class="dv-cover-gradient"></div>
+                  <div class="dv-cover-overlay">
+                    <div class="dv-mission-tag">🎬 {{ doc.missionTitle }}</div>
+                    <h1 class="dv-title">{{ doc.title }}</h1>
+                    <div class="dv-meta">{{ doc.items.length }} evidencias • {{ submitterFromDoc(doc) }}</div>
+                  </div>
+                </div>
+  
+                <!-- Narrativa IA -->
+                @if (doc.aiNarrative) {
+                  <div class="dv-narrative">
+                    <div class="dv-nar-badge">✨ Narrativa • Sentinel AI</div>
+                    <div class="dv-nar-text" [innerHTML]="formatMarkdown(doc.aiNarrative)"></div>
                   </div>
                 }
-
-                @if (item.type === 'VIDEO' && item.mediaData && item.mediaMime) {
-                  <div class="dv-polaroid">
-                    <video [src]="'data:' + item.mediaMime + ';base64,' + item.mediaData"
-                           class="dv-polaroid-img" controls muted></video>
-                    <div class="dv-polaroid-caption">{{ cleanLabel(item.label) }}</div>
-                  </div>
-                }
-
-                @if (item.type === 'AUDIO' && item.mediaData && item.mediaMime) {
-                  <div class="dv-audio-card">
-                    <div class="dv-audio-icon">🎙️</div>
-                    <audio [src]="'data:' + item.mediaMime + ';base64,' + item.mediaData"
-                           controls class="dv-audio-player"></audio>
-                    <div class="dv-audio-label">{{ cleanLabel(item.label) }}</div>
-                  </div>
-                }
-
-                @if (item.type === 'SELF_REFLECTION' && item.textContent) {
-                  <div class="dv-note-card">
-                    <div class="dv-note-mark">"</div>
-                    <p class="dv-note-text">{{ item.textContent }}</p>
-                    @if (item.emotion) {
-                      <span class="dv-note-emotion">{{ emotionEmoji(item.emotion) }}</span>
+  
+                <!-- Galería de evidencias -->
+                <div class="dv-section-title">📸 Evidencias de la misión</div>
+                <div class="dv-gallery">
+                  @for (item of doc.items; track item.id) {
+  
+                    @if (item.type === 'PHOTO' && item.mediaData && item.mediaMime) {
+                      <div class="dv-polaroid">
+                        <img [src]="'data:' + item.mediaMime + ';base64,' + item.mediaData"
+                             class="dv-polaroid-img" alt="Foto" />
+                        <div class="dv-polaroid-caption">{{ cleanLabel(item.label) }}</div>
+                      </div>
                     }
-                    <div class="dv-note-label">{{ cleanLabel(item.label) }}</div>
-                  </div>
-                }
-
-                @if (item.type === 'DOCUMENT' && item.latitude && item.longitude) {
-                  <div class="dv-location-card">
-                    <div class="dv-loc-icon">📍</div>
-                    <div class="dv-loc-coords">{{ item.latitude.toFixed(4) }}, {{ item.longitude.toFixed(4) }}</div>
-                    <a [href]="'https://maps.google.com/?q=' + item.latitude + ',' + item.longitude"
-                       target="_blank" class="dv-maps-link">Abrir en Google Maps →</a>
-                  </div>
-                }
-
-              }
-            </div>
-
-            <!-- Bitácora (reflexiones) -->
-            @if (doc.reflections.length > 0) {
-              <div class="dv-section-title">📖 Bitácora de la misión</div>
-              <div class="dv-logbook">
-                @for (r of doc.reflections; track r.q) {
-                  <div class="dv-lb-entry">
-                    <div class="dv-lb-q">{{ r.q }}</div>
-                    <div class="dv-lb-a" [class.highlight]="r.q.includes('aprendimos')">{{ r.a }}</div>
-                  </div>
-                }
-              </div>
-            }
-
-            <!-- Banner Película Familiar -->
-            <div class="dv-movie-banner">
-              <div class="dv-mb-icon">🎬</div>
-              <div>
-                <div class="dv-mb-title">Insumo de la Película Familiar</div>
-                <div class="dv-mb-hint">Este documental se suma al trimestre actual. Cada 3 meses la IA los reunirá en la Película de tu familia.</div>
+  
+                    @if (item.type === 'VIDEO' && item.mediaData && item.mediaMime) {
+                      <div class="dv-polaroid dv-polaroid-video">
+                        <video [src]="'data:' + item.mediaMime + ';base64,' + item.mediaData"
+                               class="dv-polaroid-img" controls></video>
+                        <div class="dv-polaroid-caption">{{ cleanLabel(item.label) }}</div>
+                      </div>
+                    }
+  
+                    @if (item.type === 'AUDIO' && item.mediaData && item.mediaMime) {
+                      <div class="dv-audio-card">
+                        <div class="dv-audio-icon">🎙️</div>
+                        <audio [src]="'data:' + item.mediaMime + ';base64,' + item.mediaData"
+                               controls class="dv-audio-player"></audio>
+                        <div class="dv-audio-label">{{ cleanLabel(item.label) }}</div>
+                      </div>
+                    }
+  
+                  } @empty {
+                    <div class="dv-empty">No hay evidencias multimedia registradas.</div>
+                  }
+                </div>
+  
+                <div class="dv-actions">
+                  <button class="btn-back-gallery" (click)="viewingDoc.set(null)">← Otros documentales</button>
+                  <button class="btn-new-doc" (click)="goToDocumentary()">+ Nuevo documental</button>
+                </div>
               </div>
             </div>
-
-            <div class="dv-actions">
-              <button class="btn-back-gallery" (click)="viewingDoc.set(null)">← Otros documentales</button>
-              <button class="btn-new-doc" (click)="goToDocumentary()">+ Nuevo documental</button>
-            </div>
-
-          </div>
-        }
+          }
 
       }
 
       <!-- ══ ZONA DE CAPTURA ══════════════════════════════════════════════ -->
       @if (mainTab() === 'capture') {
 
-      <!-- ── Menú de tipos ────────────────────────────────── -->
       @if (mode() === 'menu') {
         <div class="ec-menu">
+          <div class="ec-doc-banner" style="grid-column: 1 / -1; margin-bottom: 16px; background: linear-gradient(135deg, #7c3aed, #4f46e5); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.2s;" (click)="goToDocumentary()" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
+            <div>
+              <div style="color: white; font-weight: 700; font-size: 16px; margin-bottom: 4px;">🎬 Generar Mini Documental</div>
+              <div style="color: rgba(255,255,255,0.8); font-size: 13px;">Captura un recuerdo o misión completa (¡Nuevo UI!)</div>
+            </div>
+            <div style="font-size: 24px;">✨</div>
+          </div>
+
           <button class="ec-type-btn" (click)="startPhoto()">
             <span class="tb-icon">📷</span>
             <span class="tb-label">Foto</span>
@@ -1092,126 +1061,120 @@ const EMOTIONS = [
     }
     .btn-ver-doc:hover { color: #c4b5fd; }
 
-    /* ══ VISOR DE DOCUMENTAL COMPLETO ════════════════════════════════════ */
-    .doc-viewer { display: flex; flex-direction: column; gap: 24px; animation: fadeIn 0.3s ease-out; }
+    /* 🎬 VISOR DE DOCUMENTAL COMPLETO FULLSCREEN CINEMATICO 
+==================================================================== */
+      .doc-viewer { 
+        position: fixed; inset: 0; z-index: 9999;
+        background: #000;
+        overflow-y: auto;
+        animation: fadeIn 0.4s ease-out; 
+      }
+      .dv-inner {
+        max-width: 1000px; margin: 0 auto;
+        padding: 40px 20px 80px;
+        display: flex; flex-direction: column; gap: 32px;
+      }
+      .btn-back-gallery {
+        background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+        color: #ddd; padding: 12px 24px;
+        border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer;
+        align-self: flex-start; backdrop-filter: blur(10px);
+        transition: all 0.2s;
+      }
+      .btn-back-gallery:hover { background: rgba(255,255,255,0.1); color: #fff; transform: translateX(-4px); }
 
-    .btn-back-gallery {
-      background: transparent; border: 1px solid rgba(255,255,255,0.1);
-      color: var(--if-text-secondary, #aaa); padding: 9px 16px;
-      border-radius: 9px; font-size: 12px; font-weight: 600; cursor: pointer;
-      align-self: flex-start;
-    }
+      .dv-seal {
+        display: flex; align-items: center; gap: 16px;
+        background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.05));
+        border: 1px solid rgba(16,185,129,0.3);
+        border-radius: 16px; padding: 18px 24px;
+        font-size: 34px; margin-top: 10px;
+      }
+      .dv-seal-label { font-size: 14px; font-weight: 800; color: #6ee7b7; text-transform: uppercase; letter-spacing: 0.15em; }
+      .dv-seal-date  { font-size: 12px; color: #a7f3d0; margin-top: 4px; opacity: 0.8; }
 
-    .dv-seal {
-      display: flex; align-items: center; gap: 12px;
-      background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(5,150,105,0.07));
-      border: 1px solid rgba(16,185,129,0.25);
-      border-radius: 12px; padding: 14px 18px;
-      font-size: 28px;
-    }
-    .dv-seal-label { font-size: 12px; font-weight: 800; color: #6ee7b7; text-transform: uppercase; letter-spacing: 0.1em; }
-    .dv-seal-date  { font-size: 11px; color: var(--if-text-secondary, #999); margin-top: 2px; }
+      .dv-cover {
+        position: relative; border-radius: 24px; overflow: hidden;
+        min-height: 45vh;
+        background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      }
+      .dv-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.4; mix-blend-mode: overlay; }
+      .dv-cover-gradient {
+        position: absolute; inset: 0;
+        background: linear-gradient(to top, #000 0%, transparent 80%);
+        z-index: 1;
+      }
+      .dv-cover-overlay {
+        position: relative; z-index: 2;
+        display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+        padding: 40px 30px; min-height: 45vh; text-align: center;
+      }
+      .dv-mission-tag { font-size: 13px; font-weight: 800; color: #c4b5fd; text-transform: uppercase; letter-spacing: 0.2em; margin-bottom: 12px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+      .dv-title { font-size: 42px; font-weight: 900; color: #fff; margin: 0 0 10px; line-height: 1.1; text-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+      .dv-meta  { font-size: 15px; color: rgba(255,255,255,0.7); text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
 
-    .dv-cover {
-      position: relative; border-radius: 18px; overflow: hidden;
-      min-height: 220px;
-      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
-    }
-    .dv-cover-img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.35; }
-    .dv-cover-gradient {
-      position: absolute; inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 55%);
-      z-index: 1;
-    }
-    .dv-cover-overlay {
-      position: relative; z-index: 2;
-      display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-      padding: 24px 20px; min-height: 220px; text-align: center;
-    }
-    .dv-mission-tag { font-size: 10px; font-weight: 700; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 8px; }
-    .dv-title { font-size: 26px; font-weight: 900; color: #fff; margin: 0 0 7px; line-height: 1.2; }
-    .dv-meta  { font-size: 12px; color: rgba(255,255,255,0.55); }
+      .dv-narrative {
+        background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(79,70,229,0.04));
+        border: 1px solid rgba(124,58,237,0.25);
+        border-radius: 20px; padding: 32px;
+        box-shadow: inset 0 0 40px rgba(124,58,237,0.05);
+      }
+      .dv-nar-badge {
+        display: inline-block; font-size: 12px; font-weight: 800; color: #c4b5fd;
+        background: rgba(124,58,237,0.2); border: 1px solid rgba(124,58,237,0.4);
+        padding: 6px 14px; border-radius: 30px; text-transform: uppercase; letter-spacing: 0.1em;
+        margin-bottom: 20px;
+      }
+      .dv-nar-text { 
+        font-size: 16px; line-height: 1.9; color: #e2e8f0; margin: 0; font-family: Georgia, serif;
+      }
+      .dv-nar-text p { margin-bottom: 16px; }
+      .dv-nar-text strong { color: #fff; font-weight: 700; background: rgba(124,58,237,0.15); padding: 0 4px; border-radius: 4px; }
+      .dv-nar-text .nar-section { 
+        display: block; font-size: 18px; font-weight: 800; color: #c4b5fd; 
+        margin-top: 24px; margin-bottom: 8px; font-family: inherit; text-transform: uppercase; letter-spacing: 0.05em;
+        border-bottom: 1px solid rgba(124,58,237,0.3); padding-bottom: 4px;
+      }
 
-    .dv-narrative {
-      background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(79,70,229,0.05));
-      border: 1px solid rgba(124,58,237,0.2);
-      border-radius: 14px; padding: 20px;
-    }
-    .dv-nar-badge {
-      display: inline-block; font-size: 10px; font-weight: 700; color: #a78bfa;
-      background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.25);
-      padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em;
-      margin-bottom: 12px;
-    }
-    .dv-nar-text { font-size: 14px; line-height: 1.8; color: var(--if-text-primary, #ddd); margin: 0; font-style: italic; }
+      .dv-section-title { font-size: 22px; font-weight: 800; color: #fff; margin: 16px 0 0; }
+      .dv-empty { font-size: 14px; color: #777; font-style: italic; }
 
-    .dv-section-title { font-size: 14px; font-weight: 800; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 9px; }
+      /* Galería del visor */
+      .dv-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 24px; }
 
-    /* Galería del visor */
-    .dv-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+      .dv-polaroid {
+        background: #fff; padding: 12px 12px 36px;
+        border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        transform: rotate(-1deg); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        cursor: default; position: relative;
+      }
+      .dv-polaroid:nth-child(even) { transform: rotate(1.5deg); }
+      .dv-polaroid:hover { transform: rotate(0) scale(1.05); z-index: 10; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+      
+      .dv-polaroid-video { transform: none !important; transition: none !important; }
+      .dv-polaroid-video:hover { transform: scale(1.02) !important; }
+      
+      .dv-polaroid-img { width: 100%; height: 180px; object-fit: cover; border-radius: 2px; display: block; border: 1px solid #eee; }
+      .dv-polaroid-caption { font-size: 13px; text-align: center; color: #333; margin-top: 12px; font-family: 'Comic Sans MS', cursive, sans-serif; padding: 0 6px; }
 
-    .dv-polaroid {
-      background: #fff; padding: 7px 7px 20px;
-      border-radius: 3px; box-shadow: 0 6px 18px rgba(0,0,0,0.4);
-      transform: rotate(-1.5deg); transition: transform 0.3s;
-      cursor: default;
-    }
-    .dv-polaroid:hover { transform: rotate(1deg) scale(1.04); }
-    .dv-polaroid-img { width: 100%; height: 100px; object-fit: cover; border-radius: 2px; display: block; }
-    .dv-polaroid-caption { font-size: 10px; text-align: center; color: #555; margin-top: 6px; font-style: italic; padding: 0 4px; }
+      .dv-audio-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02)); 
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px; padding: 24px;
+        display: flex; flex-direction: column; align-items: center; gap: 16px;
+        transition: transform 0.3s;
+      }
+      .dv-audio-card:hover { transform: translateY(-4px); border-color: rgba(124,58,237,0.4); }
+      .dv-audio-icon  { font-size: 42px; text-shadow: 0 4px 12px rgba(124,58,237,0.5); }
+      .dv-audio-player { width: 100%; height: 40px; }
+      .dv-audio-player::-webkit-media-controls-panel { background: rgba(255,255,255,0.9); }
+      .dv-audio-label { font-size: 13px; color: #ccc; font-weight: 600; text-align: center; }
 
-    .dv-audio-card {
-      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px; padding: 14px;
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-    }
-    .dv-audio-icon  { font-size: 32px; }
-    .dv-audio-player { width: 100%; }
-    .dv-audio-label { font-size: 10px; color: var(--if-text-secondary, #888); font-weight: 600; }
-
-    .dv-note-card {
-      background: #fefcf3; border-radius: 10px; padding: 12px;
-      min-height: 100px; box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-    .dv-note-mark  { font-size: 40px; line-height: 0.5; color: rgba(124,58,237,0.25); }
-    .dv-note-text  { font-size: 12px; line-height: 1.5; color: #3b2a1a; font-style: italic; margin: 6px 0 0; }
-    .dv-note-emotion { font-size: 22px; display: block; margin-top: 6px; }
-    .dv-note-label { font-size: 10px; color: #777; margin-top: 6px; font-weight: 600; }
-
-    .dv-location-card {
-      background: rgba(16,185,129,0.07); border: 1px solid rgba(16,185,129,0.2);
-      border-radius: 12px; padding: 14px;
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-      text-align: center;
-    }
-    .dv-loc-icon   { font-size: 28px; }
-    .dv-loc-coords { font-size: 10px; font-variant-numeric: tabular-nums; color: #6ee7b7; font-weight: 700; }
-    .dv-maps-link  { font-size: 11px; color: #6ee7b7; text-decoration: none; border-bottom: 1px dotted #6ee7b7; }
-
-    /* Bitácora del visor */
-    .dv-logbook { display: flex; flex-direction: column; gap: 14px; }
-    .dv-lb-entry { border-left: 3px solid rgba(124,58,237,0.4); padding-left: 14px; }
-    .dv-lb-q { font-size: 10px; font-weight: 700; color: #a78bfa; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
-    .dv-lb-a { font-size: 13px; line-height: 1.7; color: var(--if-text-primary, #ddd); }
-    .dv-lb-a.highlight { color: #c4b5fd; font-style: italic; font-weight: 600; }
-
-    /* Banner película */
-    .dv-movie-banner {
-      display: flex; align-items: center; gap: 14px;
-      background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.06));
-      border: 1px solid rgba(245,158,11,0.2);
-      border-radius: 14px; padding: 16px 18px;
-    }
-    .dv-mb-icon  { font-size: 32px; flex-shrink: 0; }
-    .dv-mb-title { font-size: 13px; font-weight: 700; color: #fbbf24; margin-bottom: 3px; }
-    .dv-mb-hint  { font-size: 12px; color: var(--if-text-secondary, #999); line-height: 1.5; }
-
-    .dv-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .btn-new-doc {
-      flex: 1; padding: 11px 18px; border-radius: 10px;
-      background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.3);
-      color: #c4b5fd; font-size: 13px; font-weight: 700; cursor: pointer;
-    }
+      .dv-actions {
+        display: flex; gap: 16px; margin-top: 20px;
+        border-top: 1px solid rgba(255,255,255,0.1); padding-top: 32px;
+      }
   `]
 })
 export class EvidenceCaptureComponent implements OnInit, OnDestroy {
@@ -1219,6 +1182,7 @@ export class EvidenceCaptureComponent implements OnInit, OnDestroy {
   private readonly familyState     = inject(FamilyStateService);
   private readonly http             = inject(HttpClient);
   private readonly api              = inject(ApiService);
+  private readonly route            = inject(ActivatedRoute);
 
   @Input() preselectedTaskId: number | null = null;
 
@@ -1241,12 +1205,74 @@ export class EvidenceCaptureComponent implements OnInit, OnDestroy {
     const fid = this.familyState.getSelectedFamilyId();
     if (!fid) return;
     this.loadingDocs.set(true);
-    this.http.get<any>(`${this.api.base}/evidences/family/${fid}`).pipe(
-      catchError(() => of(null))
-    ).subscribe(res => {
+
+    forkJoin({
+      legacy: this.http.get<any>(`${this.api.base}/evidences/family/${fid}`).pipe(catchError(() => of({ data: [] }))),
+      modern: this.http.get<any>(`/api/documentaries/family/${fid}`).pipe(catchError(() => of({ data: [] }))),
+      productions: this.http.get<any>(`/api/documentary-productions/family/${fid}`).pipe(catchError(() => of({ data: [] })))
+    }).subscribe(res => {
       this.loadingDocs.set(false);
-      const all: any[] = res?.data ?? [];
-      this.documentals.set(this.groupIntoDocumentals(all));
+      const allLegacy: any[] = res.legacy?.data ?? [];
+      const allModern: any[] = res.modern?.data ?? [];
+      const allProductions: any[] = res.productions?.data ?? [];
+
+      const legacyDocs = this.groupIntoDocumentals(allLegacy);
+      const modernDocs = this.mapModernDocumentaries(allModern, allLegacy, 'doc');
+      const prodDocs = this.mapModernDocumentaries(allProductions, allLegacy, 'prod');
+
+      const combined = [...legacyDocs, ...modernDocs, ...prodDocs]
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      this.documentals.set(combined);
+
+      // Si viene por query param, abrir automáticamente
+      const docIdParam = this.route.snapshot.queryParamMap.get('doc');
+      if (docIdParam) {
+        const found = combined.find((d: any) => d.id === 'doc-' + docIdParam || d.id === docIdParam);
+        if (found) {
+          this.viewingDoc.set(found);
+          this.mainTab.set('gallery');
+        }
+      }
+    });
+  }
+
+  private mapModernDocumentaries(docs: any[], allEvidences: any[], prefix: string = 'doc'): SavedDocumental[] {
+    return docs.map(doc => {
+      const items = doc.curatedEvidences || [];
+      
+      const coverItem = items.find((e: any) => e.mediaData && e.mediaMime && e.mediaMime.startsWith('image/'));
+      const coverData = coverItem ? coverItem.mediaData : null;
+      const coverMime = coverItem ? coverItem.mediaMime : null;
+
+      const mappedItems = items.map((e: any) => ({
+        id: e.id,
+        type: e.evidenceType,
+        mediaData: e.mediaData,
+        mediaMime: e.mediaMime,
+        textContent: e.textContent,
+        label: e.title || ''
+      }));
+
+      let aiNarrative = '';
+      if (doc.scriptData) {
+        try {
+          const parsed = JSON.parse(doc.scriptData);
+          aiNarrative = parsed.narrativeScript || parsed.closingMessage || '';
+        } catch (e) { aiNarrative = doc.scriptData; }
+      }
+
+      return {
+        id: prefix + '-' + doc.id,
+        title: doc.title || 'Documental sin título',
+        missionTitle: doc.scope === 'MISSION' ? 'Misión completada' : (doc.scope === 'SPRINT' ? 'Cierre de Sprint' : 'Momento Familiar'),
+        date: doc.createdAt,
+        coverMime: coverMime,
+        coverData: coverData,
+        aiNarrative: aiNarrative,
+        items: mappedItems,
+        reflections: mappedItems.filter((e: any) => e.textContent && e.type === 'REFLECTION')
+      } as unknown as SavedDocumental;
     });
   }
 
@@ -1339,8 +1365,20 @@ export class EvidenceCaptureComponent implements OnInit, OnDestroy {
     return doc.items[0] ? '' : 'La familia';
   }
 
-  cleanLabel(label: string): string {
-    return label.replace(/^\[Documental\].*?— /, '');
+  cleanLabel(l: string): string {
+    return l.replace(/^(?:FOTO|VIDEO|AUDIO):\s*/i, '');
+  }
+
+  formatMarkdown(text: string): string {
+    if (!text) return '';
+    let formatted = text;
+    // Highlight sections [**SECTION**: ...]
+    formatted = formatted.replace(/\[\*\*([^*]+)\*\*:(.*?)\]/g, '<span class="nar-section">$1: $2</span>');
+    // Basic bold
+    formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    // Replace newlines with paragraphs
+    formatted = formatted.split('\n').filter(p => p.trim() !== '').map(p => `<p>${p}</p>`).join('');
+    return formatted;
   }
 
   emotionEmoji(key: string): string {
@@ -1354,7 +1392,7 @@ export class EvidenceCaptureComponent implements OnInit, OnDestroy {
   }
 
   goToDocumentary(): void {
-    window.location.href = '/evidence/documentary';
+    window.location.href = '/documentary-maker';
   }
 
   // Estado de flujo
@@ -1402,6 +1440,27 @@ export class EvidenceCaptureComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.selectedTaskId = this.preselectedTaskId;
     this.loadTasks();
+
+    // Reaccionar a cambios en los query params (ej. al redirigir desde maker)
+    this.route.queryParamMap.subscribe(params => {
+      const docIdParam = params.get('doc');
+      console.log('Query param doc:', docIdParam);
+      if (docIdParam) {
+        // Primero cambiamos a gallery para que se dispare loadDocumentals si no se ha llamado
+        this.switchTab('gallery');
+        
+        // Si ya estan cargados, intentamos abrirlo inmediatamente
+        if (this.documentals().length > 0) {
+          console.log('Documentals loaded, looking for:', docIdParam);
+          console.log('Available IDs:', this.documentals().map(d => d.id));
+          const found = this.documentals().find((d: any) => d.id === 'doc-' + docIdParam || d.id === docIdParam);
+          console.log('Found:', found);
+          if (found) {
+            this.viewingDoc.set(found);
+          }
+        }
+      }
+    });
   }
 
   ngOnDestroy(): void {

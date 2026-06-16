@@ -70,36 +70,36 @@ const STEPS: Array<{ key: ErrorStep; label: string; icon: string; question: stri
           </div>
 
           <!-- Step content -->
-          <div class="step-content" [style.border-color]="currentStep()?.color + '33'">
-            <div class="sc-icon">{{ currentStep()?.icon }}</div>
-            <div class="sc-question">{{ currentStep()?.question }}</div>
+          <div class="step-content" [style.border-color]="currentStep()!.color + '33'">
+            <div class="sc-icon">{{ currentStep()!.icon }}</div>
+            <div class="sc-question">{{ currentStep()!.question }}</div>
 
-            @if (currentStep()?.key === 'detect') {
+            @if (currentStep()!.key === 'detect') {
               <input class="sc-input" [(ngModel)]="activeRecord()!.missionFailed"
                 placeholder="Ej: No cumplimos la cena familiar esta semana…" />
             }
-            @if (currentStep()?.key === 'feel') {
+            @if (currentStep()!.key === 'feel') {
               <textarea class="sc-textarea" rows="3" [(ngModel)]="activeRecord()!.feelings"
                 placeholder="Ej: Me sentí frustrado, mi hijo se sintió ignorado…"></textarea>
             }
-            @if (currentStep()?.key === 'understand') {
+            @if (currentStep()!.key === 'understand') {
               <textarea class="sc-textarea" rows="3" [(ngModel)]="activeRecord()!.whatHappened"
                 placeholder="Ej: El trabajo llegó tarde y nadie avisó a tiempo…"></textarea>
             }
-            @if (currentStep()?.key === 'action') {
+            @if (currentStep()!.key === 'action') {
               <input class="sc-input" [(ngModel)]="activeRecord()!.correctiveAction"
                 placeholder="¿Qué cambiaremos?" style="margin-bottom:10px" />
               <input class="sc-input" [(ngModel)]="activeRecord()!.whoHelps"
                 placeholder="¿Quién será responsable de liderar el cambio?" />
             }
-            @if (currentStep()?.key === 'agreement') {
+            @if (currentStep()!.key === 'agreement') {
               <textarea class="sc-textarea" rows="4" [(ngModel)]="activeRecord()!.agreement"
                 placeholder="Redacta el acuerdo familiar: Nosotros, como familia, nos comprometemos a…"></textarea>
             }
-            @if (currentStep()?.key === 'followup') {
+            @if (currentStep()!.key === 'followup') {
               <input type="date" class="sc-input" [(ngModel)]="activeRecord()!.followupDate" />
             }
-            @if (currentStep()?.key === 'learning') {
+            @if (currentStep()!.key === 'learning') {
               <textarea class="sc-textarea" rows="3" [(ngModel)]="activeRecord()!.learning"
                 placeholder="Ej: Aprendimos que la comunicación a tiempo evita muchos conflictos…"></textarea>
             }

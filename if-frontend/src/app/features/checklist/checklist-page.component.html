@@ -51,9 +51,11 @@
                 </div>
                 <div class="item-meta mt-8">
                   <span class="badge-source">{{ item.source | uppercase }}</span>
-                  <span class="text-muted small ml-12" *ngIf="item.completedBy">
-                    ✓ Por {{ item.completedBy }} el {{ item.completedAt | date:'shortDate' }}
-                  </span>
+                  @if (item.completedBy) {
+                    <span class="text-muted small ml-12">
+                      ✓ Por {{ item.completedBy }} el {{ item.completedAt | date:'shortDate' }}
+                    </span>
+                  }
                 </div>
               </div>
 

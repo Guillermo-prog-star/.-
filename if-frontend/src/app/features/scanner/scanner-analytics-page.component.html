@@ -15,12 +15,14 @@
   </header>
 
   <!-- ── Carga ── -->
-  <div class="loading-state" *ngIf="loading()">
-    <div class="spinner"></div>
-    <p>Cargando datos clínicos...</p>
-  </div>
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando datos clínicos...</p>
+    </div>
+  }
 
-  <ng-container *ngIf="!loading()">
+  @if (!loading()) {
 
     <!-- ── KPI Strip ── -->
     <div class="kpi-strip glass">
@@ -67,14 +69,15 @@
         </div>
       </div>
 
-      <ng-container *ngIf="icfChart() as chart; else noChart">
+      @if (icfChart(); as chart) {
         <svg [attr.viewBox]="'0 0 ' + chart.W + ' ' + chart.H" class="icf-svg">
 
           <!-- Bandas de riesgo -->
-          <rect *ngFor="let b of chart.bands"
-                [attr.x]="chart.PL" [attr.y]="b.from"
-                [attr.width]="chart.UW" [attr.height]="b.to - b.from"
-                [attr.fill]="b.color"/>
+          @for (b of chart.bands; track b) {
+            <rect [attr.x]="chart.PL" [attr.y]="b.from"
+                  [attr.width]="chart.UW" [attr.height]="b.to - b.from"
+                  [attr.fill]="b.color"/>
+          }
 
           <!-- Líneas de cuadrícula -->
           <path [attr.d]="chart.gridPath"
@@ -99,27 +102,31 @@
                 stroke-linecap="round" stroke-linejoin="round"/>
 
           <!-- Puntos por evaluación (color = estado IF-TOS) -->
-          <g *ngFor="let c of chart.coords; trackBy: trackByEvalId">
-            <circle [attr.cx]="c.x" [attr.cy]="c.y" r="4.5"
-                    [attr.fill]="stateColor(c.tos)"
-                    stroke="#0f172a" stroke-width="1.5"/>
-            <text [attr.x]="c.x" [attr.y]="c.y - 9"
-                  text-anchor="middle" font-size="9"
-                  fill="rgba(255,255,255,0.55)">
-              {{ c.icf | number:'1.0-0' }}
-            </text>
-          </g>
+          @for (c of chart.coords; track c.evalId) {
+            <g>
+              <circle [attr.cx]="c.x" [attr.cy]="c.y" r="4.5"
+                      [attr.fill]="stateColor(c.tos)"
+                      stroke="#0f172a" stroke-width="1.5"/>
+              <text [attr.x]="c.x" [attr.y]="c.y - 9"
+                    text-anchor="middle" font-size="9"
+                    fill="rgba(255,255,255,0.55)">
+                {{ c.icf | number:'1.0-0' }}
+              </text>
+            </g>
+          }
 
           <!-- Etiquetas eje Y -->
-          <g *ngFor="let yl of chart.yLabels">
-            <text [attr.x]="chart.PL - 5" [attr.y]="yl.y + 4"
-                  text-anchor="end" font-size="9" fill="rgba(255,255,255,0.3)">
-              {{ yl.label }}
-            </text>
-            <line [attr.x1]="chart.PL - 3" [attr.y1]="yl.y"
-                  [attr.x2]="chart.PL"     [attr.y2]="yl.y"
-                  stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
-          </g>
+          @for (yl of chart.yLabels; track yl) {
+            <g>
+              <text [attr.x]="chart.PL - 5" [attr.y]="yl.y + 4"
+                    text-anchor="end" font-size="9" fill="rgba(255,255,255,0.3)">
+                {{ yl.label }}
+              </text>
+              <line [attr.x1]="chart.PL - 3" [attr.y1]="yl.y"
+                    [attr.x2]="chart.PL"     [attr.y2]="yl.y"
+                    stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+            </g>
+          }
 
           <!-- Eje X base -->
           <line [attr.x1]="chart.PL"            [attr.y1]="chart.PT + chart.UH"
@@ -127,13 +134,14 @@
                 stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
 
           <!-- IDs de evaluación en eje X -->
-          <g *ngFor="let c of chart.coords; trackBy: trackByEvalId; let idx = index">
-            <text *ngIf="chart.coords.length <= 10 || idx % 2 === 0"
-                  [attr.x]="c.x" [attr.y]="chart.PT + chart.UH + 16"
-                  text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.25)">
-              #{{ c.evalId }}
-            </text>
-          </g>
+          @for (c of chart.coords; track c.evalId; let idx = $index) {
+            @if (chart.coords.length <= 10 || idx % 2 === 0) {
+              <text [attr.x]="c.x" [attr.y]="chart.PT + chart.UH + 16"
+                    text-anchor="middle" font-size="8" fill="rgba(255,255,255,0.25)">
+                #{{ c.evalId }}
+              </text>
+            }
+          }
 
         </svg>
 
@@ -156,11 +164,9 @@
             Incertidumbre IF-SUM
           </span>
         </div>
-      </ng-container>
-
-      <ng-template #noChart>
+      } @else {
         <p class="empty-chart">Sin evaluaciones finalizadas para visualizar.</p>
-      </ng-template>
+      }
     </div>
 
     <!-- ── Fila central: Radar + Diagnóstico de Dimensión ── -->
@@ -171,55 +177,60 @@
         <div class="chart-title">Radar de Dimensiones</div>
         <div class="chart-subtitle">Última evaluación (azul) · anterior (gris punteado). Selecciona para ver detalles.</div>
 
-        <ng-container *ngIf="radarChart() as radar; else noRadar">
+        @if (radarChart(); as radar) {
           <svg viewBox="0 0 220 220" class="radar-svg">
 
             <!-- Anillos de cuadrícula -->
-            <polygon *ngFor="let ring of radar.rings; let ri = index"
-                     [attr.points]="ring" fill="none"
-                     [attr.stroke]="ri === 3 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)'"
-                     [attr.stroke-width]="ri === 3 ? 1.5 : 1"/>
+            @for (ring of radar.rings; track ring; let ri = $index) {
+              <polygon [attr.points]="ring" fill="none"
+                       [attr.stroke]="ri === 3 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)'"
+                       [attr.stroke-width]="ri === 3 ? 1.5 : 1"/>
+            }
 
             <!-- Ejes -->
-            <line *ngFor="let ax of radar.axes"
-                  [attr.x1]="radar.cx" [attr.y1]="radar.cy"
-                  [attr.x2]="ax.x2"   [attr.y2]="ax.y2"
-                  stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            @for (ax of radar.axes; track ax) {
+              <line [attr.x1]="radar.cx" [attr.y1]="radar.cy"
+                    [attr.x2]="ax.x2"   [attr.y2]="ax.y2"
+                    stroke="rgba(255,255,255,0.1)" stroke-width="1"/>
+            }
 
-            <!-- Etiquetas fijas alrededor de los extremos del radar para claridad instantánea -->
-            <text *ngFor="let d of DIMS"
-                  [attr.x]="d.tx" [attr.y]="d.ty"
-                  [attr.text-anchor]="d.textAnchor"
-                  font-size="8" font-weight="800"
-                  [attr.fill]="activeDimension() === d.key ? '#818cf8' : 'rgba(255,255,255,0.35)'"
-                  class="radar-label"
-                  (mouseenter)="selectDimension(d.key)"
-                  (click)="selectDimension(d.key)"
-                  style="cursor: pointer; transition: fill 0.2s; letter-spacing: 0.2px; text-transform: uppercase;">
-              {{ d.label }}
-            </text>
+            <!-- Etiquetas fijas alrededor de los extremos del radar -->
+            @for (d of DIMS; track d.key) {
+              <text [attr.x]="d.tx" [attr.y]="d.ty"
+                    [attr.text-anchor]="d.textAnchor"
+                    font-size="8" font-weight="800"
+                    [attr.fill]="activeDimension() === d.key ? '#818cf8' : 'rgba(255,255,255,0.35)'"
+                    class="radar-label"
+                    (mouseenter)="selectDimension(d.key)"
+                    (click)="selectDimension(d.key)"
+                    style="cursor: pointer; transition: fill 0.2s; letter-spacing: 0.2px; text-transform: uppercase;">
+                {{ d.label }}
+              </text>
+            }
 
             <!-- Evaluación anterior (fantasma) -->
-            <polygon *ngIf="radar.prevPoints"
-                     [attr.points]="radar.prevPoints"
-                     fill="none" stroke="rgba(255,255,255,0.18)"
-                     stroke-width="1.5" stroke-dasharray="4,3"/>
+            @if (radar.prevPoints) {
+              <polygon [attr.points]="radar.prevPoints"
+                       fill="none" stroke="rgba(255,255,255,0.18)"
+                       stroke-width="1.5" stroke-dasharray="4,3"/>
+            }
 
             <!-- Evaluación actual (polígono principal) -->
             <polygon [attr.points]="radar.dataPoints"
                      fill="rgba(99,102,241,0.2)" stroke="#818cf8" stroke-width="2.5"
                      style="transition: all 0.3s;"/>
 
-            <!-- Vértices interactivos para mostrar puntuaciones específicas -->
-            <circle *ngFor="let v of radar.vertices"
-                    [attr.cx]="v.cx" [attr.cy]="v.cy" r="5.5"
-                    [attr.fill]="v.color"
-                    [attr.stroke]="activeDimension() === v.key ? '#ffffff' : '#0f172a'"
-                    [attr.stroke-width]="activeDimension() === v.key ? 2 : 1"
-                    (mouseenter)="selectDimension(v.key)"
-                    (click)="selectDimension(v.key)"
-                    class="radar-vertex"
-                    style="cursor: pointer; transition: all 0.2s;"/>
+            <!-- Vértices interactivos -->
+            @for (v of radar.vertices; track v.key) {
+              <circle [attr.cx]="v.cx" [attr.cy]="v.cy" r="5.5"
+                      [attr.fill]="v.color"
+                      [attr.stroke]="activeDimension() === v.key ? '#ffffff' : '#0f172a'"
+                      [attr.stroke-width]="activeDimension() === v.key ? 2 : 1"
+                      (mouseenter)="selectDimension(v.key)"
+                      (click)="selectDimension(v.key)"
+                      class="radar-vertex"
+                      style="cursor: pointer; transition: all 0.2s;"/>
+            }
 
             <!-- Centro -->
             <circle [attr.cx]="radar.cx" [attr.cy]="radar.cy" r="3.5" fill="#6366f1"/>
@@ -228,66 +239,70 @@
 
           <!-- Puntuaciones por dimensión -->
           <div class="dim-list">
-            <div class="dim-row" *ngFor="let d of radar.dims; trackBy: trackByKey"
-                 [class.active-row]="activeDimension() === d.key"
-                 (mouseenter)="selectDimension(d.key)"
-                 (click)="selectDimension(d.key)"
-                 style="cursor: pointer; padding: 6px 8px; border-radius: 8px; transition: background 0.2s;">
-              <span class="dim-label">{{ d.label }}</span>
-              <div class="dim-bar-track">
-                <div class="dim-bar-fill"
-                     [style.width]="d.value + '%'"
-                     [style.background]="d.color"></div>
+            @for (d of radar.dims; track d.key) {
+              <div class="dim-row"
+                   [class.active-row]="activeDimension() === d.key"
+                   (mouseenter)="selectDimension(d.key)"
+                   (click)="selectDimension(d.key)"
+                   style="cursor: pointer; padding: 6px 8px; border-radius: 8px; transition: background 0.2s;">
+                <span class="dim-label">{{ d.label }}</span>
+                <div class="dim-bar-track">
+                  <div class="dim-bar-fill"
+                       [style.width]="d.value + '%'"
+                       [style.background]="d.color"></div>
+                </div>
+                <span class="dim-val" [style.color]="d.color">{{ d.value }}%</span>
               </div>
-              <span class="dim-val" [style.color]="d.color">{{ d.value }}%</span>
-            </div>
+            }
           </div>
-        </ng-container>
-
-        <ng-template #noRadar>
+        } @else {
           <p class="empty-chart">Sin datos de dimensiones disponibles.</p>
-        </ng-template>
+        }
       </div>
 
       <!-- Diagnóstico Dinámico Clínico (Columna Derecha) -->
-      <div class="chart-card glass interpretation-card" *ngIf="activeDetails() as details"
-           [style.border-left-color]="details.color"
-           style="border-left: 4px solid; transition: all 0.3s; display: flex; flex-direction: column; height: 100%;">
-        <div class="chart-title">Diagnóstico de Dimensión</div>
-        <div class="chart-subtitle">Análisis clínico detallado y sugerencias de acción</div>
+      @if (activeDetails(); as details) {
+        <div class="chart-card glass interpretation-card"
+             [style.border-left-color]="details.color"
+             style="border-left: 4px solid; transition: all 0.3s; display: flex; flex-direction: column; height: 100%;">
+          <div class="chart-title">Diagnóstico de Dimensión</div>
+          <div class="chart-subtitle">Análisis clínico detallado y sugerencias de acción</div>
 
-        <div class="ib-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 20px;">{{ details.icon }}</span>
-            <strong style="font-size: 14px; color: #fff; text-transform: uppercase; letter-spacing: 0.3px;">{{ details.label }}</strong>
+          <div class="ib-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 20px;">{{ details.icon }}</span>
+              <strong style="font-size: 14px; color: #fff; text-transform: uppercase; letter-spacing: 0.3px;">{{ details.label }}</strong>
+            </div>
+            <span class="badge-status" [style.background]="details.color + '22'" [style.color]="details.color"
+                  style="font-size: 9.5px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
+              {{ details.statusLabel }}
+            </span>
           </div>
-          <span class="badge-status" [style.background]="details.color + '22'" [style.color]="details.color"
-                style="font-size: 9.5px; font-weight: 700; padding: 3px 8px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05);">
-            {{ details.statusLabel }}
-          </span>
-        </div>
 
-        <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: rgba(255,255,255,0.45);">
-          🎯 Significado Clínico:
-        </div>
-        <p class="ib-desc" style="font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.6; margin: 0 0 16px 0; flex-grow: 1;">
-          {{ details.definition }}
-        </p>
-
-        <div class="ib-rec" [style.background]="details.color + '0a'"
-             style="padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); margin-top: auto;">
-          <div style="font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: rgba(255,255,255,0.45);">
-            👉 Recomendación de Acción:
+          <div style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: rgba(255,255,255,0.45);">
+            🎯 Significado Clínico:
           </div>
-          <p style="font-size: 11.5px; color: #fff; line-height: 1.5; margin: 0;">
-            {{ details.recommendation }}
+          <p class="ib-desc" style="font-size: 12px; color: rgba(255,255,255,0.7); line-height: 1.6; margin: 0 0 16px 0; flex-grow: 1;">
+            {{ details.definition }}
           </p>
-        </div>
 
-        <div *ngIf="details.isAutoSelected" style="font-size: 8.5px; color: rgba(255,255,255,0.25); text-align: right; margin-top: 10px; font-style: italic;">
-          * Mostrando dimensión de mayor riesgo automáticamente
+          <div class="ib-rec" [style.background]="details.color + '0a'"
+               style="padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); margin-top: auto;">
+            <div style="font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; color: rgba(255,255,255,0.45);">
+              👉 Recomendación de Acción:
+            </div>
+            <p style="font-size: 11.5px; color: #fff; line-height: 1.5; margin: 0;">
+              {{ details.recommendation }}
+            </p>
+          </div>
+
+          @if (details.isAutoSelected) {
+            <div style="font-size: 8.5px; color: rgba(255,255,255,0.25); text-align: right; margin-top: 10px; font-style: italic;">
+              * Mostrando dimensión de mayor riesgo automáticamente
+            </div>
+          }
         </div>
-      </div>
+      }
 
     </div>
 
@@ -298,57 +313,66 @@
         Últimas {{ tosHistory().length }} transiciones de estado operacional familiar
       </div>
 
-      <div class="tos-timeline-horizontal" *ngIf="tosHistory().length > 0; else noTos">
-        <div class="tos-entry-horizontal" *ngFor="let t of tosHistory(); let last = last">
-          <div class="tos-node-wrapper">
-            <div class="tos-dot"
-                 [style.background]="stateColor(t.state)"
-                 [style.box-shadow]="'0 0 8px ' + stateColor(t.state) + '55'"></div>
-            <div class="tos-connector-horizontal" *ngIf="!last"></div>
-          </div>
-          <div class="tos-info-horizontal">
-            <span class="tos-state-name" [ngClass]="stateClass(t.state)">
-              {{ stateGlyph(t.state) }} {{ stateLabel(t.state) }}
-            </span>
-            <div class="tos-meta">
-              <span>Eval #{{ t.evalId }}</span>
-              <span>ICF {{ t.icf | number:'1.0-1' }}</span>
-              <span>{{ formatDateShort(t.date) }}</span>
+      @if (tosHistory().length > 0) {
+        <div class="tos-timeline-horizontal">
+          @for (t of tosHistory(); track t; let last = $last) {
+            <div class="tos-entry-horizontal">
+              <div class="tos-node-wrapper">
+                <div class="tos-dot"
+                     [style.background]="stateColor(t.state)"
+                     [style.box-shadow]="'0 0 8px ' + stateColor(t.state) + '55'"></div>
+                @if (!last) {
+                  <div class="tos-connector-horizontal"></div>
+                }
+              </div>
+              <div class="tos-info-horizontal">
+                <span class="tos-state-name" [ngClass]="stateClass(t.state)">
+                  {{ stateGlyph(t.state) }} {{ stateLabel(t.state) }}
+                </span>
+                <div class="tos-meta">
+                  <span>Eval #{{ t.evalId }}</span>
+                  <span>ICF {{ t.icf | number:'1.0-1' }}</span>
+                  <span>{{ formatDateShort(t.date) }}</span>
+                </div>
+              </div>
             </div>
-          </div>
+          }
         </div>
-      </div>
-
-      <ng-template #noTos>
+      } @else {
         <p class="empty-chart">Sin historial de estados IF-TOS aún.</p>
-      </ng-template>
+      }
     </div>
 
     <!-- ── Reglas EEDSL activadas (IF-REE) ── -->
-    <div class="chart-card glass" *ngIf="ruleActivations().length > 0">
-      <div class="chart-title">Activaciones de Reglas EEDSL (IF-REE)</div>
-      <div class="chart-subtitle">
-        Reglas emocionales activadas con mayor frecuencia en el historial de inferencias
-      </div>
-      <div class="rule-bars">
-        <div class="rule-bar-row" *ngFor="let r of ruleActivations(); trackBy: trackByKey">
-          <span class="rule-bar-label">{{ r.label }}</span>
-          <div class="rule-bar-track">
-            <div class="rule-bar-fill" [style.width]="r.pct + '%'"></div>
-          </div>
-          <span class="rule-bar-count">{{ r.count }}×</span>
+    @if (ruleActivations().length > 0) {
+      <div class="chart-card glass">
+        <div class="chart-title">Activaciones de Reglas EEDSL (IF-REE)</div>
+        <div class="chart-subtitle">
+          Reglas emocionales activadas con mayor frecuencia en el historial de inferencias
+        </div>
+        <div class="rule-bars">
+          @for (r of ruleActivations(); track r.key) {
+            <div class="rule-bar-row">
+              <span class="rule-bar-label">{{ r.label }}</span>
+              <div class="rule-bar-track">
+                <div class="rule-bar-fill" [style.width]="r.pct + '%'"></div>
+              </div>
+              <span class="rule-bar-count">{{ r.count }}×</span>
+            </div>
+          }
         </div>
       </div>
-    </div>
+    }
 
     <!-- ── Sin datos ── -->
-    <div class="empty-state glass"
-         *ngIf="!loading() && totalEvaluations() === 0">
-      <div class="empty-icon">📊</div>
-      <h3>Sin datos de evaluación</h3>
-      <p>Completa al menos una evaluación para visualizar el panel clínico.</p>
-      <a routerLink="/evaluations/start" class="btn-primary">+ Iniciar Evaluación</a>
-    </div>
+    @if (!loading() && totalEvaluations() === 0) {
+      <div class="empty-state glass">
+        <div class="empty-icon">📊</div>
+        <h3>Sin datos de evaluación</h3>
+        <p>Completa al menos una evaluación para visualizar el panel clínico.</p>
+        <a routerLink="/evaluations/start" class="btn-primary">+ Iniciar Evaluación</a>
+      </div>
+    }
 
-  </ng-container>
+  }
 </div>

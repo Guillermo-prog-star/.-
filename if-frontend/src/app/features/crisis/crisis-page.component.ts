@@ -194,7 +194,8 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
       </div>
 
       <!-- HISTORIAL RECIENTE -->
-      <div class="mt-48" *ngIf="history.length > 0">
+      @if (history.length > 0) {
+      <div class="mt-48">
         <h3 class="history-section-title">
           <span>🕒</span> Historial de Contención Reciente
         </h3>
@@ -226,6 +227,7 @@ import { NarrativeCompanionComponent } from '../../shared/components/narrative-c
           }
         </div>
       </div>
+      }
     </div>
   `,
   styles: [`

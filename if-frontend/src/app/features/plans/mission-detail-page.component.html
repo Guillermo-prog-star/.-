@@ -3,23 +3,29 @@
   <!-- Cabecera -->
   <header class="md-header">
     <a routerLink="/plans" class="md-back">← Volver a planes</a>
-    <div class="md-header-right" *ngIf="task">
-      <span class="md-dim-badge" [ngClass]="dimensionColor(task.dimension)">{{ task.dimension }}</span>
-    </div>
+    @if (task) {
+      <div class="md-header-right">
+        <span class="md-dim-badge" [ngClass]="dimensionColor(task.dimension)">{{ task.dimension }}</span>
+      </div>
+    }
   </header>
 
   <!-- Loading -->
-  <div class="md-loading" *ngIf="loading">
-    <div class="md-spinner"></div>
-    <span>Cargando misión…</span>
-  </div>
+  @if (loading) {
+    <div class="md-loading">
+      <div class="md-spinner"></div>
+      <span>Cargando misión…</span>
+    </div>
+  }
 
-  <!-- Error -->
-  <div class="md-error" *ngIf="errorMsg && !loading">
-    <span>⚠️ {{ errorMsg }}</span>
-  </div>
+  <!-- Error inicial -->
+  @if (errorMsg && !loading && !task) {
+    <div class="md-error">
+      <span>⚠️ {{ errorMsg }}</span>
+    </div>
+  }
 
-  <ng-container *ngIf="!loading && task">
+  @if (!loading && task) {
 
     <!-- Info de la misión -->
     <section class="md-mission-card">
@@ -30,39 +36,43 @@
         </span>
       </div>
 
-      <p class="md-mission-desc" *ngIf="task.description">{{ task.description }}</p>
+      @if (task.description) {
+        <p class="md-mission-desc">{{ task.description }}</p>
+      }
 
-      <!-- CTA Flujo: Iniciar Sprint o ir al Daily -->
-      <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-        <a [routerLink]="['/logbook']" [queryParams]="{tab:'SPRINT'}"
-           style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;
-                  background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.35);
-                  color:#818cf8;border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;
-                  transition:all .2s;">
+      <!-- Acciones rápidas -->
+      <div class="md-cta-row">
+        <a [routerLink]="['/logbook']" [queryParams]="{tab:'SPRINT'}" class="md-cta-btn md-cta-primary">
           📔 Ir al Sprint / Daily
         </a>
-        <a [routerLink]="['/transformation/weekly-plan']"
-           style="display:inline-flex;align-items:center;gap:6px;padding:9px 16px;
-                  background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
-                  color:rgba(255,255,255,0.5);border-radius:10px;font-size:12px;font-weight:700;text-decoration:none;">
+        <a [routerLink]="['/transformation/weekly-plan']" class="md-cta-btn">
           📅 Planeación Mensual
         </a>
       </div>
 
-      <div class="md-mission-meta" *ngIf="task.accionConcreta || task.indicadorCumplimiento || task.evidenciaRequerida">
-        <div class="md-meta-item" *ngIf="task.accionConcreta">
-          <span class="md-meta-label">🎯 Acción concreta</span>
-          <span class="md-meta-value">{{ task.accionConcreta }}</span>
+      <!-- Meta datos de la misión -->
+      @if (task.accionConcreta || task.indicadorCumplimiento || task.evidenciaRequerida) {
+        <div class="md-mission-meta">
+          @if (task.accionConcreta) {
+            <div class="md-meta-item">
+              <span class="md-meta-label">🎯 Acción concreta</span>
+              <span class="md-meta-value">{{ task.accionConcreta }}</span>
+            </div>
+          }
+          @if (task.indicadorCumplimiento) {
+            <div class="md-meta-item">
+              <span class="md-meta-label">📊 Indicador de cumplimiento</span>
+              <span class="md-meta-value">{{ task.indicadorCumplimiento }}</span>
+            </div>
+          }
+          @if (task.evidenciaRequerida) {
+            <div class="md-meta-item">
+              <span class="md-meta-label">📎 Evidencia solicitada</span>
+              <span class="md-meta-value">{{ task.evidenciaRequerida }}</span>
+            </div>
+          }
         </div>
-        <div class="md-meta-item" *ngIf="task.indicadorCumplimiento">
-          <span class="md-meta-label">📊 Indicador de cumplimiento</span>
-          <span class="md-meta-value">{{ task.indicadorCumplimiento }}</span>
-        </div>
-        <div class="md-meta-item" *ngIf="task.evidenciaRequerida">
-          <span class="md-meta-label">📎 Evidencia solicitada</span>
-          <span class="md-meta-value">{{ task.evidenciaRequerida }}</span>
-        </div>
-      </div>
+      }
     </section>
 
     <!-- Grid: formulario + historial -->
@@ -74,15 +84,17 @@
           <span class="md-section-icon">✍️</span> Enviar evidencia
         </h2>
 
-        <!-- Toast éxito -->
-        <div class="md-toast md-toast-ok" *ngIf="submitted">
-          <span>📤 Evidencia enviada. Sentinel AI la está analizando en segundo plano…</span>
-        </div>
+        @if (submitted) {
+          <div class="md-toast md-toast-ok">
+            <span>📤 Evidencia enviada. Sentinel AI la está analizando en segundo plano…</span>
+          </div>
+        }
 
-        <!-- Toast error -->
-        <div class="md-toast md-toast-err" *ngIf="errorMsg && !loading">
-          <span>⚠️ {{ errorMsg }}</span>
-        </div>
+        @if (errorMsg && !loading) {
+          <div class="md-toast md-toast-err">
+            <span>⚠️ {{ errorMsg }}</span>
+          </div>
+        }
 
         <form (ngSubmit)="submit()" class="md-form">
 
@@ -90,16 +102,14 @@
           <div class="md-field">
             <label>Tipo de evidencia</label>
             <div class="md-type-row">
-              <button type="button"
-                class="md-type-btn"
-                [class.active]="form.evidenceType === 'BITACORA'"
-                (click)="form.evidenceType = 'BITACORA'">
+              <button type="button" class="md-type-btn"
+                      [class.active]="form.evidenceType === 'BITACORA'"
+                      (click)="form.evidenceType = 'BITACORA'">
                 📝 Bitácora
               </button>
-              <button type="button"
-                class="md-type-btn"
-                [class.active]="form.evidenceType === 'PHOTO'"
-                (click)="form.evidenceType = 'PHOTO'">
+              <button type="button" class="md-type-btn"
+                      [class.active]="form.evidenceType === 'PHOTO'"
+                      (click)="form.evidenceType = 'PHOTO'">
                 🖼️ Foto / URL
               </button>
             </div>
@@ -117,36 +127,38 @@
             <label for="ev-by">Enviado por</label>
             <select id="ev-by" [(ngModel)]="form.submittedBy" name="submittedBy">
               <option value="">— Selecciona un miembro —</option>
-              <option *ngFor="let m of familyMembers" [value]="m.fullName">{{ m.fullName }}</option>
+              @for (m of familyMembers; track m.id) {
+                <option [value]="m.fullName">{{ m.fullName }}</option>
+              }
             </select>
           </div>
 
-          <!-- Contenido texto -->
-          <div class="md-field" *ngIf="form.evidenceType === 'BITACORA'">
-            <label for="ev-text">Reflexión / descripción</label>
-            <textarea id="ev-text" [(ngModel)]="form.textContent" name="textContent"
-                      rows="5"
-                      placeholder="Describe qué hiciste, cómo te sentiste, qué aprendiste…"></textarea>
-          </div>
-
-          <!-- URL de foto -->
-          <div class="md-field" *ngIf="form.evidenceType === 'PHOTO'">
-            <label for="ev-url">URL de imagen</label>
-            <input id="ev-url" type="url" [(ngModel)]="form.fileUrl" name="fileUrl"
-                   placeholder="https://…" />
-          </div>
+          <!-- Contenido según tipo -->
+          @if (form.evidenceType === 'BITACORA') {
+            <div class="md-field">
+              <label for="ev-text">Reflexión / descripción</label>
+              <textarea id="ev-text" [(ngModel)]="form.textContent" name="textContent" rows="5"
+                        placeholder="Describe qué hiciste, cómo te sentiste, qué aprendiste…"></textarea>
+            </div>
+          } @else {
+            <div class="md-field">
+              <label for="ev-url">URL de imagen</label>
+              <input id="ev-url" type="url" [(ngModel)]="form.fileUrl" name="fileUrl"
+                     placeholder="https://…" />
+            </div>
+          }
 
           <!-- Cohesión emocional -->
           <div class="md-field">
             <label>¿Cómo se siente la familia hoy?</label>
             <div class="md-emoji-row">
-              <button type="button"
-                *ngFor="let e of emojis"
-                class="md-emoji-btn"
-                [class.selected]="form.feelingEmoji === e"
-                (click)="form.feelingEmoji = form.feelingEmoji === e ? '' : e">
-                {{ e }}
-              </button>
+              @for (e of emojis; track e) {
+                <button type="button" class="md-emoji-btn"
+                        [class.selected]="form.feelingEmoji === e"
+                        (click)="form.feelingEmoji = form.feelingEmoji === e ? '' : e">
+                  {{ e }}
+                </button>
+              }
             </div>
           </div>
 
@@ -162,49 +174,56 @@
       <section class="md-history-section">
         <h2 class="md-section-title">
           <span class="md-section-icon">🕓</span> Historial
-          <span class="md-history-count" *ngIf="evidences.length">{{ evidences.length }}</span>
+          @if (evidences.length) {
+            <span class="md-history-count">{{ evidences.length }}</span>
+          }
         </h2>
 
-        <div class="md-empty-history" *ngIf="evidences.length === 0">
-          <span class="md-empty-icon">📭</span>
-          <p>Aún no hay evidencias para esta misión.</p>
-        </div>
-
-        <div class="md-ev-list">
-          <div class="md-ev-card" *ngFor="let ev of evidences">
-
-            <div class="md-ev-top">
-              <span class="md-ev-status" [ngClass]="statusClass(ev.status)">
-                {{ statusLabel(ev.status) }}
-              </span>
-              <span class="md-ev-date">{{ ev.createdAt | date:'d MMM · HH:mm' }}</span>
-            </div>
-
-            <h4 class="md-ev-title">{{ ev.title }}</h4>
-
-            <p class="md-ev-by">Por {{ ev.submittedBy }}</p>
-
-            <!-- Score IA -->
-            <div class="md-ev-score-row" *ngIf="ev.aiScore != null">
-              <span class="md-ev-score-label">Score Sentinel AI</span>
-              <div class="md-ev-score-bar">
-                <div class="md-ev-score-fill" [ngClass]="scoreColor(ev.aiScore)"
-                     [style.width.%]="ev.aiScore"></div>
-              </div>
-              <span class="md-ev-score-num" [ngClass]="scoreColor(ev.aiScore)">
-                {{ ev.aiScore | number:'1.0-0' }}/100
-              </span>
-            </div>
-
-            <!-- Descripción / feedback IA -->
-            <p class="md-ev-desc" *ngIf="ev.description">{{ ev.description }}</p>
-
+        @if (evidences.length === 0) {
+          <div class="md-empty-history">
+            <span class="md-empty-icon">📭</span>
+            <p>Aún no hay evidencias para esta misión.</p>
           </div>
-        </div>
+        } @else {
+          <div class="md-ev-list">
+            @for (ev of evidences; track ev.id) {
+              <div class="md-ev-card">
+
+                <div class="md-ev-top">
+                  <span class="md-ev-status" [ngClass]="statusClass(ev.status)">
+                    {{ statusLabel(ev.status) }}
+                  </span>
+                  <span class="md-ev-date">{{ ev.createdAt | date:'d MMM · HH:mm' }}</span>
+                </div>
+
+                <h4 class="md-ev-title">{{ ev.title }}</h4>
+                <p class="md-ev-by">Por {{ ev.submittedBy }}</p>
+
+                @if (ev.aiScore != null) {
+                  <div class="md-ev-score-row">
+                    <span class="md-ev-score-label">Score Sentinel AI</span>
+                    <div class="md-ev-score-bar">
+                      <div class="md-ev-score-fill" [ngClass]="scoreColor(ev.aiScore)"
+                           [style.width.%]="ev.aiScore"></div>
+                    </div>
+                    <span class="md-ev-score-num" [ngClass]="scoreColor(ev.aiScore)">
+                      {{ ev.aiScore | number:'1.0-0' }}/100
+                    </span>
+                  </div>
+                }
+
+                @if (ev.description) {
+                  <p class="md-ev-desc">{{ ev.description }}</p>
+                }
+
+              </div>
+            }
+          </div>
+        }
       </section>
 
     </div>
 
-  </ng-container>
+  }
 
 </div>

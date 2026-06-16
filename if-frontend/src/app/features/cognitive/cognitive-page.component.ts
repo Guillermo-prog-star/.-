@@ -42,18 +42,21 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
       <app-narrative-companion module="cognitive"></app-narrative-companion>
 
       <!-- LOADING -->
-      <div *ngIf="loading()" class="flex items-center justify-center py-24">
-        <div class="flex flex-col items-center gap-4 text-white/30">
-          <div class="w-12 h-12 rounded-full border-2 border-violet-500/40
-                      border-t-violet-500 animate-spin"></div>
-          <span class="text-xs uppercase tracking-widest">Cargando sistema cognitivo...</span>
+      @if (loading()) {
+        <div class="flex items-center justify-center py-24">
+          <div class="flex flex-col items-center gap-4 text-white/30">
+            <div class="w-12 h-12 rounded-full border-2 border-violet-500/40
+                        border-t-violet-500 animate-spin"></div>
+            <span class="text-xs uppercase tracking-widest">Cargando sistema cognitivo...</span>
+          </div>
         </div>
-      </div>
+      }
 
-      <ng-container *ngIf="!loading()">
+      @if (!loading()) {
 
         <!-- ── SECCIÓN 1: IDENTIDAD ───────────────────────────────────────── -->
-        <section *ngIf="narrative()" class="glass-card border-l-4 border-violet-500 p-8 rounded-3xl">
+        @if (narrative()) {
+        <section class="glass-card border-l-4 border-violet-500 p-8 rounded-3xl">
           <div class="flex items-center gap-3 mb-6">
             <div class="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center text-xl">🪪</div>
             <div>
@@ -116,15 +119,18 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
           </div>
 
           <!-- Narrativa identitaria -->
-          <div *ngIf="snapshot()?.identityProfile?.identityNarrative"
-               class="mt-6 p-5 bg-violet-500/5 rounded-2xl border border-violet-500/10">
-            <span class="text-[9px] text-violet-400/60 uppercase tracking-widest block mb-2">Narrativa Identitaria</span>
-            <p class="text-white/70 text-sm leading-relaxed">{{ snapshot()!.identityProfile.identityNarrative }}</p>
-          </div>
+          @if (snapshot()?.identityProfile?.identityNarrative) {
+            <div class="mt-6 p-5 bg-violet-500/5 rounded-2xl border border-violet-500/10">
+              <span class="text-[9px] text-violet-400/60 uppercase tracking-widest block mb-2">Narrativa Identitaria</span>
+              <p class="text-white/70 text-sm leading-relaxed">{{ snapshot()!.identityProfile.identityNarrative }}</p>
+            </div>
+          }
         </section>
+        }
 
         <!-- ── SECCIÓN 2: NARRATIVA ───────────────────────────────────────── -->
-        <section *ngIf="narrative()" class="glass-card border-l-4 border-indigo-500 p-8 rounded-3xl">
+        @if (narrative()) {
+        <section class="glass-card border-l-4 border-indigo-500 p-8 rounded-3xl">
           <div class="flex items-center justify-between gap-3 mb-6">
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-xl">📖</div>
@@ -149,53 +155,62 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
           <div class="relative">
             <div class="absolute left-5 top-0 bottom-0 w-px bg-gradient-to-b from-indigo-500/40 via-white/10 to-transparent"></div>
             <div class="space-y-6 ml-12">
-              <div *ngFor="let chapter of narrative()?.chapters; trackBy: trackByChapter"
-                   class="relative">
-                <!-- Dot en la línea -->
-                <div class="absolute -left-[2.65rem] top-1.5 w-3 h-3 rounded-full border-2
-                            transition-colors"
-                     [ngClass]="chapter.open
-                       ? 'bg-indigo-500 border-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.5)]'
-                       : 'bg-white/10 border-white/20'">
-                </div>
-                <!-- Turning point indicator -->
-                <div *ngIf="chapter.turningPoint"
-                     class="absolute -left-[3.2rem] top-0 text-xs">⚡</div>
-
-                <div class="p-5 rounded-2xl border transition-all"
-                     [ngClass]="chapter.open
-                       ? 'bg-indigo-500/5 border-indigo-500/20 hover:bg-indigo-500/10'
-                       : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'">
-                  <div class="flex items-center justify-between mb-2">
-                    <div class="flex items-center gap-2">
-                      <span class="text-xs font-black text-white/30 uppercase tracking-widest">
-                        Cap. {{ chapter.chapterNumber }}
-                      </span>
-                      <span class="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-full"
-                            [ngClass]="phaseClass(chapter.phase)">
-                        {{ chapter.phase }}
-                      </span>
-                      <span *ngIf="chapter.open"
-                            class="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest
-                                   rounded-full bg-emerald-500/10 text-emerald-400">
-                        ACTIVO
-                      </span>
-                    </div>
-                    <span *ngIf="chapter.icfAtOpen" class="text-[10px] text-white/30">
-                      ICF {{ chapter.icfAtOpen | number:'1.0-0' }}
-                      <span *ngIf="chapter.icfAtClose">→ {{ chapter.icfAtClose | number:'1.0-0' }}</span>
-                    </span>
+              @for (chapter of narrative()?.chapters; track chapter.chapterNumber) {
+                <div class="relative">
+                  <!-- Dot en la línea -->
+                  <div class="absolute -left-[2.65rem] top-1.5 w-3 h-3 rounded-full border-2
+                              transition-colors"
+                       [ngClass]="chapter.open
+                         ? 'bg-indigo-500 border-indigo-400 shadow-[0_0_10px_rgba(99,102,241,0.5)]'
+                         : 'bg-white/10 border-white/20'">
                   </div>
-                  <h3 class="font-bold text-white/90 mb-1">{{ chapter.title }}</h3>
-                  <p class="text-white/50 text-xs leading-relaxed">{{ chapter.body }}</p>
+                  <!-- Turning point indicator -->
+                  @if (chapter.turningPoint) {
+                    <div class="absolute -left-[3.2rem] top-0 text-xs">⚡</div>
+                  }
+
+                  <div class="p-5 rounded-2xl border transition-all"
+                       [ngClass]="chapter.open
+                         ? 'bg-indigo-500/5 border-indigo-500/20 hover:bg-indigo-500/10'
+                         : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'">
+                    <div class="flex items-center justify-between mb-2">
+                      <div class="flex items-center gap-2">
+                        <span class="text-xs font-black text-white/30 uppercase tracking-widest">
+                          Cap. {{ chapter.chapterNumber }}
+                        </span>
+                        <span class="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest rounded-full"
+                              [ngClass]="phaseClass(chapter.phase)">
+                          {{ chapter.phase }}
+                        </span>
+                        @if (chapter.open) {
+                          <span class="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest
+                                       rounded-full bg-emerald-500/10 text-emerald-400">
+                            ACTIVO
+                          </span>
+                        }
+                      </div>
+                      @if (chapter.icfAtOpen) {
+                        <span class="text-[10px] text-white/30">
+                          ICF {{ chapter.icfAtOpen | number:'1.0-0' }}
+                          @if (chapter.icfAtClose) {
+                            <span>→ {{ chapter.icfAtClose | number:'1.0-0' }}</span>
+                          }
+                        </span>
+                      }
+                    </div>
+                    <h3 class="font-bold text-white/90 mb-1">{{ chapter.title }}</h3>
+                    <p class="text-white/50 text-xs leading-relaxed">{{ chapter.body }}</p>
+                  </div>
                 </div>
-              </div>
+              }
             </div>
           </div>
         </section>
+        }
 
         <!-- ── SECCIÓN 3: GRAFO RELACIONAL ───────────────────────────────── -->
-        <section *ngIf="graph()" class="glass-card border-l-4 border-teal-500 p-8 rounded-3xl">
+        @if (graph()) {
+        <section class="glass-card border-l-4 border-teal-500 p-8 rounded-3xl">
           <div class="flex items-center gap-3 mb-6">
             <div class="w-10 h-10 bg-teal-500/20 rounded-xl flex items-center justify-center text-xl">🕸️</div>
             <div>
@@ -207,82 +222,88 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
           </div>
 
           <!-- Roles sistémicos -->
-          <div *ngIf="(graph()?.systemRoles?.length ?? 0) > 0" class="mb-6">
-            <span class="text-[9px] text-white/30 uppercase tracking-widest block mb-3">Roles Sistémicos</span>
-            <div class="flex flex-wrap gap-2">
-              <div *ngFor="let role of graph()!.systemRoles"
-                   class="flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold"
-                   [ngClass]="systemRoleClass(role.systemRole)">
-                <span>{{ roleEmoji(role.systemRole) }}</span>
-                <span class="text-white/70">{{ role.memberName }}</span>
-                <span class="uppercase text-[9px] tracking-widest opacity-60">{{ role.systemRole }}</span>
+          @if ((graph()?.systemRoles?.length ?? 0) > 0) {
+            <div class="mb-6">
+              <span class="text-[9px] text-white/30 uppercase tracking-widest block mb-3">Roles Sistémicos</span>
+              <div class="flex flex-wrap gap-2">
+                @for (role of graph()!.systemRoles; track role.memberName) {
+                  <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-bold"
+                       [ngClass]="systemRoleClass(role.systemRole)">
+                    <span>{{ roleEmoji(role.systemRole) }}</span>
+                    <span class="text-white/70">{{ role.memberName }}</span>
+                    <span class="uppercase text-[9px] tracking-widest opacity-60">{{ role.systemRole }}</span>
+                  </div>
+                }
               </div>
             </div>
-          </div>
+          }
 
           <!-- Díadas -->
           <div class="space-y-3">
-            <div *ngFor="let dyad of graph()!.dyads; trackBy: trackByDyad"
-                 class="p-5 bg-white/[0.02] rounded-2xl border border-white/5
-                        hover:bg-white/[0.04] transition-all">
-              <!-- Header de la díada -->
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                  <span class="font-bold text-white/90 text-sm">{{ dyad.memberAName }}</span>
-                  <span class="text-white/20 text-xs">↔</span>
-                  <span class="font-bold text-white/90 text-sm">{{ dyad.memberBName }}</span>
-                  <span class="px-2 py-0.5 ml-1 text-[9px] font-black uppercase tracking-widest rounded-full"
-                        [ngClass]="dynamicClass(dyad.dynamicType)">
-                    {{ dyad.dynamicType }}
+            @for (dyad of graph()!.dyads; track trackByDyad($index, dyad)) {
+              <div class="p-5 bg-white/[0.02] rounded-2xl border border-white/5
+                          hover:bg-white/[0.04] transition-all">
+                <!-- Header de la díada -->
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold text-white/90 text-sm">{{ dyad.memberAName }}</span>
+                    <span class="text-white/20 text-xs">↔</span>
+                    <span class="font-bold text-white/90 text-sm">{{ dyad.memberBName }}</span>
+                    <span class="px-2 py-0.5 ml-1 text-[9px] font-black uppercase tracking-widest rounded-full"
+                          [ngClass]="dynamicClass(dyad.dynamicType)">
+                      {{ dyad.dynamicType }}
+                    </span>
+                  </div>
+                  <span class="text-white/30 text-[10px] flex items-center gap-1">
+                    {{ trendIcon(dyad.evolutionTrend) }} {{ dyad.evolutionTrend }}
                   </span>
                 </div>
-                <span class="text-white/30 text-[10px] flex items-center gap-1">
-                  {{ trendIcon(dyad.evolutionTrend) }} {{ dyad.evolutionTrend }}
-                </span>
-              </div>
-              <!-- Barras de métricas -->
-              <div class="space-y-2">
-                <div class="flex items-center gap-3">
-                  <span class="text-[10px] text-white/30 w-20 text-right">Cohesión</span>
-                  <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div class="h-full bg-emerald-500 rounded-full transition-all duration-700"
-                         [style.width.%]="dyad.cohesionScore"></div>
+                <!-- Barras de métricas -->
+                <div class="space-y-2">
+                  <div class="flex items-center gap-3">
+                    <span class="text-[10px] text-white/30 w-20 text-right">Cohesión</span>
+                    <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div class="h-full bg-emerald-500 rounded-full transition-all duration-700"
+                           [style.width.%]="dyad.cohesionScore"></div>
+                    </div>
+                    <span class="text-[10px] text-white/50 w-8">{{ dyad.cohesionScore | number:'1.0-0' }}</span>
                   </div>
-                  <span class="text-[10px] text-white/50 w-8">{{ dyad.cohesionScore | number:'1.0-0' }}</span>
-                </div>
-                <div class="flex items-center gap-3">
-                  <span class="text-[10px] text-white/30 w-20 text-right">Comunicación</span>
-                  <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div class="h-full bg-indigo-500 rounded-full transition-all duration-700"
-                         [style.width.%]="dyad.communicationScore"></div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-[10px] text-white/30 w-20 text-right">Comunicación</span>
+                    <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div class="h-full bg-indigo-500 rounded-full transition-all duration-700"
+                           [style.width.%]="dyad.communicationScore"></div>
+                    </div>
+                    <span class="text-[10px] text-white/50 w-8">{{ dyad.communicationScore | number:'1.0-0' }}</span>
                   </div>
-                  <span class="text-[10px] text-white/50 w-8">{{ dyad.communicationScore | number:'1.0-0' }}</span>
-                </div>
-                <div class="flex items-center gap-3">
-                  <span class="text-[10px] text-white/30 w-20 text-right">Tensión</span>
-                  <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                    <div class="h-full rounded-full transition-all duration-700"
-                         [ngClass]="dyad.tensionScore > 60 ? 'bg-red-500' : dyad.tensionScore > 35 ? 'bg-amber-500' : 'bg-teal-500'"
-                         [style.width.%]="dyad.tensionScore"></div>
+                  <div class="flex items-center gap-3">
+                    <span class="text-[10px] text-white/30 w-20 text-right">Tensión</span>
+                    <div class="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div class="h-full rounded-full transition-all duration-700"
+                           [ngClass]="dyad.tensionScore > 60 ? 'bg-red-500' : dyad.tensionScore > 35 ? 'bg-amber-500' : 'bg-teal-500'"
+                           [style.width.%]="dyad.tensionScore"></div>
+                    </div>
+                    <span class="text-[10px] text-white/50 w-8">{{ dyad.tensionScore | number:'1.0-0' }}</span>
                   </div>
-                  <span class="text-[10px] text-white/50 w-8">{{ dyad.tensionScore | number:'1.0-0' }}</span>
+                </div>
+                <!-- Roles en esta díada -->
+                <div class="flex gap-3 mt-3 pt-3 border-t border-white/5">
+                  <span class="text-[9px] text-white/20 uppercase tracking-widest">{{ dyad.memberAName }}: <strong class="text-white/50">{{ dyad.roleA }}</strong></span>
+                  <span class="text-white/10">·</span>
+                  <span class="text-[9px] text-white/20 uppercase tracking-widest">{{ dyad.memberBName }}: <strong class="text-white/50">{{ dyad.roleB }}</strong></span>
                 </div>
               </div>
-              <!-- Roles en esta díada -->
-              <div class="flex gap-3 mt-3 pt-3 border-t border-white/5">
-                <span class="text-[9px] text-white/20 uppercase tracking-widest">{{ dyad.memberAName }}: <strong class="text-white/50">{{ dyad.roleA }}</strong></span>
-                <span class="text-white/10">·</span>
-                <span class="text-[9px] text-white/20 uppercase tracking-widest">{{ dyad.memberBName }}: <strong class="text-white/50">{{ dyad.roleB }}</strong></span>
-              </div>
-            </div>
+            }
 
             <!-- Empty state -->
-            <div *ngIf="graph()!.dyads?.length === 0"
-                 class="text-center py-12 text-white/20 text-sm">
-              La familia necesita al menos 2 miembros activos para generar el grafo.
-            </div>
+            @if (graph()!.dyads.length === 0) {
+              <div class="text-center py-12 text-white/20 text-sm">
+                La familia necesita al menos 2 miembros activos para generar el grafo.
+              </div>
+            }
           </div>
         </section>
+        }
 
         <!-- ── SECCIÓN 4: MEMORIA COGNITIVA ─────────────────────────────── -->
         <section class="glass-card border-l-4 border-cyan-500 p-8 rounded-3xl">
@@ -294,49 +315,60 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
             </div>
           </div>
 
-          <div *ngIf="!memory()" class="text-center py-8 text-white/20 text-sm">
-            Sin memorias registradas aún.
-          </div>
-
-          <div *ngIf="memory()" class="space-y-6">
-
-            <!-- Tabs: 3 tipos de memoria -->
-            <div class="flex gap-2 flex-wrap">
-              <button *ngFor="let tab of memoryTabs" (click)="activeMemoryTab.set(tab.key)"
-                      class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
-                      [ngClass]="activeMemoryTab() === tab.key
-                        ? tab.activeClass
-                        : 'bg-white/5 text-white/30 hover:bg-white/10'">
-                {{ tab.emoji }} {{ tab.label }}
-                <span class="ml-1 opacity-60">({{ memoryCount(tab.key) }})</span>
-              </button>
+          @if (!memory()) {
+            <div class="text-center py-8 text-white/20 text-sm">
+              Sin memorias registradas aún.
             </div>
+          }
 
-            <!-- Lista de memorias activa -->
-            <div class="space-y-2">
-              <div *ngFor="let m of activeMemories(); trackBy: trackByMemory"
-                   class="p-4 bg-white/[0.02] rounded-2xl border border-white/5 hover:bg-white/[0.04] transition-all">
-                <div class="flex items-start justify-between gap-4 mb-2">
-                  <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
-                        [ngClass]="memoryTypeClass(m.memoryType)">
-                    {{ m.memoryType }}
-                  </span>
-                  <div class="flex items-center gap-2 text-[9px] text-white/25">
-                    <span>⭐ {{ m.importanceScore | number:'1.1-1' }}</span>
-                    <span *ngIf="m.semanticKey" class="text-white/20">· {{ m.semanticKey }}</span>
+          @if (memory()) {
+            <div class="space-y-6">
+
+              <!-- Tabs: 3 tipos de memoria -->
+              <div class="flex gap-2 flex-wrap">
+                @for (tab of memoryTabs; track tab.key) {
+                  <button (click)="activeMemoryTab.set(tab.key)"
+                          class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all"
+                          [ngClass]="activeMemoryTab() === tab.key
+                            ? tab.activeClass
+                            : 'bg-white/5 text-white/30 hover:bg-white/10'">
+                    {{ tab.emoji }} {{ tab.label }}
+                    <span class="ml-1 opacity-60">({{ memoryCount(tab.key) }})</span>
+                  </button>
+                }
+              </div>
+
+              <!-- Lista de memorias activa -->
+              <div class="space-y-2">
+                @for (m of activeMemories(); track m.id) {
+                  <div class="p-4 bg-white/[0.02] rounded-2xl border border-white/5 hover:bg-white/[0.04] transition-all">
+                    <div class="flex items-start justify-between gap-4 mb-2">
+                      <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                            [ngClass]="memoryTypeClass(m.memoryType)">
+                        {{ m.memoryType }}
+                      </span>
+                      <div class="flex items-center gap-2 text-[9px] text-white/25">
+                        <span>⭐ {{ m.importanceScore | number:'1.1-1' }}</span>
+                        @if (m.semanticKey) {
+                          <span class="text-white/20">· {{ m.semanticKey }}</span>
+                        }
+                      </div>
+                    </div>
+                    <p class="text-white/70 text-xs leading-relaxed">{{ m.content }}</p>
+                    <div class="mt-2 text-[9px] text-white/20">
+                      {{ m.sourceType }} · {{ m.createdAt | date:'dd/MM/yy HH:mm' }}
+                    </div>
                   </div>
-                </div>
-                <p class="text-white/70 text-xs leading-relaxed">{{ m.content }}</p>
-                <div class="mt-2 text-[9px] text-white/20">
-                  {{ m.sourceType }} · {{ m.createdAt | date:'dd/MM/yy HH:mm' }}
-                </div>
-              </div>
+                }
 
-              <div *ngIf="activeMemories().length === 0" class="text-center py-8 text-white/20 text-sm">
-                Sin memorias en esta categoría.
+                @if (activeMemories().length === 0) {
+                  <div class="text-center py-8 text-white/20 text-sm">
+                    Sin memorias en esta categoría.
+                  </div>
+                }
               </div>
             </div>
-          </div>
+          }
         </section>
 
         <!-- ── SECCIÓN 5: REFLEXIÓN AUTÓNOMA ─────────────────────────────────────── -->
@@ -355,24 +387,30 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
                            bg-amber-500/10 text-amber-400 border border-amber-500/20
                            hover:bg-amber-500/20 transition-all disabled:opacity-40
                            disabled:cursor-not-allowed flex items-center gap-2">
-              <span *ngIf="reflecting()" class="w-3 h-3 rounded-full border border-amber-400 border-t-transparent animate-spin"></span>
+              @if (reflecting()) {
+                <span class="w-3 h-3 rounded-full border border-amber-400 border-t-transparent animate-spin"></span>
+              }
               {{ reflecting() ? 'Analizando...' : '↻ Actualizar Reflexión' }}
             </button>
           </div>
 
           <!-- Estado: sin reflexión disponible -->
-          <div *ngIf="!reflection()" class="text-center py-12">
-            <p class="text-white/20 text-sm">Sin datos de reflexión todavía — realiza un diagnóstico primero.</p>
-          </div>
+          @if (!reflection()) {
+            <div class="text-center py-12">
+              <p class="text-white/20 text-sm">Sin datos de reflexión todavía — realiza un diagnóstico primero.</p>
+            </div>
+          }
 
           <!-- Resultado de reflexión -->
-          <div *ngIf="reflection()" class="space-y-6">
-            <!-- Alerta urgente -->
-            <div *ngIf="reflection()!.requiresUrgentAttention"
-                 class="flex items-center gap-3 p-4 bg-red-500/10 rounded-2xl border border-red-500/20">
-              <span class="text-xl">🚨</span>
-              <p class="text-red-400 text-sm font-bold">Atención urgente requerida — revisa abandono y efectividad.</p>
-            </div>
+          @if (reflection()) {
+            <div class="space-y-6">
+              <!-- Alerta urgente -->
+              @if (reflection()!.requiresUrgentAttention) {
+                <div class="flex items-center gap-3 p-4 bg-red-500/10 rounded-2xl border border-red-500/20">
+                  <span class="text-xl">🚨</span>
+                  <p class="text-red-400 text-sm font-bold">Atención urgente requerida — revisa abandono y efectividad.</p>
+                </div>
+              }
 
             <!-- Métricas -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -411,32 +449,33 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
               <p class="text-white/60 text-sm">{{ reflection()!.effectivenessSummary }}</p>
             </div>
 
-            <!-- Señales de abandono -->
-            <div *ngIf="(reflection()?.abandonmentSignals?.length ?? 0) > 0"
-                 class="p-4 bg-red-500/5 rounded-2xl border border-red-500/10">
-              <span class="text-[9px] text-red-400/60 uppercase tracking-widest block mb-2">Señales de riesgo detectadas</span>
-              <div class="flex flex-wrap gap-2">
-                <span *ngFor="let signal of reflection()!.abandonmentSignals"
-                      class="px-2 py-1 text-[10px] font-bold uppercase tracking-widest
-                             bg-red-500/10 text-red-400 rounded-lg border border-red-500/10">
-                  {{ signal }}
-                </span>
-              </div>
-            </div>
+              <!-- Señales de abandono -->
+              @if ((reflection()?.abandonmentSignals?.length ?? 0) > 0) {
+                <div class="p-4 bg-red-500/5 rounded-2xl border border-red-500/10">
+                  <span class="text-[9px] text-red-400/60 uppercase tracking-widest block mb-2">Señales de riesgo detectadas</span>
+                  <div class="flex flex-wrap gap-2">
+                    @for (signal of reflection()!.abandonmentSignals; track signal) {
+                      <span class="px-2 py-1 text-[10px] font-bold uppercase tracking-widest
+                                   bg-red-500/10 text-red-400 rounded-lg border border-red-500/10">
+                        {{ signal }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              }
 
-            <!-- Lección aprendida -->
-            <div *ngIf="reflection()!.lessonLearned"
-                 class="p-5 bg-amber-500/5 rounded-2xl border border-amber-500/10">
-              <span class="text-[9px] text-amber-400/60 uppercase tracking-widest block mb-2">💡 Lección Aprendida</span>
-              <p class="text-white/70 text-sm leading-relaxed italic">{{ reflection()!.lessonLearned }}</p>
+              <!-- Lección aprendida -->
+              @if (reflection()!.lessonLearned) {
+                <div class="p-5 bg-amber-500/5 rounded-2xl border border-amber-500/10">
+                  <span class="text-[9px] text-amber-400/60 uppercase tracking-widest block mb-2">💡 Lección Aprendida</span>
+                  <p class="text-white/70 text-sm leading-relaxed italic">{{ reflection()!.lessonLearned }}</p>
+                </div>
+              }
             </div>
-          </div>
+          }
         </section>
 
-      </ng-container>
-
-      <!-- LOADING TEMPLATE -->
-      <ng-template #loadingTemplate></ng-template>
+      }
     </div>
   `,
   styles: [`
@@ -617,8 +656,5 @@ export class CognitivePageComponent implements OnInit {
     }[type] ?? 'bg-white/10 text-white/40';
   }
 
-  // ─── TrackBy ─────────────────────────────────────────────────────────────
-  trackByChapter(_: number, c: NarrativeChapter) { return c.chapterNumber; }
   trackByDyad(_: number, d: DyadDto) { return `${d.memberAId}-${d.memberBId}`; }
-  trackByMemory(_: number, m: MemoryDto) { return m.id; }
 }

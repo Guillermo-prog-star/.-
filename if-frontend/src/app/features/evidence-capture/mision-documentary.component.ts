@@ -5,10 +5,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
-import { EvidenceService, SubmitEvidenceRequest } from '../../core/services/evidence.service';
+import { EvidenceService, SubmitEvidenceRequest, EvidenceType, SubmitDocumentaryRequest } from '../../core/services/evidence.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { ApiService } from '../../core/services/api.service';
 import { catchError, of } from 'rxjs';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 
 // ── Tipos internos ──────────────────────────────────────────────────────────
 
@@ -84,51 +85,93 @@ const EMOTIONS = [
     </div>
   }
 
-  <!-- ══ PASO 1: SELECCIÓN DE MISIÓN ════════════════════════════════════ -->
+  <!-- ══ PASO 1: SELECCIÓN DE TIPO Y MISIÓN ════════════════════════════════════ -->
   @if (step() === 'mission') {
     <div class="md-section">
-      <div class="section-title">📋 ¿Para qué misión es este documental?</div>
-      <p class="section-hint">El documental quedará vinculado a esta misión como evidencia oficial.</p>
+      <div class="section-title">📋 ¿Qué quieres documentar?</div>
+      
+      <div class="type-selector" style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px;">
+        <button class="type-btn" [class.selected]="sourceType() === 'MISSION'" (click)="setSourceType('MISSION')">
+          <div class="type-icon" style="font-size: 24px; margin-bottom: 4px;">🎯</div>
+          <div class="type-label" style="font-size: 13px; font-weight: 600;">Una misión del plan</div>
+        </button>
+        <button class="type-btn" [class.selected]="sourceType() === 'SPONTANEOUS'" (click)="setSourceType('SPONTANEOUS')">
+          <div class="type-icon" style="font-size: 24px; margin-bottom: 4px;">✨</div>
+          <div class="type-label" style="font-size: 13px; font-weight: 600;">Encuentro momentáneo</div>
+        </button>
+        <button class="type-btn" [class.selected]="sourceType() === 'MEMORY'" (click)="setSourceType('MEMORY')">
+          <div class="type-icon" style="font-size: 24px; margin-bottom: 4px;">📸</div>
+          <div class="type-label" style="font-size: 13px; font-weight: 600;">Recuerdo familiar importante</div>
+        </button>
+        <button class="type-btn" [class.selected]="sourceType() === 'SPRINT_CLOSURE'" (click)="setSourceType('SPRINT_CLOSURE')">
+          <div class="type-icon" style="font-size: 24px; margin-bottom: 4px;">🏁</div>
+          <div class="type-label" style="font-size: 13px; font-weight: 600;">Cierre de Sprint</div>
+        </button>
+        <button class="type-btn" [class.selected]="sourceType() === 'PILLAR_CLOSURE'" (click)="setSourceType('PILLAR_CLOSURE')">
+          <div class="type-icon" style="font-size: 24px; margin-bottom: 4px;">🏛️</div>
+          <div class="type-label" style="font-size: 13px; font-weight: 600;">Cierre de Pilar</div>
+        </button>
+      </div>
 
-      @if (loadingMissions()) {
-        <div class="loading-row">
-          <div class="spinner-sm"></div> Cargando misiones...
+      @if (sourceType() === 'SPONTANEOUS' || sourceType() === 'MEMORY') {
+        <div class="section-title" style="margin-top: 24px; font-size: 14px;">¿Este momento debería contar como avance de alguna misión?</div>
+        <div class="type-selector" style="display: flex; gap: 12px; margin-bottom: 24px; margin-top: 12px;">
+          <button class="type-btn" [class.selected]="linkToMission() === true" (click)="setLinkToMission(true)" style="padding: 10px;">
+            <div class="type-label" style="font-size: 13px; font-weight: 600;">Sí, vincular a misión</div>
+          </button>
+          <button class="type-btn" [class.selected]="linkToMission() === false" (click)="setLinkToMission(false)" style="padding: 10px;">
+            <div class="type-label" style="font-size: 13px; font-weight: 600;">No, guardar solo en cápsula</div>
+          </button>
         </div>
       }
 
-      @if (!loadingMissions() && missions().length === 0) {
-        <div class="empty-hint">No hay misiones activas. Ve al Plan de Transformación y activa una misión primero.</div>
+      @if (sourceType() === 'MISSION' || linkToMission() === true) {
+        <p class="section-hint">El documental quedará vinculado a esta misión como evidencia oficial.</p>
+
+        @if (loadingMissions()) {
+          <div class="loading-row">
+            <div class="spinner-sm"></div> Cargando misiones...
+          </div>
+        }
+
+        @if (!loadingMissions() && missions().length === 0) {
+          <div class="empty-hint">No hay misiones activas. Ve al Plan de Transformación y activa una misión primero.</div>
+        }
+
+        <div class="mission-list">
+          @for (m of missions(); track m.id) {
+            <button
+              class="mission-card"
+              [class.selected]="selectedMission()?.id === m.id"
+              (click)="selectMission(m)"
+            >
+              <span class="mc-icon">🎯</span>
+              <div class="mc-info">
+                <div class="mc-title">{{ m.title }}</div>
+                @if (m.description) {
+                  <div class="mc-desc">{{ m.description }}</div>
+                }
+              </div>
+              @if (selectedMission()?.id === m.id) {
+                <span class="mc-check">✓</span>
+              }
+            </button>
+          }
+        </div>
       }
 
-      <div class="mission-list">
-        @for (m of missions(); track m.id) {
-          <button
-            class="mission-card"
-            [class.selected]="selectedMission()?.id === m.id"
-            (click)="selectMission(m)"
-          >
-            <span class="mc-icon">🎯</span>
-            <div class="mc-info">
-              <div class="mc-title">{{ m.title }}</div>
-              @if (m.description) {
-                <div class="mc-desc">{{ m.description }}</div>
-              }
-            </div>
-            @if (selectedMission()?.id === m.id) {
-              <span class="mc-check">✓</span>
-            }
-          </button>
-        }
-      </div>
+      @if ((sourceType() === 'SPONTANEOUS' || sourceType() === 'MEMORY') && linkToMission() === false) {
+        <p class="section-hint">Guarda un recuerdo valioso de tu familia, independiente de las misiones.</p>
+      }
 
       <!-- Título del documental -->
-      @if (selectedMission()) {
+      @if (sourceType() && (linkToMission() === false || selectedMission() || sourceType() === 'SPRINT_CLOSURE' || sourceType() === 'PILLAR_CLOSURE')) {
         <div class="field-group" style="margin-top: 20px;">
           <label class="field-label">Título del documental</label>
           <input
             class="field-input"
             [(ngModel)]="documentaryTitle"
-            [placeholder]="'Ej: ' + (selectedMission()?.title ?? 'Nuestra misión cumplida')"
+            [placeholder]="linkToMission() === false ? 'Ej: Paseo por el parque en familia' : 'Ej: ' + (selectedMission()?.title ?? 'Cierre de ciclo')"
             maxlength="140"
           />
         </div>
@@ -138,7 +181,7 @@ const EMOTIONS = [
         <span></span>
         <button
           class="btn-next"
-          [disabled]="!selectedMission() || !documentaryTitle.trim()"
+          [disabled]="canProceedToCapture() === false"
           (click)="step.set('capture')"
         >Continuar — Agregar evidencias →</button>
       </div>
@@ -461,10 +504,10 @@ const EMOTIONS = [
       <!-- Narrativa generada por IA -->
       @if (aiNarrative()) {
         <div class="doc-narrative">
-          <div class="nar-header">
-            <span class="nar-badge">🧠 Narrativa generada por Sentinel AI</span>
+          <div class="nar-header" style="margin-bottom: 12px; border-bottom: 1px solid rgba(168, 85, 247, 0.2); padding-bottom: 8px;">
+            <span class="nar-badge">🧠 Análisis Estructurado de Sentinel AI</span>
           </div>
-          <p class="nar-text">{{ aiNarrative() }}</p>
+          <div class="nar-text" [innerHTML]="formattedAiNarrativeHtml()"></div>
         </div>
       }
 
@@ -614,6 +657,19 @@ const EMOTIONS = [
     .loading-row { display: flex; align-items: center; gap: 8px; color: var(--if-text-secondary, #999); font-size: 13px; padding: 20px 0; }
     .empty-hint  { font-size: 13px; color: var(--if-text-secondary, #999); padding: 20px; text-align: center; background: rgba(255,255,255,0.03); border-radius: 10px; }
     .mission-list { display: flex; flex-direction: column; gap: 10px; }
+    
+    /* Selector de Tipo */
+    .type-btn {
+      flex: 1; padding: 16px; border-radius: 12px;
+      background: rgba(255,255,255,0.03); border: 2px solid rgba(255,255,255,0.1);
+      color: var(--if-text-secondary, #aaa); cursor: pointer; transition: all 0.2s;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .type-btn:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.2); }
+    .type-btn.selected {
+      background: rgba(168, 85, 247, 0.15); border-color: #a855f7; color: #fff;
+    }
+
     .mission-card {
       display: flex; align-items: center; gap: 14px;
       padding: 14px 16px;
@@ -836,12 +892,42 @@ const EMOTIONS = [
       border-radius: 16px; padding: 22px;
     }
     .nar-header { margin-bottom: 14px; }
-    .nar-badge {
-      font-size: 11px; font-weight: 700; color: #a78bfa;
-      background: rgba(124,58,237,0.12); border: 1px solid rgba(124,58,237,0.25);
-      padding: 4px 12px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.06em;
+    .nar-badge { 
+      background: linear-gradient(135deg, rgba(168,85,247,0.2) 0%, rgba(139,92,246,0.1) 100%); 
+      color: #d8b4fe; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; border: 1px solid rgba(168,85,247,0.3); text-transform: uppercase; letter-spacing: 0.5px;
     }
-    .nar-text { font-size: 15px; line-height: 1.8; color: var(--if-text-primary, #ddd); margin: 0; font-style: italic; }
+    .nar-text { font-size: 14px; line-height: 1.6; color: var(--if-text-primary, #ddd); margin: 0; }
+    
+    ::ng-deep .nar-feedback {
+      background: rgba(168, 85, 247, 0.08);
+      border-left: 3px solid #a855f7;
+      padding: 14px 18px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    ::ng-deep .nar-feedback-title {
+      font-weight: 700;
+      color: #c084fc;
+      margin-bottom: 8px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    ::ng-deep .nar-feedback-body {
+      color: #e9d5ff;
+      font-size: 14px;
+      line-height: 1.6;
+      font-style: italic;
+    }
+    ::ng-deep .nar-label {
+      color: #a78bfa;
+      font-weight: 700;
+      font-size: 13px;
+      margin-top: 14px;
+      display: inline-block;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
 
     /* Título de sección */
     .doc-section-title {
@@ -963,6 +1049,7 @@ export class MisionDocumentaryComponent implements OnInit, OnDestroy {
   private readonly api          = inject(ApiService);
   private readonly route        = inject(ActivatedRoute);
   private readonly router       = inject(Router);
+  private readonly sanitizer    = inject(DomSanitizer);
 
   // ── Estado de pasos ────────────────────────────────────────────────────
   readonly step           = signal<Step>('mission');
@@ -981,11 +1068,44 @@ export class MisionDocumentaryComponent implements OnInit, OnDestroy {
     return order.indexOf(this.step()) > order.indexOf(key);
   }
 
-  // ── Misiones ───────────────────────────────────────────────────────────
+  // ── Misiones y Tipo de Documental ─────────────────────────────────────────
+  readonly sourceType       = signal<'MISSION' | 'SPONTANEOUS' | 'MEMORY' | 'SPRINT_CLOSURE' | 'PILLAR_CLOSURE' | null>(null);
+  readonly linkToMission    = signal<boolean | null>(null);
   readonly missions         = signal<Mission[]>([]);
   readonly loadingMissions  = signal(false);
   readonly selectedMission  = signal<Mission | null>(null);
   documentaryTitle = '';
+
+  setSourceType(type: 'MISSION' | 'SPONTANEOUS' | 'MEMORY' | 'SPRINT_CLOSURE' | 'PILLAR_CLOSURE') {
+    this.sourceType.set(type);
+    if (type !== 'SPONTANEOUS' && type !== 'MEMORY') {
+      this.linkToMission.set(null);
+    }
+    if (type !== 'MISSION' && this.linkToMission() !== true) {
+      this.selectedMission.set(null);
+    }
+  }
+
+  setLinkToMission(link: boolean) {
+    this.linkToMission.set(link);
+    if (!link) {
+      this.selectedMission.set(null);
+    }
+  }
+
+  canProceedToCapture(): boolean {
+    const type = this.sourceType();
+    if (!type || !this.documentaryTitle.trim()) return false;
+    
+    if (type === 'MISSION') return !!this.selectedMission();
+    if (type === 'SPONTANEOUS' || type === 'MEMORY') {
+      if (this.linkToMission() === null) return false;
+      if (this.linkToMission() === true) return !!this.selectedMission();
+      return true; // No vinculado a misión
+    }
+    // SPRINT_CLOSURE, PILLAR_CLOSURE can proceed with just title
+    return true;
+  }
 
   // ── Ítems capturados ───────────────────────────────────────────────────
   readonly capturedItems  = signal<CapsuleItem[]>([]);
@@ -1248,8 +1368,10 @@ export class MisionDocumentaryComponent implements OnInit, OnDestroy {
 
   async submit(): Promise<void> {
     const familyId = this.familyState.getSelectedFamilyId();
+    const isMission = this.sourceType() === 'MISSION' || this.linkToMission() === true;
     const mission  = this.selectedMission();
-    if (!familyId || !mission) return;
+    
+    if (!familyId || (isMission && !mission)) return;
 
     this.step.set('submitting');
     this.submitStep.set(1);
@@ -1258,6 +1380,7 @@ export class MisionDocumentaryComponent implements OnInit, OnDestroy {
 
     const items = this.capturedItems();
     let lastEvidenceId: number | null = null;
+    const capturedEvidenceIds: number[] = [];
 
     // 1. Enviar cada ítem como evidencia individual
     for (let i = 0; i < items.length; i++) {
@@ -1277,11 +1400,9 @@ export class MisionDocumentaryComponent implements OnInit, OnDestroy {
       };
 
       const req: SubmitEvidenceRequest = {
-        taskId: mission.id,
-        familyId,
         evidenceType: typeMap[item.type] as any,
-        title: `[Documental] ${this.documentaryTitle} — ${item.label}`,
-        description: item.text,
+        title: item.label,
+        description: item.text || '',
         textContent: item.type === 'note' ? item.text : undefined,
         submittedBy: this.submitterName || 'Familia',
         emotion: item.emotion,
@@ -1289,43 +1410,45 @@ export class MisionDocumentaryComponent implements OnInit, OnDestroy {
         longitude: item.lng,
         mediaData: base64,
         mediaMime: mime,
+        taskId: this.linkToMission() !== false && mission ? mission.id : null,
+        familyId: familyId
       };
 
       const result = await this.evidenceSvc.submit(req).pipe(catchError(() => of(null))).toPromise();
-      if (result?.data?.id) lastEvidenceId = result.data.id;
+      if (result?.data?.id) {
+          lastEvidenceId = result.data.id;
+          capturedEvidenceIds.push(result.data.id);
+      }
       this.submitProgress.set(i + 1);
     }
 
     this.submitStep.set(2);
 
-    // 2. Enviar evidencia maestra tipo BITACORA con todas las reflexiones
-    const masterText = [
-      `DOCUMENTAL: ${this.documentaryTitle}`,
-      `MISIÓN: ${mission.title}`,
-      ``,
-      `¿Qué hicimos?\n${this.reflections.whatWeDid}`,
-      ``,
-      `¿Quién participó?\n${this.reflections.whoParticipated}`,
-      ``,
-      `¿Cómo nos sentimos?\n${this.reflections.howWeFeeled}`,
-      ``,
-      `¿Qué aprendimos?\n${this.reflections.whatWeLearned}`,
-      this.reflections.whatWeWouldImprove ? `\n¿Qué mejoraríamos?\n${this.reflections.whatWeWouldImprove}` : '',
-    ].join('\n');
-
-    const masterReq: SubmitEvidenceRequest = {
-      taskId: mission.id,
+    // 2. Enviar consolidado maestro (el documental) a la nueva tabla
+    const masterReq: SubmitDocumentaryRequest = {
       familyId,
-      evidenceType: 'BITACORA',
-      title: `🎬 Mini Documental: ${this.documentaryTitle}`,
-      description: masterText,
-      textContent: masterText,
-      submittedBy: this.submitterName || 'Familia',
+      taskId: this.linkToMission() !== false && mission ? mission.id : null,
+      title: this.documentaryTitle,
+      content: this.reflections.whatWeDid || '', // Todo: Podría mejorarse con un resumen, por ahora manda raw
+      sourceType: this.sourceType() || 'SPONTANEOUS',
+      evidenceIds: capturedEvidenceIds
     };
 
-    const masterResult = await this.evidenceSvc.submit(masterReq).pipe(catchError(() => of(null))).toPromise();
+    let masterResult: any;
+    try {
+      masterResult = await new Promise<any>((resolve, reject) => {
+        this.evidenceSvc.submitDocumentary(masterReq).subscribe({
+          next: resolve, error: reject
+        });
+      });
+      if (masterResult?.data?.id) lastEvidenceId = masterResult.data.id;
+    } catch (err) {
+      this.submitError.set('Ocurrió un error al consolidar el documental final.');
+      this.step.set('preview');
+      return;
+    }
 
-    this.submitStep.set(3);
+    this.submitProgress.set(100);
 
     // 3. Polling para obtener narrativa IA de la evidencia maestra
     if (masterResult?.data?.id) {
@@ -1388,6 +1511,34 @@ export class MisionDocumentaryComponent implements OnInit, OnDestroy {
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
+  }
+
+  formattedAiNarrativeHtml(): SafeHtml | null {
+    const text = this.aiNarrative();
+    if (!text) return null;
+
+    let formatted = text;
+
+    // Extraer y dar estilo al bloque de retroalimentación
+    formatted = formatted.replace(/\[Retroalimentación de Sentinel AI:\s*(.*?)\]/g, 
+      '<div class="nar-feedback"><div class="nar-feedback-title">💡 Retroalimentación de Sentinel AI</div><div class="nar-feedback-body">$1</div></div>');
+
+    // Extraer y dar estilo a las etiquetas clave
+    const labels = [
+      'DOCUMENTAL:', 'MISIÓN:', '¿Qué hicimos\\?', '¿Quién participó\\?', 
+      '¿Cómo nos sentimos\\?', '¿Qué aprendimos\\?', '¿Qué mejoraríamos\\?'
+    ];
+    
+    labels.forEach(label => {
+      const regex = new RegExp(`(${label})`, 'g');
+      // Reemplaza los "?" literales escapados para visualización correcta
+      formatted = formatted.replace(regex, '<br><strong class="nar-label">$1</strong> ');
+    });
+
+    // Limpiar saltos de línea extra al principio
+    formatted = formatted.replace(/^(<br>)+/, '');
+
+    return this.sanitizer.bypassSecurityTrustHtml(formatted);
   }
 }
 

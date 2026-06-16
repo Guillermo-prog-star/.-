@@ -125,6 +125,7 @@ const EMPTY_RETRO_FORM: RetroFormState = {
     .markdown-content ::ng-deep li { margin-left: 1.5rem; margin-bottom: 6px; list-style-type: disc; }
     @keyframes gradient-slide { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes capsulaSlideIn { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
   `],
   template: `
 <div class="min-h-screen p-4 lg:p-10 space-y-8">
@@ -168,17 +169,19 @@ const EMPTY_RETRO_FORM: RetroFormState = {
   <app-narrative-companion module="logbook"></app-narrative-companion>
 
   <!-- ERROR BANNER -->
-  <div *ngIf="error()"
-       class="glass-premium border border-red-500/30 bg-red-500/5 p-4 rounded-2xl flex items-center gap-3 text-red-400 text-sm font-medium">
+  @if (error()) {
+  <div class="glass-premium border border-red-500/30 bg-red-500/5 p-4 rounded-2xl flex items-center gap-3 text-red-400 text-sm font-medium">
     <span class="text-xl">⚠️</span>
     {{ error() }}
   </div>
+  }
 
   <!-- ==================== TAB: BITÁCORA TRADICIONAL ==================== -->
-  <div *ngIf="activeTab() === 'LOGBOOK'" class="space-y-8 animate-in fade-in duration-300">
+  @if (activeTab() === 'LOGBOOK') {
+  <div class="space-y-8 animate-in fade-in duration-300">
     <!-- AI CORRELATION PANEL -->
-    <div *ngIf="correlation() || loadingCorrelation()"
-         class="glass-premium p-6 rounded-[2rem] border border-indigo-500/20 bg-gradient-to-br from-indigo-500/5 to-purple-500/5">
+    @if (correlation() || loadingCorrelation()) {
+    <div class="glass-premium p-6 rounded-[2rem] border border-indigo-500/20 bg-gradient-to-br from-indigo-500/5 to-purple-500/5">
       <details class="group">
         <summary class="flex justify-between items-center cursor-pointer list-none">
           <div class="flex items-center gap-4">
@@ -191,15 +194,17 @@ const EMPTY_RETRO_FORM: RetroFormState = {
             </div>
           </div>
           <div class="flex items-center gap-3">
-            <div *ngIf="loadingCorrelation()"
-                 class="w-4 h-4 rounded-full border-2 border-indigo-500/30 border-t-indigo-500 animate-spin"></div>
+            @if (loadingCorrelation()) {
+            <div class="w-4 h-4 rounded-full border-2 border-indigo-500/30 border-t-indigo-500 animate-spin"></div>
+            }
             <div class="w-7 h-7 bg-white/5 rounded-full flex items-center justify-center group-open:bg-white/10 transition-colors">
               <span class="text-white/50 text-[10px] group-open:rotate-180 transition-transform duration-300 block">▼</span>
             </div>
           </div>
         </summary>
 
-        <div *ngIf="!loadingCorrelation() && correlation() as corr" class="mt-6 border-t border-white/5 pt-6">
+        @if (!loadingCorrelation() && correlation(); as corr) {
+        <div class="mt-6 border-t border-white/5 pt-6">
           <div class="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
 
             <!-- Temperature panel -->
@@ -225,9 +230,11 @@ const EMPTY_RETRO_FORM: RetroFormState = {
               </div>
 
               <!-- Dimension bars -->
-              <div *ngIf="corr.dimensionCorrelations?.length" class="space-y-3">
+              @if (corr.dimensionCorrelations?.length) {
+              <div class="space-y-3">
                 <h4 class="text-[9px] uppercase tracking-widest text-white/30 font-black">Sintonía por Dimensión</h4>
-                <div *ngFor="let dc of corr.dimensionCorrelations" class="space-y-1">
+                @for (dc of corr.dimensionCorrelations; track dc.dimension) {
+                <div class="space-y-1">
                   <div class="flex justify-between text-xs font-semibold">
                     <span class="text-white/60">{{ dc.dimensionFriendlyName }}</span>
                     <span [ngClass]="dc.logbookSentimentScore >= 0 ? 'text-emerald-400' : 'text-red-400'">
@@ -240,12 +247,15 @@ const EMPTY_RETRO_FORM: RetroFormState = {
                          [ngClass]="dc.logbookSentimentScore < -0.2 ? 'bg-red-500' : dc.logbookSentimentScore > 0.2 ? 'bg-emerald-500' : 'bg-indigo-500'">
                     </div>
                   </div>
-                  <div *ngIf="dc.requiresPriorityShift"
-                       class="text-[9px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 inline-block">
+                  @if (dc.requiresPriorityShift) {
+                  <div class="text-[9px] font-black uppercase tracking-wider text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20 inline-block">
                     ⚠️ Ajuste de Prioridad Activo
                   </div>
+                  }
                 </div>
+                }
               </div>
+              }
             </div>
 
             <!-- Report panel -->
@@ -254,8 +264,10 @@ const EMPTY_RETRO_FORM: RetroFormState = {
             </div>
           </div>
         </div>
+        }
       </details>
     </div>
+    }
 
     <!-- NEW ENTRY BUTTON / FORM TOGGLE -->
     <div class="flex justify-end">
@@ -269,8 +281,8 @@ const EMPTY_RETRO_FORM: RetroFormState = {
     </div>
 
     <!-- NEW ENTRY FORM -->
-    <div *ngIf="showForm()"
-         class="glass-premium p-8 rounded-[2rem] border border-indigo-500/20 animate-in slide-in-from-top duration-300">
+    @if (showForm()) {
+    <div class="glass-premium p-8 rounded-[2rem] border border-indigo-500/20 animate-in slide-in-from-top duration-300">
       <h2 class="text-lg font-black text-white/90 mb-6 flex items-center gap-3">
         <span class="w-8 h-8 bg-indigo-500/20 rounded-xl flex items-center justify-center text-base">📔</span>
         Registrar Nueva Situación
@@ -344,18 +356,19 @@ const EMPTY_RETRO_FORM: RetroFormState = {
           <button (click)="createEntry()"
                   [disabled]="saving()"
                   class="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest text-xs rounded-2xl transition-all hover:scale-105 active:scale-95 shadow-[0_8px_24px_rgba(99,102,241,0.3)] flex items-center gap-2">
-            <span *ngIf="saving()" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            @if (saving()) { <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> }
             {{ saving() ? 'Guardando...' : '💾 Guardar Aprendizaje' }}
           </button>
         </div>
       </div>
     </div>
+    }
 
     <!-- FILTER TABS + ENTRIES -->
     <div class="space-y-6">
       <div class="flex items-center gap-3 flex-wrap">
-        <button *ngFor="let tab of filterTabs"
-                (click)="setFilter(tab.value)"
+        @for (tab of filterTabs; track tab.value) {
+        <button (click)="setFilter(tab.value)"
                 class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                 [ngClass]="filter() === tab.value
                   ? 'bg-white/10 text-white border border-white/20'
@@ -366,28 +379,34 @@ const EMPTY_RETRO_FORM: RetroFormState = {
             {{ tab.count() }}
           </span>
         </button>
+        }
       </div>
 
       <!-- Loading state -->
-      <div *ngIf="loading()" class="flex justify-center py-20">
+      @if (loading()) {
+      <div class="flex justify-center py-20">
         <div class="flex flex-col items-center gap-4">
           <div class="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
           <p class="text-white/30 text-sm font-medium animate-pulse">Cargando bitácora...</p>
         </div>
       </div>
+      }
 
       <!-- Empty state -->
-      <div *ngIf="!loading() && filteredEntries().length === 0"
-           class="glass-premium p-16 rounded-[2rem] border border-white/5 text-center">
+      @if (!loading() && filteredEntries().length === 0) {
+      <div class="glass-premium p-16 rounded-[2rem] border border-white/5 text-center">
         <div class="text-6xl mb-4">📔</div>
         <p class="text-white/30 text-sm font-medium uppercase tracking-widest">
           {{ filter() === 'ALL' ? 'Sin entradas registradas todavía' : 'Sin entradas ' + (filter() === 'OPEN' ? 'abiertas' : 'resueltas') }}
         </p>
       </div>
+      }
 
       <!-- Entry cards -->
-      <div *ngIf="!loading()" class="grid grid-cols-1 xl:grid-cols-2 gap-5">
-        <article *ngFor="let entry of filteredEntries(); trackBy: trackById"
+      @if (!loading()) {
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+        @for (entry of filteredEntries(); track entry.id) {
+        <article
                  class="glass-premium rounded-[2rem] border overflow-hidden transition-all duration-300 group"
                  [ngClass]="entry.status === 'OPEN'
                    ? 'border-amber-500/15 hover:border-amber-500/30'
@@ -410,9 +429,9 @@ const EMPTY_RETRO_FORM: RetroFormState = {
               <span class="text-[9px] text-white/30 font-medium">
                 {{ entry.createdAt | date:'dd MMM yyyy' }}
               </span>
-              <span *ngIf="entry.createdBy" class="block text-[9px] text-white/20 mt-0.5">
+              @if (entry.createdBy) { <span class="block text-[9px] text-white/20 mt-0.5">
                 por {{ entry.createdBy }}
-              </span>
+              </span> }
             </div>
           </div>
 
@@ -451,21 +470,22 @@ const EMPTY_RETRO_FORM: RetroFormState = {
                 <p class="text-white/80 text-xs leading-relaxed italic">"{{ entry.familyAgreement }}"</p>
               </div>
 
-              <div *ngIf="entry.status === 'RESOLVED' && entry.progressEvidence"
-                   class="sm:col-span-2 bg-emerald-500/5 rounded-xl p-3 border border-emerald-500/20">
+              @if (entry.status === 'RESOLVED' && entry.progressEvidence) {
+              <div class="sm:col-span-2 bg-emerald-500/5 rounded-xl p-3 border border-emerald-500/20">
                 <span class="block text-[9px] uppercase tracking-widest text-emerald-400/70 font-black mb-1">Evidencia de Avance</span>
                 <p class="text-emerald-300/80 text-xs leading-relaxed">{{ entry.progressEvidence }}</p>
                 <div class="mt-2 text-[9px] text-emerald-400/50 font-medium">
-                  <span *ngIf="entry.resolvedBy">{{ entry.resolvedBy }}</span>
-                  <span *ngIf="entry.resolvedAt"> · {{ entry.resolvedAt | date:'dd MMM yyyy' }}</span>
+                  @if (entry.resolvedBy) { <span>{{ entry.resolvedBy }}</span> }
+                  @if (entry.resolvedAt) { <span> · {{ entry.resolvedAt | date:'dd MMM yyyy' }}</span> }
                 </div>
               </div>
+              }
             </div>
           </details>
 
           <!-- Resolve box (open entries only) -->
-          <div *ngIf="entry.status === 'OPEN'"
-               class="mx-6 mb-6 p-4 bg-amber-500/5 rounded-2xl border border-amber-500/15">
+          @if (entry.status === 'OPEN') {
+          <div class="mx-6 mb-6 p-4 bg-amber-500/5 rounded-2xl border border-amber-500/15">
             <label class="block text-[9px] uppercase tracking-widest text-amber-400/70 font-black mb-2">
               Evidencia de Avance para Cerrar
             </label>
@@ -477,32 +497,40 @@ const EMPTY_RETRO_FORM: RetroFormState = {
             <button (click)="resolveEntry(entry)"
                     [disabled]="saving()"
                     class="w-full py-2.5 bg-amber-500/20 hover:bg-amber-500/30 disabled:opacity-50 text-amber-400 font-black uppercase tracking-widest text-[10px] rounded-xl border border-amber-500/20 transition-all hover:border-amber-500/40 flex items-center justify-center gap-2">
-              <span *ngIf="saving()" class="w-3 h-3 border border-amber-400/30 border-t-amber-400 rounded-full animate-spin"></span>
+              @if (saving()) { <span class="w-3 h-3 border border-amber-400/30 border-t-amber-400 rounded-full animate-spin"></span> }
               ✓ Cerrar con Evidencia
             </button>
           </div>
+          }
         </article>
+        }
       </div>
+      }
     </div>
   </div>
+  }
 
 
   <!-- ==================== TAB: SPRINT DE EVOLUCIÓN ==================== -->
-  <div *ngIf="activeTab() === 'SPRINT'" class="space-y-8 animate-in fade-in duration-300">
-    <div *ngIf="loadingSprint()" class="flex justify-center py-20">
+  @if (activeTab() === 'SPRINT') {
+  <div class="space-y-8 animate-in fade-in duration-300">
+    @if (loadingSprint()) {
+    <div class="flex justify-center py-20">
       <div class="flex flex-col items-center gap-4">
         <div class="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
         <p class="text-white/30 text-sm font-medium animate-pulse">Cargando sprint familiar...</p>
       </div>
     </div>
+    }
 
     <!-- CASE 2.1: NO ACTIVE SPRINT - FORM TO CREATE ONE -->
-    <div *ngIf="!loadingSprint() && !activeSprint()"
+    @if (!loadingSprint() && !activeSprint()) {
+    <div
          class="glass-premium p-8 rounded-[2rem] border border-indigo-500/20 max-w-3xl mx-auto space-y-6">
 
       <!-- ── BANNER SUGERENCIA DESDE MISIÓN ACTIVA ───────────────────────── -->
-      <div *ngIf="sprintSuggestion() && !suggestionDismissed()"
-           class="relative overflow-hidden rounded-2xl border p-5 mb-2"
+      @if (sprintSuggestion() && !suggestionDismissed()) {
+      <div class="relative overflow-hidden rounded-2xl border p-5 mb-2"
            style="background:rgba(99,102,241,0.07);border-color:rgba(99,102,241,0.35);">
         <!-- Borde superior animado -->
         <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#6366f1,#818cf8,#6366f1);background-size:200%;animation:gradient-slide 2s linear infinite;"></div>
@@ -538,8 +566,8 @@ const EMPTY_RETRO_FORM: RetroFormState = {
             (click)="acceptAndCreateSprint()"
             [disabled]="savingSprint()"
             style="flex:1;padding:11px;background:linear-gradient(135deg,#6366f1,#818cf8);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;transition:all .2s;">
-            <span *ngIf="savingSprint()">⏳ Creando sprint…</span>
-            <span *ngIf="!savingSprint()">🚀 Crear sprint de esta misión</span>
+            @if (savingSprint()) { <span>⏳ Creando sprint…</span> }
+            @if (!savingSprint()) { <span>🚀 Crear sprint de esta misión</span> }
           </button>
           <button
             (click)="acceptSuggestion()"
@@ -554,13 +582,15 @@ const EMPTY_RETRO_FORM: RetroFormState = {
           </button>
         </div>
       </div>
+      }
 
       <!-- Cargando sugerencia -->
-      <div *ngIf="loadingSuggestion()"
-           style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;color:rgba(255,255,255,0.35);font-size:12px;">
+      @if (loadingSuggestion()) {
+      <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:12px;color:rgba(255,255,255,0.35);font-size:12px;">
         <div style="width:14px;height:14px;border:2px solid rgba(99,102,241,0.3);border-top-color:#6366f1;border-radius:50%;animation:spin 0.7s linear infinite;"></div>
         Buscando misión activa del plan…
       </div>
+      }
 
       <div class="text-center space-y-2">
         <div class="w-16 h-16 bg-indigo-600/10 text-indigo-400 rounded-2xl flex items-center justify-center text-3xl mx-auto shadow-inner">
@@ -626,16 +656,19 @@ const EMPTY_RETRO_FORM: RetroFormState = {
           </div>
 
           <!-- Missions List -->
-          <div class="space-y-2 max-h-48 overflow-y-auto" *ngIf="sprintForm().missions.length > 0">
-            <div *ngFor="let mission of sprintForm().missions; let i = index"
-                 class="flex justify-between items-center bg-white/[0.02] border border-white/5 rounded-xl px-4 py-2.5">
+          @if (sprintForm().missions.length > 0) {
+          <div class="space-y-2 max-h-48 overflow-y-auto">
+            @for (mission of sprintForm().missions; track mission; let i = $index) {
+            <div class="flex justify-between items-center bg-white/[0.02] border border-white/5 rounded-xl px-4 py-2.5">
               <span class="text-xs text-white/85 font-medium">{{ mission }}</span>
               <button (click)="removeSprintMission(i)"
                       class="text-red-400/50 hover:text-red-400 text-sm font-bold px-2 py-1 transition-colors">
                 ✕
               </button>
             </div>
+            }
           </div>
+          }
         </div>
 
         <!-- Submit Button -->
@@ -643,15 +676,44 @@ const EMPTY_RETRO_FORM: RetroFormState = {
           <button (click)="createSprint()"
                   [disabled]="savingSprint() || !sprintForm().objective.trim() || sprintForm().missions.length === 0"
                   class="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest text-xs rounded-2xl transition-all shadow-[0_8px_32px_rgba(99,102,241,0.2)] hover:scale-[1.01] active:scale-95 flex items-center justify-center gap-2">
-            <span *ngIf="savingSprint()" class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            @if (savingSprint()) { <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span> }
             Iniciar Sprint Familiar
           </button>
         </div>
       </div>
     </div>
+    }
+
+    <!-- BANNER: Cápsula Familiar creada al completar el sprint -->
+    @if (capsulaCreadaBanner(); as capsula) {
+    <div
+      style="
+        position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border: 1px solid rgba(139,92,246,0.5);
+        border-radius: 20px; padding: 20px 24px;
+        box-shadow: 0 20px 60px rgba(79,70,229,0.4);
+        max-width: 340px; animation: capsulaSlideIn 0.4s ease-out;">
+      <div style="display: flex; align-items: flex-start; gap: 14px;">
+        <div style="font-size: 36px; flex-shrink: 0;">🎖️</div>
+        <div>
+          <p style="margin: 0 0 4px 0; font-size: 14px; font-weight: 800; color: #fff;">
+            {{ capsula.titulo }}
+          </p>
+          <p style="margin: 0; font-size: 12px; color: rgba(255,255,255,0.75); line-height: 1.5;">
+            <strong>{{ capsula.misionTitulo }}</strong> quedó registrada como evidencia en el historial familiar.
+          </p>
+          <p style="margin: 6px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.5);">
+            Ahora puedes cerrar el sprint con la retrospectiva.
+          </p>
+        </div>
+      </div>
+    </div>
+    }
 
     <!-- CASE 2.2: SPRINT IS ACTIVE -->
-    <div *ngIf="!loadingSprint() && activeSprint() as sprint" class="space-y-8">
+    @if (!loadingSprint() && activeSprint(); as sprint) {
+    <div class="space-y-8">
       
       <!-- SPRINT HEADER / OBJECTIVE CARD -->
       <div class="glass-premium p-6 lg:p-8 rounded-[2.5rem] border border-indigo-500/20 bg-gradient-to-br from-indigo-950/20 via-slate-900/30 to-purple-950/20">
@@ -681,11 +743,12 @@ const EMPTY_RETRO_FORM: RetroFormState = {
             </div>
 
             <!-- Ir a Evidencias (si el sprint viene de una misión del plan) -->
-            <button *ngIf="activeSprint()?.missionTaskId"
-                    (click)="goToEvidence()"
+            @if (activeSprint()?.missionTaskId) {
+            <button (click)="goToEvidence()"
                     class="w-full sm:w-auto px-5 py-4 bg-amber-600/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/25 font-black uppercase tracking-widest text-[10px] rounded-2xl transition-all hover:scale-105 flex items-center justify-center gap-2">
               📸 Agregar Evidencia
             </button>
+            }
 
             <!-- Complete/Close Sprint Button -->
             <button (click)="openRetrospectiveModal()"
@@ -712,8 +775,8 @@ const EMPTY_RETRO_FORM: RetroFormState = {
           </div>
 
           <!-- DAILY FORM -->
-          <div *ngIf="showDailyForm()"
-               class="glass-premium p-6 rounded-[2rem] border border-white/10 bg-white/[0.01] animate-in slide-in-from-top duration-300 space-y-4">
+          @if (showDailyForm()) {
+          <div class="glass-premium p-6 rounded-[2rem] border border-white/10 bg-white/[0.01] animate-in slide-in-from-top duration-300 space-y-4">
             
             <div class="text-xs text-white/50 border-b border-white/5 pb-2">
               "No necesitas mirar al techo en el sofá; aprovecha los tiempos muertos para hacer tu propia reunión de sincronización diaria"
@@ -733,8 +796,8 @@ const EMPTY_RETRO_FORM: RetroFormState = {
               <div>
                 <label class="block text-[9px] uppercase tracking-widest text-white/40 font-black mb-2">¿Cómo te sientes emocionalmente? *</label>
                 <div class="flex gap-2">
-                  <button *ngFor="let mood of moods"
-                          (click)="patchDailyForm('emotionalIndicator', mood.value)"
+                  @for (mood of moods; track mood.value) {
+                  <button (click)="patchDailyForm('emotionalIndicator', mood.value)"
                           type="button"
                           class="flex-1 py-2 rounded-xl text-base border transition-all flex items-center justify-center"
                           [ngClass]="dailyForm().emotionalIndicator === mood.value
@@ -742,6 +805,7 @@ const EMPTY_RETRO_FORM: RetroFormState = {
                             : 'bg-black/20 border-white/5 text-white/40 hover:text-white/70 hover:border-white/10'">
                     {{ mood.icon }}
                   </button>
+                  }
                 </div>
               </div>
             </div>
@@ -792,23 +856,27 @@ const EMPTY_RETRO_FORM: RetroFormState = {
               <button (click)="submitDaily()"
                       [disabled]="savingDaily() || !dailyForm().memberName.trim() || !dailyForm().yesterdayText.trim() || !dailyForm().todayText.trim()"
                       class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest text-[10px] rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
-                <span *ngIf="savingDaily()" class="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin"></span>
+                @if (savingDaily()) { <span class="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin"></span> }
                 💾 Guardar Check-In Diario
               </button>
             </div>
           </div>
+          }
 
           <!-- LOGGED DAILIES LIST -->
           <div class="space-y-4">
             <h4 class="text-[10px] uppercase tracking-widest text-white/30 font-black">Historial del Daily en el Sprint</h4>
-            
-            <div *ngIf="sprint.dailies.length === 0"
-                 class="bg-white/[0.01] border border-white/5 rounded-2xl p-8 text-center text-xs text-white/30">
+
+            @if (sprint.dailies.length === 0) {
+            <div class="bg-white/[0.01] border border-white/5 rounded-2xl p-8 text-center text-xs text-white/30">
               Aún no se han registrado Check-Ins diarios para este Sprint. ¡Sé el primero en sincronizar tu conciencia familiar!
             </div>
+            }
 
-            <div class="space-y-4" *ngIf="sprint.dailies.length > 0">
-              <div *ngFor="let d of sprint.dailies"
+            @if (sprint.dailies.length > 0) {
+            <div class="space-y-4">
+              @for (d of sprint.dailies; track d) {
+              <div
                    class="bg-white/[0.02] border border-white/5 rounded-2xl p-5 space-y-4 transition-all hover:border-white/10">
                 
                 <!-- Daily Header -->
@@ -844,7 +912,9 @@ const EMPTY_RETRO_FORM: RetroFormState = {
                   </div>
                 </div>
               </div>
+              }
             </div>
+            }
           </div>
         </div>
 
@@ -874,8 +944,8 @@ const EMPTY_RETRO_FORM: RetroFormState = {
 
             <!-- Checklist -->
             <div class="space-y-3 pt-4">
-              <div *ngFor="let m of sprint.missions"
-                   (click)="toggleMission(sprint.id, m)"
+              @for (m of sprint.missions; track m) {
+              <div (click)="toggleMission(sprint.id, m)"
                    class="flex items-start gap-3 p-3.5 rounded-xl border transition-all cursor-pointer select-none group"
                    [ngClass]="m.status === 'COMPLETED'
                      ? 'bg-emerald-500/5 border-emerald-500/25 text-white/50'
@@ -893,12 +963,14 @@ const EMPTY_RETRO_FORM: RetroFormState = {
                      [ngClass]="m.status === 'COMPLETED' ? 'line-through text-white/40' : ''">
                     {{ m.description }}
                   </p>
-                  <span *ngIf="m.status === 'COMPLETED' && m.completedAt"
-                        class="block text-[8px] text-emerald-500/60 mt-1 uppercase tracking-wider">
+                  @if (m.status === 'COMPLETED' && m.completedAt) {
+                  <span class="block text-[8px] text-emerald-500/60 mt-1 uppercase tracking-wider">
                     Cumplido el {{ m.completedAt | date:'dd MMM HH:mm' }}
                   </span>
+                  }
                 </div>
               </div>
+              }
             </div>
           </div>
         </div>
@@ -906,8 +978,8 @@ const EMPTY_RETRO_FORM: RetroFormState = {
       </div>
 
       <!-- RETROSPECTIVA MODAL / POPUP OVERLAY -->
-      <div *ngIf="showRetroForm()"
-           class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+      @if (showRetroForm()) {
+      <div class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
         
         <div class="glass-premium max-w-2xl w-full p-6 md:p-8 rounded-[2.5rem] border border-white/10 bg-slate-950 space-y-6 max-h-[90vh] overflow-y-auto animate-in scale-in duration-300">
           
@@ -1038,7 +1110,7 @@ const EMPTY_RETRO_FORM: RetroFormState = {
               <button (click)="closeSprint()"
                       [disabled]="savingRetro() || !retroForm().whatWentWell.trim() || !retroForm().whatWasDifficult.trim()"
                       class="px-7 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-30 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest text-[9px] rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
-                <span *ngIf="savingRetro()" class="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin"></span>
+                @if (savingRetro()) { <span class="w-3 h-3 border border-white/30 border-t-white rounded-full animate-spin"></span> }
                 ✓ Finalizar Sprint Familiar
               </button>
             </div>
@@ -1046,23 +1118,29 @@ const EMPTY_RETRO_FORM: RetroFormState = {
 
         </div>
       </div>
+      }
 
     </div>
+    }
   </div>
+  }
 
 
   <!-- ==================== TAB: HISTORIAL DE SPRINTS ==================== -->
-  <div *ngIf="activeTab() === 'HISTORY'" class="space-y-8 animate-in fade-in duration-300">
-    <div *ngIf="loadingHistory()" class="flex justify-center py-20">
+  @if (activeTab() === 'HISTORY') {
+  <div class="space-y-8 animate-in fade-in duration-300">
+    @if (loadingHistory()) {
+    <div class="flex justify-center py-20">
       <div class="flex flex-col items-center gap-4">
         <div class="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin"></div>
         <p class="text-white/30 text-sm font-medium animate-pulse">Cargando historial de sprints...</p>
       </div>
     </div>
+    }
 
     <!-- Empty History -->
-    <div *ngIf="!loadingHistory() && sprintHistory().length === 0"
-         class="glass-premium p-16 rounded-[2rem] border border-white/5 text-center">
+    @if (!loadingHistory() && sprintHistory().length === 0) {
+    <div class="glass-premium p-16 rounded-[2rem] border border-white/5 text-center">
       <div class="text-6xl mb-4">📜</div>
       <p class="text-white/30 text-sm font-medium uppercase tracking-widest">
         Aún no hay sprints familiares finalizados en tu historial.
@@ -1072,14 +1150,16 @@ const EMPTY_RETRO_FORM: RetroFormState = {
         Comenzar tu primer Sprint
       </button>
     </div>
+    }
 
     <!-- History List -->
-    <div *ngIf="!loadingHistory() && sprintHistory().length > 0" class="space-y-6">
+    @if (!loadingHistory() && sprintHistory().length > 0) {
+    <div class="space-y-6">
       <h3 class="text-lg font-black text-white/90">Sprints Históricos de la Familia</h3>
 
       <div class="space-y-6">
-        <article *ngFor="let s of sprintHistory()"
-                 class="glass-premium rounded-[2.5rem] border border-white/5 overflow-hidden p-6 lg:p-8 space-y-6">
+        @for (s of sprintHistory(); track s) {
+        <article class="glass-premium rounded-[2.5rem] border border-white/5 overflow-hidden p-6 lg:p-8 space-y-6">
           
           <!-- History Header -->
           <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-4">
@@ -1099,15 +1179,17 @@ const EMPTY_RETRO_FORM: RetroFormState = {
             </div>
 
             <!-- Consistencia Score -->
-            <div class="bg-indigo-600/10 border border-indigo-500/20 px-5 py-3 rounded-2xl text-center min-w-[130px]"
-                 *ngIf="s.retrospective">
+            @if (s.retrospective) {
+            <div class="bg-indigo-600/10 border border-indigo-500/20 px-5 py-3 rounded-2xl text-center min-w-[130px]">
               <span class="block text-3xl font-black text-indigo-400">{{ s.retrospective.consistencyScore }} / 10</span>
               <span class="text-[9px] uppercase tracking-widest text-white/40 font-black">Consistencia Evolutiva</span>
             </div>
+            }
           </div>
 
           <!-- History Content (if Retro exists) -->
-          <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8" *ngIf="s.retrospective">
+          @if (s.retrospective) {
+          <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
             
             <!-- Reflections & AI Feedback -->
             <div class="space-y-6">
@@ -1192,10 +1274,14 @@ const EMPTY_RETRO_FORM: RetroFormState = {
             </div>
 
           </div>
+          }
         </article>
+        }
       </div>
     </div>
+    }
   </div>
+  }
 
 </div>
   `
@@ -1254,6 +1340,8 @@ export class FamilyLogbookComponent implements OnInit {
   readonly retroForm       = signal<RetroFormState>({ ...EMPTY_RETRO_FORM });
   readonly savingRetro     = signal(false);
 
+  readonly capsulaCreadaBanner = signal<{ titulo: string; misionTitulo: string } | null>(null);
+
   readonly sprintHistory   = signal<SprintResponse[]>([]);
   readonly loadingHistory  = signal(false);
 
@@ -1290,16 +1378,145 @@ export class FamilyLogbookComponent implements OnInit {
       this.authorName = user.fullName ?? '';
       this.form.update(f => ({ ...f, createdBy: this.authorName }));
       this.dailyForm.update(d => ({ ...d, memberName: this.authorName }));
-      
+
       this.loadEntries();
       this.loadCorrelation();
       this.loadActiveSprint();
-      // Si viene con ?tab=SPRINT en la URL (desde plan/misión), activar ese tab
+
+      // Leer params de URL: ?tab=SPRINT&mision={id}
       const urlParams = new URLSearchParams(window.location.search);
-      if (urlParams.get('tab') === 'SPRINT') this.activeTab.set('SPRINT');
+      const tabParam   = urlParams.get('tab');
+      const misionParam = urlParams.get('mision');
+
+      if (tabParam === 'SPRINT') this.activeTab.set('SPRINT');
+
+      // Si viene desde el botón "Iniciar Sprint" de /plans con ?mision={id},
+      // pre-cargar el formulario desde el contexto guardado en localStorage
+      if (misionParam) {
+        this._precargarSprintDesdeMision(misionParam);
+      }
     } else {
       this.error.set('No se encontró una familia asociada a tu cuenta.');
     }
+  }
+
+  /** Pre-rellena el sprint form con datos de la misión que llegó por queryParam */
+  private _precargarSprintDesdeMision(misionId: string): void {
+    try {
+      const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+      if (!ctx || ctx.misionId !== misionId) return;
+
+      // Mapear pilar/dimensión a riskDimension del sprint
+      const dimMap: Record<string, string> = {
+        emociones: 'emociones', comunicacion: 'comunicacion',
+        habitos: 'habitos', tiempos: 'tiempos',
+        reconocimiento: 'reconocimiento', amor: 'amor', entrega: 'entrega'
+      };
+      const dim = Object.keys(dimMap).find(k => misionId.includes(k)) ?? 'emociones';
+
+      const titulo    = ctx.misionTitulo ?? misionId;
+      const diasLocal = parseInt(localStorage.getItem(`sprint_dias_${misionId}`) ?? '0', 10);
+
+      // Mostrar sugerencia de sprint si no hay uno activo aún
+      this.sprintSuggestion.set({
+        missionTitle:       titulo,
+        missionDescription: `Sprint 7 días · ${titulo}`,
+        dimension:          dim,
+        durationDays:       7,
+        missionTaskId:      ctx.backendTaskId ?? 0,
+      });
+
+      // Pre-rellenar el formulario
+      this.sprintForm.set({
+        objective:     `Misión: ${titulo}`,
+        riskDimension: dim,
+        durationDays:  7,
+        missions:      [
+          `Día 1–7: completar la misión "${titulo}"`,
+          'Registrar evidencia diaria en el Daily',
+          'Reflexión al finalizar los 7 días'
+        ],
+        newMission: '',
+      });
+
+      // Si ya había días registrados en localStorage, sincronizar
+      if (diasLocal > 0) {
+        console.info(`[SPRINT] Misión ${misionId} tiene ${diasLocal} días completados localmente.`);
+      }
+    } catch { /* localStorage no disponible */ }
+  }
+
+  /**
+   * Sincroniza el contador local sprint_dias_{misionId} con el backend
+   * cada vez que se envía un Daily exitosamente.
+   * Esto permite que la página /plans muestre el progreso real del sprint.
+   */
+  /** Sincroniza el contador local con el recuento real de dailies del backend al cargar el sprint */
+  private _sincronizarContadorRealDesdeBackend(sprint: SprintResponse): void {
+    try {
+      const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+      if (!ctx?.misionId) return;
+      if (ctx.sprintId && ctx.sprintId !== sprint.id) return;
+      const diasReales = sprint.dailies?.length ?? 0;
+      localStorage.setItem(`sprint_dias_${ctx.misionId}`, String(diasReales));
+    } catch { /* ignorar */ }
+  }
+
+  private _sincronizarDiasSprint(sprint: SprintResponse): void {
+    try {
+      const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+      if (!ctx?.misionId) return;
+      // Si el contexto tiene sprintId, verificar que coincide con el sprint activo
+      if (ctx.sprintId && ctx.sprintId !== sprint.id) return;
+      const nuevoDia = (sprint.dailies?.length ?? 0) + 1; // +1 porque el daily recién enviado aún no está en la respuesta
+      localStorage.setItem(`sprint_dias_${ctx.misionId}`, String(nuevoDia));
+      // Si se completaron todos los días, marcar la misión como completada en el contexto
+      if (nuevoDia >= sprint.durationDays) {
+        ctx.completado = true;
+        localStorage.setItem('active_sprint_mision', JSON.stringify(ctx));
+      }
+    } catch { /* localStorage no disponible */ }
+  }
+
+  /** Auto-crea una Cápsula Familiar (evidencia BITACORA) al completar todos los días del sprint */
+  private _crearCapsulaFamiliar(sprint: SprintResponse): void {
+    try {
+      const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+      const misionTitulo = ctx?.misionTitulo ?? sprint.objective ?? 'Misión';
+      const diasCompletados = (sprint.dailies?.length ?? 0) + 1;
+
+      const resumen = sprint.dailies
+        ?.slice(-3)
+        .map((d: SprintDailyResponse, i: number) =>
+          `Día ${diasCompletados - 2 + i}: ${d.todayText ?? d.yesterdayText ?? '—'}`
+        )
+        .join('\n') ?? '';
+
+      const payload: any = {
+        familyId: this.familyId,
+        evidenceType: 'BITACORA',
+        title: `🎖️ Cápsula Familiar — ${misionTitulo}`,
+        description: `Sprint de ${diasCompletados} días completado exitosamente. Esta cápsula documenta el logro de la familia.`,
+        textContent: `✅ SPRINT COMPLETADO — ${misionTitulo}\n\nLa familia López Blanco completó ${diasCompletados} días consecutivos de práctica.\n\n${resumen ? 'Últimos registros:\n' + resumen : ''}`.trim(),
+        submittedBy: this.authorName || 'Familia',
+      };
+
+      if (sprint.missionTaskId && sprint.missionTaskId > 0) {
+        payload.taskId = sprint.missionTaskId;
+      }
+
+      this.http.post<any>(`${this.api.base}/evidences/submit`, payload).subscribe({
+        next: () => {
+          this.capsulaCreadaBanner.set({ titulo: `🎖️ Cápsula Familiar creada`, misionTitulo });
+          setTimeout(() => this.capsulaCreadaBanner.set(null), 8000);
+        },
+        error: () => {
+          // No bloquear el flujo si falla la cápsula
+          this.capsulaCreadaBanner.set({ titulo: `🎖️ ¡Sprint completado!`, misionTitulo });
+          setTimeout(() => this.capsulaCreadaBanner.set(null), 6000);
+        }
+      });
+    } catch { /* ignorar */ }
   }
 
   // ─── Tabs Switcher ─────────────────────────────────────────────────────────
@@ -1449,6 +1666,8 @@ export class FamilyLogbookComponent implements OnInit {
           if (!urlParams.get('tab')) this.activeTab.set('SPRINT');
           // Actualizar número de sprint en el flujo de transformación
           this.flow.setSprint((res as any).id ?? 1);
+          // Sincronizar contador real de días desde el backend
+          this._sincronizarContadorRealDesdeBackend(res);
         } else {
           // Sin sprint → intentar sugerir desde misión activa
           this.tryLoadMissionSuggestion();
@@ -1578,6 +1797,15 @@ export class FamilyLogbookComponent implements OnInit {
         this.savingSprint.set(false);
         this.sprintSuggestion.set(null);
         this.suggestionDismissed.set(true);
+        // Guardar sprintId en el contexto de misión para poder sincronizar los dailies
+        try {
+          const ctx = JSON.parse(localStorage.getItem('active_sprint_mision') ?? 'null');
+          if (ctx?.misionId) {
+            ctx.sprintId = res.id;
+            localStorage.setItem('active_sprint_mision', JSON.stringify(ctx));
+            localStorage.setItem(`sprint_dias_${ctx.misionId}`, '0');
+          }
+        } catch { /* ignorar */ }
         // Actualizar número de sprint en el flujo de transformación
         this.flow.setSprint((res as any).sprintNumber ?? 1);
         // Cambiar a tab SPRINT para mostrar el sprint recién creado
@@ -1665,6 +1893,13 @@ export class FamilyLogbookComponent implements OnInit {
         this.savingDaily.set(false);
         this.showDailyForm.set(false);
         this.dailyForm.set({ ...EMPTY_DAILY_FORM, memberName: this.authorName });
+        // Sincronizar contador de días con localStorage para que /plans refleje el progreso
+        const nuevosDias = (active.dailies?.length ?? 0) + 1;
+        this._sincronizarDiasSprint(active);
+        // Si el sprint acaba de completarse, auto-crear la Cápsula Familiar
+        if (nuevosDias >= active.durationDays) {
+          this._crearCapsulaFamiliar(active);
+        }
         this.loadActiveSprint();
       },
       error: err => {

@@ -73,7 +73,7 @@
       <div class="form-group"><label>Edad</label><input [(ngModel)]="age" name="age" type="number" placeholder="0"/></div>
       <div class="form-group"><label>Autonomía</label><input [(ngModel)]="aut" name="aut" type="number" placeholder="50%"/></div>
     </div>
-    
+
     @if (error) {
       <div class="error-banner" style="margin-top: 10px; margin-bottom: 0;">
         ⚠️ {{ error }}
@@ -89,46 +89,46 @@
 </div>
 
 @if (members.length === 0) {
-    <div class="glass-card" style="text-align: center; padding: 60px; border-style: dashed; background: rgba(255,255,255,0.01);">
-        <div style="font-size: 48px; margin-bottom: 20px; filter: grayscale(1) opacity(0.2);">👥</div>
-        <h3 style="color: #94a3b8;">No hay miembros registrados</h3>
-        <p style="color: #64748b;">Comienza agregando a los integrantes de la familia arriba.</p>
-    </div>
+  <div class="glass-card" style="text-align: center; padding: 60px; border-style: dashed; background: rgba(255,255,255,0.01);">
+    <div style="font-size: 48px; margin-bottom: 20px; filter: grayscale(1) opacity(0.2);">👥</div>
+    <h3 style="color: #94a3b8;">No hay miembros registrados</h3>
+    <p style="color: #64748b;">Comienza agregando a los integrantes de la familia arriba.</p>
+  </div>
 } @else {
-    <div class="grid-3">
-      @for (m of members; track m.id) {
-        <div class="member-card">
-          <div class="member-header">
-            <div class="member-avatar">{{ m.fullName[0] }}</div>
-            <div class="member-info">
-              <div class="member-name">{{ m.fullName }}</div>
-              <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">{{ m.roleType }} · {{ m.age }} años</span>
-            </div>
-            
-            <button (click)="invite(m.id)" class="btn-invite" title="Enviar invitación">🚀</button>
-            <ng-container *ngIf="pendingDeleteId === m.id; else removeBtn">
-              <div class="inline-confirm">
-                <span class="confirm-label">¿Eliminar?</span>
-                <button (click)="confirmRemove()" class="btn-confirm-yes">Sí</button>
-                <button (click)="cancelRemove()" class="btn-confirm-no">No</button>
-              </div>
-            </ng-container>
-            <ng-template #removeBtn>
-              <button (click)="remove(m.id)" class="btn-remove" title="Eliminar">✕</button>
-            </ng-template>
+  <div class="grid-3">
+    @for (m of members; track m.id) {
+      <div class="member-card">
+        <div class="member-header">
+          <div class="member-avatar">{{ m.fullName[0] }}</div>
+          <div class="member-info">
+            <div class="member-name">{{ m.fullName }}</div>
+            <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">{{ m.roleType }} · {{ m.age }} años</span>
           </div>
-          
-          <div class="member-stats">
-            <div class="stat-row">
-              <div class="stat-label"><span>Nivel de Autonomía</span><strong>{{ m.autonomyLevel }}%</strong></div>
-              <div class="progress-track"><div class="progress-fill accent-bar" [style.width]="m.autonomyLevel+'%'"></div></div>
+
+          <button (click)="invite(m.id)" class="btn-invite" title="Enviar invitación">🚀</button>
+
+          @if (pendingDeleteId === m.id) {
+            <div class="inline-confirm">
+              <span class="confirm-label">¿Eliminar?</span>
+              <button (click)="confirmRemove()" class="btn-confirm-yes">Sí</button>
+              <button (click)="cancelRemove()" class="btn-confirm-no">No</button>
             </div>
-            <div class="stat-row" style="opacity: 0.7;">
-              <div class="stat-label"><span>Responsabilidad</span><strong>{{ m.responsibilityLevel }}%</strong></div>
-              <div class="progress-track"><div class="progress-fill primary-bar" [style.width]="m.responsibilityLevel+'%'"></div></div>
-            </div>
+          } @else {
+            <button (click)="remove(m.id)" class="btn-remove" title="Eliminar">✕</button>
+          }
+        </div>
+
+        <div class="member-stats">
+          <div class="stat-row">
+            <div class="stat-label"><span>Nivel de Autonomía</span><strong>{{ m.autonomyLevel }}%</strong></div>
+            <div class="progress-track"><div class="progress-fill accent-bar" [style.width]="m.autonomyLevel+'%'"></div></div>
+          </div>
+          <div class="stat-row" style="opacity: 0.7;">
+            <div class="stat-label"><span>Responsabilidad</span><strong>{{ m.responsibilityLevel }}%</strong></div>
+            <div class="progress-track"><div class="progress-fill primary-bar" [style.width]="m.responsibilityLevel+'%'"></div></div>
           </div>
         </div>
-      }
-    </div>
+      </div>
+    }
+  </div>
 }

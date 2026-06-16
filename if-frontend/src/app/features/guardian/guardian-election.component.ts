@@ -29,98 +29,107 @@ interface MemberCandidate {
     <div class="circle c3"></div>
   </div>
 
-  <div class="election-card" *ngIf="!loading && status">
+  @if (!loading && status) {
+    <div class="election-card">
 
-    <!-- Guardián ya elegido -->
-    <ng-container *ngIf="status.hasGuardian; else electionFlow">
-      <div class="guardian-confirmed">
-        <div class="confirmed-icon">🌱</div>
-        <h2>¡Guardián Familiar elegido!</h2>
-        <div class="guardian-badge">
-          <span class="guardian-name">{{ status.guardianFullName }}</span>
-          <span class="guardian-label">Guardián Familiar</span>
-        </div>
-        <p class="confirmed-desc">
-          Gracias por elegir quién guiará la evolución de su familia.
-          Esta persona impulsará el bienestar de todos con amor y compromiso.
-        </p>
-        <button class="btn-primary" (click)="goToDashboard()">Comenzar la aventura →</button>
-      </div>
-    </ng-container>
-
-    <!-- Flujo de elección -->
-    <ng-template #electionFlow>
-      <div class="election-header">
-        <div class="header-icon">🏡</div>
-        <h1>¿Quién será el <span class="highlight">Guardián Familiar</span>?</h1>
-        <p class="subtitle">
-          El Guardián motiva, acompaña y ayuda a mantener viva la evolución de la familia.
-          <strong>No controla a nadie.</strong> Solo impulsa el bienestar y la participación.
-        </p>
-      </div>
-
-      <!-- Lista de candidatos -->
-      <div class="members-grid" *ngIf="members.length > 0">
-        <div
-          class="member-card"
-          *ngFor="let m of members"
-          [class.selected]="selectedMemberId === m.memberId"
-          [class.leading]="isLeading(m)"
-          (click)="selectCandidate(m.memberId)">
-
-          <div class="member-avatar">{{ getInitials(m.fullName) }}</div>
-          <div class="member-info">
-            <span class="member-name">{{ m.fullName }}</span>
-            <span class="vote-count" *ngIf="m.votes > 0">
-              {{ m.votes }} voto{{ m.votes !== 1 ? 's' : '' }} 🗳️
-            </span>
+      <!-- Guardián ya elegido -->
+      @if (status.hasGuardian) {
+        <div class="guardian-confirmed">
+          <div class="confirmed-icon">🌱</div>
+          <h2>¡Guardián Familiar elegido!</h2>
+          <div class="guardian-badge">
+            <span class="guardian-name">{{ status.guardianFullName }}</span>
+            <span class="guardian-label">Guardián Familiar</span>
           </div>
-          <div class="leading-badge" *ngIf="isLeading(m)">🌟 Preferido</div>
+          <p class="confirmed-desc">
+            Gracias por elegir quién guiará la evolución de su familia.
+            Esta persona impulsará el bienestar de todos con amor y compromiso.
+          </p>
+          <button class="btn-primary" (click)="goToDashboard()">Comenzar la aventura →</button>
         </div>
-      </div>
-
-      <p class="vote-hint" *ngIf="status.currentUserHasVoted">
-        ✓ Ya votaste. Puedes cambiar tu voto cuando quieras.
-      </p>
-
-      <!-- Acciones -->
-      <div class="actions">
-        <button
-          class="btn-vote"
-          [disabled]="!selectedMemberId || voting"
-          (click)="castVote()">
-          {{ voting ? 'Votando...' : '🗳️ Votar por este miembro' }}
-        </button>
-
-        <button
-          class="btn-confirm"
-          *ngIf="canConfirm()"
-          (click)="confirmGuardian()">
-          ✅ Confirmar como Guardián
-        </button>
-
-        <button class="btn-skip" (click)="goToDashboard()">
-          Decidir más tarde →
-        </button>
-      </div>
-
-      <!-- Barra de progreso de votos -->
-      <div class="votes-summary" *ngIf="status.totalVotes > 0">
-        <span class="votes-label">{{ status.totalVotes }} de {{ totalMembers }} votos emitidos</span>
-        <div class="progress-bar">
-          <div class="progress-fill"
-               [style.width.%]="(status.totalVotes / totalMembers) * 100"></div>
+      } @else {
+        <div class="election-header">
+          <div class="header-icon">🏡</div>
+          <h1>¿Quién será el <span class="highlight">Guardián Familiar</span>?</h1>
+          <p class="subtitle">
+            El Guardián motiva, acompaña y ayuda a mantener viva la evolución de la familia.
+            <strong>No controla a nadie.</strong> Solo impulsa el bienestar y la participación.
+          </p>
         </div>
-      </div>
-    </ng-template>
 
-  </div>
+        <!-- Lista de candidatos -->
+        @if (members.length > 0) {
+          <div class="members-grid">
+            @for (m of members; track m.memberId) {
+              <div
+                class="member-card"
+                [class.selected]="selectedMemberId === m.memberId"
+                [class.leading]="isLeading(m)"
+                (click)="selectCandidate(m.memberId)">
+
+                <div class="member-avatar">{{ getInitials(m.fullName) }}</div>
+                <div class="member-info">
+                  <span class="member-name">{{ m.fullName }}</span>
+                  @if (m.votes > 0) {
+                    <span class="vote-count">
+                      {{ m.votes }} voto{{ m.votes !== 1 ? 's' : '' }} 🗳️
+                    </span>
+                  }
+                </div>
+                @if (isLeading(m)) {
+                  <div class="leading-badge">🌟 Preferido</div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        @if (status.currentUserHasVoted) {
+          <p class="vote-hint">✓ Ya votaste. Puedes cambiar tu voto cuando quieras.</p>
+        }
+
+        <!-- Acciones -->
+        <div class="actions">
+          <button
+            class="btn-vote"
+            [disabled]="!selectedMemberId || voting"
+            (click)="castVote()">
+            {{ voting ? 'Votando...' : '🗳️ Votar por este miembro' }}
+          </button>
+
+          @if (canConfirm()) {
+            <button class="btn-confirm" (click)="confirmGuardian()">
+              ✅ Confirmar como Guardián
+            </button>
+          }
+
+          <button class="btn-skip" (click)="goToDashboard()">
+            Decidir más tarde →
+          </button>
+        </div>
+
+        <!-- Barra de progreso de votos -->
+        @if (status.totalVotes > 0) {
+          <div class="votes-summary">
+            <span class="votes-label">{{ status.totalVotes }} de {{ totalMembers }} votos emitidos</span>
+            <div class="progress-bar">
+              <div class="progress-fill"
+                   [style.width.%]="(status.totalVotes / totalMembers) * 100"></div>
+            </div>
+          </div>
+        }
+      }
+
+    </div>
+  }
 
   <!-- Loader -->
-  <div class="loader" *ngIf="loading">
-    <div class="spinner"></div>
-    <p>Cargando familia...</p>
-  </div>
+  @if (loading) {
+    <div class="loader">
+      <div class="spinner"></div>
+      <p>Cargando familia...</p>
+    </div>
+  }
 
 </div>
   `,

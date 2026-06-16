@@ -1,4 +1,4 @@
-name: Quality Gate — Tests + Coverage + SonarQube
+name: Quality Gate — Tests + Coverage + SonarCloud
 
 on:
   pull_request:
@@ -6,22 +6,21 @@ on:
     paths:
       - 'backend/**'
   push:
-    branches: [main]
+    branches: [main, principal]
     paths:
       - 'backend/**'
   workflow_dispatch:
 
 jobs:
   quality:
-    name: Tests · JaCoCo · SonarQube
+    name: Tests · JaCoCo · SonarCloud
     runs-on: ubuntu-latest
 
     steps:
-      # ── 1. Checkout ──────────────────────────────────────────────────────
+      # ── 1. Checkout (historial completo para análisis "new code") ────────
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # SonarQube necesita el historial completo para el análisis de "new code"
           fetch-depth: 0
 
       # ── 2. JDK 17 ────────────────────────────────────────────────────────
@@ -32,25 +31,31 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # ── 3. Cache SonarQube ───────────────────────────────────────────────
-      - name: Cache SonarQube packages
+      # ── 3. Cache SonarCloud ──────────────────────────────────────────────
+      - name: Cache SonarCloud packages
         uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      # ── 4. Tests + JaCoCo report ─────────────────────────────────────────
-      - name: Run tests with JaCoCo coverage
+      # ── 4. Tests + JaCoCo + Sonar (todo en un solo mvn) ─────────────────
+      - name: Build, Test & Analyze
         working-directory: backend
-        run: |
-          mvn verify -P ci \
-            --no-transfer-progress \
-            -Dmaven.test.failure.ignore=false
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SPRING_PROFILES_ACTIVE: test
+        run: |
+          mvn verify sonar:sonar \
+            -P ci \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.organization=guillermo-prog-star \
+            -Dsonar.projectKey=Guillermo-prog-star_if-full \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+            --no-transfer-progress
 
-      # ── 5. Publicar resultados de tests en GitHub ─────────────────────────
+      # ── 5. Resultados de tests en GitHub (visible en la pestaña Checks) ──
       - name: Publish test results
         uses: dorny/test-reporter@v1
         if: always()
@@ -60,46 +65,45 @@ jobs:
           reporter: java-junit
           fail-on-error: true
 
-      # ── 6. SonarQube Analysis ────────────────────────────────────────────
-      - name: SonarQube Analysis
-        working-directory: backend
-        run: |
-          mvn sonar:sonar \
-            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
-            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
-            -Dsonar.projectKey=integrity-family-backend \
-            -Dsonar.projectName="Integrity Family — Backend" \
-            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-            --no-transfer-progress
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # ── 7. Publicar reporte de cobertura como artefacto ──────────────────
-      - name: Upload JaCoCo coverage report
+      # ── 6. Artefacto: reporte HTML de cobertura ──────────────────────────
+      - name: Upload JaCoCo HTML report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: jacoco-report
+          name: jacoco-report-${{ github.run_number }}
           path: backend/target/site/jacoco/
           retention-days: 14
 
-      # ── 8. Resumen en PR ─────────────────────────────────────────────────
+      # ── 7. Resumen de cobertura en el PR ─────────────────────────────────
       - name: Coverage summary
         if: always()
         run: |
-          if [ -f backend/target/site/jacoco/jacoco.xml ]; then
-            COVERED=$(grep -oP 'type="LINE"[^/]*/>' backend/target/site/jacoco/jacoco.xml | \
-              grep -oP 'covered="\K[0-9]+' | awk '{s+=$1}END{print s}')
-            MISSED=$(grep -oP 'type="LINE"[^/]*/>' backend/target/site/jacoco/jacoco.xml | \
-              grep -oP 'missed="\K[0-9]+' | awk '{s+=$1}END{print s}')
-            TOTAL=$(( COVERED + MISSED ))
-            if [ "$TOTAL" -gt 0 ]; then
-              PCT=$(echo "scale=1; $COVERED * 100 / $TOTAL" | bc)
-              echo "## 📊 Cobertura de código" >> $GITHUB_STEP_SUMMARY
-              echo "| Métrica | Valor |" >> $GITHUB_STEP_SUMMARY
-              echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-              echo "| Líneas cubiertas | $COVERED / $TOTAL |" >> $GITHUB_STEP_SUMMARY
-              echo "| Cobertura de líneas | **${PCT}%** |" >> $GITHUB_STEP_SUMMARY
-              echo "| Umbral mínimo (CI) | 40% |" >> $GITHUB_STEP_SUMMARY
-            fi
+          REPORT="backend/target/site/jacoco/jacoco.xml"
+          if [ ! -f "$REPORT" ]; then
+            echo "⚠️ No se encontró el reporte JaCoCo" >> $GITHUB_STEP_SUMMARY
+            exit 0
           fi
+
+          COVERED=$(grep -oP 'type="LINE".*?missed="\K[0-9]+' "$REPORT" | \
+            awk -F'"' '{print $1}' | awk 'BEGIN{s=0}{s+=$1}END{print s}' || echo 0)
+          MISSED=$(grep -oP 'type="LINE".*?missed="\K[0-9]+' "$REPORT" | \
+            awk 'BEGIN{s=0}{s+=$1}END{print s}' || echo 0)
+
+          # Parsing robusto: extraer totales del summary counter LINE
+          COVERED=$(xmllint --xpath \
+            'sum(//counter[@type="LINE"]/@covered)' \
+            "$REPORT" 2>/dev/null || echo "N/A")
+          MISSED=$(xmllint --xpath \
+            'sum(//counter[@type="LINE"]/@missed)' \
+            "$REPORT" 2>/dev/null || echo "N/A")
+
+          echo "## 📊 Cobertura de código (JaCoCo)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Métrica | Valor |" >> $GITHUB_STEP_SUMMARY
+          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
+          echo "| Líneas cubiertas | $COVERED |" >> $GITHUB_STEP_SUMMARY
+          echo "| Líneas no cubiertas | $MISSED |" >> $GITHUB_STEP_SUMMARY
+          echo "| Umbral CI (líneas) | ≥ 40% |" >> $GITHUB_STEP_SUMMARY
+          echo "| Umbral CI (ramas) | ≥ 30% |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [Ver análisis completo en SonarCloud](https://sonarcloud.io/project/overview?id=Guillermo-prog-star_if-full)" >> $GITHUB_STEP_SUMMARY

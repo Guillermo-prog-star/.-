@@ -3,6 +3,7 @@ package com.integrityfamily.risk.service;
 import com.integrityfamily.admin.service.SecurityWatchdogService;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.RiskSnapshot;
+import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.RiskSnapshotRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,9 @@ class RiskServiceTest {
 
     @Mock
     private RiskSnapshotRepository riskSnapshotRepository;
+
+    @Mock
+    private FamilyRepository familyRepository;
 
     @Mock
     private SecurityWatchdogService watchdogService;

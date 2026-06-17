@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * SDD: Evaluador de Seguridad Multitenancy Familiar.
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component("familySecurity")
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class FamilySecurityEvaluator {
 
     private final UserRepository userRepository;

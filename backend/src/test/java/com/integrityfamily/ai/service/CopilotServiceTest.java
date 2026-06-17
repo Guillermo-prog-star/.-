@@ -3,6 +3,7 @@ package com.integrityfamily.ai.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrityfamily.ai.dto.CopilotDtos.*;
 import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.ai.provider.TaskType;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,6 +48,9 @@ public class CopilotServiceTest {
     private AiInferenceRepository inferenceRepository;
 
     @Mock
+    private AiProviderSelector aiProviderSelector;
+
+    @Mock
     private AiProvider aiProvider;
 
     @Mock
@@ -73,6 +77,7 @@ public class CopilotServiceTest {
                 .build();
         
         Mockito.lenient().when(aiProperties.getAnthropic()).thenReturn(new com.integrityfamily.ai.config.AiProperties.Anthropic());
+        Mockito.lenient().when(aiProviderSelector.selectProvider(any(TaskType.class))).thenReturn(aiProvider);
     }
 
     @Test

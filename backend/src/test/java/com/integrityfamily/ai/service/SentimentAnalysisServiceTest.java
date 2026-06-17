@@ -4,6 +4,7 @@ import com.integrityfamily.ai.dto.DimensionCorrelation;
 import com.integrityfamily.ai.dto.LogbookCorrelationResult;
 import com.integrityfamily.ai.dto.SentimentResult;
 import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.ai.provider.TaskType;
 import com.integrityfamily.domain.Evaluation;
 import com.integrityfamily.domain.EvaluationDimensionScore;
 import com.integrityfamily.domain.EvaluationStatus;
@@ -37,6 +38,7 @@ class SentimentAnalysisServiceTest {
     @Mock FamilyRepository             familyRepository;
     @Mock FamilyLogbookEntryRepository logbookRepository;
     @Mock EvaluationRepository         evaluationRepository;
+    @Mock AiProviderSelector           aiProviderSelector;
     @Mock AiProvider                   aiProvider;
     @Mock ContextSynthesizer           contextSynthesizer;
 

@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrityfamily.ai.dto.EmotionalContentDtos.*;
 import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.ai.provider.TaskType;
+import com.integrityfamily.ai.service.AiProviderSelector;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +25,7 @@ public class EmotionalContentEngineService {
     private final ReflectiveSessionRepository reflectiveSessionRepository;
     private final FamilyRepository familyRepository;
     private final MemberRepository memberRepository;
-    private final AiProvider aiProvider;
+    private final AiProviderSelector aiProviderSelector;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
@@ -108,7 +110,8 @@ public class EmotionalContentEngineService {
         String jsonResponse = "";
         EmotionalInferenceDto inference = null;
 
-        // 3. Ejecutar inferencia AI o fallback de Simulación SDD
+        // 3. Ejecutar inferencia AI — LIGHTWEIGHT: siempre usa el proveedor más barato disponible
+        AiProvider aiProvider = aiProviderSelector.selectProvider(TaskType.LIGHTWEIGHT);
         try {
             jsonResponse = aiProvider.generateRawResponse(prompt).trim();
 

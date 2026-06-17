@@ -2,6 +2,7 @@ package com.integrityfamily.ai.service;
 
 import com.integrityfamily.ai.dto.AiContext;
 import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.ai.provider.TaskType;
 import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.repository.FamilyRepository;
@@ -20,7 +21,7 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AiInferenceService {
 
-    private final AiProvider aiProvider;
+    private final AiProviderSelector aiProviderSelector;
     private final FamilyRepository familyRepository;
     private final CriticalDayRepository criticalDayRepository;
     private final ContextSynthesizer contextSynthesizer;
@@ -39,9 +40,10 @@ public class AiInferenceService {
             // 1. Obtener contexto completo (ICF, miembros, historia)
             AiContext context = contextSynthesizer.synthesize(family, "CRISIS");
 
-            // 2. Solicitar inferencia real a Claude
+            // 2. Crisis → siempre proveedor de máxima capacidad
+            AiProvider aiProvider = aiProviderSelector.selectProvider(TaskType.HIGH_CAPACITY);
             String response = aiProvider.generateResponse(
-                "ALERTA SENTINEL: Se ha detectado una crisis en el nodo. Genera una guÃƒÂ­a de contenciÃƒÂ³n inmediata.", 
+                "ALERTA SENTINEL: Se ha detectado una crisis en el nodo. Genera una guÃƒÂ­a de contenciÃƒÂ³n inmediata.",
                 context
             );
 

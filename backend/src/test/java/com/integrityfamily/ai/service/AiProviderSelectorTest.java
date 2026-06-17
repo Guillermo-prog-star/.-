@@ -2,8 +2,10 @@ package com.integrityfamily.ai.service;
 
 import com.integrityfamily.ai.dto.AiContext;
 import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.ai.provider.TaskType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -18,6 +20,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("AiProviderSelector")
 class AiProviderSelectorTest {
 
+    // Claude: priority=10 (más capaz), Gemini: priority=20 (más barato)
     @Mock AiProvider claudeProvider;
     @Mock AiProvider geminiProvider;
 
@@ -25,53 +28,103 @@ class AiProviderSelectorTest {
 
     @BeforeEach
     void setUp() {
-        // lenient: el stream puede encontrar el primero y no llamar al segundo
-        lenient().when(claudeProvider.getProviderId()).thenReturn("CLAUDE_3_5_SONNET");
-        lenient().when(geminiProvider.getProviderId()).thenReturn("GEMINI_1_5_FLASH");
-        // Claude primero en la lista → es el fallback
+        lenient().when(claudeProvider.getPriority()).thenReturn(10);
+        lenient().when(geminiProvider.getPriority()).thenReturn(20);
+        lenient().when(claudeProvider.available()).thenReturn(true);
+        lenient().when(geminiProvider.available()).thenReturn(true);
         selector = new AiProviderSelector(List.of(claudeProvider, geminiProvider));
     }
 
-    @Test
-    @DisplayName("sentinelActive=true → selecciona CLAUDE_3_5_SONNET")
-    void sentinelActive_selectsClaude() {
-        AiContext ctx = mock(AiContext.class);
-        when(ctx.sentinelActive()).thenReturn(true);
+    @Nested
+    @DisplayName("selectProvider(AiContext)")
+    class SelectByContext {
 
-        AiProvider result = selector.selectProvider(ctx);
+        @Test
+        @DisplayName("sentinelActive=true → proveedor más capaz (priority menor = Claude)")
+        void sentinelActive_selectsHighCapacity() {
+            AiContext ctx = mock(AiContext.class);
+            when(ctx.sentinelActive()).thenReturn(true);
 
-        assertThat(result).isSameAs(claudeProvider);
+            AiProvider result = selector.selectProvider(ctx);
+
+            assertThat(result).isSameAs(claudeProvider);
+        }
+
+        @Test
+        @DisplayName("sentinelActive=false → proveedor más barato (priority mayor = Gemini)")
+        void sentinelInactive_selectsCostOptimized() {
+            AiContext ctx = mock(AiContext.class);
+            when(ctx.sentinelActive()).thenReturn(false);
+
+            AiProvider result = selector.selectProvider(ctx);
+
+            assertThat(result).isSameAs(geminiProvider);
+        }
+
+        @Test
+        @DisplayName("sentinelActive=true pero Claude no disponible → cae a Gemini")
+        void sentinelActive_claudeUnavailable_fallsToGemini() {
+            when(claudeProvider.available()).thenReturn(false);
+            AiContext ctx = mock(AiContext.class);
+            when(ctx.sentinelActive()).thenReturn(true);
+
+            AiProvider result = selector.selectProvider(ctx);
+
+            assertThat(result).isSameAs(geminiProvider);
+        }
     }
 
-    @Test
-    @DisplayName("sentinelActive=false → selecciona GEMINI_1_5_FLASH")
-    void sentinelInactive_selectsGemini() {
-        AiContext ctx = mock(AiContext.class);
-        when(ctx.sentinelActive()).thenReturn(false);
+    @Nested
+    @DisplayName("selectProvider(TaskType)")
+    class SelectByTaskType {
 
-        AiProvider result = selector.selectProvider(ctx);
+        @Test
+        @DisplayName("LIGHTWEIGHT → siempre el más barato disponible (Gemini), aunque Sentinel esté activo")
+        void lightweight_selectsCheapest() {
+            AiProvider result = selector.selectProvider(TaskType.LIGHTWEIGHT);
 
-        assertThat(result).isSameAs(geminiProvider);
+            assertThat(result).isSameAs(geminiProvider);
+        }
+
+        @Test
+        @DisplayName("HIGH_CAPACITY → siempre el más capaz disponible (Claude)")
+        void highCapacity_selectsMostCapable() {
+            AiProvider result = selector.selectProvider(TaskType.HIGH_CAPACITY);
+
+            assertThat(result).isSameAs(claudeProvider);
+        }
+
+        @Test
+        @DisplayName("LIGHTWEIGHT con Gemini no disponible → cae a Claude")
+        void lightweight_geminiUnavailable_fallsToClaude() {
+            when(geminiProvider.available()).thenReturn(false);
+
+            AiProvider result = selector.selectProvider(TaskType.LIGHTWEIGHT);
+
+            assertThat(result).isSameAs(claudeProvider);
+        }
     }
 
-    @Test
-    @DisplayName("getReportingProvider → siempre selecciona CLAUDE_3_5_SONNET")
-    void reportingProvider_selectsClaude() {
-        AiProvider result = selector.getReportingProvider();
+    @Nested
+    @DisplayName("getReportingProvider()")
+    class Reporting {
 
-        assertThat(result).isSameAs(claudeProvider);
-    }
+        @Test
+        @DisplayName("siempre selecciona el más capaz (Claude)")
+        void reportingProvider_selectsMostCapable() {
+            AiProvider result = selector.getReportingProvider();
 
-    @Test
-    @DisplayName("proveedor buscado no encontrado → fallback al primero de la lista")
-    void providerNotFound_fallsBackToFirst() {
-        // Selector con solo Gemini en la lista; busca CLAUDE → no encontrado → devuelve Gemini (primero)
-        AiProviderSelector selectorSingleProvider = new AiProviderSelector(List.of(geminiProvider));
-        AiContext ctx = mock(AiContext.class);
-        when(ctx.sentinelActive()).thenReturn(true); // pide Claude
+            assertThat(result).isSameAs(claudeProvider);
+        }
 
-        AiProvider result = selectorSingleProvider.selectProvider(ctx);
+        @Test
+        @DisplayName("Claude no disponible → cae a Gemini para reportes")
+        void reportingProvider_claudeUnavailable_fallsToGemini() {
+            when(claudeProvider.available()).thenReturn(false);
 
-        assertThat(result).isSameAs(geminiProvider); // fallback al primero
+            AiProvider result = selector.getReportingProvider();
+
+            assertThat(result).isSameAs(geminiProvider);
+        }
     }
 }

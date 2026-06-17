@@ -2,6 +2,8 @@ package com.integrityfamily.ai.service;
 
 import com.integrityfamily.ai.dto.EmotionalContentDtos.*;
 import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.ai.provider.TaskType;
+import com.integrityfamily.ai.service.AiProviderSelector;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import org.junit.jupiter.api.DisplayName;
@@ -27,6 +29,7 @@ class EmotionalContentEngineServiceTest {
     @Mock ReflectiveSessionRepository reflectiveSessionRepository;
     @Mock FamilyRepository            familyRepository;
     @Mock MemberRepository            memberRepository;
+    @Mock AiProviderSelector          aiProviderSelector;
     @Mock AiProvider                  aiProvider;
     @InjectMocks EmotionalContentEngineService service;
 
@@ -49,6 +52,7 @@ class EmotionalContentEngineServiceTest {
                 .findFirstByFamilyIdAndMemberIdAndStimulusId(FAM_ID, MEM_ID, STIM_ID))
                 .thenReturn(Optional.empty());
         when(reflectiveSessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(aiProviderSelector.selectProvider(any(TaskType.class))).thenReturn(aiProvider);
     }
 
     // ── getActiveStimulus ─────────────────────────────────────────────────────
@@ -180,6 +184,7 @@ class EmotionalContentEngineServiceTest {
                     .findFirstByFamilyIdAndMemberIdAndStimulusId(FAM_ID, MEM_ID, STIM_ID))
                     .thenReturn(Optional.empty());
             when(reflectiveSessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(aiProviderSelector.selectProvider(any(TaskType.class))).thenReturn(aiProvider);
             when(aiProvider.generateRawResponse(any())).thenThrow(new RuntimeException("AI down"));
 
             EmotionalInferenceDto result = service.processReflection(STIM_ID, pantallaReq);
@@ -199,6 +204,7 @@ class EmotionalContentEngineServiceTest {
                     .findFirstByFamilyIdAndMemberIdAndStimulusId(FAM_ID, MEM_ID, STIM_ID))
                     .thenReturn(Optional.empty());
             when(reflectiveSessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(aiProviderSelector.selectProvider(any(TaskType.class))).thenReturn(aiProvider);
             when(aiProvider.generateRawResponse(any())).thenThrow(new RuntimeException("AI down"));
 
             EmotionalInferenceDto result = service.processReflection(STIM_ID, estresReq);
@@ -218,6 +224,7 @@ class EmotionalContentEngineServiceTest {
                     .findFirstByFamilyIdAndMemberIdAndStimulusId(FAM_ID, MEM_ID, STIM_ID))
                     .thenReturn(Optional.empty());
             when(reflectiveSessionRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(aiProviderSelector.selectProvider(any(TaskType.class))).thenReturn(aiProvider);
             when(aiProvider.generateRawResponse(any())).thenThrow(new RuntimeException("AI down"));
 
             EmotionalInferenceDto result = service.processReflection(STIM_ID, conversarReq);

@@ -6,7 +6,7 @@ import com.integrityfamily.ai.dto.SentimentResult;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import com.integrityfamily.ai.provider.AiProvider;
-import com.integrityfamily.ai.service.ContextSynthesizer;
+import com.integrityfamily.ai.provider.TaskType;
 import com.integrityfamily.ai.dto.AiContext;
 import org.springframework.stereotype.Service;
 import lombok.extern.slf4j.Slf4j;
@@ -26,20 +26,20 @@ public class SentimentAnalysisService {
     private final FamilyRepository familyRepository;
     private final FamilyLogbookEntryRepository logbookRepository;
     private final EvaluationRepository evaluationRepository;
-    private final AiProvider aiProvider;
+    private final AiProviderSelector aiProviderSelector;
     private final ContextSynthesizer contextSynthesizer;
 
     public SentimentAnalysisService(
             FamilyRepository familyRepository,
             FamilyLogbookEntryRepository logbookRepository,
             EvaluationRepository evaluationRepository,
-            AiProvider aiProvider,
+            AiProviderSelector aiProviderSelector,
             ContextSynthesizer contextSynthesizer
     ) {
         this.familyRepository = familyRepository;
         this.logbookRepository = logbookRepository;
         this.evaluationRepository = evaluationRepository;
-        this.aiProvider = aiProvider;
+        this.aiProviderSelector = aiProviderSelector;
         this.contextSynthesizer = contextSynthesizer;
     }
 
@@ -221,7 +221,8 @@ public class SentimentAnalysisService {
                 globalSentiment, correlationsText.toString(), logbookText.toString()
             );
 
-            log.info("🧠 [SENTIMENT-CLAUDE] Consultando a Claude...");
+            AiProvider aiProvider = aiProviderSelector.selectProvider(TaskType.STANDARD);
+            log.info("🧠 [SENTIMENT-CLAUDE] Consultando a {} ...", aiProvider.getProviderId());
             return aiProvider.generateResponse(prompt, context);
         } catch (Exception e) {
             log.error("⚠️ [SENTIMENT-CLAUDE] Error al generar recomendación adaptativa con Claude, usando fallback: {}", e.getMessage());

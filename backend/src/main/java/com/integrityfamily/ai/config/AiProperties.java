@@ -11,6 +11,8 @@ public class AiProperties {
 
     private Voice voice = new Voice();
     private Anthropic anthropic = new Anthropic();
+    private Gemini gemini = new Gemini();
+    private Deepseek deepseek = new Deepseek();
     private Openai openai = new Openai();
     private Elevenlabs elevenlabs = new Elevenlabs();
 
@@ -18,6 +20,10 @@ public class AiProperties {
     public void setVoice(Voice v) { this.voice = v; }
     public Anthropic getAnthropic() { return anthropic; }
     public void setAnthropic(Anthropic v) { this.anthropic = v; }
+    public Gemini getGemini() { return gemini; }
+    public void setGemini(Gemini v) { this.gemini = v; }
+    public Deepseek getDeepseek() { return deepseek; }
+    public void setDeepseek(Deepseek v) { this.deepseek = v; }
     public Openai getOpenai() { return openai; }
     public void setOpenai(Openai v) { this.openai = v; }
     public Elevenlabs getElevenlabs() { return elevenlabs; }
@@ -34,6 +40,36 @@ public class AiProperties {
         private String apiKey = "";
         private String model = "claude-3-5-haiku-20241022";
         private String baseUrl = "https://api.anthropic.com/v1";
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean v) { this.enabled = v; }
+        public String getApiKey() { return apiKey; }
+        public void setApiKey(String v) { this.apiKey = v; }
+        public String getModel() { return model; }
+        public void setModel(String v) { this.model = v; }
+        public String getBaseUrl() { return baseUrl; }
+        public void setBaseUrl(String v) { this.baseUrl = v; }
+    }
+
+    public static class Gemini {
+        private boolean enabled = false;
+        private String apiKey = "";
+        private String model = "gemini-1.5-flash";
+        private String baseUrl = "https://generativelanguage.googleapis.com/v1beta";
+        public boolean isEnabled() { return enabled; }
+        public void setEnabled(boolean v) { this.enabled = v; }
+        public String getApiKey() { return apiKey; }
+        public void setApiKey(String v) { this.apiKey = v; }
+        public String getModel() { return model; }
+        public void setModel(String v) { this.model = v; }
+        public String getBaseUrl() { return baseUrl; }
+        public void setBaseUrl(String v) { this.baseUrl = v; }
+    }
+
+    public static class Deepseek {
+        private boolean enabled = false;
+        private String apiKey = "";
+        private String model = "deepseek-chat";
+        private String baseUrl = "https://api.deepseek.com";
         public boolean isEnabled() { return enabled; }
         public void setEnabled(boolean v) { this.enabled = v; }
         public String getApiKey() { return apiKey; }

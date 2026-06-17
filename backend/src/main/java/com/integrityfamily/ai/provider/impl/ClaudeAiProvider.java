@@ -574,7 +574,19 @@ public class ClaudeAiProvider implements AiProvider {
 
     @Override
     public String getProviderId() {
-        return "CLAUDE_PRO";
+        return "CLAUDE";
+    }
+
+    @Override
+    public boolean available() {
+        String key = aiProperties.getAnthropic().getApiKey();
+        return aiProperties.getAnthropic().isEnabled()
+                && key != null && !key.isBlank() && !"MOCK_KEY".equals(key);
+    }
+
+    @Override
+    public int getPriority() {
+        return 10;
     }
 }
 

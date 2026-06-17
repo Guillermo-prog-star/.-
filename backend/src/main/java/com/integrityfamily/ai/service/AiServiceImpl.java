@@ -2,6 +2,7 @@ package com.integrityfamily.ai.service;
 
 import com.integrityfamily.ai.dto.AiContext;
 import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.ai.provider.TaskType;
 import com.integrityfamily.domain.ChatMessage;
 import com.integrityfamily.domain.repository.ChatMessageRepository;
 import com.integrityfamily.domain.Family;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AiServiceImpl implements AiService {
 
-    private final AiProvider aiProvider;
+    private final AiProviderSelector aiProviderSelector;
     private final FamilyRepository familyRepository;
     private final EvaluationRepository evaluationRepository;
     private final ContextSynthesizer contextSynthesizer;
@@ -114,8 +115,8 @@ public class AiServiceImpl implements AiService {
             fullPrompt = promptGenerator.buildFamilyMentorPrompt(message, context);
         }
 
-        // 8. Generar respuesta con el prompt pre-construido
-        String response = aiProvider.generateWithFullPrompt(fullPrompt);
+        // 8. Chat conversacional → STANDARD
+        String response = aiProviderSelector.selectProvider(TaskType.STANDARD).generateWithFullPrompt(fullPrompt);
 
         // 9. Guardar respuesta de la IA vinculada a la misma sesión
         ChatMessage aiMessage = chatMessageRepository.save(ChatMessage.builder()
@@ -174,14 +175,14 @@ public class AiServiceImpl implements AiService {
         AiContext context = (familyId != null)
                 ? familyRepository.findById(familyId).map(f -> contextSynthesizer.synthesize(f, "NEUTRAL")).orElse(null)
                 : null;
-        return aiProvider.generateResponse(prompt, context);
+        return aiProviderSelector.selectProvider(TaskType.STANDARD).generateResponse(prompt, context);
     }
 
     @Override
     public String generateDashboardInsight(Family family, Map<String, Double> dimensions, String riskLevel) {
         log.info("[AI_ANALYTICS] Generando insight de dashboard para familia: {}", family.getName());
         String prompt = promptGenerator.buildDashboardInsightPrompt(family, dimensions, riskLevel);
-        return aiProvider.generateRawResponse(prompt);
+        return aiProviderSelector.selectProvider(TaskType.STANDARD).generateRawResponse(prompt);
     }
 
     @Override
@@ -209,7 +210,7 @@ public class AiServiceImpl implements AiService {
                 .collect(Collectors.joining(",\n  ", "[\n  ", "\n]"));
 
         String prompt = promptGenerator.buildSpiritualSynthesisPrompt(evaluation.getFamily(), dimensions, answersJson);
-        return aiProvider.generateRawResponse(prompt);
+        return aiProviderSelector.selectProvider(TaskType.HIGH_CAPACITY).generateRawResponse(prompt);
     }
 
     @Override
@@ -231,7 +232,7 @@ public class AiServiceImpl implements AiService {
                 evaluation.getIcf(), 
                 evaluation.getRiskLevel()
         );
-        return aiProvider.generateRawResponse(prompt);
+        return aiProviderSelector.selectProvider(TaskType.HIGH_CAPACITY).generateRawResponse(prompt);
     }
 
     @Override
@@ -265,14 +266,14 @@ public class AiServiceImpl implements AiService {
                 "    \"description\": \"Instrucción muy corta, humana y motivadora (ej: Intenten comer juntos hoy sin pantallas. Lo importante es compartir el momento.)\"\n" +
                 "  }\n" +
                 "]";
-        return aiProvider.generateResponse(prompt, aiContext);
+        return aiProviderSelector.selectProvider(TaskType.HIGH_CAPACITY).generateResponse(prompt, aiContext);
     }
 
     @Override
     public String generateEvolutionaryMissions(Family family, Map<String, Double> dimensions, String riskLevel) {
         log.info("[AI_MISSIONS] Generando misiones evolutivas (1m-2y) para familia: {}", family.getName());
         String prompt = promptGenerator.buildMissionGenerationPrompt(family, dimensions, riskLevel);
-        return aiProvider.generateRawResponse(prompt);
+        return aiProviderSelector.selectProvider(TaskType.HIGH_CAPACITY).generateRawResponse(prompt);
     }
 
     @Override
@@ -295,6 +296,6 @@ public class AiServiceImpl implements AiService {
         }
 
         String prompt = promptGenerator.buildHybridPlanPrompt(family, dimensions, riskLevel, correlation, continuityAnalysis);
-        return aiProvider.generateRawResponse(prompt);
+        return aiProviderSelector.selectProvider(TaskType.HIGH_CAPACITY).generateRawResponse(prompt);
     }
 }

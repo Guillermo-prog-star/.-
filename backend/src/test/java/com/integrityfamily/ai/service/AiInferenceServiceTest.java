@@ -2,6 +2,7 @@ package com.integrityfamily.ai.service;
 
 import com.integrityfamily.ai.dto.AiContext;
 import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.ai.provider.TaskType;
 import com.integrityfamily.domain.CriticalDay;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.repository.CriticalDayRepository;
@@ -22,10 +23,11 @@ import static org.mockito.Mockito.*;
 @DisplayName("AiInferenceService")
 class AiInferenceServiceTest {
 
-    @Mock AiProvider           aiProvider;
-    @Mock FamilyRepository     familyRepository;
+    @Mock AiProviderSelector    aiProviderSelector;
+    @Mock AiProvider            aiProvider;
+    @Mock FamilyRepository      familyRepository;
     @Mock CriticalDayRepository criticalDayRepository;
-    @Mock ContextSynthesizer   contextSynthesizer;
+    @Mock ContextSynthesizer    contextSynthesizer;
     @InjectMocks AiInferenceService service;
 
     private static final long FAM_ID = 1L;
@@ -59,6 +61,7 @@ class AiInferenceServiceTest {
         AiContext ctx = mock(AiContext.class);
         when(familyRepository.findById(FAM_ID)).thenReturn(Optional.of(f));
         when(contextSynthesizer.synthesize(f, "CRISIS")).thenReturn(ctx);
+        when(aiProviderSelector.selectProvider(any(TaskType.class))).thenReturn(aiProvider);
         when(aiProvider.generateResponse(any(), eq(ctx))).thenReturn("Guía de contención.");
         when(criticalDayRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -78,6 +81,7 @@ class AiInferenceServiceTest {
         AiContext ctx = mock(AiContext.class);
         when(familyRepository.findById(FAM_ID)).thenReturn(Optional.of(f));
         when(contextSynthesizer.synthesize(f, "CRISIS")).thenReturn(ctx);
+        when(aiProviderSelector.selectProvider(any(TaskType.class))).thenReturn(aiProvider);
         when(aiProvider.generateResponse(any(), eq(ctx))).thenThrow(new RuntimeException("AI down"));
 
         service.handleCrisisSignal(String.valueOf(FAM_ID));
@@ -92,6 +96,7 @@ class AiInferenceServiceTest {
         AiContext ctx = mock(AiContext.class);
         when(familyRepository.findById(FAM_ID)).thenReturn(Optional.of(f));
         when(contextSynthesizer.synthesize(f, "CRISIS")).thenReturn(ctx);
+        when(aiProviderSelector.selectProvider(any(TaskType.class))).thenReturn(aiProvider);
         when(aiProvider.generateResponse(any(), any())).thenReturn("OK");
         when(criticalDayRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 

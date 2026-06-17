@@ -3,6 +3,7 @@ package com.integrityfamily.ai.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrityfamily.ai.dto.CopilotDtos.*;
 import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.ai.provider.TaskType;
 import com.integrityfamily.ai.config.AiProperties;
 import com.integrityfamily.cognitive.service.FamilyMemoryService;
 import com.integrityfamily.cognitive.service.FamilyReflectionService;
@@ -38,7 +39,7 @@ public class CopilotService {
     private final LearningEntryRepository learningEntryRepository;
     private final FamilyMetricsSnapshotRepository snapshotRepository;
     private final AiInferenceRepository inferenceRepository;
-    private final AiProvider aiProvider;
+    private final AiProviderSelector aiProviderSelector;
     private final ObjectMapper objectMapper;
     private final AiProperties aiProperties;
     private final FamilyMemoryService familyMemoryService;
@@ -161,6 +162,7 @@ public class CopilotService {
 
         String rawResponse;
         try {
+            AiProvider aiProvider = aiProviderSelector.selectProvider(TaskType.STANDARD);
             rawResponse = aiProvider.generateRawResponse(prompt);
         } catch (Exception e) {
             log.error("⚠️ Error llamando a Claude, aplicando fallback determinístico: {}", e.getMessage());

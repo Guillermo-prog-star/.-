@@ -91,6 +91,16 @@ app:
       api-key: ${CLAUDE_API_KEY:MOCK_KEY}
       model: ${CLAUDE_MODEL:claude-haiku-4-5}
       base-url: ${CLAUDE_BASE_URL:https://api.anthropic.com/v1}
+    gemini:
+      enabled: ${GEMINI_ENABLED:false}
+      api-key: ${GEMINI_API_KEY:MOCK_KEY}
+      model: ${GEMINI_MODEL:gemini-1.5-flash}
+      base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
+    deepseek:
+      enabled: ${DEEPSEEK_ENABLED:false}
+      api-key: ${DEEPSEEK_API_KEY:MOCK_KEY}
+      model: ${DEEPSEEK_MODEL:deepseek-chat}
+      base-url: ${DEEPSEEK_BASE_URL:https://api.deepseek.com}
     openai:
       api-key: ${OPENAI_API_KEY:MOCK_KEY}
       whisper:
@@ -104,6 +114,12 @@ app:
       voice-id: ${ELEVENLABS_VOICE_ID:MOCK_VOICE}
       model: ${ELEVENLABS_MODEL:eleven_multilingual_v2}
       base-url: ${ELEVENLABS_BASE_URL:https://api.elevenlabs.io/v1}
+  alexa:
+    enabled: ${ALEXA_ENABLED:false}
+    skill-id: ${ALEXA_SKILL_ID:}
+    client-id: ${ALEXA_CLIENT_ID:integrity-family}
+    token-ttl-seconds: ${ALEXA_TOKEN_TTL:3600}
+    code-ttl-seconds: ${ALEXA_CODE_TTL:300}
 
 logging:
   file:

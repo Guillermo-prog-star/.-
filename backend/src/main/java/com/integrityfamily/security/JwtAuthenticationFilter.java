@@ -93,34 +93,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         } catch (ExpiredJwtException ex) {
             // ── FIX CENTRAL ─────────────────────────────────────────────────
-            // Token expirado → SecurityContext vacío, pero la cadena CONTINÚA.
-            // Spring Security devolverá 401 en endpoints protegidos.
-            // Endpoints públicos (ej. /auth/login) ignoran el contexto vacío.
-            // ANTES: el catch no llamaba filterChain.doFilter() → 403 silencioso.
             log.warn("[JWT-FILTER] Token expirado en {}: {}",
                     request.getServletPath(), ex.getMessage());
             SecurityContextHolder.clearContext();
 
         } catch (JwtException ex) {
-            // Token malformado o firma inválida → mismo tratamiento
             log.warn("[JWT-FILTER] Token JWT inválido en {}: {}",
                     request.getServletPath(), ex.getMessage());
             SecurityContextHolder.clearContext();
 
         } catch (Exception ex) {
-            // Cualquier otro error inesperado → log completo para diagnóstico
             log.error("[JWT-FILTER] Error inesperado procesando JWT en {}: {}",
                     request.getServletPath(), ex.getMessage());
             SecurityContextHolder.clearContext();
 
+        }
+
+        try {
+            filterChain.doFilter(request, response);
         } finally {
             // Siempre limpiar TenantContext para evitar fugas entre hilos del pool
             TenantContext.clear();
         }
-
-        // ── FIX: filterChain.doFilter() SIEMPRE se ejecuta, fuera del try ──
-        // Antes estaba dentro del try → un catch lo cortocircuitaba.
-        filterChain.doFilter(request, response);
     }
 
     private String extractJwtFromRequest(HttpServletRequest request) {

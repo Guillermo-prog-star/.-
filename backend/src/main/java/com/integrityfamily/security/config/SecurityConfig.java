@@ -68,7 +68,9 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/api-docs/**",
                                 "/api/auth/**",
-                                "/api/assessments/resilience-check"
+                                "/api/assessments/resilience-check",
+                                "/oauth/alexa/**",
+                                "/alexa"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

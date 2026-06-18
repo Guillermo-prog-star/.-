@@ -169,7 +169,13 @@ public class AlexaSkillController {
                     + completionTxt
                     + aiMsgTxt;
 
-            return speakResponse(texto);
+            return aplResponse(texto, aplInfoCard("🛡️ Resumen del Guardián", family.getName(),
+                    List.of(
+                        participacion + inactivos,
+                        "Avance: " + String.format("%.0f%%", b.planCompletionRate() * 100),
+                        b.currentMilestone() != null ? "Hito: " + b.currentMilestone() : "",
+                        b.fatigueSignal() != null && !b.fatigueSignal().isBlank() ? "⚠️ " + b.fatigueSignal() : ""
+                    ), "#2563eb"));
         } catch (Exception e) {
             log.warn("[ALEXA-SKILL] GuardianBriefing error familia {}: {}", family.getId(), e.getMessage());
             return speakResponse("No pude obtener el resumen del guardián en este momento.");
@@ -204,7 +210,14 @@ public class AlexaSkillController {
                         + "Nivel de riesgo: " + nivelTexto + ". "
                         + "Sentinel no detecta situaciones críticas en este momento.";
             }
-            return speakResponse(estado);
+            boolean alerta = enCrisis || sentinel;
+            String accentColor = alerta ? "#ef4444" : "#22c55e";
+            return aplResponse(estado, aplInfoCard("🔭 Estado Sentinel", family.getName(),
+                    List.of(
+                        alerta ? "🔴 ALERTA ACTIVA" : "🟢 Sin situaciones críticas",
+                        "Nivel de riesgo: " + nivelTexto,
+                        alerta ? "Revisa el panel de Integrity Family" : "Sentinel monitorea continuamente"
+                    ), accentColor));
         } catch (Exception e) {
             log.warn("[ALEXA-SKILL] SentinelStatus error familia {}: {}", family.getId(), e.getMessage());
             return speakResponse("No pude obtener el estado Sentinel. Revisa el panel de Integrity Family.");
@@ -225,10 +238,16 @@ public class AlexaSkillController {
 
             crisisService.registerCrisis(family.getId(), null, categoria, descripcion, emocion);
 
-            return speakResponse(
-                    "He registrado la situación crítica de nivel " + nivel + " para la familia " + family.getName() + ". "
+            String textoAlerta = "He registrado la situación crítica de nivel " + nivel
+                    + " para la familia " + family.getName() + ". "
                     + "El equipo de apoyo de Integrity Family ha sido notificado. "
-                    + "Recuerda: en peligro inmediato llama a los servicios de emergencia locales.");
+                    + "Recuerda: en peligro inmediato llama a los servicios de emergencia locales.";
+            return aplResponse(textoAlerta, aplInfoCard("🚨 Sentinel Activado", family.getName(),
+                    List.of(
+                        "Nivel registrado: " + nivel + " / 5",
+                        "⚠️ Equipo de apoyo notificado",
+                        "🆘 Emergencia: llama al 123"
+                    ), "#ef4444"));
         } catch (Exception e) {
             log.warn("[ALEXA-SKILL] ActivateSentinel error familia {}: {}", family.getId(), e.getMessage());
             return speakResponse("No pude activar Sentinel. Por favor usa la aplicación directamente.");
@@ -266,7 +285,16 @@ public class AlexaSkillController {
                 texto.append("Sugerencia inmediata: ").append(resp.containmentSuggestion());
             }
 
-            return speakResponse(texto.toString().trim());
+            List<String> lineas = new java.util.ArrayList<>();
+            if (resp.summary() != null) lineas.add(resp.summary());
+            if (resp.recommendedActions() != null)
+                resp.recommendedActions().stream().limit(3)
+                    .forEach(a -> lineas.add("• " + a));
+            if (resp.containmentSuggestion() != null && !resp.containmentSuggestion().isBlank())
+                lineas.add("💡 " + resp.containmentSuggestion());
+
+            return aplResponse(texto.toString().trim(),
+                    aplInfoCard("🧠 Consejo Familiar IA", family.getName(), lineas, "#7c3aed"));
         } catch (Exception e) {
             log.warn("[ALEXA-SKILL] Copilot error familia {}: {}", family.getId(), e.getMessage());
             return speakResponse("El Consejo Familiar no está disponible ahora. Intenta de nuevo pronto.");
@@ -294,7 +322,18 @@ public class AlexaSkillController {
                         .count();
                 misionTexto += " Tienen " + pendientes + " misiones pendientes esta semana.";
             }
-            return speakResponse(misionTexto + " ¡Adelante, familia " + family.getName() + "!");
+            String textoMision = misionTexto + " ¡Adelante, familia " + family.getName() + "!";
+            long total    = sprint.missions() != null ? sprint.missions().size() : 0;
+            long completadas = sprint.missions() != null ? sprint.missions().stream()
+                    .filter(m -> "COMPLETED".equalsIgnoreCase(m.status())).count() : 0;
+            long pendientes = total - completadas;
+
+            return aplResponse(textoMision, aplInfoCard("🎯 Misión Actual", family.getName(),
+                    List.of(
+                        sprint.objective() != null ? sprint.objective() : "Objetivo no definido",
+                        "✅ Completadas: " + completadas + " / " + total,
+                        "⏳ Pendientes: " + pendientes
+                    ), "#f59e0b"));
         } catch (Exception e) {
             log.warn("[ALEXA-SKILL] CurrentMission error familia {}: {}", family.getId(), e.getMessage());
             return speakResponse("No pude obtener la misión. Intenta de nuevo más tarde.");
@@ -324,7 +363,18 @@ public class AlexaSkillController {
                     + (inactividad > 0 ? "Días sin actividad registrada: " + inactividad + ". " : "")
                     + alertas;
 
-            return speakResponse(texto.trim());
+            List<String> lineasCtx = new java.util.ArrayList<>(List.of(
+                "Riesgo: " + nivel,
+                "Dimensión crítica: " + dimension,
+                "Tendencia: " + tendencia,
+                String.format("Adherencia: %.0f%%", adherencia * 100)
+            ));
+            if (inactividad > 0) lineasCtx.add("⚠️ " + inactividad + " días sin actividad");
+            if (ctx.alerts() != null) ctx.alerts().stream().limit(2)
+                    .forEach(a -> lineasCtx.add("🔔 " + a));
+
+            return aplResponse(texto.trim(),
+                    aplInfoCard("📊 Contexto Familiar", family.getName(), lineasCtx, "#0891b2"));
         } catch (Exception e) {
             log.warn("[ALEXA-SKILL] FamilyContext error familia {}: {}", family.getId(), e.getMessage());
             return speakResponse("No pude obtener el contexto familiar en este momento.");
@@ -351,7 +401,13 @@ public class AlexaSkillController {
                     + "Sombras a trabajar: " + sombras + ". "
                     + "Estilo de comunicación: " + estilo + ".";
 
-            return speakResponse(texto);
+            return aplResponse(texto, aplInfoCard("🧬 ADN Familiar", family.getName(),
+                    List.of(
+                        "💚 Valores: " + valores,
+                        "💪 Fortalezas: " + fortalezas,
+                        "🌑 Sombras: " + sombras,
+                        "🗣️ Comunicación: " + estilo
+                    ), "#059669"));
         } catch (Exception e) {
             log.warn("[ALEXA-SKILL] FamilyDna error familia {}: {}", family.getId(), e.getMessage());
             return speakResponse("No pude obtener el ADN familiar en este momento.");
@@ -372,7 +428,16 @@ public class AlexaSkillController {
                     + (primero.getDescription() != null ? primero.getDescription() : "")
                     + " Tu familia tiene " + values.size() + " valor" + (values.size() != 1 ? "es" : "")
                     + " de legado registrado" + (values.size() != 1 ? "s" : "") + ".";
-            return speakResponse(texto);
+            List<String> lineasLegado = new java.util.ArrayList<>();
+            lineasLegado.add("📖 " + primero.getName());
+            if (primero.getDescription() != null && !primero.getDescription().isBlank())
+                lineasLegado.add(primero.getDescription().length() > 80
+                        ? primero.getDescription().substring(0, 80) + "…"
+                        : primero.getDescription());
+            lineasLegado.add("Total de valores: " + values.size());
+
+            return aplResponse(texto, aplInfoCard("🏛️ Legado Familiar", family.getName(),
+                    lineasLegado, "#d97706"));
         } catch (Exception e) {
             log.warn("[ALEXA-SKILL] LegacyMessage error familia {}: {}", family.getId(), e.getMessage());
             return speakResponse("No pude acceder al legado familiar en este momento.");
@@ -405,7 +470,16 @@ public class AlexaSkillController {
             }
             texto.append(". Cada evento es una huella de su evolución.");
 
-            return speakResponse(texto.toString());
+            List<String> lineasTl = new java.util.ArrayList<>();
+            lineasTl.add("📅 " + total + " evento" + (total != 1 ? "s" : "") + " en su historia");
+            recientes.forEach(ev -> {
+                String linea = "▸ " + ev.title();
+                if (ev.actor() != null && !ev.actor().isBlank()) linea += " (" + ev.actor() + ")";
+                lineasTl.add(linea);
+            });
+
+            return aplResponse(texto.toString(),
+                    aplInfoCard("📜 Línea del Tiempo", family.getName(), lineasTl, "#6366f1"));
         } catch (Exception e) {
             log.warn("[ALEXA-SKILL] Timeline error familia {}: {}", family.getId(), e.getMessage());
             return speakResponse("No pude obtener la línea del tiempo familiar en este momento.");
@@ -582,6 +656,57 @@ public class AlexaSkillController {
             "token",       "ifDashboard",
             "document",    document,
             "datasources", datasources
+        );
+    }
+
+    /**
+     * Tarjeta informativa genérica APL para intents secundarios.
+     * Muestra título del intent, nombre de la familia y hasta 5 líneas de datos.
+     */
+    private static Map<String, Object> aplInfoCard(
+            String titulo, String familyName, List<String> lineas, String accentColor) {
+
+        List<Map<String, Object>> items = new java.util.ArrayList<>();
+        items.add(Map.of("type", "Text", "text", titulo,
+                "fontSize", "26dp", "color", accentColor, "fontWeight", "700",
+                "textAlign", "left", "spacing", "0dp"));
+        items.add(Map.of("type", "Text", "text", "Familia " + familyName,
+                "fontSize", "20dp", "color", "#94a3b8", "textAlign", "left", "spacing", "6dp"));
+
+        // Separador
+        items.add(Map.of("type", "Frame", "width", "100%", "height", "2dp",
+                "backgroundColor", accentColor, "spacing", "14dp"));
+
+        // Líneas de datos (máx 5, ignorar vacías)
+        lineas.stream()
+              .filter(l -> l != null && !l.isBlank())
+              .limit(5)
+              .forEach(l -> items.add(Map.of(
+                  "type", "Text", "text", l,
+                  "fontSize", "22dp", "color", "#e2e8f0",
+                  "textAlign", "left", "spacing", "10dp")));
+
+        Map<String, Object> document = Map.of(
+            "type", "APL", "version", "2024.1",
+            "mainTemplate", Map.of(
+                "parameters", List.of("p"),
+                "items", List.of(Map.of(
+                    "type", "Container",
+                    "width", "100vw", "height", "100vh",
+                    "backgroundColor", "#0f172a",
+                    "direction", "column",
+                    "justifyContent", "center",
+                    "paddingLeft", "72dp", "paddingRight", "72dp",
+                    "items", items
+                ))
+            )
+        );
+
+        return Map.of(
+            "type", "Alexa.Presentation.APL.RenderDocument",
+            "token", "ifCard",
+            "document", document,
+            "datasources", Map.of("p", Map.of("family", familyName))
         );
     }
 

@@ -16,6 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/oauth/alexa")
+@CrossOrigin(origins = "*")
 @Slf4j
 @RequiredArgsConstructor
 public class AlexaOAuthController {

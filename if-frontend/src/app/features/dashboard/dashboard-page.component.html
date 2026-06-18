@@ -60,10 +60,10 @@
     <!-- ── EL HOGAR VIVO — Visualización emocional del estado familiar ── -->
     <app-hogar-vivo
       [scores]="{
-        comunicacion: data.dimensionScores.comunicacion,
-        habitos:      data.dimensionScores.habitos,
-        tiempos:      data.dimensionScores.tiempos,
-        emociones:    data.dimensionScores.emociones
+        comunicacion: data.dimensionScores?.comunicacion,
+        habitos:      data.dimensionScores?.habitos,
+        tiempos:      data.dimensionScores?.tiempos,
+        emociones:    data.dimensionScores?.emociones
       }">
     </app-hogar-vivo>
 

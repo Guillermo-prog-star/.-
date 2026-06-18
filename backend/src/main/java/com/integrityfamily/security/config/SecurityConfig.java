@@ -36,6 +36,17 @@ public class SecurityConfig {
 
     @Bean
     public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+        org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
+
+        // OAuth endpoints de Alexa: permiten cualquier origen (Alexa embedded browser)
+        org.springframework.web.cors.CorsConfiguration oauthConfig = new org.springframework.web.cors.CorsConfiguration();
+        oauthConfig.addAllowedOriginPattern("*");
+        oauthConfig.setAllowedMethods(java.util.Arrays.asList("GET", "POST", "OPTIONS"));
+        oauthConfig.setAllowedHeaders(java.util.Arrays.asList("*"));
+        oauthConfig.setAllowCredentials(false);
+        source.registerCorsConfiguration("/oauth/alexa/**", oauthConfig);
+
+        // Resto de la API: solo orígenes configurados
         org.springframework.web.cors.CorsConfiguration configuration = new org.springframework.web.cors.CorsConfiguration();
         java.util.List<String> originsList = java.util.Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
@@ -45,9 +56,8 @@ public class SecurityConfig {
         configuration.setAllowedHeaders(java.util.Arrays.asList("*"));
         configuration.setAllowCredentials(true);
         configuration.setExposedHeaders(java.util.Arrays.asList("Authorization"));
-
-        org.springframework.web.cors.UrlBasedCorsConfigurationSource source = new org.springframework.web.cors.UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 

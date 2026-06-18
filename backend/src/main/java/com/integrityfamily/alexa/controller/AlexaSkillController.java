@@ -117,18 +117,22 @@ public class AlexaSkillController {
     // Intents — críticos para el guardian
     // ═══════════════════════════════════════════════════════════════════════
 
-    /** LaunchRequest: bienvenida contextual. */
+    /** LaunchRequest: bienvenida contextual con pantalla APL en Echo Show. */
     private Map<String, Object> handleLaunch(Family family) {
         boolean sentinel = Boolean.TRUE.equals(family.getSentinelActive());
-        if (sentinel) {
-            return speakResponse(
-                    "Hola, familia " + family.getName() + ". Hay una situación que requiere atención. " +
-                    "Di «estado Sentinel» para conocer los detalles, o «consejo familiar» para orientación.");
-        }
-        return speakResponseKeepSession(
-                "Hola, familia " + family.getName() + ". Estoy aquí para apoyarlos. " +
-                "Puedes decirme: resumen del guardián, misión actual, consejo familiar, ADN familiar o estado Sentinel.",
-                "Integrity Family escuchando...");
+        String texto = sentinel
+                ? "Hola, familia " + family.getName() + ". Hay una situación que requiere atención. " +
+                  "Di «estado Sentinel» para conocer los detalles, o «consejo familiar» para orientación."
+                : "Hola, familia " + family.getName() + ". Estoy aquí para apoyarlos. " +
+                  "Puedes decirme: resumen del guardián, misión actual, consejo familiar, ADN familiar o estado Sentinel.";
+
+        String icfTexto = family.getMilestoneIcfAvg() != null
+                ? String.format("%.0f%%", family.getMilestoneIcfAvg()) : "—";
+        String riesgo   = sentinel ? "🔴 ALERTA" : "🟢 Estable";
+        int participacion = family.getParticipationScore() != null ? family.getParticipationScore() : 0;
+
+        return aplResponseKeepSession(texto, "Integrity Family escuchando...",
+                aplDashboard(family.getName(), icfTexto, riesgo, participacion, sentinel));
     }
 
     /**
@@ -490,6 +494,109 @@ public class AlexaSkillController {
             var slot   = (Map<String, Object>) slots.get(slotName);
             return (String) slot.get("value");
         } catch (Exception e) { return null; }
+    }
+
+    // ── APL — pantalla visual para Echo Show ──────────────────────────────
+
+    private static Map<String, Object> aplResponseKeepSession(
+            String text, String reprompt, Map<String, Object> aplDirective) {
+        return Map.of(
+                "version", "1.0",
+                "response", Map.of(
+                        "outputSpeech",    Map.of("type", "PlainText", "text", text),
+                        "reprompt",        Map.of("outputSpeech", Map.of("type", "PlainText", "text", reprompt)),
+                        "directives",      List.of(aplDirective),
+                        "shouldEndSession", false));
+    }
+
+    private static Map<String, Object> aplResponse(String text, Map<String, Object> aplDirective) {
+        return Map.of(
+                "version", "1.0",
+                "response", Map.of(
+                        "outputSpeech", Map.of("type", "PlainText", "text", text),
+                        "directives",   List.of(aplDirective),
+                        "shouldEndSession", true));
+    }
+
+    /** APL RenderDocument para el dashboard de bienvenida. */
+    private static Map<String, Object> aplDashboard(
+            String familyName, String icf, String riesgo, int participacion, boolean alerta) {
+
+        String bg    = alerta ? "#4a0000" : "#0d1b2a";
+        String accent = alerta ? "#ff4444" : "#00d4aa";
+
+        Map<String, Object> document = Map.of(
+            "type", "APL",
+            "version", "2024.1",
+            "mainTemplate", Map.of(
+                "parameters", List.of("p"),
+                "items", List.of(Map.of(
+                    "type", "Container",
+                    "width", "100vw", "height", "100vh",
+                    "backgroundColor", "${p.bg}",
+                    "direction", "column",
+                    "alignItems", "center",
+                    "justifyContent", "center",
+                    "paddingLeft", "60dp", "paddingRight", "60dp",
+                    "items", List.of(
+                        Map.of("type", "Text",
+                               "text", "✨ INTEGRITY FAMILY",
+                               "fontSize", "22dp", "color", "${p.accent}",
+                               "textAlign", "center", "spacing", "0dp"),
+                        Map.of("type", "Text",
+                               "text", "Familia ${p.familyName}",
+                               "fontSize", "44dp", "color", "#ffffff",
+                               "fontWeight", "700", "textAlign", "center",
+                               "spacing", "16dp"),
+                        Map.of("type", "Container",
+                               "direction", "row",
+                               "justifyContent", "center",
+                               "spacing", "32dp",
+                               "items", List.of(
+                                   aplStat("ICF", "${p.icf}", "${p.accent}"),
+                                   aplStat("Estado", "${p.riesgo}", "#ffffff"),
+                                   aplStat("Participación", "${p.part}", "#f0c040")
+                               )),
+                        Map.of("type", "Text",
+                               "text", "Di: «resumen del guardián» · «misión actual» · «consejo familiar»",
+                               "fontSize", "18dp", "color", "#aaaaaa",
+                               "textAlign", "center", "spacing", "24dp")
+                    )
+                ))
+            )
+        );
+
+        Map<String, Object> datasources = Map.of(
+            "p", Map.of(
+                "familyName",  familyName,
+                "icf",         icf,
+                "riesgo",      riesgo,
+                "part",        participacion + " pts",
+                "bg",          bg,
+                "accent",      accent
+            )
+        );
+
+        return Map.of(
+            "type",        "Alexa.Presentation.APL.RenderDocument",
+            "token",       "ifDashboard",
+            "document",    document,
+            "datasources", datasources
+        );
+    }
+
+    private static Map<String, Object> aplStat(String label, String value, String color) {
+        return Map.of(
+            "type", "Container",
+            "alignItems", "center",
+            "paddingLeft", "24dp", "paddingRight", "24dp",
+            "items", List.of(
+                Map.of("type", "Text", "text", value,
+                       "fontSize", "36dp", "color", color, "fontWeight", "700"),
+                Map.of("type", "Text", "text", label,
+                       "fontSize", "16dp", "color", "#aaaaaa")
+            )
+        );
     }
 
     // ── Builders de respuesta Alexa ────────────────────────────────────────

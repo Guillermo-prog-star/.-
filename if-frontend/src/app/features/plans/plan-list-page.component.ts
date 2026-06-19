@@ -159,6 +159,7 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
   
   get familyId()   { return this.familyState.currentFamilyId(); }
   get familyCode() { return this.familyState.currentFamilyCode() || 'IF-CO-QUI-2026-0001'; }
+  get familyName() { return this.familyState.currentFamilyName() || 'la familia'; }
 
   selectTask(taskId: number, event: Event) {
     event.stopPropagation();
@@ -803,7 +804,7 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
             entrega: { completed: 0, total: 0, percentage: 0 }
           };
 
-          // Sincronizar dinámicamente con el PLANES_MOCK (6 misiones fijas: 2 clínicas + 2 IA + 2 iniciativas)
+          // Sincronizar dinámicamente con el PLANES_MOCK (3 misiones fijas por dimensión: IA-1, IA-2, CREATIVA)
           this.planes = JSON.parse(JSON.stringify(PLANES_MOCK));
           this.adaptIaMissionsToDiagnostic(); // Adaptar misiones IA-2 al hito diagnóstico actual
           
@@ -895,7 +896,7 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
                 }
               });
 
-              // 2. El mock es la fuente de verdad (6 misiones fijas: 2 clínicas + 2 IA + 2 iniciativas).
+              // 2. El mock es la fuente de verdad (3 misiones fijas: IA-1, IA-2, CREATIVA).
               // No se inyectan tareas del backend — el paso 1 ya sincronizó los estados de completado.
               
               // 3. Calcular progreso dinámico del pilar real basado en las misiones mapeadas de este plan

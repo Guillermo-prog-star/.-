@@ -4,6 +4,8 @@ import com.integrityfamily.ai.dto.AiContext;
 import com.integrityfamily.ai.dto.LogbookCorrelationResult;
 import com.integrityfamily.ai.dto.SentimentResult;
 import com.integrityfamily.ai.provider.AiProvider;
+import com.integrityfamily.ai.provider.TaskType;
+import com.integrityfamily.ai.service.AiProviderSelector;
 import com.integrityfamily.chat.controller.ChatController;
 import com.integrityfamily.domain.ChatMessage;
 import com.integrityfamily.domain.Evaluation;
@@ -15,6 +17,7 @@ import com.integrityfamily.domain.repository.ChatMessageRepository;
 import com.integrityfamily.domain.repository.EvaluationRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.participation.service.ParticipationService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -36,6 +39,7 @@ import static org.mockito.Mockito.*;
 @DisplayName("AiServiceImpl")
 class AiServiceImplTest {
 
+    @Mock AiProviderSelector         aiProviderSelector;
     @Mock AiProvider                 aiProvider;
     @Mock FamilyRepository           familyRepository;
     @Mock EvaluationRepository       evaluationRepository;
@@ -50,6 +54,11 @@ class AiServiceImplTest {
     @Mock PostSessionAnalyzer        postSessionAnalyzer;
 
     @InjectMocks AiServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        lenient().when(aiProviderSelector.selectProvider(any(TaskType.class))).thenReturn(aiProvider);
+    }
 
     private static final long FAM_ID = 1L;
     private final Family family = Family.builder().id(FAM_ID).name("Test").build();

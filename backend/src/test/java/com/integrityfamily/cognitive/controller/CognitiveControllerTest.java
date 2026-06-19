@@ -116,35 +116,35 @@ public class CognitiveControllerTest {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    //  1. Seguridad — unauthenticated (Spring devuelve 403 sin entry point custom)
+    //  1. Seguridad — unauthenticated → 401 (entry point custom en SecurityConfig)
     // ═══════════════════════════════════════════════════════════════════════
 
     @Test
-    @DisplayName("GET /snapshot sin autenticación → 403")
-    void snapshot_unauthenticated_returns403() throws Exception {
+    @DisplayName("GET /snapshot sin autenticación → 401")
+    void snapshot_unauthenticated_returns401() throws Exception {
         mockMvc.perform(get("/api/cognitive/1/snapshot"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("GET /narrative sin autenticación → 403")
-    void narrative_unauthenticated_returns403() throws Exception {
+    @DisplayName("GET /narrative sin autenticación → 401")
+    void narrative_unauthenticated_returns401() throws Exception {
         mockMvc.perform(get("/api/cognitive/1/narrative"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("POST /reflect sin autenticación → 403")
-    void reflect_unauthenticated_returns403() throws Exception {
+    @DisplayName("POST /reflect sin autenticación → 401")
+    void reflect_unauthenticated_returns401() throws Exception {
         mockMvc.perform(post("/api/cognitive/1/reflect"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test
-    @DisplayName("POST /bootstrap sin autenticación → 403")
-    void bootstrap_unauthenticated_returns403() throws Exception {
+    @DisplayName("POST /bootstrap sin autenticación → 401")
+    void bootstrap_unauthenticated_returns401() throws Exception {
         mockMvc.perform(post("/api/cognitive/1/bootstrap"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -316,10 +316,10 @@ public class CognitiveControllerTest {
     // ═══════════════════════════════════════════════════════════════════════
 
     @Test
-    @DisplayName("GET /reflection/latest sin autenticación → 403")
-    void reflectionLatest_unauthenticated_returns403() throws Exception {
+    @DisplayName("GET /reflection/latest sin autenticación → 401")
+    void reflectionLatest_unauthenticated_returns401() throws Exception {
         mockMvc.perform(get("/api/cognitive/1/reflection/latest"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

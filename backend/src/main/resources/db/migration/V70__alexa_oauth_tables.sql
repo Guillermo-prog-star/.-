@@ -21,5 +21,5 @@ CREATE TABLE IF NOT EXISTS alexa_oauth_tokens (
     created_at       BIGINT       NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_alexa_tokens_refresh ON alexa_oauth_tokens(refresh_token);
-CREATE INDEX IF NOT EXISTS idx_alexa_tokens_family  ON alexa_oauth_tokens(family_id);
+CREATE INDEX idx_alexa_tokens_refresh ON alexa_oauth_tokens(refresh_token);
+CREATE INDEX idx_alexa_tokens_family  ON alexa_oauth_tokens(family_id);

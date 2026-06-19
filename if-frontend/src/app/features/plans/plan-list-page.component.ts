@@ -329,19 +329,52 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
   }
 
   iniciarSprintMision(plan: PlanTransformacion, mision: Mision) {
-    try {
-      localStorage.setItem(`sprint_activo_${mision.id}`, '1');
-      if (!localStorage.getItem(`sprint_dias_${mision.id}`)) {
-        localStorage.setItem(`sprint_dias_${mision.id}`, '0');
-      }
-      localStorage.setItem('active_sprint_mision', JSON.stringify({
-        misionId: mision.id, 
-        misionTitulo: mision.titulo, 
-        pilar: plan.pilar,
-        backendTaskId: mision.backendTaskId
-      }));
-    } catch {}
-    this.router.navigate(['/logbook'], { queryParams: { tab: 'SPRINT', mision: mision.id } });
+    const guardarContextoYNavegar = (taskId?: number) => {
+      try {
+        localStorage.setItem(`sprint_activo_${mision.id}`, '1');
+        if (!localStorage.getItem(`sprint_dias_${mision.id}`)) {
+          localStorage.setItem(`sprint_dias_${mision.id}`, '0');
+        }
+        localStorage.setItem('active_sprint_mision', JSON.stringify({
+          misionId: mision.id,
+          misionTitulo: mision.titulo,
+          pilar: plan.pilar,
+          backendTaskId: taskId ?? mision.backendTaskId
+        }));
+      } catch {}
+      this.router.navigate(['/logbook'], { queryParams: { tab: 'SPRINT', mision: mision.id } });
+    };
+
+    if (mision.backendTaskId) {
+      guardarContextoYNavegar();
+      return;
+    }
+
+    // Sin task en backend → crearlo primero para vincular el sprint
+    if (!this.plans || this.plans.length === 0) { guardarContextoYNavegar(); return; }
+    const payload = {
+      title: mision.titulo,
+      description: mision.descripcionGeneral,
+      dimension: plan.pilar.toUpperCase(),
+      fase: this.activePillar,
+      riesgoAsociado: 'BAJO',
+      objetivo: plan.visionFamiliar,
+      accionConcreta: mision.microacciones[0]?.descripcion || '',
+      indicadorCumplimiento: mision.microacciones[1]?.descripcion || '',
+      evidenciaRequerida: mision.microacciones[2]?.descripcion || '',
+      impactoIcf: 15,
+      completed: false,
+      plan: { id: this.plans[0].id }
+    };
+    this.http.post<any>(`${this.api.base}/plans/tasks`, payload).subscribe({
+      next: (res) => {
+        const taskId = res?.data?.id ?? res?.id;
+        if (taskId) { mision.backendTaskId = taskId; }
+        this.load(true);
+        guardarContextoYNavegar(taskId);
+      },
+      error: () => guardarContextoYNavegar() // navegar igualmente si falla la creación
+    });
   }
 
   toggleCli() {

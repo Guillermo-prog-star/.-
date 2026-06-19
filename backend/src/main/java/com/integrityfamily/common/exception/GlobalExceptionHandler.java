@@ -44,6 +44,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(ex.getStatus()).body(error);
     }
 
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFoundException(NotFoundException ex, HttpServletRequest request) {
+        ErrorResponse error = new ErrorResponse();
+        error.setSuccess(false);
+        error.setCode("NOT_FOUND");
+        error.setMessage(ex.getMessage());
+        error.setPath(request.getRequestURI());
+        error.setTimestamp(LocalDateTime.now().toString());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
         log.warn("[VALIDATION] IllegalArgumentException at {}: {}", request.getRequestURI(), ex.getMessage());

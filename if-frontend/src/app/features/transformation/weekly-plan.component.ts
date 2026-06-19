@@ -269,7 +269,7 @@ export class WeeklyPlanComponent implements OnInit {
   }
 
   goToSprint() {
-    this.router.navigate(['/family-logbook']);
+    this.router.navigate(['/logbook']);
   }
 
   private loadAll() {

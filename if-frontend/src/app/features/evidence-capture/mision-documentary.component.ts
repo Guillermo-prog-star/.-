@@ -1459,28 +1459,26 @@ export class MisionDocumentaryComponent implements OnInit, OnDestroy {
     }
   }
 
-  private async pollForNarrative(familyId: number, evidenceId: number): Promise<void> {
+  private async pollForNarrative(familyId: number, documentaryId: number): Promise<void> {
     return new Promise(resolve => {
       let attempts = 0;
       const poll = setInterval(() => {
         attempts++;
-        this.http.get<any>(`${this.api.base}/evidences/family/${familyId}`).subscribe({
+        this.http.get<any>(`${this.api.base}/documentaries/family/${familyId}`).subscribe({
           next: res => {
-            const ev = (res?.data ?? []).find((e: any) => e.id === evidenceId);
-            if (ev?.status === 'VALIDATED' || attempts >= 15) {
+            const docs: any[] = res?.data ?? [];
+            const doc = docs.find((d: any) => d.id === documentaryId);
+            if (doc || attempts >= 6) {
               clearInterval(poll);
-              if (ev?.description && ev.description !== masterText(this.documentaryTitle, this.selectedMission()?.title ?? '')) {
-                this.aiNarrative.set(ev.description);
-              }
               this.step.set('documentary');
               resolve();
             }
           },
           error: () => {
-            if (attempts >= 15) { clearInterval(poll); this.step.set('documentary'); resolve(); }
+            if (attempts >= 6) { clearInterval(poll); this.step.set('documentary'); resolve(); }
           }
         });
-      }, 3000);
+      }, 1000);
     });
   }
 
@@ -1540,9 +1538,4 @@ export class MisionDocumentaryComponent implements OnInit, OnDestroy {
 
     return this.sanitizer.bypassSecurityTrustHtml(formatted);
   }
-}
-
-// helper puro para comparar texto en el polling
-function masterText(title: string, missionTitle: string): string {
-  return `DOCUMENTAL: ${title}\nMISIÓN: ${missionTitle}`;
 }

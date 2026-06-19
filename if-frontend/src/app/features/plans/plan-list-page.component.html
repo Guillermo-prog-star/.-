@@ -846,14 +846,14 @@
                   <div class="actions-footer">
                     <button class="btn-comenzar"
                             (click)="comenzarMision(plan, mision)"
-                            [disabled]="isMisionLocked(plan, mision)"
-                            [style.background]="mision.estado === 'Completada' ? 'rgba(255,255,255,0.05)' : 'rgba(56, 189, 248, 0.1)'"
-                            [style.color]="mision.estado === 'Completada' ? '#8b949e' : '#38bdf8'"
-                            [style.borderColor]="mision.estado === 'Completada' ? 'rgba(255,255,255,0.1)' : 'rgba(56, 189, 248, 0.3)'"
+                            [disabled]="isMisionLocked(plan, mision) || mision.estado === 'Completada'"
+                            [style.background]="mision.estado === 'Completada' ? 'rgba(16,185,129,0.07)' : 'rgba(56, 189, 248, 0.1)'"
+                            [style.color]="mision.estado === 'Completada' ? '#10b981' : '#38bdf8'"
+                            [style.borderColor]="mision.estado === 'Completada' ? 'rgba(16,185,129,0.3)' : 'rgba(56, 189, 248, 0.3)'"
                             [style.opacity]="isMisionLocked(plan, mision) ? '0.4' : '1'"
-                            [style.cursor]="isMisionLocked(plan, mision) ? 'not-allowed' : 'pointer'"
+                            [style.cursor]="(isMisionLocked(plan, mision) || mision.estado === 'Completada') ? 'default' : 'pointer'"
                             style="border: 1px solid; padding: 8px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; transition: all 0.2s;">
-                      {{ mision.estado === 'Completada' ? 'Desmarcar' : (mision.backendTaskId ? 'Completar' : 'Comenzar') }}
+                      {{ mision.estado === 'Completada' ? '✓ Completada' : (mision.backendTaskId ? 'Completar' : 'Comenzar') }}
                     </button>
                     <button class="btn-evidencia"
                             [disabled]="!mision.backendTaskId || isMisionLocked(plan, mision)"
@@ -1039,14 +1039,14 @@
             @for (m of familyMembers; track m.id) {
               <option [value]="m.fullName">{{ m.fullName }} ({{ m.roleType }})</option>
             }
-            <option value="William Rivera">William Rivera (Terapeuta)</option>
+            <option [value]="currentUserName">{{ currentUserName }} (Terapeuta)</option>
           </select>
         </div>
 
         <!-- Botones de Control -->
         <div style="display: flex; justify-content: flex-end; gap: 12px;">
           <button (click)="closeEvidenceModal()" style="background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #c9d1d9; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">Cancelar</button>
-          <button [disabled]="submittingEvidence" (click)="submitEvidence()" style="background: #238636; border: 1px solid #30853c; color: #fff; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; border-radius: 6px;">
+          <button [disabled]="submittingEvidence || !isFormValid()" (click)="submitEvidence()" [style.opacity]="(submittingEvidence || !isFormValid()) ? '0.5' : '1'" [style.cursor]="(submittingEvidence || !isFormValid()) ? 'not-allowed' : 'pointer'" style="background: #238636; border: 1px solid #30853c; color: #fff; padding: 8px 18px; border-radius: 6px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
             @if (submittingEvidence) {
               <span>⌛ Analizando Coherencia...</span>
             } @else {

@@ -906,39 +906,9 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
               plan.progresoPilar = plan.misionesTotales > 0 ? Math.round((completedTasks / plan.misionesTotales) * 100) : 0;
             });
 
-            // Proponer 2 misiones clínicas proporcionadas por la IA adaptadas al diagnóstico
+            // El mock ya cubre las misiones IA de todas las dimensiones (IA-1, IA-2, CREATIVA).
+            // No se proponen misiones adicionales para evitar duplicados.
             this.proposedMissions = [];
-            
-            const hasReactividadMission = planTasks.some((t: any) => t.title.includes('[IA] Escucha Activa'));
-            const hasDigitalMission = planTasks.some((t: any) => t.title.includes('[IA] Receso Digital'));
-
-            if (!hasReactividadMission) {
-              this.proposedMissions.push({
-                title: '[IA] Escucha Activa Contra Reactividad',
-                description: 'Espacio diario nocturno de escucha activa de 10 minutos al final del día para mitigar el estrés parental y la reactividad emocional.',
-                dimension: 'emociones',
-                objetivo: 'Fomentar la validación y corregulación emocional ante el estrés diario.',
-                accion: 'Pasar un objeto de habla para que cada miembro comparta sin ser juzgado o interrumpido.',
-                indicador: 'Dinámica completada 4 noches en la semana.',
-                evidencia: 'Registrar en la bitácora familiar el nivel de tranquilidad colectiva (1 al 5).',
-                impacto: 20,
-                isAi: true
-              });
-            }
-
-            if (!hasDigitalMission) {
-              this.proposedMissions.push({
-                title: '[IA] Receso Digital y Conexión Activa',
-                description: 'Desconexión colectiva de pantallas 45 minutos antes de dormir, depositando dispositivos en una cesta común fuera de las habitaciones.',
-                dimension: 'habitos',
-                objetivo: 'Restaurar la higiene de sueño familiar y contrarrestar la desconexión por pantallas.',
-                accion: 'Fijar una alarma familiar unificada y depositar celulares en la Caja de Presencia.',
-                indicador: 'Desconexión colectiva exitosa por 5 días consecutivos.',
-                evidencia: 'Cargar una bitácora detallando la asimilación del hábito y la calidad del descanso.',
-                impacto: 22,
-                isAi: true
-              });
-            }
           }
         }, 
         error: () => this.loading = false 
@@ -1071,10 +1041,10 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
 
   private _mostrarCelebracionDimension(completada: string, desbloqueada: string | null): void {
     const emojis: Record<string, string> = {
-      'Regulación & Clima Emocional':        '💛',
-      'Comunicación Asertiva':               '💬',
-      'Hábitos & Convivencia Colectiva':     '🌿',
-      'Tiempos de Conexión Activa':          '⏰',
+      'Plan de Transformación en EMOCIONES':   '💛',
+      'Plan de Transformación en COMUNICACIÓN':'💬',
+      'Plan de Transformación en HÁBITOS':     '🌿',
+      'Plan de Transformación en TIEMPOS':     '⏰',
     };
     this.dimensionCompletadaBanner = {
       dimensionCompletada:  completada,

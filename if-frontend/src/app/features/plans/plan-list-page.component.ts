@@ -1287,7 +1287,7 @@ export class PlanListPageComponent implements OnInit, OnDestroy {
     this.planes.forEach(plan => {
       const contenido = contenidos[plan.pilar];
       if (!contenido) return;
-      const ia2 = plan.misiones.find((m: any) => m.id.endsWith('-ia-2'));
+      const ia2 = plan.misiones[1]; // índice 1 = misión IA-2 (adaptativa) en la estructura de 3 misiones
       if (!ia2) return;
       ia2.titulo = contenido.titulo;
       ia2.descripcionGeneral = contenido.descripcionGeneral;

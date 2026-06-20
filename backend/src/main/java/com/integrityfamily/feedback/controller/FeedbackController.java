@@ -5,6 +5,7 @@ import com.integrityfamily.domain.Feedback;
 import com.integrityfamily.domain.repository.FeedbackRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.common.dto.ApiResponse;
+import com.integrityfamily.common.exception.NotFoundException;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

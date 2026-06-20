@@ -6,6 +6,7 @@ import com.integrityfamily.ai.service.CopilotService;
 import com.integrityfamily.alexa.config.AlexaProperties;
 import com.integrityfamily.alexa.domain.AlexaOAuthToken;
 import com.integrityfamily.alexa.service.AlexaOAuthService;
+import com.integrityfamily.alexa.service.ChapterService;
 import com.integrityfamily.bitacora.service.SprintService;
 import com.integrityfamily.dna.service.FamilyDnaService;
 import com.integrityfamily.domain.Family;
@@ -51,6 +52,7 @@ public class AlexaSkillController {
     private final FamilyDnaService        familyDnaService;
     private final LegacyService           legacyService;
     private final FamilyTimelineService   familyTimelineService;
+    private final ChapterService          chapterService;
 
     // ═══════════════════════════════════════════════════════════════════════
     // Entry point
@@ -103,6 +105,8 @@ public class AlexaSkillController {
                 // ── Historia y Escena (narrativa de transformación) ───────
                 case "FamilyHistoryIntent"     -> handleFamilyHistory(family);
                 case "FamilySceneIntent"       -> handleFamilyScene(family);
+                // ── Consejo Diario — tarjeta insignia ─────────────────────
+                case "ConsejoDiarioIntent"     -> handleConsejoDiario(family);
                 // ── Ayuda / sistema ───────────────────────────────────────
                 case "AMAZON.HelpIntent"       -> helpResponse(family);
                 case "AMAZON.StopIntent",
@@ -399,6 +403,123 @@ public class AlexaSkillController {
         }
     }
 
+    /**
+     * ConsejoDiarioIntent — la tarjeta insignia de Integrity Family.
+     * Responde: ¿Qué debe hacer esta familia HOY para escribir un mejor capítulo de su historia?
+     * Backed by the 75-chapter narrative system from chapters.json.
+     */
+    private Map<String, Object> handleConsejoDiario(Family family) {
+        try {
+            var chapter = chapterService.getCurrentChapter(family.getId());
+            int completados = chapterService.getCompletedCount(family.getId());
+            int totalChapters = chapterService.getChapters().size();
+
+            if (chapter == null) {
+                return speakResponse("La familia " + family.getName() + " está comenzando su viaje. "
+                        + "Ingresa a Integrity Family para iniciar tu primer capítulo.");
+            }
+
+            int num         = ((Number) chapter.get("number")).intValue();
+            String titulo   = (String) chapter.get("title");
+            String escena   = (String) chapter.get("scene");
+            String tension  = (String) chapter.get("tension");
+            String accion   = (String) chapter.get("action");
+            String temporada = chapterService.getSeasonName(num);
+            int pillar      = ((Number) chapter.get("pillar")).intValue();
+            String pilarNombre = switch (pillar) {
+                case 1 -> "Pilar I · Reconocimiento";
+                case 2 -> "Pilar II · Amor";
+                case 3 -> "Pilar III · Entrega y Legado";
+                default -> "Pilar " + pillar;
+            };
+
+            // Voz narrativa — no prescriptiva
+            String texto = "Hoy, la familia " + family.getName() + " está en el capítulo " + num + ": "
+                    + titulo + ". "
+                    + escena + ". "
+                    + "La pregunta que guía el día de hoy es: " + tension + " "
+                    + "Una posible acción: " + accion + ". "
+                    + "La familia decide cómo y cuándo actuar.";
+
+            // APL — tarjeta insignia
+            List<Map<String, Object>> items = new java.util.ArrayList<>();
+
+            // Cabecera: pilar y temporada
+            items.add(Map.of("type", "Text",
+                    "text", pilarNombre + "  ·  " + temporada,
+                    "fontSize", "16dp", "color", "#64748b",
+                    "textAlign", "left", "spacing", "0dp"));
+
+            // Título del capítulo
+            items.add(Map.of("type", "Text",
+                    "text", "Cap. " + num + " · " + titulo,
+                    "fontSize", "30dp", "color", "#f8fafc",
+                    "fontWeight", "700", "textAlign", "left", "spacing", "10dp"));
+
+            // Línea separadora
+            items.add(Map.of("type", "Frame", "width", "100%", "height", "2dp",
+                    "backgroundColor", "#7c3aed", "spacing", "14dp"));
+
+            // Escena (contextualiza el momento)
+            items.add(Map.of("type", "Text",
+                    "text", "📖 " + escena,
+                    "fontSize", "20dp", "color", "#cbd5e1",
+                    "textAlign", "left", "spacing", "10dp"));
+
+            // Tensión (la pregunta del día)
+            items.add(Map.of("type", "Text",
+                    "text", "❓ " + tension,
+                    "fontSize", "20dp", "color", "#a78bfa",
+                    "fontStyle", "italic", "textAlign", "left", "spacing", "12dp"));
+
+            // Acción sugerida
+            items.add(Map.of("type", "Text",
+                    "text", "✦ Acción sugerida: " + accion,
+                    "fontSize", "19dp", "color", "#e2e8f0",
+                    "textAlign", "left", "spacing", "12dp"));
+
+            // Progreso
+            items.add(Map.of("type", "Text",
+                    "text", completados + " / " + totalChapters + " capítulos completados",
+                    "fontSize", "15dp", "color", "#475569",
+                    "textAlign", "left", "spacing", "16dp"));
+
+            Map<String, Object> document = Map.of(
+                "type", "APL", "version", "2024.1",
+                "mainTemplate", Map.of(
+                    "parameters", List.of("p"),
+                    "items", List.of(Map.of(
+                        "type", "Container",
+                        "width", "100vw", "height", "100vh",
+                        "backgroundColor", "#0a0f1e",
+                        "direction", "column",
+                        "justifyContent", "center",
+                        "paddingLeft", "72dp", "paddingRight", "72dp",
+                        "items", items
+                    ))
+                )
+            );
+
+            Map<String, Object> aplDirective = Map.of(
+                "type", "Alexa.Presentation.APL.RenderDocument",
+                "token", "consejoDiario",
+                "document", document,
+                "datasources", Map.of("p", Map.of("family", family.getName()))
+            );
+
+            return Map.of(
+                "version", "1.0",
+                "response", Map.of(
+                    "outputSpeech", Map.of("type", "PlainText", "text", texto),
+                    "directives", List.of(aplDirective),
+                    "shouldEndSession", true));
+
+        } catch (Exception e) {
+            log.warn("[ALEXA-SKILL] ConsejoDiario error familia {}: {}", family.getId(), e.getMessage());
+            return speakResponse("No pude obtener el consejo del día en este momento. Intenta de nuevo pronto.");
+        }
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // Intents — sprint, DNA, legado, contexto
     // ═══════════════════════════════════════════════════════════════════════
@@ -591,8 +712,9 @@ public class AlexaSkillController {
     private Map<String, Object> helpResponse(Family family) {
         return speakResponseKeepSession(
                 "Hola, soy Integrity Family. Puedes pedirme: "
-                + "«resumen del guardián», «estado Sentinel», «consejo familiar», "
-                + "«misión actual», «contexto familiar», «ADN familiar», «legado», o «línea del tiempo».",
+                + "«consejo del día», «escena del día», «historia familiar», "
+                + "«tensión familiar», «misión actual», «ADN familiar», «legado», «línea del tiempo», "
+                + "«resumen del guardián» o «estado Sentinel».",
                 "¿Qué deseas consultar?");
     }
 

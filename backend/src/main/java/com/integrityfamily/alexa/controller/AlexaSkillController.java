@@ -90,7 +90,7 @@ public class AlexaSkillController {
                 // ── Sentinel / riesgo ─────────────────────────────────────
                 case "SentinelStatusIntent"    -> handleSentinelStatus(family);
                 case "ActivateSentinelIntent"  -> handleActivateSentinel(family, body);
-                // ── Consejo Familiar (Copilot IA) ─────────────────────────
+                // ── Consejo Familiar (Copilot IA — tensión narrativa) ─────
                 case "CopilotIntent"           -> handleCopilot(family);
                 // ── Sprint y misión ───────────────────────────────────────
                 case "CurrentMissionIntent"    -> handleCurrentMission(family);
@@ -100,6 +100,9 @@ public class AlexaSkillController {
                 // ── Legado y narrativa temporal ───────────────────────────
                 case "LegacyMessageIntent"     -> handleLegacyMessage(family);
                 case "TimelineIntent"          -> handleTimeline(family);
+                // ── Historia y Escena (narrativa de transformación) ───────
+                case "FamilyHistoryIntent"     -> handleFamilyHistory(family);
+                case "FamilySceneIntent"       -> handleFamilyScene(family);
                 // ── Ayuda / sistema ───────────────────────────────────────
                 case "AMAZON.HelpIntent"       -> helpResponse(family);
                 case "AMAZON.StopIntent",
@@ -117,14 +120,22 @@ public class AlexaSkillController {
     // Intents — críticos para el guardian
     // ═══════════════════════════════════════════════════════════════════════
 
-    /** LaunchRequest: bienvenida contextual con pantalla APL en Echo Show. */
+    /** LaunchRequest: bienvenida contextual con Temporada y pantalla APL en Echo Show. */
     private Map<String, Object> handleLaunch(Family family) {
         boolean sentinel = Boolean.TRUE.equals(family.getSentinelActive());
+
+        // Determinar temporada desde línea del tiempo
+        String temporada = "Temporada 1 · Aprender a Ver";
+        try {
+            var eventos = familyTimelineService.getTimeline(family.getId());
+            if (eventos != null) temporada = getTemporada(eventos.size());
+        } catch (Exception ignored) {}
+
         String texto = sentinel
                 ? "Hola, familia " + family.getName() + ". Hay una situación que requiere atención. " +
-                  "Di «estado Sentinel» para conocer los detalles, o «consejo familiar» para orientación."
-                : "Hola, familia " + family.getName() + ". Estoy aquí para apoyarlos. " +
-                  "Puedes decirme: resumen del guardián, misión actual, consejo familiar, ADN familiar o estado Sentinel.";
+                  "Di «estado Sentinel» para conocer los detalles, o «tensión familiar» para orientación."
+                : "Hola, familia " + family.getName() + ". Están en su " + temporada + ". " +
+                  "Puedes decirme: escena del día, historia familiar, misión actual, tensión familiar o estado Sentinel.";
 
         String icfTexto = family.getMilestoneIcfAvg() != null
                 ? String.format("%.0f%%", family.getMilestoneIcfAvg()) : "—";
@@ -132,7 +143,7 @@ public class AlexaSkillController {
         int participacion = family.getParticipationScore() != null ? family.getParticipationScore() : 0;
 
         return aplResponseKeepSession(texto, "Integrity Family escuchando...",
-                aplDashboard(family.getName(), icfTexto, riesgo, participacion, sentinel));
+                aplDashboard(family.getName(), icfTexto, riesgo, participacion, sentinel, temporada));
     }
 
     /**
@@ -258,46 +269,133 @@ public class AlexaSkillController {
      * CopilotIntent — Consejo Familiar Autónomo.
      * Usa CopilotService que internamente sintetiza ADN + contexto + historial + IA.
      */
+    /**
+     * CopilotIntent — interpreta tensión narrativa, no prescribe acciones.
+     * La IA identifica QUÉ está en tensión; la familia decide qué hacer.
+     */
     private Map<String, Object> handleCopilot(Family family) {
         try {
             StructuredAiInferenceResponse resp = copilotService.generateInference(
                     new CopilotInferRequest(family.getId(), "ALEXA_CONSULTATION"));
 
             if (resp == null) {
-                return speakResponse("El Consejo Familiar no tiene orientación disponible en este momento. "
+                return speakResponse("El Consejo Familiar no tiene una lectura disponible en este momento. "
                         + "Vuelve a intentarlo en unos minutos.");
             }
 
-            StringBuilder texto = new StringBuilder("El Consejo Familiar dice: ");
+            // Texto de voz — enmarcado como interpretación, no prescripción
+            StringBuilder texto = new StringBuilder("La familia " + family.getName() + " atraviesa un momento que merece atención. ");
             if (resp.summary() != null) texto.append(resp.summary()).append(". ");
-
-            if (resp.recommendedActions() != null && !resp.recommendedActions().isEmpty()) {
-                texto.append("Acciones recomendadas: ");
-                int max = Math.min(resp.recommendedActions().size(), 3);
-                for (int i = 0; i < max; i++) {
-                    texto.append(i + 1).append(": ").append(resp.recommendedActions().get(i));
-                    if (i < max - 1) texto.append(". ");
-                }
-                texto.append(". ");
-            }
-
             if (resp.containmentSuggestion() != null && !resp.containmentSuggestion().isBlank()) {
-                texto.append("Sugerencia inmediata: ").append(resp.containmentSuggestion());
+                texto.append("Hay un capítulo disponible que puede ayudar: ").append(resp.containmentSuggestion()).append(". ");
             }
+            texto.append("La familia decide cuándo y cómo avanzar.");
 
+            // APL — tensión narrativa, no lista de acciones
             List<String> lineas = new java.util.ArrayList<>();
-            if (resp.summary() != null) lineas.add(resp.summary());
-            if (resp.recommendedActions() != null)
+            if (resp.summary() != null)
+                lineas.add("⚠️ " + resp.summary());
+            if (resp.recommendedActions() != null && !resp.recommendedActions().isEmpty()) {
+                lineas.add("Manifestaciones:");
                 resp.recommendedActions().stream().limit(3)
-                    .forEach(a -> lineas.add("• " + a));
+                        .forEach(a -> lineas.add("  · " + a));
+            }
             if (resp.containmentSuggestion() != null && !resp.containmentSuggestion().isBlank())
-                lineas.add("💡 " + resp.containmentSuggestion());
+                lineas.add("📖 Capítulo recomendado: " + resp.containmentSuggestion());
 
             return aplResponse(texto.toString().trim(),
-                    aplInfoCard("🧠 Consejo Familiar IA", family.getName(), lineas, "#7c3aed"));
+                    aplInfoCard("🧠 Tensión Narrativa Familiar", family.getName(), lineas, "#7c3aed"));
         } catch (Exception e) {
             log.warn("[ALEXA-SKILL] Copilot error familia {}: {}", family.getId(), e.getMessage());
             return speakResponse("El Consejo Familiar no está disponible ahora. Intenta de nuevo pronto.");
+        }
+    }
+
+    /** FamilyHistoryIntent — Historia Familiar Viva: evolución narrativa, no métricas. */
+    private Map<String, Object> handleFamilyHistory(Family family) {
+        try {
+            var eventos    = familyTimelineService.getTimeline(family.getId());
+            var dna        = familyDnaService.findByFamilyId(family.getId()).orElse(null);
+            var legValues  = legacyService.getValues(family.getId());
+
+            int totalEventos = eventos != null ? eventos.size() : 0;
+
+            // Narrativa de apertura
+            String apertura = totalEventos > 0
+                    ? "Esta familia lleva " + totalEventos + " momentos registrados en su historia."
+                    : "Esta familia está escribiendo sus primeros capítulos.";
+
+            // Lo que aprendieron — valores del ADN
+            String aprendizajes = "";
+            if (dna != null && dna.fortalezas() != null && !dna.fortalezas().isEmpty()) {
+                aprendizajes = "Sus fortalezas: " + formatLista(dna.fortalezas(), 3, "") + ". ";
+            }
+
+            // Lo que viene — sombras a trabajar
+            String proximoPaso = "";
+            if (dna != null && dna.sombras() != null && !dna.sombras().isEmpty()) {
+                proximoPaso = "Su próximo reto: " + dna.sombras().get(0) + ".";
+            }
+
+            String legadoTxt = (legValues != null && !legValues.isEmpty())
+                    ? " Han registrado " + legValues.size() + " valor" + (legValues.size() != 1 ? "es" : "") + " de legado."
+                    : "";
+
+            String texto = "Historia Familiar Viva de la familia " + family.getName() + ". "
+                    + apertura + " " + aprendizajes + legadoTxt + " " + proximoPaso;
+
+            // Determinar temporada actual
+            var sprint = sprintService.getActiveSprint(family.getId());
+            String temporadaTxt = sprint != null ? getTemporada(totalEventos) : "Temporada en construcción";
+
+            List<String> lineas = new java.util.ArrayList<>();
+            lineas.add("🗓 " + temporadaTxt);
+            lineas.add("📅 " + totalEventos + " momentos en su historia");
+            if (dna != null && dna.valores() != null && !dna.valores().isEmpty())
+                lineas.add("✨ Valores: " + formatLista(dna.valores(), 2, ""));
+            if (legValues != null && !legValues.isEmpty())
+                lineas.add("🏛️ " + legValues.size() + " valor" + (legValues.size() != 1 ? "es" : "") + " de legado");
+            if (dna != null && dna.sombras() != null && !dna.sombras().isEmpty())
+                lineas.add("❤️ Próximo reto: " + dna.sombras().get(0));
+
+            return aplResponse(texto.trim(),
+                    aplInfoCard("📖 Historia Familiar Viva", family.getName(), lineas, "#10b981"));
+        } catch (Exception e) {
+            log.warn("[ALEXA-SKILL] FamilyHistory error familia {}: {}", family.getId(), e.getMessage());
+            return speakResponse("No pude obtener la historia familiar en este momento.");
+        }
+    }
+
+    /** FamilySceneIntent — Escena Familiar del Día: el momento más reciente que merece ser recordado. */
+    private Map<String, Object> handleFamilyScene(Family family) {
+        try {
+            var eventos = familyTimelineService.getTimeline(family.getId());
+
+            if (eventos == null || eventos.isEmpty()) {
+                return speakResponse("La familia " + family.getName() + " aún no tiene escenas registradas. "
+                        + "Cada misión completada, cada evidencia y cada conversación profunda se convertirá en una escena.");
+            }
+
+            // Última escena registrada
+            var escena = eventos.get(eventos.size() - 1);
+            String titulo  = escena.title() != null ? escena.title() : "Un momento familiar";
+            String actor   = escena.actor() != null && !escena.actor().isBlank() ? escena.actor() : null;
+
+            String textoVoz = "Hoy ocurrió algo que merece ser recordado en la familia " + family.getName() + ". "
+                    + titulo + (actor != null ? ", protagonizado por " + actor : "") + ". "
+                    + "Cada escena es un capítulo de la historia que están construyendo.";
+
+            List<String> lineas = new java.util.ArrayList<>();
+            lineas.add("🎬 " + titulo);
+            if (actor != null) lineas.add("👤 " + actor);
+            lineas.add("❤️ Confianza +1");
+            lineas.add("📼 Guardado en su historia familiar");
+
+            return aplResponse(textoVoz,
+                    aplInfoCard("🎬 Escena Familiar del Día", family.getName(), lineas, "#f59e0b"));
+        } catch (Exception e) {
+            log.warn("[ALEXA-SKILL] FamilyScene error familia {}: {}", family.getId(), e.getMessage());
+            return speakResponse("No pude obtener la escena del día en este momento.");
         }
     }
 
@@ -505,6 +603,19 @@ public class AlexaSkillController {
         return configured.equals(incoming);
     }
 
+    /** Mapea número de eventos/capítulos a nombre de Temporada. */
+    private static String getTemporada(int capitulos) {
+        if (capitulos <= 5)  return "Temporada 1 · Aprender a Ver";
+        if (capitulos <= 10) return "Temporada 2 · Aprender a Comprender";
+        if (capitulos <= 15) return "Temporada 3 · Aprender a Valorar";
+        if (capitulos <= 20) return "Temporada 4 · Comprender Nuestra Historia";
+        if (capitulos <= 25) return "Temporada 5 · Descubrir Quiénes Somos";
+        if (capitulos <= 30) return "Temporada 6 · Escribir Nuestra Historia";
+        if (capitulos <= 35) return "Temporada 7 · Sostener lo Construido";
+        if (capitulos <= 40) return "Temporada 8 · Transmitir el Legado";
+        return "Temporada 9 · Familia Transformada";
+    }
+
     private static int parseNivelSentinel(String slot) {
         if (slot == null) return 3;
         return switch (slot.toLowerCase().trim()) {
@@ -592,11 +703,11 @@ public class AlexaSkillController {
                         "shouldEndSession", true));
     }
 
-    /** APL RenderDocument para el dashboard de bienvenida. */
+    /** APL RenderDocument para el dashboard de bienvenida con Temporada. */
     private static Map<String, Object> aplDashboard(
-            String familyName, String icf, String riesgo, int participacion, boolean alerta) {
+            String familyName, String icf, String riesgo, int participacion, boolean alerta, String temporada) {
 
-        String bg    = alerta ? "#4a0000" : "#0d1b2a";
+        String bg     = alerta ? "#4a0000" : "#0d1b2a";
         String accent = alerta ? "#ff4444" : "#00d4aa";
 
         Map<String, Object> document = Map.of(
@@ -615,13 +726,17 @@ public class AlexaSkillController {
                     "items", List.of(
                         Map.of("type", "Text",
                                "text", "✨ INTEGRITY FAMILY",
-                               "fontSize", "22dp", "color", "${p.accent}",
+                               "fontSize", "20dp", "color", "${p.accent}",
                                "textAlign", "center", "spacing", "0dp"),
                         Map.of("type", "Text",
                                "text", "Familia ${p.familyName}",
-                               "fontSize", "44dp", "color", "#ffffff",
+                               "fontSize", "40dp", "color", "#ffffff",
                                "fontWeight", "700", "textAlign", "center",
-                               "spacing", "16dp"),
+                               "spacing", "10dp"),
+                        Map.of("type", "Text",
+                               "text", "${p.temporada}",
+                               "fontSize", "18dp", "color", "${p.accent}",
+                               "textAlign", "center", "spacing", "6dp"),
                         Map.of("type", "Container",
                                "direction", "row",
                                "justifyContent", "center",
@@ -632,9 +747,9 @@ public class AlexaSkillController {
                                    aplStat("Participación", "${p.part}", "#f0c040")
                                )),
                         Map.of("type", "Text",
-                               "text", "Di: «resumen del guardián» · «misión actual» · «consejo familiar»",
-                               "fontSize", "18dp", "color", "#aaaaaa",
-                               "textAlign", "center", "spacing", "24dp")
+                               "text", "Di: «escena del día» · «historia familiar» · «misión actual» · «tensión familiar»",
+                               "fontSize", "16dp", "color", "#aaaaaa",
+                               "textAlign", "center", "spacing", "20dp")
                     )
                 ))
             )
@@ -647,7 +762,8 @@ public class AlexaSkillController {
                 "riesgo",      riesgo,
                 "part",        participacion + " pts",
                 "bg",          bg,
-                "accent",      accent
+                "accent",      accent,
+                "temporada",   temporada
             )
         );
 

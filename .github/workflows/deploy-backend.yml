@@ -53,9 +53,10 @@ jobs:
         run: railway up --service if-backend --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT: steadfast-nurturing
 
       - name: Notify deployment
         run: |
           echo "✅ Backend desplegado en Railway"
-          echo "🔗 https://railway.app/dashboard"
-          echo "📋 Migraciones Flyway se ejecutarán automáticamente al iniciar"
+          echo "🔗 https://api.integrityfamily.online"
+          echo "📋 Flyway aplicará V68 y V69 automáticamente al iniciar"

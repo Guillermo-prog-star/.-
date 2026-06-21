@@ -248,8 +248,8 @@ export class AiInsightPanelComponent {
         i++; continue;
       }
 
-      // ## Subtítulo (H2)
-      if (/^##\s/.test(line)) {
+      // ## Subtítulo (H2 o más)
+      if (/^#{2,}\s/.test(line)) {
         const title = line.replace(/^#+\s*/, '');
         blocks.push({ type: 'heading', html: this._toHtml(title) });
         i++; continue;
@@ -295,6 +295,9 @@ export class AiInsightPanelComponent {
         } else {
           blocks.push({ type: 'paragraph', html: this._toHtml(paraText) });
         }
+      } else {
+        // Fallback de seguridad contra bucles infinitos
+        i++;
       }
     }
 

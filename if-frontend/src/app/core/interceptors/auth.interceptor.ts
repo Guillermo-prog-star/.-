@@ -20,11 +20,13 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         // NO se llama logout() para no borrar el nombre/familia del localStorage
         // (permite mostrar UX de "usuario recurrente" en la pantalla de login).
         const returnUrl = router.url;
-        console.warn(`SENTINEL: 401 en ${req.url} → redirigiendo a login con returnUrl=${returnUrl}`);
-        router.navigate(['/auth/login'], {
-          queryParams: { returnUrl },
-          replaceUrl: true
-        });
+        if (!returnUrl.startsWith('/auth/login')) {
+          console.warn(`SENTINEL: 401 en ${req.url} → redirigiendo a login con returnUrl=${returnUrl}`);
+          router.navigate(['/auth/login'], {
+            queryParams: { returnUrl },
+            replaceUrl: true
+          });
+        }
       } else if (error.status === 403) {
         console.warn('SENTINEL: Acceso denegado (403).');
       }

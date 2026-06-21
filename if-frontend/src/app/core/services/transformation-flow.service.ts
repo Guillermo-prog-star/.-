@@ -1,6 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { catchError, of } from 'rxjs';
+import { catchError, of, map } from 'rxjs';
+import { Observable } from 'rxjs';
 import { FamilyStateService } from './family-state.service';
 
 /**
@@ -182,6 +183,27 @@ export class TransformationFlowService {
       if (server.activeMissionId)    mapped.activeMissionId     = String(server.activeMissionId);
       this.patch(mapped);
     });
+  }
+
+  /** Obtiene la ruta correcta para continuar el proceso según el estado en el backend */
+  getRouteForNextStep(familyId: number): Observable<string> {
+    if (!familyId || familyId === 0) return of('/families/create');
+    return this.http.get<any>(`/api/families/${familyId}/transformation`).pipe(
+      map(server => {
+        const step = server?.data?.onboardingStep ?? server?.onboardingStep ?? 'create-family';
+        const formattedStep = step.toLowerCase().replace('_', '-');
+        switch (formattedStep) {
+          case 'create-family': return '/families/create';
+          case 'add-members': return '/members';
+          case 'choose-guardian': return `/guardian/${familyId}/election`;
+          case 'diagnosis': return '/evaluations/start';
+          case 'plan-generated': return '/plans';
+          case 'completed': return '/dashboard';
+          default: return '/dashboard';
+        }
+      }),
+      catchError(() => of('/dashboard'))
+    );
   }
 
   /** Sincroniza el estado desde el backend (versión manual) */

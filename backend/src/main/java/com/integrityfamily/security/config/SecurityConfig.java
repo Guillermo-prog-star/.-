@@ -77,7 +77,12 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**",
                                 "/api-docs/**",
-                                "/api/auth/**",
+                                "/api/auth/login",
+                                "/api/auth/register",
+                                "/api/auth/register-family",
+                                "/api/auth/forgot-password",
+                                "/api/auth/reset-password",
+                                "/api/auth/refresh-token",
                                 "/api/assessments/resilience-check",
                                 "/oauth/alexa/**",
                                 "/alexa"

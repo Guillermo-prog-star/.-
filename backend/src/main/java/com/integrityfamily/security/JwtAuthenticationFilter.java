@@ -32,8 +32,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     // ── Paths públicos: el filtro los salta completamente ───────────────────
     // FIX: agregado /auth/ (sin /api) para cubrir ambos mappings posibles
     private static final List<String> PUBLIC_PATHS = List.of(
-            "/auth/",
-            "/api/auth/",
             "/actuator/health",
             "/actuator/info",
             "/swagger-ui",

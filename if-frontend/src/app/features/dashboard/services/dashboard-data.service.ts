@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { BehaviorSubject, Observable, map, tap, catchError, of, forkJoin } from 'rxjs';
+import { BehaviorSubject, Observable, map, tap, catchError, of, forkJoin, timeout } from 'rxjs';
 import { DashboardDTO } from '../../../core/models/dashboard.model';
 import { environment } from '../../../../environments/environment';
 
@@ -22,12 +22,14 @@ export class DashboardDataService {
     const base = environment.apiBaseUrl;
     if (!id) return of(null);
     return forkJoin({
-      dashboard: this.http.get<any>(`${base}/analytics/dashboard/family/${id}`).pipe(catchError(() => of(null))),
+      dashboard: this.http.get<any>(`${base}/analytics/dashboard/family/${id}`).pipe(timeout(8000), catchError(() => of(null))),
       advanceStatus: this.http.get<any>(`${base}/milestones/family/${id}/advancement-status`).pipe(
+        timeout(8000),
         map(res => res?.data?.canAdvance ?? false),
         catchError(() => of(false))
       ),
       progress: this.http.get<any>(`${base}/analytics/family/${id}/progress`).pipe(
+        timeout(8000),
         map(res => res?.data ?? null),
         catchError(() => of(null))
       )

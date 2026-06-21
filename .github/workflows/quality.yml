@@ -63,6 +63,15 @@ jobs:
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             --no-transfer-progress
 
+      # ── 4b. Subir surefire XMLs para diagnóstico de fallos en CI ────────
+      - name: Upload surefire reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: surefire-reports-${{ github.run_number }}
+          path: backend/target/surefire-reports/
+          retention-days: 3
+
       # ── 5. Resultados de tests en GitHub (visible en la pestaña Checks) ──
       - name: Publish test results
         uses: dorny/test-reporter@v1

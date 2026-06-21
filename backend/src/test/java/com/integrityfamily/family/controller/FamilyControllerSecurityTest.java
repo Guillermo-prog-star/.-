@@ -3,6 +3,7 @@ package com.integrityfamily.family.controller;
 import com.integrityfamily.family.service.FamilyService;
 import com.integrityfamily.security.FamilySecurityEvaluator;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
 @SuppressWarnings("deprecation")
 public class FamilyControllerSecurityTest {
 

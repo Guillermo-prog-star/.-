@@ -24,6 +24,15 @@ Get-ScheduledTask -TaskName "IntegrityFamily-DailyBackup"
 ./scripts/backup-mysql.sh --compress --keep 30
 ```
 
+### Verificar restore (sin tocar datos de producción)
+```bash
+# Usa el backup más reciente automáticamente
+./scripts/verify-restore.sh
+
+# O especifica un backup concreto
+./scripts/verify-restore.sh backups/if_backup_YYYYMMDD_HHmmss.sql.gz
+```
+
 ---
 
 ## Restauración
@@ -64,7 +73,7 @@ SELECT 'family_chapter_progress', COUNT(*) FROM family_chapter_progress;
 | Fecha | Backup | Resultado | Notas |
 |-------|--------|-----------|-------|
 | 2026-06-16 | if_backup_20260616_140811.sql.gz (9.6 MB) | OK | 8 tablas verificadas, 100% coincidencia |
-| 2026-06-20 | if_backup_20260620_202317.sql.gz (9.7 MB) | OK | Primer backup automático |
+| 2026-06-20 | if_backup_20260620_202317.sql.gz (9.7 MB) | OK | Primer backup automático + verify-restore.sh 8/8 tablas |
 
 **Próxima verificación recomendada:** 2026-07-20
 

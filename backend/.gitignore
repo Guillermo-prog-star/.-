@@ -42,3 +42,6 @@ mysql_data/
 cd
 -p
 netstat
+
+# Scripts locales de conveniencia
+run.ps1

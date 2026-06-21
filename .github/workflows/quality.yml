@@ -51,7 +51,7 @@ jobs:
             -P ci \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.organization=guillermo-prog-star \
-            -Dsonar.projectKey=Guillermo-prog-star_if-full \
+            -Dsonar.projectKey=Guillermo-prog-star_.- \
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             --no-transfer-progress
 

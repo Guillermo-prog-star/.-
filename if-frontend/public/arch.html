@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Integrity Family — Arquitectura Dinámica</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#03080f;--surface:#080f1e;--card:#0c1628;
+  --indigo:#6366f1;--violet:#8b5cf6;--cyan:#06b6d4;
+  --emerald:#10b981;--amber:#f59e0b;--rose:#f43f5e;--sky:#38bdf8;
+  --text:#e2e8f0;--muted:#475569;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--text)}
+
+/* CANVAS */
+#canvas{position:fixed;inset:0;z-index:0}
+
+/* UI */
+#ui{position:fixed;inset:0;z-index:10;pointer-events:none}
+
+/* HEADER */
+#header{
+  position:fixed;top:0;left:0;right:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 28px;
+  background:rgba(3,8,15,0.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(99,102,241,0.15);
+  pointer-events:all;
+  z-index:20;
+}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{
+  width:38px;height:38px;border-radius:10px;
+  background:linear-gradient(135deg,var(--indigo),var(--violet));
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  box-shadow:0 0 20px rgba(99,102,241,0.4);
+}
+.logo-name{font-size:16px;font-weight:800;letter-spacing:-0.5px}
+.logo-sub{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+.stats{display:flex;gap:20px}
+.stat{text-align:center}
+.stat-val{font-size:18px;font-weight:800;color:var(--indigo)}
+.stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+
+/* SIDEBAR NODES */
+#sidebar{
+  position:fixed;left:0;top:72px;bottom:0;width:220px;
+  background:rgba(3,8,15,0.9);
+  backdrop-filter:blur(20px);
+  border-right:1px solid rgba(99,102,241,0.1);
+  overflow-y:auto;
+  padding:16px 12px;
+  pointer-events:all;
+  z-index:15;
+}
+#sidebar::-webkit-scrollbar{width:4px}
+#sidebar::-webkit-scrollbar-track{background:transparent}
+#sidebar::-webkit-scrollbar-thumb{background:rgba(99,102,241,0.3);border-radius:2px}
+.group-label{
+  font-size:9px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);padding:10px 6px 6px;
+}
+.module-btn{
+  display:flex;align-items:center;gap:8px;
+  width:100%;padding:7px 10px;border-radius:8px;
+  background:transparent;border:none;color:var(--muted);
+  font-size:12px;font-weight:600;cursor:pointer;
+  transition:all 0.15s;text-align:left;
+  font-family:monospace;
+}
+.module-btn:hover{background:rgba(99,102,241,0.1);color:var(--text)}
+.module-btn.active{background:rgba(99,102,241,0.15);color:var(--indigo);border:1px solid rgba(99,102,241,0.3)}
+.module-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* DETAIL PANEL */
+#detail{
+  position:fixed;right:0;top:72px;width:320px;
+  background:rgba(3,8,15,0.95);
+  backdrop-filter:blur(30px);
+  border-left:1px solid rgba(99,102,241,0.15);
+  padding:24px;
+  transform:translateX(100%);
+  transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  pointer-events:all;
+  z-index:15;
+  overflow-y:auto;
+  bottom:0;
+}
+#detail.open{transform:translateX(0)}
+.detail-close{
+  position:absolute;top:16px;right:16px;
+  background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+  color:var(--muted);width:28px;height:28px;border-radius:6px;
+  cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;
+}
+.detail-close:hover{color:var(--text)}
+.detail-icon{font-size:36px;margin-bottom:12px}
+.detail-name{font-size:22px;font-weight:800;font-family:monospace;color:var(--sky);margin-bottom:4px}
+.detail-group{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.detail-desc{font-size:13px;color:var(--text);line-height:1.6;margin-bottom:16px}
+.detail-section{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--indigo);margin-bottom:8px;margin-top:16px}
+.detail-chip{
+  display:inline-block;
+  background:rgba(99,102,241,0.1);
+  border:1px solid rgba(99,102,241,0.2);
+  border-radius:6px;padding:3px 8px;
+  font-size:11px;font-family:monospace;color:var(--sky);
+  margin:2px;
+}
+.detail-flow{
+  background:rgba(255,255,255,0.03);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:8px;padding:10px 12px;
+  font-size:12px;color:var(--muted);
+  display:flex;align-items:center;gap:8px;
+}
+.pulse-dot{
+  width:8px;height:8px;border-radius:50%;
+  animation:pulse-anim 1.5s infinite;
+  flex-shrink:0;
+}
+@keyframes pulse-anim{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%{opacity:0.5;transform:scale(0.8)}
+}
+
+/* BOTTOM BAR */
+#bottom{
+  position:fixed;bottom:0;left:220px;right:0;
+  background:rgba(3,8,15,0.9);
+  backdrop-filter:blur(20px);
+  border-top:1px solid rgba(99,102,241,0.1);
+  padding:10px 24px;
+  display:flex;align-items:center;gap:20px;
+  pointer-events:all;z-index:15;
+  flex-wrap:wrap;
+}
+.legend{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:50%}
+
+/* CONTROLS */
+.controls{margin-left:auto;display:flex;gap:8px}
+.ctrl-btn{
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.08);
+  color:var(--muted);padding:5px 12px;border-radius:6px;
+  font-size:11px;font-weight:600;cursor:pointer;
+  transition:all 0.15s;
+}
+.ctrl-btn:hover{color:var(--text);border-color:var(--indigo);background:rgba(99,102,241,0.1)}
+.ctrl-btn.active{color:var(--indigo);border-color:var(--indigo);background:rgba(99,102,241,0.15)}
+
+/* TOOLTIP */
+#tooltip{
+  position:fixed;
+  background:rgba(8,15,30,0.95);
+  border:1px solid rgba(99,102,241,0.3);
+  border-radius:10px;padding:10px 14px;
+  font-size:12px;pointer-events:none;
+  z-index:100;opacity:0;transition:opacity 0.15s;
+  max-width:200px;
+}
+#tooltip.show{opacity:1}
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<!-- HEADER -->
+<div id="header">
+  <div class="logo">
+    <div class="logo-icon">⬡</div>
+    <div>
+      <div class="logo-name">INTEGRITY FAMILY</div>
+      <div class="logo-sub">Arquitectura del Sistema · Live</div>
+    </div>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="stat-val">44</div><div class="stat-label">Módulos</div></div>
+    <div class="stat"><div class="stat-val">99</div><div class="stat-label">Tablas</div></div>
+    <div class="stat"><div class="stat-val">V69</div><div class="stat-label">Flyway</div></div>
+    <div class="stat"><div class="stat-val" id="event-counter">0</div><div class="stat-label">Eventos</div></div>
+  </div>
+</div>
+
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <div class="group-label">Núcleo Familiar</div>
+  <button class="module-btn" data-module="family" onclick="showModule('family')"><span class="module-dot" style="background:#6366f1"></span>family</button>
+  <button class="module-btn" data-module="member" onclick="showModule('member')"><span class="module-dot" style="background:#6366f1"></span>member</button>
+  <button class="module-btn" data-module="auth" onclick="showModule('auth')"><span class="module-dot" style="background:#6366f1"></span>auth</button>
+  <button class="module-btn" data-module="security" onclick="showModule('security')"><span class="module-dot" style="background:#6366f1"></span>security</button>
+
+  <div class="group-label">Evaluación ICF</div>
+  <button class="module-btn" data-module="evaluation" onclick="showModule('evaluation')"><span class="module-dot" style="background:#f43f5e"></span>evaluation</button>
+  <button class="module-btn" data-module="assessment" onclick="showModule('assessment')"><span class="module-dot" style="background:#f43f5e"></span>assessment</button>
+  <button class="module-btn" data-module="risk" onclick="showModule('risk')"><span class="module-dot" style="background:#f43f5e"></span>risk</button>
+  <button class="module-btn" data-module="scanner" onclick="showModule('scanner')"><span class="module-dot" style="background:#f43f5e"></span>scanner</button>
+
+  <div class="group-label">Transformación</div>
+  <button class="module-btn" data-module="plan" onclick="showModule('plan')"><span class="module-dot" style="background:#10b981"></span>plan</button>
+  <button class="module-btn" data-module="checklist" onclick="showModule('checklist')"><span class="module-dot" style="background:#10b981"></span>checklist</button>
+  <button class="module-btn" data-module="bitacora" onclick="showModule('bitacora')"><span class="module-dot" style="background:#10b981"></span>bitacora</button>
+  <button class="module-btn" data-module="adaptive" onclick="showModule('adaptive')"><span class="module-dot" style="background:#10b981"></span>adaptive</button>
+  <button class="module-btn" data-module="milestone" onclick="showModule('milestone')"><span class="module-dot" style="background:#10b981"></span>milestone</button>
+
+  <div class="group-label">IA y Cognición</div>
+  <button class="module-btn" data-module="ai" onclick="showModule('ai')"><span class="module-dot" style="background:#8b5cf6"></span>ai</button>
+  <button class="module-btn" data-module="cognitive" onclick="showModule('cognitive')"><span class="module-dot" style="background:#8b5cf6"></span>cognitive</button>
+  <button class="module-btn" data-module="context" onclick="showModule('context')"><span class="module-dot" style="background:#8b5cf6"></span>context</button>
+  <button class="module-btn" data-module="chat" onclick="showModule('chat')"><span class="module-dot" style="background:#8b5cf6"></span>chat</button>
+
+  <div class="group-label">Memoria y Herencia</div>
+  <button class="module-btn" data-module="documentary" onclick="showModule('documentary')"><span class="module-dot" style="background:#f59e0b"></span>documentary</button>
+  <button class="module-btn" data-module="legado" onclick="showModule('legado')"><span class="module-dot" style="background:#f59e0b"></span>legado</button>
+  <button class="module-btn" data-module="lineage" onclick="showModule('lineage')"><span class="module-dot" style="background:#f59e0b"></span>lineage</button>
+  <button class="module-btn" data-module="dna" onclick="showModule('dna')"><span class="module-dot" style="background:#f59e0b"></span>dna</button>
+  <button class="module-btn" data-module="timeline" onclick="showModule('timeline')"><span class="module-dot" style="background:#f59e0b"></span>timeline</button>
+  <button class="module-btn" data-module="lts" onclick="showModule('lts')"><span class="module-dot" style="background:#f59e0b"></span>lts</button>
+
+  <div class="group-label">Analytics</div>
+  <button class="module-btn" data-module="analytics" onclick="showModule('analytics')"><span class="module-dot" style="background:#38bdf8"></span>analytics</button>
+  <button class="module-btn" data-module="twin" onclick="showModule('twin')"><span class="module-dot" style="background:#38bdf8"></span>twin</button>
+  <button class="module-btn" data-module="simulation" onclick="showModule('simulation')"><span class="module-dot" style="background:#38bdf8"></span>simulation</button>
+
+  <div class="group-label">Infraestructura</div>
+  <button class="module-btn" data-module="common" onclick="showModule('common')"><span class="module-dot" style="background:#6366f1"></span>common</button>
+  <button class="module-btn" data-module="config" onclick="showModule('config')"><span class="module-dot" style="background:#6366f1"></span>config</button>
+  <button class="module-btn" data-module="admin" onclick="showModule('admin')"><span class="module-dot" style="background:#6366f1"></span>admin</button>
+</div>
+
+<!-- DETAIL PANEL -->
+<div id="detail">
+  <button class="detail-close" onclick="closeDetail()">✕</button>
+  <div id="detail-content"></div>
+</div>
+
+<!-- TOOLTIP -->
+<div id="tooltip"></div>
+
+<!-- BOTTOM BAR -->
+<div id="bottom">
+  <div class="legend"><div class="legend-dot" style="background:#6366f1"></div>Núcleo</div>
+  <div class="legend"><div class="legend-dot" style="background:#f43f5e"></div>ICF</div>
+  <div class="legend"><div class="legend-dot" style="background:#10b981"></div>Transformación</div>
+  <div class="legend"><div class="legend-dot" style="background:#8b5cf6"></div>IA</div>
+  <div class="legend"><div class="legend-dot" style="background:#f59e0b"></div>Memoria</div>
+  <div class="legend"><div class="legend-dot" style="background:#38bdf8"></div>Analytics</div>
+  <div class="controls">
+    <button class="ctrl-btn active" id="btn-flow" onclick="toggleFlow()">⚡ Flujo activo</button>
+    <button class="ctrl-btn" id="btn-labels" onclick="toggleLabels()">🏷 Nombres</button>
+    <button class="ctrl-btn" onclick="resetView()">⟳ Reset</button>
+  </div>
+</div>
+
+<script>
+// ─── DATOS ───────────────────────────────────────────────────────────────────
+const MODULES = {
+  // Infraestructura base (centro)
+  mysql:      { label:'MySQL',      icon:'🗄️', color:'#3b82f6', group:'infra',    x:0.5,  y:0.5,  r:34, desc:'Base de datos principal. 99 tablas, Flyway V1→V69. Almacena todas las entidades del dominio.', services:['JPA','Flyway','Hibernate'], connections:['family','evaluation','plan','bitacora','documentary','analytics','auth'] },
+  rabbitmq:   { label:'RabbitMQ',   icon:'🐇', color:'#f97316', group:'infra',    x:0.72, y:0.5,  r:28, desc:'Message broker para eventos asíncronos. CloudAMQP en producción.', services:['Exchanges','Queues','DLQ'], connections:['member','evaluation','plan','checklist','analytics','ai','common'] },
+  claude_api: { label:'Claude API', icon:'🤖', color:'#8b5cf6', group:'ai',       x:0.5,  y:0.18, r:28, desc:'API de Anthropic. Genera planes de mejora, copilot familiar, inferencias de IA.', services:['ClaudeAiService','AiProviderSelector','PromptGenerator'], connections:['ai','plan','cognitive','context'] },
+  angular:    { label:'Angular 18', icon:'🌐', color:'#e11d48', group:'frontend', x:0.18, y:0.28, r:30, desc:'SPA en TypeScript. ng serve (dev) / NGINX (prod). Proxy /api → :8080.', services:['Components','Services','Guards','Interceptors'], connections:['auth','family','evaluation','chat'] },
+  railway:    { label:'Railway',    icon:'🚂', color:'#6366f1', group:'infra',    x:0.82, y:0.28, r:22, desc:'Deploy automático del backend desde rama main. Puerto 8080.', services:['deploy-backend.yml','Auto-deploy'], connections:['mysql','rabbitmq'] },
+  vercel:     { label:'Vercel',     icon:'▲',  color:'#ffffff', group:'frontend', x:0.18, y:0.72, r:22, desc:'Deploy automático del frontend desde rama main.', services:['deploy-frontend.yml','CDN'], connections:['angular'] },
+
+  // Módulos backend
+  auth:       { label:'auth',       icon:'🔐', color:'#6366f1', group:'nucleo',   x:0.28, y:0.42, r:22, desc:'JWT (jjwt 0.12.6), refresh tokens, account lock, AuditService. Spring Security.', services:['JwtFilter','AuthController','RefreshToken','AuditService'], connections:['mysql','family','member'] },
+  family:     { label:'family',     icon:'🏠', color:'#6366f1', group:'nucleo',   x:0.35, y:0.55, r:26, desc:'CRUD de núcleos familiares. Calcula ICF score y risk_level. Entidad raíz del dominio.', services:['FamilyService','FamilyController','IcfScoreService'], connections:['mysql','member','evaluation','plan','bitacora'] },
+  member:     { label:'member',     icon:'👤', color:'#6366f1', group:'nucleo',   x:0.25, y:0.62, r:22, desc:'Miembros, invitaciones, perfiles. Publica eventos en RabbitMQ al unirse/salir.', services:['MemberService','InvitationService','MemberEventPublisher'], connections:['mysql','rabbitmq','family'] },
+  security:   { label:'security',   icon:'🛡️', color:'#6366f1', group:'nucleo',   x:0.2,  y:0.5,  r:20, desc:'SecurityWatchdog, SecurityValidator. Valida acceso por rol/email/familyId.', services:['SecurityValidator','SecurityWatchdog'], connections:['auth','family'] },
+
+  evaluation: { label:'evaluation', icon:'📊', color:'#f43f5e', group:'icf',      x:0.42, y:0.38, r:24, desc:'Evaluaciones ICF completas. EvaluationScoringService calcula el score en 4 dimensiones.', services:['EvaluationService','EvaluationScoringService','IcfCalculator'], connections:['mysql','rabbitmq','family','risk','assessment'] },
+  assessment: { label:'assessment', icon:'❓', color:'#f43f5e', group:'icf',      x:0.35, y:0.3,  r:20, desc:'Banco de preguntas del ICF. AssessmentAnswerService procesa respuestas.', services:['AssessmentService','AssessmentAnswerService'], connections:['mysql','evaluation'] },
+  risk:       { label:'risk',       icon:'⚠️', color:'#f43f5e', group:'icf',      x:0.5,  y:0.35, r:22, desc:'RiskEvaluationService, RiskSnapshotService, AlertEngine. Detecta días críticos.', services:['RiskEvaluationService','RiskSnapshotService','AlertEngine'], connections:['mysql','evaluation','scanner','analytics'] },
+  scanner:    { label:'scanner',    icon:'🔍', color:'#f43f5e', group:'icf',      x:0.6,  y:0.3,  r:20, desc:'Análisis de señales de riesgo en tiempo real. Detecta patrones de crisis emergentes.', services:['ScannerService','SignalAnalyzer'], connections:['mysql','risk','rabbitmq'] },
+
+  plan:       { label:'plan',       icon:'📋', color:'#10b981', group:'transform',x:0.42, y:0.62, r:24, desc:'ImprovementPlan, PlanTask. PlanGenerationService usa IA para generar planes personalizados.', services:['PlanService','PlanGenerationService','PlanTaskService'], connections:['mysql','rabbitmq','family','ai','evaluation','checklist'] },
+  checklist:  { label:'checklist',  icon:'✅', color:'#10b981', group:'transform',x:0.5,  y:0.68, r:20, desc:'ChecklistItem, TaskEvidence. Valida evidencias de tareas cumplidas.', services:['ChecklistService','TaskEvidenceService'], connections:['mysql','rabbitmq','plan','documentary'] },
+  bitacora:   { label:'bitacora',   icon:'📔', color:'#10b981', group:'transform',x:0.35, y:0.72, r:22, desc:'FamilySprint, SprintMission, SprintDaily, SprintRetrospective. Ciclos de 7-21 días.', services:['SprintService','SprintMissionService','SprintDailyService'], connections:['mysql','family','checklist','ai'] },
+  adaptive:   { label:'adaptive',   icon:'🔄', color:'#10b981', group:'transform',x:0.55, y:0.58, r:18, desc:'AdaptivePlanService. Ajusta planes automáticamente según el contexto familiar actual.', services:['AdaptivePlanService'], connections:['plan','ai','context'] },
+  milestone:  { label:'milestone',  icon:'🏆', color:'#10b981', group:'transform',x:0.28, y:0.78, r:18, desc:'Hitos familiares. MilestoneAwarePlanEngine integra hitos en la generación de planes.', services:['MilestoneService','MilestoneAwarePlanEngine'], connections:['mysql','plan'] },
+
+  ai:         { label:'ai',         icon:'🧠', color:'#8b5cf6', group:'ia',       x:0.58, y:0.2,  r:26, desc:'ClaudeAiService, AiProviderSelector, PromptGenerator, AiInferenceService. Núcleo de IA.', services:['ClaudeAiService','AiProviderSelector','PromptGenerator','AiInferenceService'], connections:['claude_api','mysql','rabbitmq','plan','cognitive','context'] },
+  cognitive:  { label:'cognitive',  icon:'💭', color:'#8b5cf6', group:'ia',       x:0.68, y:0.25, r:22, desc:'CopilotService, EmotionalStateTracker, ConversationSessionService. IA conversacional.', services:['CopilotService','EmotionalStateTracker','ConversationSessionService'], connections:['ai','mysql','chat'] },
+  context:    { label:'context',    icon:'🌐', color:'#8b5cf6', group:'ia',       x:0.65, y:0.38, r:20, desc:'FamilyContextEngine. Sintetiza el contexto completo de la familia para enriquecer los prompts de IA.', services:['FamilyContextEngine'], connections:['family','ai','evaluation','plan'] },
+  chat:       { label:'chat',       icon:'💬', color:'#8b5cf6', group:'ia',       x:0.75, y:0.38, r:20, desc:'WebSocket chat con STOMP. Mensajes y sesiones conversacionales en tiempo real.', services:['ChatController','MessageService','WebSocketConfig'], connections:['mysql','cognitive','rabbitmq'] },
+
+  documentary:{ label:'documentary',icon:'🎬', color:'#f59e0b', group:'memory',   x:0.62, y:0.68, r:22, desc:'FamilyDocumentary. DocumentaryProductionService: flujo DRAFT→PUBLISHED.', services:['DocumentaryService','DocumentaryProductionService'], connections:['mysql','checklist','bitacora'] },
+  legado:     { label:'legado',     icon:'📜', color:'#f59e0b', group:'memory',   x:0.72, y:0.6,  r:18, desc:'LegacyService. Preserva el legado intergeneracional de la familia.', services:['LegacyService'], connections:['mysql','lineage','documentary'] },
+  lineage:    { label:'lineage',    icon:'🌳', color:'#f59e0b', group:'memory',   x:0.8,  y:0.5,  r:18, desc:'LineageService. Árbol genealógico extendido con hasta 5+ generaciones.', services:['LineageService'], connections:['mysql','family','legado'] },
+  dna:        { label:'dna',        icon:'🧬', color:'#f59e0b', group:'memory',   x:0.78, y:0.62, r:18, desc:'FamilyDnaService. ADN cultural y emocional de la familia: valores, rituales, patrones.', services:['FamilyDnaService'], connections:['mysql','family','evaluation'] },
+  timeline:   { label:'timeline',   icon:'⏳', color:'#f59e0b', group:'memory',   x:0.7,  y:0.72, r:18, desc:'FamilyTimelineService. Línea de tiempo completa de eventos familiares significativos.', services:['FamilyTimelineService'], connections:['mysql','family','documentary'] },
+  lts:        { label:'lts',        icon:'📈', color:'#f59e0b', group:'memory',   x:0.82, y:0.72, r:16, desc:'LongitudinalStateService. Rastrea el estado histórico de la familia para análisis longitudinal.', services:['LongitudinalStateService'], connections:['mysql','family','twin'] },
+
+  analytics:  { label:'analytics',  icon:'📉', color:'#38bdf8', group:'analytics',x:0.6,  y:0.82, r:24, desc:'AnalyticsService, AdminAnalyticsService, ConvivenceAnalytics. Dashboard de métricas.', services:['AnalyticsService','AdminAnalyticsService','ConvivenceAnalytics'], connections:['mysql','rabbitmq','evaluation','family','risk'] },
+  twin:       { label:'twin',       icon:'👥', color:'#38bdf8', group:'analytics',x:0.75, y:0.82, r:20, desc:'DigitalTwinService. Gemelo digital de la familia para simulación y predicción de estados.', services:['DigitalTwinService'], connections:['mysql','family','simulation','lts'] },
+  simulation: { label:'simulation', icon:'🎲', color:'#38bdf8', group:'analytics',x:0.88, y:0.65, r:20, desc:'CrisisSimulationService, SentinelSimulationService, TrendSimulation. Escenarios futuros.', services:['CrisisSimulationService','SentinelSimulationService','TrendSimulation'], connections:['twin','ai','risk'] },
+  report:     { label:'report',     icon:'📄', color:'#38bdf8', group:'analytics',x:0.88, y:0.82, r:18, desc:'ExcelExport, PdfExport, ExecutiveReport, AutomatedReporting.', services:['ExcelExport','PdfExport','ExecutiveReport'], connections:['mysql','analytics'] },
+
+  common:     { label:'common',     icon:'⚙️', color:'#475569', group:'infra',    x:0.42, y:0.82, r:20, desc:'SecurityValidator, EventPublisher, FamilyEventListener. Infraestructura compartida.', services:['SecurityValidator','EventPublisher','FamilyEventListener'], connections:['rabbitmq','family','evaluation'] },
+  admin:      { label:'admin',      icon:'👑', color:'#475569', group:'infra',    x:0.18, y:0.85, r:18, desc:'AdminAnalyticsService, BackupService, BetaLauncherService.', services:['AdminAnalyticsService','BackupService','BetaLauncherService'], connections:['mysql','analytics','family'] },
+};
+
+const MODULE_DATA = {
+  family:      { icon:'🏠', group:'Núcleo Familiar', desc:'CRUD de núcleos familiares. Calcula el ICF score (0-100) en 4 dimensiones: emociones, comunicación, hábitos, tiempos. Gestiona el risk_level.', services:['FamilyService','FamilyController','IcfScoreService','FamilyRepository'], flows:['Evaluation → ICF recalculado → RabbitMQ event','Plan → ImprovementPlan generado con IA','Sprint → Ciclo 7-21 días con misiones'] },
+  member:      { icon:'👤', group:'Núcleo Familiar', desc:'Gestión de miembros del núcleo familiar. Invitaciones por email, perfiles personales, estado activo/inactivo. Publica eventos en RabbitMQ.', services:['MemberService','InvitationService','MemberEventPublisher'], flows:['Miembro se une → RabbitMQ MemberJoinedEvent','Invitación aceptada → Actualiza familyId'] },
+  auth:        { icon:'🔐', group:'Núcleo Familiar', desc:'JWT con jjwt 0.12.6. Refresh tokens, bloqueo de cuenta por intentos fallidos, AuditService para trazabilidad.', services:['JwtFilter','AuthController','RefreshTokenService','AuditService'], flows:['POST /api/auth/login → JWT + RefreshToken','JwtFilter intercepta todas las requests','ROLE_ADMIN bypass en SecurityValidator'] },
+  security:    { icon:'🛡️', group:'Núcleo Familiar', desc:'SecurityWatchdog monitorea anomalías. SecurityValidator.validateFamilyOwnership() en 5 pasos: null→ADMIN bypass→creador→miembro activo→denegado.', services:['SecurityValidator','SecurityWatchdog'], flows:['validateFamilyOwnership(familyId, principal)','5 pasos de validación en cascada'] },
+  evaluation:  { icon:'📊', group:'Evaluación ICF', desc:'Evaluaciones ICF completas. EvaluationScoringService calcula score en 4 dimensiones. Dispara recálculo del ICF familiar y publica en RabbitMQ.', services:['EvaluationService','EvaluationScoringService','IcfCalculator'], flows:['Evaluación completada → RiskEvaluationService','ICF calculado → AlertEngine si baja mucho','Snapshot guardado en risk_snapshots'] },
+  assessment:  { icon:'❓', group:'Evaluación ICF', desc:'Banco de preguntas del cuestionario ICF. AssessmentAnswerService procesa y valida respuestas antes de pasarlas al scoring.', services:['AssessmentService','AssessmentAnswerService','QuestionRepository'], flows:['Usuario responde → AssessmentAnswerService valida','Respuestas → EvaluationScoringService'] },
+  risk:        { icon:'⚠️', group:'Evaluación ICF', desc:'Motor de riesgo familiar. RiskEvaluationService analiza el ICF. AlertEngine activa protocolos cuando el score baja del umbral. RiskSnapshotService guarda histórico.', services:['RiskEvaluationService','RiskSnapshotService','AlertEngine'], flows:['ICF bajo umbral → AlertEngine activa protocolo','Snapshot guardado periódicamente','crisis_days detectados por patrones'] },
+  scanner:     { icon:'🔍', group:'Evaluación ICF', desc:'Analiza señales de riesgo en tiempo real. Detecta patrones emergentes antes de que se conviertan en crisis declaradas.', services:['ScannerService','SignalAnalyzer','PatternDetector'], flows:['Análisis continuo de señales','Patrón detectado → RabbitMQ alert event'] },
+  plan:        { icon:'📋', group:'Transformación', desc:'ImprovementPlan con PlanTasks. PlanGenerationService usa Claude API para generar planes personalizados según el ICF y contexto familiar.', services:['PlanService','PlanGenerationService','PlanTaskService','PlanRepository'], flows:['Evaluación baja → IA genera plan en 4 pilares','Plan asignado → PlanTasks creadas','Evidencias → TaskEvidence (V65: task_id nullable)'] },
+  checklist:   { icon:'✅', group:'Transformación', desc:'ChecklistItem y TaskEvidence. Valida las evidencias que los miembros suben para demostrar el cumplimiento de tareas.', services:['ChecklistService','TaskEvidenceService','EvidenceValidator'], flows:['Tarea completada → TaskEvidence creada','Evidencia validada → RabbitMQ event','documentary_id link desde V67'] },
+  bitacora:    { icon:'📔', group:'Transformación', desc:'Sprints familiares de 7-21 días. FamilySprint con SprintMissions, SprintDailies y SprintRetrospective al cierre.', services:['SprintService','SprintMissionService','SprintDailyService','SprintRetrospectiveService'], flows:['Sprint creado → Misiones asignadas','Daily check-in → progreso registrado','Sprint closure → Documental source SPRINT_CLOSURE'] },
+  adaptive:    { icon:'🔄', group:'Transformación', desc:'AdaptivePlanService ajusta automáticamente los planes de mejora según el contexto familiar actual: días críticos, progreso reciente, estado emocional.', services:['AdaptivePlanService'], flows:['Contexto cambia → Plan ajustado automáticamente','Usa FamilyContextEngine para síntesis'] },
+  milestone:   { icon:'🏆', group:'Transformación', desc:'Hitos familiares significativos. MilestoneAwarePlanEngine los integra en la generación de nuevos planes para mantener el momentum.', services:['MilestoneService','MilestoneAwarePlanEngine'], flows:['Hito alcanzado → Celebración + nuevo objetivo','Plan siguiente generado considerando hitos'] },
+  ai:          { icon:'🧠', group:'IA y Cognición', desc:'Núcleo de IA. ClaudeAiService llama a la API de Anthropic. AiProviderSelector elige el modelo. PromptGenerator construye prompts con contexto familiar completo.', services:['ClaudeAiService','AiProviderSelector','PromptGenerator','AiInferenceService'], flows:['Plan request → PromptGenerator + contexto → Claude API','Inferencia guardada en ai_inferences','RabbitMQ notifica cuando IA completa'] },
+  cognitive:   { icon:'💭', group:'IA y Cognición', desc:'CopilotService actúa como copiloto familiar. EmotionalStateTracker analiza el estado emocional. ConversationSessionService mantiene el hilo de cada conversación.', services:['CopilotService','EmotionalStateTracker','ConversationSessionService'], flows:['Usuario habla → EmotionalState analizado','Copilot responde con contexto familiar','Sesión guardada en BD'] },
+  context:     { icon:'🌐', group:'IA y Cognición', desc:'FamilyContextEngine sintetiza toda la información de la familia en un contexto coherente para enriquecer los prompts enviados a Claude.', services:['FamilyContextEngine'], flows:['Antes de llamar a IA → Contexto sintetizado','ICF + sprint + riesgo + miembros → prompt context'] },
+  chat:        { icon:'💬', group:'IA y Cognición', desc:'Chat en tiempo real con WebSocket/STOMP. Mensajes entre miembros y con el copiloto de IA. Sesiones conversacionales persistidas en BD.', services:['ChatController','MessageService','WebSocketConfig'], flows:['WebSocket connect → sesión iniciada','Mensaje → broadcast a miembros de la familia','IA integrada en el chat'] },
+  documentary: { icon:'🎬', group:'Memoria y Herencia', desc:'FamilyDocumentary con flujo DRAFT→PUBLISHED. DocumentaryProductionService compila memorias, misiones y eventos en un documental familiar.', services:['DocumentaryService','DocumentaryProductionService'], flows:['Fuentes: MISSION | SPONTANEOUS | MEMORY | SPRINT_CLOSURE | PILLAR_CLOSURE','DRAFT editado → PUBLISHED definitivo','task_evidences.documentary_id desde V67'] },
+  legado:      { icon:'📜', group:'Memoria y Herencia', desc:'LegacyService preserva el legado intergeneracional: cartas, valores, decisiones importantes, lecciones aprendidas para las siguientes generaciones.', services:['LegacyService'], flows:['Legado capturado → guardado en BD','Conectado con lineage y documentary'] },
+  lineage:     { icon:'🌳', group:'Memoria y Herencia', desc:'LineageService gestiona el árbol genealógico extendido con múltiples generaciones, relaciones, fechas y eventos familiares históricos.', services:['LineageService'], flows:['Miembros registrados → árbol actualizado','Hasta 5+ generaciones visibles'] },
+  dna:         { icon:'🧬', group:'Memoria y Herencia', desc:'FamilyDnaService extrae el ADN cultural y emocional de la familia: valores compartidos, rituales, patrones relacionales, fortalezas y vulnerabilidades.', services:['FamilyDnaService'], flows:['Evaluaciones acumuladas → ADN calculado','ADN informa planes y copiloto'] },
+  timeline:    { icon:'⏳', group:'Memoria y Herencia', desc:'FamilyTimelineService construye la línea de tiempo de eventos significativos: evaluaciones, sprints, hitos, crisis superadas, documentales publicados.', services:['FamilyTimelineService'], flows:['Evento ocurre → timeline actualizado','Vista cronológica de la historia familiar'] },
+  lts:         { icon:'📈', group:'Memoria y Herencia', desc:'LongitudinalStateService rastrea el estado histórico de la familia para análisis de tendencias a largo plazo y alimentar el Digital Twin.', services:['LongitudinalStateService'], flows:['Estado snapshoteado periódicamente','Alimenta DigitalTwinService para predicciones'] },
+  analytics:   { icon:'📉', group:'Analytics e Inteligencia', desc:'AnalyticsService para métricas de uso. AdminAnalyticsService para dashboard administrativo. ConvivenceAnalytics analiza patrones de convivencia familiar.', services:['AnalyticsService','AdminAnalyticsService','ConvivenceAnalytics'], flows:['Eventos → métricas en tiempo real','Dashboard admin con KPIs de todas las familias'] },
+  twin:        { icon:'👥', group:'Analytics e Inteligencia', desc:'DigitalTwinService crea y mantiene el gemelo digital de cada familia. Permite simular escenarios futuros y predecir el impacto de intervenciones.', services:['DigitalTwinService'], flows:['LTS alimenta el twin','Twin simula → predicciones de ICF','Escenarios de intervención modelados'] },
+  simulation:  { icon:'🎲', group:'Analytics e Inteligencia', desc:'CrisisSimulationService simula crisis familiares. SentinelSimulationService prueba el AlertEngine. TrendSimulation predice tendencias del ICF.', services:['CrisisSimulationService','SentinelSimulationService','TrendSimulation'], flows:['Simulación crisis → protocolo activado','Tendencia ICF → próximas 4 semanas'] },
+  common:      { icon:'⚙️', group:'Infraestructura', desc:'Infraestructura compartida. SecurityValidator central, EventPublisher para RabbitMQ, FamilyEventListener procesa eventos del broker.', services:['SecurityValidator','EventPublisher','FamilyEventListener'], flows:['EventPublisher → RabbitMQ','FamilyEventListener consume eventos','SecurityValidator usado por todos los módulos'] },
+  admin:       { icon:'👑', group:'Infraestructura', desc:'Módulo administrativo. AdminAnalyticsService, BackupService (con rotación), BetaLauncherService para el programa beta.', services:['AdminAnalyticsService','BackupService','BetaLauncherService'], flows:['Backup diario con rotación automática','Beta program management','Admin dashboard con métricas globales'] },
+};
+
+// ─── CANVAS ENGINE ────────────────────────────────────────────────────────────
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let W, H, sideW = 220, topH = 72, botH = 44;
+let showFlow = true, showLabels = false;
+let selectedModule = null;
+let eventCount = 0;
+
+// Particles
+const particles = [];
+class Particle {
+  constructor(sx,sy,ex,ey,color) {
+    this.sx=sx;this.sy=sy;this.ex=ex;this.ey=ey;
+    this.x=sx;this.y=sy;this.color=color;
+    this.t=0;this.speed=0.008+Math.random()*0.012;
+    this.size=2+Math.random()*2;
+    this.trail=[];
+  }
+  update() {
+    this.t+=this.speed;
+    this.trail.push({x:this.x,y:this.y});
+    if(this.trail.length>8) this.trail.shift();
+    const ease=t=>t<0.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+    const e=ease(Math.min(this.t,1));
+    this.x=this.sx+(this.ex-this.sx)*e;
+    this.y=this.sy+(this.ey-this.sy)*e;
+    return this.t<1;
+  }
+  draw() {
+    for(let i=0;i<this.trail.length;i++){
+      const a=(i/this.trail.length)*0.4;
+      ctx.beginPath();
+      ctx.arc(this.trail[i].x,this.trail[i].y,this.size*0.5,0,Math.PI*2);
+      ctx.fillStyle=this.color+Math.floor(a*255).toString(16).padStart(2,'0');
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+    ctx.fillStyle=this.color;
+    ctx.shadowBlur=8;ctx.shadowColor=this.color;
+    ctx.fill();
+    ctx.shadowBlur=0;
+  }
+}
+
+// Stars
+const stars=[];
+for(let i=0;i<120;i++){
+  stars.push({x:Math.random(),y:Math.random(),r:Math.random()*1.2,a:Math.random()});
+}
+
+function resize() {
+  W=canvas.width=window.innerWidth;
+  H=canvas.height=window.innerHeight;
+}
+resize();
+window.addEventListener('resize',resize);
+
+function nodePos(key) {
+  const m=MODULES[key];
+  const usableW=W-sideW;
+  const usableH=H-topH-botH;
+  return {
+    x: sideW + m.x*usableW,
+    y: topH + m.y*usableH
+  };
+}
+
+let t=0;
+let spawnTimer=0;
+
+function spawnParticle() {
+  const keys=Object.keys(MODULES);
+  const fromKey=keys[Math.floor(Math.random()*keys.length)];
+  const m=MODULES[fromKey];
+  if(!m.connections||m.connections.length===0) return;
+  const toKey=m.connections[Math.floor(Math.random()*m.connections.length)];
+  if(!MODULES[toKey]) return;
+  const from=nodePos(fromKey);
+  const to=nodePos(toKey);
+  particles.push(new Particle(from.x,from.y,to.x,to.y,m.color));
+  eventCount++;
+  document.getElementById('event-counter').textContent=eventCount;
+}
+
+function drawGrid() {
+  const usableW=W-sideW;
+  const usableH=H-topH-botH;
+  ctx.strokeStyle='rgba(99,102,241,0.04)';
+  ctx.lineWidth=1;
+  const step=60;
+  for(let x=sideW;x<W;x+=step){
+    ctx.beginPath();ctx.moveTo(x,topH);ctx.lineTo(x,H-botH);ctx.stroke();
+  }
+  for(let y=topH;y<H-botH;y+=step){
+    ctx.beginPath();ctx.moveTo(sideW,y);ctx.lineTo(W,y);ctx.stroke();
+  }
+}
+
+function drawConnections() {
+  Object.entries(MODULES).forEach(([key,m])=>{
+    if(!m.connections) return;
+    const from=nodePos(key);
+    m.connections.forEach(toKey=>{
+      if(!MODULES[toKey]) return;
+      const to=nodePos(toKey);
+      const isSelected=selectedModule&&(selectedModule===key||selectedModule===toKey);
+      ctx.beginPath();
+      ctx.moveTo(from.x,from.y);
+      ctx.lineTo(to.x,to.y);
+      if(isSelected){
+        ctx.strokeStyle=m.color+'99';
+        ctx.lineWidth=2;
+      } else {
+        ctx.strokeStyle='rgba(99,102,241,0.08)';
+        ctx.lineWidth=1;
+      }
+      ctx.stroke();
+    });
+  });
+}
+
+function drawNodes() {
+  Object.entries(MODULES).forEach(([key,m])=>{
+    const {x,y}=nodePos(key);
+    const r=m.r;
+    const isSelected=selectedModule===key;
+    const isConnected=selectedModule&&MODULES[selectedModule]&&
+      (MODULES[selectedModule].connections||[]).includes(key);
+
+    // Glow
+    if(isSelected||isConnected){
+      const grad=ctx.createRadialGradient(x,y,0,x,y,r*2.5);
+      grad.addColorStop(0,m.color+'44');
+      grad.addColorStop(1,'transparent');
+      ctx.beginPath();ctx.arc(x,y,r*2.5,0,Math.PI*2);
+      ctx.fillStyle=grad;ctx.fill();
+    }
+
+    // Ring pulse for selected
+    if(isSelected){
+      const pulse=0.5+0.5*Math.sin(t*3);
+      ctx.beginPath();ctx.arc(x,y,r+6+pulse*4,0,Math.PI*2);
+      ctx.strokeStyle=m.color+'88';ctx.lineWidth=2;ctx.stroke();
+    }
+
+    // Body
+    const grad=ctx.createRadialGradient(x-r*0.3,y-r*0.3,0,x,y,r);
+    grad.addColorStop(0,m.color+'cc');
+    grad.addColorStop(1,m.color+'44');
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.fillStyle=grad;ctx.fill();
+
+    // Border
+    ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+    ctx.strokeStyle=isSelected?m.color:'rgba(255,255,255,0.1)';
+    ctx.lineWidth=isSelected?2:1;ctx.stroke();
+
+    // Dim if not related to selection
+    if(selectedModule&&!isSelected&&!isConnected){
+      ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fillStyle='rgba(3,8,15,0.6)';ctx.fill();
+    }
+
+    // Icon
+    ctx.font=`${r*0.7}px serif`;
+    ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(m.icon,x,y);
+
+    // Label
+    if(showLabels||isSelected||isConnected){
+      ctx.font=`bold ${Math.max(10,r*0.38)}px -apple-system,sans-serif`;
+      ctx.fillStyle=isSelected?m.color:'rgba(255,255,255,0.7)';
+      ctx.fillText(m.label,x,y+r+12);
+    }
+  });
+}
+
+function loop() {
+  t+=0.016;
+  ctx.clearRect(0,0,W,H);
+
+  // Stars
+  stars.forEach(s=>{
+    const flicker=0.3+0.7*Math.abs(Math.sin(t*0.5+s.a*10));
+    ctx.beginPath();
+    ctx.arc(s.x*W,s.y*H,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${flicker*0.4})`;
+    ctx.fill();
+  });
+
+  drawGrid();
+  drawConnections();
+
+  // Particles
+  if(showFlow){
+    spawnTimer++;
+    if(spawnTimer>18){spawnTimer=0;spawnParticle();}
+    for(let i=particles.length-1;i>=0;i--){
+      if(!particles[i].update()) particles.splice(i,1);
+      else particles[i].draw();
+    }
+  }
+
+  drawNodes();
+  requestAnimationFrame(loop);
+}
+loop();
+
+// ─── INTERACTION ──────────────────────────────────────────────────────────────
+canvas.addEventListener('mousemove',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  let found=false;
+  Object.entries(MODULES).forEach(([key,m])=>{
+    const {x,y}=nodePos(key);
+    const dx=mx-x,dy=my-y;
+    if(Math.sqrt(dx*dx+dy*dy)<m.r+4){
+      const tip=document.getElementById('tooltip');
+      tip.innerHTML=`<strong style="color:${m.color}">${m.icon} ${m.label}</strong><br><span style="color:#64748b;font-size:11px">${(m.connections||[]).length} conexiones</span>`;
+      tip.style.left=(e.clientX+14)+'px';
+      tip.style.top=(e.clientY-10)+'px';
+      tip.classList.add('show');
+      canvas.style.cursor='pointer';
+      found=true;
+    }
+  });
+  if(!found){
+    document.getElementById('tooltip').classList.remove('show');
+    canvas.style.cursor='default';
+  }
+});
+
+canvas.addEventListener('click',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  let hit=false;
+  Object.entries(MODULES).forEach(([key,m])=>{
+    const {x,y}=nodePos(key);
+    const dx=mx-x,dy=my-y;
+    if(Math.sqrt(dx*dx+dy*dy)<m.r+4){
+      hit=true;
+      if(selectedModule===key){
+        selectedModule=null;
+        // también actualiza sidebar y cierra detalle si el panel corresponde al mismo
+      } else {
+        selectedModule=key;
+        if(MODULE_DATA[key]) showModuleDetail(key);
+      }
+      document.querySelectorAll('.module-btn').forEach(b=>{
+        b.classList.toggle('active',b.dataset.module===selectedModule);
+      });
+    }
+  });
+  if(!hit){selectedModule=null;closeDetail();}
+});
+
+function showModule(key) {
+  selectedModule=key;
+  document.querySelectorAll('.module-btn').forEach(b=>{
+    b.classList.toggle('active',b.dataset.module===key);
+  });
+  if(MODULE_DATA[key]) showModuleDetail(key);
+}
+
+function showModuleDetail(key) {
+  const d=MODULE_DATA[key];
+  const m=MODULES[key]||{color:'#6366f1'};
+  document.getElementById('detail-content').innerHTML=`
+    <div class="detail-icon">${d.icon}</div>
+    <div class="detail-name" style="color:${m.color||'#38bdf8'}">${key}</div>
+    <div class="detail-group">${d.group}</div>
+    <div class="detail-desc">${d.desc}</div>
+    <div class="detail-section">Servicios</div>
+    <div>${d.services.map(s=>`<span class="detail-chip">${s}</span>`).join('')}</div>
+    <div class="detail-section">Flujos</div>
+    ${d.flows.map(f=>`<div class="detail-flow"><div class="pulse-dot" style="background:${m.color||'#6366f1'}"></div>${f}</div>`).join('')}
+    ${m.connections&&m.connections.length?`
+    <div class="detail-section">Conectado con</div>
+    <div>${m.connections.filter(c=>MODULES[c]).map(c=>`<span class="detail-chip" onclick="showModule('${c}')" style="cursor:pointer">${MODULES[c].icon} ${c}</span>`).join('')}</div>`:''}
+  `;
+  document.getElementById('detail').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail').classList.remove('open');
+  selectedModule=null;
+  document.querySelectorAll('.module-btn').forEach(b=>b.classList.remove('active'));
+}
+
+function toggleFlow() {
+  showFlow=!showFlow;
+  const btn=document.getElementById('btn-flow');
+  btn.textContent=showFlow?'⚡ Flujo activo':'⚡ Flujo pausado';
+  btn.classList.toggle('active',showFlow);
+}
+
+function toggleLabels() {
+  showLabels=!showLabels;
+  document.getElementById('btn-labels').classList.toggle('active',showLabels);
+}
+
+function resetView() {
+  selectedModule=null;
+  closeDetail();
+}
+</script>
+</body>
+</html>

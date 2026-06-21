@@ -22,7 +22,8 @@ public class FeedbackController {
 
     @PostMapping("/send")
     public ApiResponse<Feedback> submit(@RequestBody FeedbackRequest request) {
-        Family family = familyRepository.findById(request.getFamilyId()).orElseThrow();
+        Family family = familyRepository.findById(request.getFamilyId())
+                .orElseThrow(() -> new NotFoundException("Familia no encontrada: " + request.getFamilyId()));
         
         Feedback fb = Feedback.builder()
                 .family(family)

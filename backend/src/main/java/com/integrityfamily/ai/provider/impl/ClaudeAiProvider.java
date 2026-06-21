@@ -150,7 +150,7 @@ public class ClaudeAiProvider implements AiProvider {
                 }
             }
 
-            return "### ⚠️ ERROR DE INFERENCIA\nStatus: " + response.getStatusCode();
+            throw new RuntimeException("Respuesta inesperada del proveedor IA. Status: " + response.getStatusCode());
 
         } catch (Exception e) {
             log.error("❌ FALLA CRÍTICA EN CLAUDE PROVIDER: {}. Activando Plan de Mitigación de Contingencia.", e.getMessage());
@@ -565,10 +565,12 @@ public class ClaudeAiProvider implements AiProvider {
                     return (String) content.get(0).get("text");
                 }
             }
-            return "### ⚠️ ERROR\nStatus: " + response.getStatusCode();
+            throw new RuntimeException("Respuesta inesperada del proveedor IA. Status: " + response.getStatusCode());
+        } catch (RuntimeException e) {
+            throw e;
         } catch (Exception e) {
             log.error("❌ Error en callClaude: {}", e.getMessage());
-            return "### ⚠️ ERROR DE CONEXIÓN\nIntenta de nuevo en un momento.";
+            throw new RuntimeException("AI_UNAVAILABLE: " + e.getMessage(), e);
         }
     }
 

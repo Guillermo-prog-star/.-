@@ -115,8 +115,16 @@ public class AiServiceImpl implements AiService {
             fullPrompt = promptGenerator.buildFamilyMentorPrompt(message, context);
         }
 
-        // 8. Chat conversacional → STANDARD
-        String response = aiProviderSelector.selectProvider(TaskType.STANDARD).generateWithFullPrompt(fullPrompt);
+        // 8. Chat conversacional → STANDARD (si el proveedor falla, no persistir error en BD)
+        String response;
+        try {
+            response = aiProviderSelector.selectProvider(TaskType.STANDARD).generateWithFullPrompt(fullPrompt);
+        } catch (Exception e) {
+            log.error("[AI_CHAT] Proveedor IA no disponible para familia {}: {}", family.getId(), e.getMessage());
+            throw new org.springframework.web.server.ResponseStatusException(
+                org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE,
+                "El servicio de IA no está disponible en este momento. Intenta en unos minutos.");
+        }
 
         // 9. Guardar respuesta de la IA vinculada a la misma sesión
         ChatMessage aiMessage = chatMessageRepository.save(ChatMessage.builder()

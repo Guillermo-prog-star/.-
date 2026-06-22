@@ -66,11 +66,23 @@ jobs:
       - name: Fail if tests failed
         working-directory: backend
         run: |
-          FAILURES=$(grep -rl "<failure\|<error" target/surefire-reports/*.xml 2>/dev/null | wc -l)
+          echo "## ❌ Tests Fallidos" >> $GITHUB_STEP_SUMMARY
+          FAILED_FILES=$(grep -rl "<failure\|<error" target/surefire-reports/*.xml 2>/dev/null || true)
+          FAILURES=$(echo "$FAILED_FILES" | grep -c . || echo 0)
           if [ "$FAILURES" -gt "0" ]; then
+            echo "### Archivos con errores:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$FAILED_FILES" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            for f in $FAILED_FILES; do
+              echo "--- $f ---" >> $GITHUB_STEP_SUMMARY
+              grep -o 'classname="[^"]*" name="[^"]*"' "$f" | head -5 >> $GITHUB_STEP_SUMMARY || true
+            done
+            echo '```' >> $GITHUB_STEP_SUMMARY
             echo "❌ Hay $FAILURES archivos con tests fallidos"
             exit 1
           fi
+          echo "✅ Todos los tests pasaron" >> $GITHUB_STEP_SUMMARY
           echo "✅ Todos los tests pasaron"
 
       - name: Analyze with SonarCloud

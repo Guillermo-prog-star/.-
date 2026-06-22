@@ -54,35 +54,26 @@ jobs:
         if: always()
         working-directory: backend
         run: |
-          echo "=== TESTS FALLIDOS ==="
-          grep -r "testcase.*failure\|<failure\|<error" target/surefire-reports/*.xml \
-            | grep -o 'classname="[^"]*" name="[^"]*"' \
-            | sort -u || echo "No se encontraron fallos en XML"
+          echo "=== RESUMEN SUREFIRE (archivos con errors/failures) ==="
+          grep -hlE 'errors="[1-9]|failures="[1-9]' target/surefire-reports/TEST-*.xml 2>/dev/null || echo "Ninguno"
           echo ""
-          echo "=== RESUMEN SUREFIRE ==="
-          grep -h "tests=" target/surefire-reports/TEST-*.xml 2>/dev/null \
-            | grep -v " errors=\"0\" failures=\"0\"" | head -20 || echo "Sin fallos"
+          echo "=== DETALLE ERRORES ==="
+          for f in target/surefire-reports/TEST-*.xml; do
+            if grep -qE 'errors="[1-9]|failures="[1-9]' "$f" 2>/dev/null; then
+              echo "--- $f ---"
+              grep -E '<testcase|<failure|<error' "$f" | head -30
+              echo ""
+            fi
+          done
 
       - name: Fail if tests failed
         working-directory: backend
         run: |
-          echo "## ❌ Tests Fallidos" >> $GITHUB_STEP_SUMMARY
-          FAILED_FILES=$(grep -rl "<failure\|<error" target/surefire-reports/*.xml 2>/dev/null || true)
-          FAILURES=$(echo "$FAILED_FILES" | grep -c . || echo 0)
-          if [ "$FAILURES" -gt "0" ]; then
-            echo "### Archivos con errores:" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "$FAILED_FILES" >> $GITHUB_STEP_SUMMARY
-            echo "" >> $GITHUB_STEP_SUMMARY
-            for f in $FAILED_FILES; do
-              echo "--- $f ---" >> $GITHUB_STEP_SUMMARY
-              grep -o 'classname="[^"]*" name="[^"]*"' "$f" | head -5 >> $GITHUB_STEP_SUMMARY || true
-            done
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "❌ Hay $FAILURES archivos con tests fallidos"
+          BAD=$(grep -lE 'errors="[1-9]|failures="[1-9]' target/surefire-reports/TEST-*.xml 2>/dev/null | wc -l)
+          if [ "$BAD" -gt "0" ]; then
+            echo "❌ Hay $BAD archivos con tests fallidos"
             exit 1
           fi
-          echo "✅ Todos los tests pasaron" >> $GITHUB_STEP_SUMMARY
           echo "✅ Todos los tests pasaron"
 
       - name: Analyze with SonarCloud

@@ -67,9 +67,25 @@ jobs:
 
       - name: Fail if tests failed
         working-directory: backend
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          BAD=$(grep -lE 'errors="[1-9]|failures="[1-9]' target/surefire-reports/TEST-*.xml 2>/dev/null | wc -l)
+          BAD_FILES=$(grep -lE 'errors="[1-9]|failures="[1-9]' target/surefire-reports/TEST-*.xml 2>/dev/null || true)
+          BAD=$(echo "$BAD_FILES" | grep -c . 2>/dev/null || echo 0)
           if [ "$BAD" -gt "0" ]; then
+            BODY="## CI Test Failures — run ${{ github.run_number }}"$'\n\n'
+            BODY+="**Commit:** ${{ github.sha }}"$'\n\n'
+            BODY+='```'$'\n'
+            for f in $BAD_FILES; do
+              BODY+="### $f"$'\n'
+              BODY+=$(grep -E 'classname=|<failure|<error' "$f" | head -20)$'\n'
+            done
+            BODY+='```'
+            gh issue create \
+              --repo "Guillermo-prog-star/.-" \
+              --title "CI Failures run-${{ github.run_number }}" \
+              --body "$BODY" \
+              --label "bug" 2>/dev/null || true
             echo "❌ Hay $BAD archivos con tests fallidos"
             exit 1
           fi

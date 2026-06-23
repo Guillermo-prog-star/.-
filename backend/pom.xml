@@ -285,10 +285,8 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <excludes>
-                                <!-- Tests E2E requieren MySQL local en localhost:3307 -->
-                                <exclude>**/integration/*IntegrationTest.java</exclude>
-                            </excludes>
+                            <!-- Excluir tests E2E que requieren MySQL local en localhost:3307 -->
+                            <excludedGroups>integration</excludedGroups>
                         </configuration>
                     </plugin>
                 </plugins>

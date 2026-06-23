@@ -36,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *   3 miembros votan → mayoría automática → guardián confirmado
  *   → activa misión → completa misión → puntuación aumenta
  */
+@Tag("integration")
 @SpringBootTest
 @ActiveProfiles("integration-test")
 @DisplayName("E2E: Guardián Familiar — votación, misiones y participación")

@@ -35,6 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *   Meses > 18 → BAJO si ICF ≥ 90 | MEDIO si ICF ≥ 70 | ALTO si ICF < 70
  *   hasCrisis  → siempre CRITICO (ignora ICF)
  */
+@Tag("integration")
 @SpringBootTest
 @ActiveProfiles("integration-test")
 @DisplayName("E2E: Motor de Riesgo Sentinel — cálculo dinámico y persistencia")

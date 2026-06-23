@@ -36,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * RabbitMQ se mockea porque es mensajería asíncrona externa,
  * no parte de la lógica de negocio que queremos validar aquí.
  */
+@Tag("integration")
 @SpringBootTest
 @ActiveProfiles("integration-test")
 @DisplayName("E2E: Flujo completo Evaluación → Plan → Sprint → Evidencia → Documental")

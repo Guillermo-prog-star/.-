@@ -9,6 +9,7 @@ import com.integrityfamily.legado.repository.FamilyValueRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ import java.util.List;
  * ════════════════════════════════════════════════════════════════════════════
  */
 @Component
+@Profile("!test")
 @RequiredArgsConstructor
 @Slf4j
 @Order(11)

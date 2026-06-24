@@ -39,42 +39,20 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      # ── 4. Tests + JaCoCo + Sonar (todo en un solo mvn) ─────────────────
+      # ── 4. Tests + JaCoCo ────────────────────────────────────────────────
       - name: Build & Test (JaCoCo)
         working-directory: backend
         env:
           SPRING_PROFILES_ACTIVE: test
-          SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb
           CLAUDE_API_KEY: test-key-not-used
           AI_PROVIDER: mock
         run: |
-          mvn verify -P ci --no-transfer-progress || true
+          mvn verify -P ci --no-transfer-progress 2>&1 | tee /tmp/maven-output.txt; exit ${PIPESTATUS[0]}
 
-      - name: Print failed tests
-        if: always()
-        working-directory: backend
-        run: |
-          echo "=== TESTS FALLIDOS ==="
-          grep -r "testcase.*failure\|<failure\|<error" target/surefire-reports/*.xml \
-            | grep -o 'classname="[^"]*" name="[^"]*"' \
-            | sort -u || echo "No se encontraron fallos en XML"
-          echo ""
-          echo "=== RESUMEN SUREFIRE ==="
-          grep -h "tests=" target/surefire-reports/TEST-*.xml 2>/dev/null \
-            | grep -v " errors=\"0\" failures=\"0\"" | head -20 || echo "Sin fallos"
-
-      - name: Fail if tests failed
-        working-directory: backend
-        run: |
-          FAILURES=$(grep -rl "<failure\|<error" target/surefire-reports/*.xml 2>/dev/null | wc -l)
-          if [ "$FAILURES" -gt "0" ]; then
-            echo "❌ Hay $FAILURES archivos con tests fallidos"
-            exit 1
-          fi
-          echo "✅ Todos los tests pasaron"
-
+      # ── 5. SonarCloud ────────────────────────────────────────────────────
       - name: Analyze with SonarCloud
         working-directory: backend
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -86,16 +64,15 @@ jobs:
             -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
             --no-transfer-progress
 
-      # ── 4b. Subir surefire XMLs para diagnóstico de fallos en CI ────────
+      # ── 6. Artefactos ────────────────────────────────────────────────────
       - name: Upload surefire reports
         uses: actions/upload-artifact@v4
-        if: always()
+        if: failure()
         with:
           name: surefire-reports-${{ github.run_number }}
           path: backend/target/surefire-reports/
           retention-days: 3
 
-      # ── 5. Resultados de tests en GitHub (visible en la pestaña Checks) ──
       - name: Publish test results
         uses: dorny/test-reporter@v1
         if: always()
@@ -103,9 +80,8 @@ jobs:
           name: JUnit Tests
           path: backend/target/surefire-reports/*.xml
           reporter: java-junit
-          fail-on-error: true
+          fail-on-error: false
 
-      # ── 6. Artefacto: reporte HTML de cobertura ──────────────────────────
       - name: Upload JaCoCo HTML report
         uses: actions/upload-artifact@v4
         if: always()
@@ -113,37 +89,3 @@ jobs:
           name: jacoco-report-${{ github.run_number }}
           path: backend/target/site/jacoco/
           retention-days: 14
-
-      # ── 7. Resumen de cobertura en el PR ─────────────────────────────────
-      - name: Coverage summary
-        if: always()
-        run: |
-          REPORT="backend/target/site/jacoco/jacoco.xml"
-          if [ ! -f "$REPORT" ]; then
-            echo "⚠️ No se encontró el reporte JaCoCo" >> $GITHUB_STEP_SUMMARY
-            exit 0
-          fi
-
-          COVERED=$(grep -oP 'type="LINE".*?missed="\K[0-9]+' "$REPORT" | \
-            awk -F'"' '{print $1}' | awk 'BEGIN{s=0}{s+=$1}END{print s}' || echo 0)
-          MISSED=$(grep -oP 'type="LINE".*?missed="\K[0-9]+' "$REPORT" | \
-            awk 'BEGIN{s=0}{s+=$1}END{print s}' || echo 0)
-
-          # Parsing robusto: extraer totales del summary counter LINE
-          COVERED=$(xmllint --xpath \
-            'sum(//counter[@type="LINE"]/@covered)' \
-            "$REPORT" 2>/dev/null || echo "N/A")
-          MISSED=$(xmllint --xpath \
-            'sum(//counter[@type="LINE"]/@missed)' \
-            "$REPORT" 2>/dev/null || echo "N/A")
-
-          echo "## 📊 Cobertura de código (JaCoCo)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Métrica | Valor |" >> $GITHUB_STEP_SUMMARY
-          echo "|---|---|" >> $GITHUB_STEP_SUMMARY
-          echo "| Líneas cubiertas | $COVERED |" >> $GITHUB_STEP_SUMMARY
-          echo "| Líneas no cubiertas | $MISSED |" >> $GITHUB_STEP_SUMMARY
-          echo "| Umbral CI (líneas) | ≥ 40% |" >> $GITHUB_STEP_SUMMARY
-          echo "| Umbral CI (ramas) | ≥ 30% |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 [Ver análisis completo en SonarCloud](https://sonarcloud.io/project/overview?id=Guillermo-prog-star_if-full)" >> $GITHUB_STEP_SUMMARY

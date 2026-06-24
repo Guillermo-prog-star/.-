@@ -21,6 +21,8 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 import java.util.List;
+import java.sql.DriverManager;
+import org.junit.jupiter.api.Assumptions;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -34,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * RabbitMQ se mockea porque es mensajería asíncrona externa,
  * no parte de la lógica de negocio que queremos validar aquí.
  */
+@Tag("integration")
 @SpringBootTest
 @ActiveProfiles("integration-test")
 @DisplayName("E2E: Flujo completo Evaluación → Plan → Sprint → Evidencia → Documental")
@@ -55,6 +58,13 @@ class FamilyLifecycleIntegrationTest {
 
     @BeforeAll
     static void createTestDatabase() throws Exception {
+        try {
+            DriverManager.getConnection(
+                "jdbc:mysql://localhost:3307/?useSSL=false&allowPublicKeyRetrieval=true",
+                "root", "root123").close();
+        } catch (Exception e) {
+            Assumptions.assumeTrue(false, "MySQL en localhost:3307 no disponible — test E2E omitido");
+        }
         var conn = java.sql.DriverManager.getConnection(
             "jdbc:mysql://localhost:3307/?useSSL=false&allowPublicKeyRetrieval=true",
             "root", "root123");
@@ -68,12 +78,14 @@ class FamilyLifecycleIntegrationTest {
     }
 
     @AfterAll
-    static void dropTestDatabase() throws Exception {
-        var conn = java.sql.DriverManager.getConnection(
-            "jdbc:mysql://localhost:3307/?useSSL=false&allowPublicKeyRetrieval=true",
-            "root", "root123");
-        conn.createStatement().execute("DROP DATABASE IF EXISTS integrity_family_e2e_test");
-        conn.close();
+    static void dropTestDatabase() {
+        try (var conn = java.sql.DriverManager.getConnection(
+                "jdbc:mysql://localhost:3307/?useSSL=false&allowPublicKeyRetrieval=true",
+                "root", "root123")) {
+            conn.createStatement().execute("DROP DATABASE IF EXISTS integrity_family_e2e_test");
+        } catch (Exception ignored) {
+            // MySQL no disponible — nada que limpiar
+        }
     }
 
     @Autowired EvaluationService   evaluationService;

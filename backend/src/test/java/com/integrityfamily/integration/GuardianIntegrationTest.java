@@ -23,6 +23,8 @@ import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
 import java.util.List;
+import java.sql.DriverManager;
+import org.junit.jupiter.api.Assumptions;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *   3 miembros votan → mayoría automática → guardián confirmado
  *   → activa misión → completa misión → puntuación aumenta
  */
+@Tag("integration")
 @SpringBootTest
 @ActiveProfiles("integration-test")
 @DisplayName("E2E: Guardián Familiar — votación, misiones y participación")
@@ -53,6 +56,13 @@ class GuardianIntegrationTest {
 
     @BeforeAll
     static void createTestDatabase() throws Exception {
+        try {
+            DriverManager.getConnection(
+                "jdbc:mysql://localhost:3307/?useSSL=false&allowPublicKeyRetrieval=true",
+                "root", "root123").close();
+        } catch (Exception e) {
+            Assumptions.assumeTrue(false, "MySQL en localhost:3307 no disponible — test E2E omitido");
+        }
         var conn = java.sql.DriverManager.getConnection(
             "jdbc:mysql://localhost:3307/?useSSL=false&allowPublicKeyRetrieval=true",
             "root", "root123");
@@ -63,12 +73,14 @@ class GuardianIntegrationTest {
     }
 
     @AfterAll
-    static void dropTestDatabase() throws Exception {
-        var conn = java.sql.DriverManager.getConnection(
-            "jdbc:mysql://localhost:3307/?useSSL=false&allowPublicKeyRetrieval=true",
-            "root", "root123");
-        conn.createStatement().execute("DROP DATABASE IF EXISTS integrity_family_guardian_test");
-        conn.close();
+    static void dropTestDatabase() {
+        try (var conn = java.sql.DriverManager.getConnection(
+                "jdbc:mysql://localhost:3307/?useSSL=false&allowPublicKeyRetrieval=true",
+                "root", "root123")) {
+            conn.createStatement().execute("DROP DATABASE IF EXISTS integrity_family_guardian_test");
+        } catch (Exception ignored) {
+            // MySQL no disponible — nada que limpiar
+        }
     }
 
     @Autowired GuardianService guardianService;

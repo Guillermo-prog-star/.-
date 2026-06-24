@@ -285,8 +285,16 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-surefire-plugin</artifactId>
                         <configuration>
-                            <!-- Excluir tests E2E que requieren MySQL local en localhost:3307 -->
+                            <!-- Repetir argLine para que JaCoCo agent se inyecte correctamente -->
+                            <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
+                            <systemPropertyVariables>
+                                <spring.profiles.active>test</spring.profiles.active>
+                            </systemPropertyVariables>
+                            <!-- Doble exclusión: por @Tag (JUnit5) y por path (Surefire) -->
                             <excludedGroups>integration</excludedGroups>
+                            <excludes>
+                                <exclude>**/integration/*</exclude>
+                            </excludes>
                         </configuration>
                     </plugin>
                 </plugins>

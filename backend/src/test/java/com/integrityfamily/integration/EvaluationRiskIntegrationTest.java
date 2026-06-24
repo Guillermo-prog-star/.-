@@ -72,12 +72,14 @@ class EvaluationRiskIntegrationTest {
     }
 
     @AfterAll
-    static void dropTestDatabase() throws Exception {
-        var conn = java.sql.DriverManager.getConnection(
-            "jdbc:mysql://localhost:3307/?useSSL=false&allowPublicKeyRetrieval=true",
-            "root", "root123");
-        conn.createStatement().execute("DROP DATABASE IF EXISTS integrity_family_risk_test");
-        conn.close();
+    static void dropTestDatabase() {
+        try (var conn = java.sql.DriverManager.getConnection(
+                "jdbc:mysql://localhost:3307/?useSSL=false&allowPublicKeyRetrieval=true",
+                "root", "root123")) {
+            conn.createStatement().execute("DROP DATABASE IF EXISTS integrity_family_risk_test");
+        } catch (Exception ignored) {
+            // MySQL no disponible — nada que limpiar
+        }
     }
 
     @Autowired RiskService riskService;

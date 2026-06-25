@@ -164,6 +164,14 @@ export const routes: Routes = [
           .then(m => m.LegadoComponent)
       },
 
+      // ── Centro de Documentación ──────────────────────────────────────
+      {
+        path: 'documentation',
+        title: 'Centro de Documentación',
+        loadComponent: () => import('./features/documentation/documentation-page.component')
+          .then(m => m.DocumentationPageComponent)
+      },
+
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

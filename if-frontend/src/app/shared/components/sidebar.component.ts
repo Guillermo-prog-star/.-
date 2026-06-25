@@ -138,6 +138,9 @@ import { filter } from 'rxjs/operators';
           <a routerLink="/cognitive" class="nav-item nav-intel" routerLinkActive="active">
             <span class="nav-icon">🧠</span><span class="nav-text">Sistema Cognitivo</span>
           </a>
+          <a routerLink="/documentation" class="nav-item nav-intel" routerLinkActive="active">
+            <span class="nav-icon">📚</span><span class="nav-text">Documentación</span>
+          </a>
         </div>
 
         <div class="divider"></div>

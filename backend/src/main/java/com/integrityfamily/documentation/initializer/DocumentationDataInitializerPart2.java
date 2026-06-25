@@ -36,18 +36,22 @@ public class DocumentationDataInitializerPart2 implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        Set<String> existing = repository.findAll().stream()
-            .map(ProjectDocument::getCode)
-            .collect(Collectors.toSet());
+        try {
+            Set<String> existing = repository.findAll().stream()
+                .map(ProjectDocument::getCode)
+                .collect(Collectors.toSet());
 
-        List<ProjectDocument> toInsert = buildDocuments().stream()
-            .filter(d -> !existing.contains(d.getCode()))
-            .toList();
+            List<ProjectDocument> toInsert = buildDocuments().stream()
+                .filter(d -> !existing.contains(d.getCode()))
+                .toList();
 
-        if (toInsert.isEmpty()) return;
+            if (toInsert.isEmpty()) return;
 
-        repository.saveAll(toInsert);
-        log.info("[DOCS] {} documentos complementarios cargados.", toInsert.size());
+            repository.saveAll(toInsert);
+            log.info("[DOCS] {} documentos complementarios cargados.", toInsert.size());
+        } catch (Exception e) {
+            log.warn("[DOCS] Carga complementaria omitida (la app sigue funcionando): {}", e.getMessage());
+        }
     }
 
     private List<ProjectDocument> buildDocuments() {

@@ -22,7 +22,12 @@ public class DocumentationDataInitializer implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
-        if (repository.count() > 0) return;
+        try {
+            if (repository.count() > 0) return;
+        } catch (Exception e) {
+            log.warn("[DOCS] Tabla project_documents no disponible aún, se omite carga inicial: {}", e.getMessage());
+            return;
+        }
 
         log.info("[DOCS] Cargando documentos base del Centro de Documentación...");
 
@@ -403,7 +408,11 @@ public class DocumentationDataInitializer implements ApplicationRunner {
             )
         );
 
-        repository.saveAll(docs);
-        log.info("[DOCS] {} documentos base cargados correctamente.", docs.size());
+        try {
+            repository.saveAll(docs);
+            log.info("[DOCS] {} documentos base cargados correctamente.", docs.size());
+        } catch (Exception e) {
+            log.error("[DOCS] Error al cargar documentos base (la app sigue funcionando): {}", e.getMessage());
+        }
     }
 }

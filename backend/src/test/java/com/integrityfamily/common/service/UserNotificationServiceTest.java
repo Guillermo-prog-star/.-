@@ -22,6 +22,7 @@ import static org.mockito.Mockito.*;
 class UserNotificationServiceTest {
 
     @Mock NotificationLogRepository notificationLogRepository;
+    @Mock WhatsAppService whatsAppService;
     @InjectMocks UserNotificationService service;
 
     private final Family family = Family.builder().id(1L).name("Familia Test").build();
@@ -76,6 +77,29 @@ class UserNotificationServiceTest {
             service.push(family, null, "WARN", "Error", "Mensaje");
 
             verify(notificationLogRepository).save(any());
+        }
+
+        @Test
+        @DisplayName("tipo no prioritario → WhatsApp NO se llama")
+        void nonPriorityType_noWhatsApp() {
+            when(notificationLogRepository.save(any())).thenReturn(new NotificationLog());
+
+            service.push(family, null, "GENERAL_INFO", "Info", "Contenido");
+
+            verifyNoInteractions(whatsAppService);
+        }
+
+        @Test
+        @DisplayName("tipo prioritario sin número WhatsApp → WhatsApp no se envía pero no lanza excepción")
+        void priorityType_noPhone_noError() {
+            Family familyNoPhone = Family.builder().id(2L).name("Sin WhatsApp").build();
+            when(notificationLogRepository.save(any())).thenReturn(new NotificationLog());
+
+            // RISK_CRITICAL_ALERT es tipo prioritario, pero familia sin whatsapp → no envía
+            service.push(familyNoPhone, null, "RISK_CRITICAL_ALERT", "Alerta crítica", "Riesgo detectado");
+
+            verify(notificationLogRepository).save(any());
+            verifyNoInteractions(whatsAppService); // sin número → no llama a sendMessage
         }
     }
 }

@@ -308,6 +308,57 @@ interface UserProfile {
     @media (max-width: 900px) {
       .profile-grid { grid-template-columns: 1fr; }
     }
+
+    /* ── WhatsApp section ─────────────────────────────────────── */
+    .wa-block { margin-bottom: 12px; }
+    .wa-active, .wa-inactive {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 14px;
+    }
+    .wa-active  { background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2); }
+    .wa-inactive{ background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); }
+    .wa-icon { font-size: 22px; flex-shrink: 0; }
+    .wa-text { flex: 1; min-width: 0; }
+    .wa-text strong { display: block; font-size: 13px; font-weight: 700; color: #f1f5f9; }
+    .wa-text span   { font-size: 12px; color: #64748b; }
+    .btn-wa-edit, .btn-wa-add {
+      flex-shrink: 0; padding: 6px 14px; border-radius: 10px; border: none; cursor: pointer;
+      font-size: 12px; font-weight: 700; transition: opacity .2s;
+    }
+    .btn-wa-edit { background: rgba(255,255,255,0.1); color: #94a3b8; }
+    .btn-wa-add  { background: rgba(37,211,102,0.2); color: #4ade80; }
+
+    .wa-edit-form { padding: 12px 0 4px; }
+    .wa-input-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .wa-prefix { font-size: 13px; color: #94a3b8; font-weight: 600; }
+    .wa-inp {
+      flex: 1; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px; padding: 8px 12px; color: #f1f5f9; font-size: 14px; outline: none;
+    }
+    .wa-hint  { font-size: 11px; color: #475569; margin: 0 0 8px; }
+    .wa-error { font-size: 12px; color: #f87171; margin: 0 0 8px; }
+    .wa-form-actions { display: flex; gap: 8px; }
+    .btn-wa-save {
+      padding: 8px 18px; border-radius: 10px; border: none; cursor: pointer;
+      background: rgba(37,211,102,0.25); color: #4ade80; font-weight: 700; font-size: 13px;
+    }
+    .btn-wa-save:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-wa-cancel {
+      padding: 8px 14px; border-radius: 10px; border: none; cursor: pointer;
+      background: rgba(255,255,255,0.06); color: #64748b; font-size: 13px;
+    }
+
+    .wa-types { margin-top: 14px; }
+    .wa-types-title { font-size: 11px; color: #475569; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .05em; }
+    .wa-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .wa-chip {
+      padding: 3px 10px; border-radius: 99px; font-size: 11px; font-weight: 600;
+    }
+    .wa-chip--red    { background: rgba(239,68,68,0.12);   color: #f87171; }
+    .wa-chip--orange { background: rgba(249,115,22,0.12);  color: #fb923c; }
+    .wa-chip--yellow { background: rgba(234,179,8,0.12);   color: #fbbf24; }
+    .wa-chip--blue   { background: rgba(99,102,241,0.12);  color: #818cf8; }
+    .wa-chip--gray   { background: rgba(148,163,184,0.10); color: #94a3b8; }
   `],
   template: `
     <div class="profile-header">
@@ -399,6 +450,66 @@ interface UserProfile {
             <p class="no-family">Este usuario no está asociado a ningún núcleo familiar.</p>
           } @else {
             <div class="skeleton skeleton-line" style="height:60px;border-radius:16px"></div>
+          }
+        </div>
+
+        <!-- WhatsApp Notifications -->
+        <div class="glass-card">
+          <p class="section-title">📱 Notificaciones WhatsApp</p>
+          @if (waLoading()) {
+            <div class="skeleton skeleton-line" style="height:48px;border-radius:12px"></div>
+          } @else {
+            <div class="wa-block">
+              @if (waNumber()) {
+                <div class="wa-active">
+                  <span class="wa-icon">✅</span>
+                  <div class="wa-text">
+                    <strong>WhatsApp activo</strong>
+                    <span>+57 {{ waNumber() }}</span>
+                  </div>
+                  <button class="btn-wa-edit" (click)="editingWa.set(true)">Cambiar</button>
+                </div>
+              } @else {
+                <div class="wa-inactive">
+                  <span class="wa-icon">💬</span>
+                  <div class="wa-text">
+                    <strong>Sin número configurado</strong>
+                    <span>Activa alertas críticas por WhatsApp</span>
+                  </div>
+                  <button class="btn-wa-add" (click)="editingWa.set(true)">Activar</button>
+                </div>
+              }
+            </div>
+
+            @if (editingWa()) {
+              <div class="wa-edit-form">
+                <div class="wa-input-row">
+                  <span class="wa-prefix">+57</span>
+                  <input class="wa-inp" type="tel" maxlength="10" placeholder="300 123 4567"
+                         [value]="waInput()" (input)="onWaInput($any($event.target).value)"
+                         (keydown.enter)="saveWaNumber()" />
+                </div>
+                <p class="wa-hint">Recibirás alertas de riesgo crítico, recaídas en trayectorias y planes asignados.</p>
+                @if (waError()) { <p class="wa-error">{{ waError() }}</p> }
+                <div class="wa-form-actions">
+                  <button class="btn-wa-save" (click)="saveWaNumber()" [disabled]="waSaving()">
+                    {{ waSaving() ? 'Guardando…' : '✓ Guardar' }}
+                  </button>
+                  <button class="btn-wa-cancel" (click)="editingWa.set(false); waError.set('')">Cancelar</button>
+                </div>
+              </div>
+            }
+
+            <div class="wa-types">
+              <p class="wa-types-title">Tipos de alerta que llegan por WhatsApp:</p>
+              <div class="wa-chips">
+                <span class="wa-chip wa-chip--red">🚨 Riesgo crítico</span>
+                <span class="wa-chip wa-chip--orange">🗺️ Recaída trayectoria</span>
+                <span class="wa-chip wa-chip--yellow">⚠️ Alerta Sentinel</span>
+                <span class="wa-chip wa-chip--blue">📋 Plan asignado</span>
+                <span class="wa-chip wa-chip--gray">🔍 Sugerencias urgentes</span>
+              </div>
+            </div>
           }
         </div>
 
@@ -527,6 +638,14 @@ export class ProfilePageComponent implements OnInit {
   readonly hasBackendError = signal(false);
   readonly familyStats     = signal<any>(null);
 
+  // ── WhatsApp signals ──────────────────────────────────────────────────────
+  readonly waNumber   = signal<string>('');
+  readonly waLoading  = signal(true);
+  readonly editingWa  = signal(false);
+  readonly waInput    = signal('');
+  readonly waSaving   = signal(false);
+  readonly waError    = signal('');
+
   private readonly localUser = this.auth.user;
 
   // ── Insignias ganadas basadas en el estado de transformación ──────────────
@@ -557,6 +676,7 @@ export class ProfilePageComponent implements OnInit {
     this.flow.loadFromBackend(this.familyState.currentFamilyId());
     this.loadProfile();
     this.loadFamilyStats();
+    this.loadWhatsAppNumber();
   }
 
   loadFamilyStats(): void {
@@ -565,6 +685,48 @@ export class ProfilePageComponent implements OnInit {
     this.http.get<any>(`${this.api.base}/analytics/dashboard/family/${fid}`)
       .pipe(catchError(() => of(null)))
       .subscribe(res => this.familyStats.set(res?.data ?? res));
+  }
+
+  loadWhatsAppNumber(): void {
+    const fid = this.familyState.getSelectedFamilyId();
+    if (!fid) { this.waLoading.set(false); return; }
+    this.http.get<any>(`${this.api.base}/families/${fid}`)
+      .pipe(catchError(() => of(null)))
+      .subscribe(res => {
+        const family = res?.data ?? res;
+        this.waNumber.set(family?.whatsapp ?? '');
+        this.waInput.set(family?.whatsapp ?? '');
+        this.waLoading.set(false);
+      });
+  }
+
+  onWaInput(value: string): void {
+    this.waInput.set(value.replace(/\D/g, ''));
+  }
+
+  saveWaNumber(): void {
+    const num = this.waInput().replace(/\D/g, '');
+    if (num.length < 10) { this.waError.set('Ingresa un número de 10 dígitos.'); return; }
+    const fid = this.familyState.getSelectedFamilyId();
+    if (!fid) return;
+    this.waSaving.set(true);
+    this.waError.set('');
+    this.http.get<any>(`${this.api.base}/families/${fid}`).pipe(catchError(() => of(null))).subscribe(res => {
+      const familyData = res?.data ?? res;
+      if (!familyData) { this.waSaving.set(false); this.waError.set('Error al cargar datos de la familia.'); return; }
+      familyData.whatsapp = num;
+      this.http.put<any>(`${this.api.base}/families/${fid}`, familyData)
+        .pipe(catchError(() => of(null)))
+        .subscribe(upd => {
+          this.waSaving.set(false);
+          if (upd) {
+            this.waNumber.set(num);
+            this.editingWa.set(false);
+          } else {
+            this.waError.set('Error al guardar. Intenta de nuevo.');
+          }
+        });
+    });
   }
 
   loadProfile(): void {

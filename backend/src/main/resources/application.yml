@@ -84,7 +84,7 @@ management:
         include: health,info
   endpoint:
     health:
-      show-details: never
+      show-details: always
   health:
     rabbit:
       enabled: false
@@ -130,6 +130,18 @@ app:
     client-id: ${ALEXA_CLIENT_ID:integrity-family}
     token-ttl-seconds: ${ALEXA_TOKEN_TTL:3600}
     code-ttl-seconds: ${ALEXA_CODE_TTL:300}
+
+# ---------- WhatsApp (Meta Cloud API) ----------
+whatsapp:
+  api:
+    url: ${WHATSAPP_API_URL:https://graph.facebook.com/v17.0/${WHATSAPP_PHONE_NUMBER_ID:12345}/messages}
+    token: ${WHATSAPP_TOKEN:MOCK_TOKEN}
+  notifications:
+    enabled: ${WHATSAPP_NOTIFICATIONS_ENABLED:true}
+    # Tipos de notificación que disparan WhatsApp (alta prioridad)
+    priority-types: >
+      RISK_CRITICAL_ALERT,TRAJECTORY_RELAPSED,TRAJECTORY_RELAPSE_REMINDER,
+      TRAJECTORY_SUGGESTION_URGENT,SENTINEL_ALERT,CRISIS_ALERT,PLAN_ASSIGNED
 
 logging:
   file:

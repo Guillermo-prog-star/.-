@@ -1,10 +1,12 @@
-import { Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectionStrategy, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Observable, of, BehaviorSubject, Subject } from 'rxjs';
 import { map, shareReplay, catchError, switchMap, filter, takeUntil } from 'rxjs/operators';
+import { TrajectoryService } from '../../core/services/trajectory.service';
+import { FamilyTrajectoryDto } from '../../core/models/trajectory.model';
 
 // Capa de Servicios
 import { DashboardDataService } from './services/dashboard-data.service';
@@ -75,9 +77,17 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardPageComponent implements OnInit, OnDestroy {
-  private readonly emotionalService = inject(EmotionalEngineService);
-  private readonly scannerService   = inject(ScannerService);
-  private readonly router           = inject(Router);
+  private readonly emotionalService    = inject(EmotionalEngineService);
+  private readonly scannerService      = inject(ScannerService);
+  private readonly trajectoryService   = inject(TrajectoryService);
+  private readonly router              = inject(Router);
+
+  readonly trajectories    = signal<FamilyTrajectoryDto[]>([]);
+  readonly activeTrajectories = computed(() =>
+    this.trajectories().filter(t => t.status !== 'RESOLVED' && t.status !== 'CLOSED')
+  );
+  readonly hasRelapsed  = computed(() => this.trajectories().some(t => t.status === 'RELAPSED'));
+  readonly relapsedCount = computed(() => this.trajectories().filter(t => t.status === 'RELAPSED').length);
 
   // Estado para modal de WhatsApp
   readonly showWhatsappModal = signal(false);
@@ -263,6 +273,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
             this.resolvedFamilyId$.next(familyId);
             this.dashboardService.fetchData(familyId).subscribe();
             this.loadLongitudinalState(familyId);
+            this.loadTrajectories(familyId);
 
             this.iocScore$ = this.emotionalService.getFamilyStats(familyId).pipe(
               map(stats => stats?.ioc ?? 50.0),
@@ -293,6 +304,7 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
       this.resolvedFamilyId$.next(familyId);
       this.dashboardService.fetchData(familyId).subscribe();
       this.loadLongitudinalState(familyId);
+      this.loadTrajectories(familyId);
 
       this.iocScore$ = this.emotionalService.getFamilyStats(familyId).pipe(
         map(stats => stats?.ioc ?? 50.0),
@@ -396,5 +408,26 @@ export class DashboardPageComponent implements OnInit, OnDestroy {
       },
       error: (err) => console.error('❌ [SDD-ERROR] Falla en evolución:', err)
     });
+  }
+
+  private loadTrajectories(familyId: number): void {
+    this.trajectoryService.getFamilyTrajectories(familyId)
+      .pipe(catchError(() => of([])))
+      .subscribe(t => this.trajectories.set(t));
+  }
+
+  trajectoryBadgeClass(status: string, severity: string): string {
+    if (status === 'RELAPSED') return 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-500/20 text-red-300 text-sm';
+    if (severity === 'CRITICAL') return 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-red-900/30 text-red-400 text-sm';
+    if (severity === 'HIGH') return 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-900/30 text-orange-400 text-sm';
+    if (severity === 'MEDIUM') return 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-yellow-900/30 text-yellow-400 text-sm';
+    return 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/10 text-white/60 text-sm';
+  }
+
+  severityDot(severity: string): string {
+    if (severity === 'CRITICAL') return '🔴';
+    if (severity === 'HIGH')     return '🟠';
+    if (severity === 'MEDIUM')   return '🟡';
+    return '🟢';
   }
 }

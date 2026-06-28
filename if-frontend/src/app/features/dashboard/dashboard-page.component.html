@@ -86,6 +86,44 @@
     <!-- [SDD Analytics v2] ABANDONMENT RISK BANNER — visible sólo si HIGH/CRITICAL -->
     <app-abandonment-risk-banner></app-abandonment-risk-banner>
 
+    <!-- TRAJECTORY RISK WIDGET — visible sólo si hay trayectorias activas -->
+    @if (activeTrajectories().length > 0) {
+      <section class="glass-premium rounded-3xl p-5 border"
+               [class]="hasRelapsed() ? 'border-red-500/40 bg-red-500/03' : 'border-orange-500/20 bg-orange-500/03'">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-3">
+            <span class="text-xl">🗺️</span>
+            <div>
+              <h3 class="text-white font-semibold text-sm">Trayectorias de Riesgo Activas</h3>
+              <p class="text-white/40 text-xs">{{ activeTrajectories().length }} en seguimiento
+                @if (hasRelapsed()) { · <span class="text-red-400 font-medium">{{ relapsedCount() }} en recaída</span> }
+              </p>
+            </div>
+          </div>
+          <a routerLink="/trajectory"
+             class="text-xs font-medium px-3 py-1.5 rounded-xl border transition-all
+                    border-orange-500/30 text-orange-300 hover:bg-orange-500/10">
+            Ver detalle →
+          </a>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          @for (t of activeTrajectories().slice(0, 5); track t.id) {
+            <div class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium"
+                 [class]="trajectoryBadgeClass(t.status, t.trajectory.severityDefault)">
+              <span>{{ severityDot(t.trajectory.severityDefault) }}</span>
+              <span class="truncate max-w-[140px]">{{ t.trajectory.name }}</span>
+              @if (t.status === 'RELAPSED') { <span class="text-red-400">⚠</span> }
+            </div>
+          }
+          @if (activeTrajectories().length > 5) {
+            <div class="px-3 py-1.5 rounded-xl text-xs text-white/30 bg-white/5">
+              +{{ activeTrajectories().length - 5 }} más
+            </div>
+          }
+        </div>
+      </section>
+    }
+
     <!-- [SDD Spec] MILESTONE ADVANCE REINFORCEMENT -->
     @if (readyToAdvance$ | async) {
       <div class="glass-premium border-emerald-500/50 p-6 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-6 animate-in slide-in-from-top duration-700 bg-emerald-500/5">

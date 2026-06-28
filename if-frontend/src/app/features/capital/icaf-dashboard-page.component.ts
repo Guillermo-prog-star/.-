@@ -364,7 +364,7 @@ import { environment } from '../../../environments/environment';
           <p class="text-red-300 font-semibold text-sm">Alerta de recaída activa</p>
           <p class="text-white/50 text-xs mt-1">
             {{ relapsedTrajectories().length }} trayectoria(s) han registrado una recaída:
-            {{ relapsedTrajectories().slice(0,2).map(t => t.trajectory.name).join(', ') }}{{ relapsedTrajectories().length > 2 ? '…' : '' }}.
+            {{ relapsedNames() }}.
             Revisión urgente recomendada.
           </p>
         </div>
@@ -427,6 +427,12 @@ export class IcafDashboardPageComponent implements OnInit, OnDestroy {
   readonly relapsedTrajectories = computed(() =>
     this.trajectories().filter(t => t.status === 'RELAPSED')
   );
+
+  readonly relapsedNames = computed(() => {
+    const list = this.relapsedTrajectories();
+    const names = list.slice(0, 2).map(t => t.trajectory.name).join(', ');
+    return names + (list.length > 2 ? '…' : '');
+  });
 
   private familyId = 0;
 

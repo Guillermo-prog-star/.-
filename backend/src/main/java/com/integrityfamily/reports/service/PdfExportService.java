@@ -3,6 +3,8 @@ package com.integrityfamily.reports.service;
 import com.integrityfamily.analytics.service.SentimentAnalyticsService;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
+import com.integrityfamily.trajectory.dto.TrajectoryDtos.*;
+import com.integrityfamily.trajectory.service.TrajectoryService;
 import com.integrityfamily.scanner.domain.FamilyAlert;
 import com.integrityfamily.scanner.domain.InferenceRecord;
 import com.integrityfamily.scanner.repository.FamilyAlertRepository;
@@ -52,6 +54,7 @@ public class PdfExportService {
     private final AuditEventRepository auditEventRepository;
     private final InferenceRecordRepository inferenceRecordRepository;
     private final FamilyAlertRepository familyAlertRepository;
+    private final TrajectoryService trajectoryService;
 
     // Paleta de Colores Corporativos y Clínicos
     private static final Color PRIMARY_BLUE = new DeviceRgb(28, 40, 65);
@@ -537,5 +540,199 @@ public class PdfExportService {
             // fallback
         }
         return metadataJson;
+    }
+
+    // ─── Reporte de Trayectorias de Riesgo ───────────────────────────────────
+
+    public byte[] generateTrajectoryReportPdf(Long familyId) {
+        log.info("[PDF-TRAY] Generando reporte de trayectorias para familia {}", familyId);
+        Family family = familyRepository.findById(familyId)
+            .orElseThrow(() -> new BusinessException("Familia no encontrada"));
+
+        List<FamilyTrajectoryDto> trajectories = trajectoryService.getFamilyTrajectories(familyId);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (PdfDocument pdf = new PdfDocument(new PdfWriter(baos));
+             Document doc = new Document(pdf, PageSize.A4)) {
+
+            doc.setMargins(40, 40, 40, 40);
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+            // Encabezado
+            Table header = new Table(UnitValue.createPercentArray(new float[]{1})).useAllAvailableWidth();
+            Cell hCell = new Cell()
+                .add(new Paragraph("INTEGRITY FAMILY").setFontSize(9).setFontColor(ColorConstants.WHITE)
+                    .setTextAlignment(TextAlignment.CENTER))
+                .add(new Paragraph("Reporte de Trayectorias de Riesgo Familiar").setFontSize(16)
+                    .setBold().setFontColor(ColorConstants.WHITE).setTextAlignment(TextAlignment.CENTER))
+                .add(new Paragraph("Familia: " + family.getName() + "  ·  Generado: "
+                    + java.time.LocalDateTime.now().format(fmt)).setFontSize(9)
+                    .setFontColor(new DeviceRgb(180, 200, 240)).setTextAlignment(TextAlignment.CENTER))
+                .setBackgroundColor(PRIMARY_BLUE).setPadding(20).setBorder(Border.NO_BORDER);
+            header.addCell(hCell);
+            doc.add(header);
+            doc.add(new Paragraph("\n"));
+
+            // Resumen
+            long active = trajectories.stream()
+                .filter(t -> !t.status().name().equals("RESOLVED") && !t.status().name().equals("CLOSED"))
+                .count();
+            long resolved = trajectories.stream()
+                .filter(t -> t.status().name().equals("RESOLVED") || t.status().name().equals("CLOSED"))
+                .count();
+            long critical = trajectories.stream()
+                .filter(t -> "CRITICAL".equals(t.trajectory().severityDefault()))
+                .count();
+
+            Table summary = new Table(UnitValue.createPercentArray(new float[]{1, 1, 1})).useAllAvailableWidth();
+            summary.addCell(summaryCell("Total", String.valueOf(trajectories.size()), ACCENT_INDIGO));
+            summary.addCell(summaryCell("Activas", String.valueOf(active), RISK_RED));
+            summary.addCell(summaryCell("Resueltas", String.valueOf(resolved), SUCCESS_GREEN));
+            doc.add(summary);
+            doc.add(new Paragraph("\n"));
+
+            if (trajectories.isEmpty()) {
+                doc.add(new Paragraph("No se han registrado trayectorias de riesgo para esta familia.")
+                    .setFontSize(11).setFontColor(ColorConstants.DARK_GRAY).setItalic());
+            } else {
+                // Tabla de trayectorias
+                Table table = new Table(UnitValue.createPercentArray(new float[]{3, 2, 2, 2, 3}))
+                    .useAllAvailableWidth();
+                String[] cols = {"Trayectoria", "Macrodominio", "Estado", "Severidad", "Detectada"};
+                for (String col : cols) {
+                    table.addHeaderCell(new Cell()
+                        .add(new Paragraph(col).setBold().setFontSize(9).setFontColor(ColorConstants.WHITE))
+                        .setBackgroundColor(ACCENT_BLUE).setBorderBottom(new SolidBorder(ColorConstants.WHITE, 1))
+                        .setPadding(6));
+                }
+
+                boolean alt = false;
+                for (FamilyTrajectoryDto t : trajectories) {
+                    Color rowBg = alt ? LIGHT_GRAY : ColorConstants.WHITE;
+                    Color statusColor = statusColor(t.status().name());
+                    String detected = t.detectedAt() != null
+                        ? t.detectedAt().toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "—";
+
+                    table.addCell(trayCell(t.trajectory().name(), rowBg, 9, false));
+                    table.addCell(trayCell(macroDomainLabel(t.trajectory().macrodomain().name()), rowBg, 8, true));
+                    table.addCell(trayColorCell(statusLabel(t.status().name()), rowBg, statusColor));
+                    table.addCell(trayColorCell(t.trajectory().severityDefault(), rowBg,
+                        severityColor(t.trajectory().severityDefault())));
+                    table.addCell(trayCell(detected, rowBg, 9, false));
+                    alt = !alt;
+
+                    // Notas
+                    if (t.notes() != null && !t.notes().isBlank()) {
+                        Cell notesCell = new Cell(1, 5)
+                            .add(new Paragraph("Notas: " + t.notes()).setFontSize(8)
+                                .setFontColor(ColorConstants.DARK_GRAY).setItalic())
+                            .setBackgroundColor(rowBg).setPadding(4).setBorder(Border.NO_BORDER)
+                            .setBorderBottom(new SolidBorder(BORDER_GRAY, 0.5f));
+                        table.addCell(notesCell);
+                    }
+                }
+                doc.add(table);
+
+                // Trayectorias críticas con señales tempranas
+                List<FamilyTrajectoryDto> criticalTrend = trajectories.stream()
+                    .filter(t -> "CRITICAL".equals(t.trajectory().severityDefault())
+                        || "HIGH".equals(t.trajectory().severityDefault()))
+                    .toList();
+
+                if (!criticalTrend.isEmpty()) {
+                    doc.add(new Paragraph("\nTrayectorias de Alto Riesgo — Señales Tempranas")
+                        .setFontSize(13).setBold().setFontColor(RISK_RED));
+                    for (FamilyTrajectoryDto t : criticalTrend) {
+                        doc.add(new Paragraph("▸ " + t.trajectory().name()).setFontSize(10).setBold()
+                            .setFontColor(PRIMARY_BLUE));
+                        if (t.trajectory().earlySignals() != null) {
+                            doc.add(new Paragraph("  Señales: " + t.trajectory().earlySignals())
+                                .setFontSize(9).setFontColor(ColorConstants.DARK_GRAY));
+                        }
+                        if (t.trajectory().potentialEvolution() != null) {
+                            doc.add(new Paragraph("  Evolución potencial: " + t.trajectory().potentialEvolution())
+                                .setFontSize(9).setFontColor(ColorConstants.DARK_GRAY).setItalic());
+                        }
+                        doc.add(new Paragraph(""));
+                    }
+                }
+            }
+
+            // Pie
+            doc.add(new Paragraph("\n\neste reporte es confidencial y de uso exclusivo del equipo de acompañamiento familiar.")
+                .setFontSize(7).setFontColor(ColorConstants.LIGHT_GRAY).setTextAlignment(TextAlignment.CENTER));
+
+        } catch (Exception e) {
+            log.error("[PDF-TRAY] Error generando PDF: {}", e.getMessage(), e);
+            throw new BusinessException("Error generando PDF de trayectorias");
+        }
+        return baos.toByteArray();
+    }
+
+    private Cell summaryCell(String label, String value, Color color) {
+        return new Cell()
+            .add(new Paragraph(value).setFontSize(28).setBold().setFontColor(color)
+                .setTextAlignment(TextAlignment.CENTER))
+            .add(new Paragraph(label).setFontSize(9).setFontColor(ColorConstants.DARK_GRAY)
+                .setTextAlignment(TextAlignment.CENTER))
+            .setBorder(new SolidBorder(BORDER_GRAY, 1)).setPadding(12);
+    }
+
+    private Cell trayCell(String text, Color bg, int fontSize, boolean italic) {
+        Paragraph p = new Paragraph(text).setFontSize(fontSize);
+        if (italic) p.setItalic().setFontColor(ColorConstants.DARK_GRAY);
+        return new Cell().add(p).setBackgroundColor(bg).setPadding(5)
+            .setBorderBottom(new SolidBorder(BORDER_GRAY, 0.5f)).setBorder(Border.NO_BORDER)
+            .setBorderBottom(new SolidBorder(BORDER_GRAY, 0.5f));
+    }
+
+    private Cell trayColorCell(String text, Color bg, Color textColor) {
+        return new Cell().add(new Paragraph(text).setFontSize(9).setBold().setFontColor(textColor))
+            .setBackgroundColor(bg).setPadding(5)
+            .setBorder(Border.NO_BORDER).setBorderBottom(new SolidBorder(BORDER_GRAY, 0.5f));
+    }
+
+    private Color statusColor(String status) {
+        return switch (status) {
+            case "IN_PROGRESS" -> ACCENT_BLUE;
+            case "RESOLVED", "CLOSED" -> SUCCESS_GREEN;
+            case "RELAPSED" -> new DeviceRgb(230, 100, 20);
+            default -> ACCENT_INDIGO;
+        };
+    }
+
+    private Color severityColor(String sev) {
+        return switch (sev) {
+            case "CRITICAL" -> RISK_RED;
+            case "HIGH" -> new DeviceRgb(230, 100, 20);
+            case "MEDIUM" -> new DeviceRgb(200, 160, 0);
+            default -> SUCCESS_GREEN;
+        };
+    }
+
+    private String statusLabel(String status) {
+        return switch (status) {
+            case "DETECTED" -> "Detectado";
+            case "IN_PROGRESS" -> "En progreso";
+            case "RESOLVED" -> "Resuelto";
+            case "RELAPSED" -> "Recaída";
+            case "CLOSED" -> "Cerrado";
+            default -> status;
+        };
+    }
+
+    private String macroDomainLabel(String domain) {
+        return switch (domain) {
+            case "RELACIONES_PAREJA" -> "Rel. de Pareja";
+            case "CRIANZA_ADOLESCENCIA" -> "Crianza/Adolesc.";
+            case "SALUD_MENTAL" -> "Salud Mental";
+            case "ADICCIONES" -> "Adicciones";
+            case "EDUCACION_DESARROLLO" -> "Educación";
+            case "ECONOMIA_FAMILIAR" -> "Economía";
+            case "GOBERNANZA" -> "Gobernanza";
+            case "ADULTO_MAYOR" -> "Adulto Mayor";
+            case "LEGADO" -> "Legado";
+            default -> domain;
+        };
     }
 }

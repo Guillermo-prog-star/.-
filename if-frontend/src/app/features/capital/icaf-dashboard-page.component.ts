@@ -5,7 +5,9 @@ import {
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, forkJoin, takeUntil } from 'rxjs';
+import { FamilyTrajectoryDto } from '../../core/models/trajectory.model';
+import { TrajectoryService } from '../../core/services/trajectory.service';
 import { IcafDataService } from './services/icaf-data.service';
 import {
   IcafDashboardResponse, IcafDomainScore,
@@ -311,6 +313,49 @@ import { environment } from '../../../environments/environment';
       </div>
     </section>
 
+    <!-- Trayectorias de Riesgo Activas -->
+    @if (activeTrajectories().length > 0) {
+      <section class="glass-card rounded-3xl p-6">
+        <div class="flex items-center justify-between mb-5">
+          <div>
+            <h2 class="text-white font-bold">Trayectorias de Riesgo Activas</h2>
+            <p class="text-white/40 text-xs mt-0.5">{{ activeTrajectories().length }} trayectoria(s) en seguimiento</p>
+          </div>
+          <div class="flex gap-2">
+            <button (click)="downloadTrajectoryPdf()" [disabled]="downloadingPdf()"
+              class="px-3 py-1.5 rounded-xl text-xs font-medium transition-all
+                     bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/30
+                     text-orange-300 hover:text-orange-200 disabled:opacity-40">
+              {{ downloadingPdf() ? 'Generando…' : '📄 Exportar PDF' }}
+            </button>
+            <a routerLink="/trajectory"
+              class="px-3 py-1.5 rounded-xl text-xs font-medium transition-all
+                     bg-white/5 hover:bg-white/10 border border-white/10
+                     text-white/60 hover:text-white">
+              Ver todas →
+            </a>
+          </div>
+        </div>
+        <div class="space-y-2">
+          @for (t of activeTrajectories(); track t.id) {
+            <div class="flex items-center justify-between rounded-2xl bg-white/5 px-4 py-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="text-lg shrink-0">{{ severityIcon(t.trajectory.severityDefault) }}</span>
+                <div class="min-w-0">
+                  <p class="text-white/90 text-sm font-medium truncate">{{ t.trajectory.name }}</p>
+                  <p class="text-white/40 text-xs">{{ macroDomainLabel(t.trajectory.macrodomain) }}</p>
+                </div>
+              </div>
+              <span class="text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ml-3"
+                [class]="statusBadge(t.status)">
+                {{ statusLabel(t.status) }}
+              </span>
+            </div>
+          }
+        </div>
+      </section>
+    }
+
     <!-- Banner sin datos reales -->
     @if (!data()!.hasRealData) {
       <div class="rounded-2xl border border-amber-500/30 bg-amber-500/08 p-4 flex gap-3">
@@ -343,12 +388,19 @@ import { environment } from '../../../environments/environment';
 })
 export class IcafDashboardPageComponent implements OnInit, OnDestroy {
 
-  private readonly icafService = inject(IcafDataService);
-  private readonly http        = inject(HttpClient);
-  private readonly destroy$    = new Subject<void>();
+  private readonly icafService       = inject(IcafDataService);
+  private readonly trajectoryService = inject(TrajectoryService);
+  private readonly http              = inject(HttpClient);
+  private readonly destroy$          = new Subject<void>();
 
-  readonly loading = signal(true);
-  readonly data    = signal<IcafDashboardResponse | null>(null);
+  readonly loading         = signal(true);
+  readonly data            = signal<IcafDashboardResponse | null>(null);
+  readonly trajectories    = signal<FamilyTrajectoryDto[]>([]);
+  readonly downloadingPdf  = signal(false);
+
+  readonly activeTrajectories = computed(() =>
+    this.trajectories().filter(t => t.status !== 'RESOLVED' && t.status !== 'CLOSED')
+  );
 
   private familyId = 0;
 
@@ -446,9 +498,72 @@ export class IcafDashboardPageComponent implements OnInit, OnDestroy {
 
   // ── Privados ──────────────────────────────────────────────────────────────
 
+  downloadTrajectoryPdf(): void {
+    if (!this.familyId || this.downloadingPdf()) return;
+    this.downloadingPdf.set(true);
+    this.http.get(
+      `${environment.apiBaseUrl}/v1/reports/export/pdf/family/${this.familyId}/trajectories`,
+      { responseType: 'blob' }
+    ).subscribe({
+      next: blob => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `IFE_Trayectorias_Familia_${this.familyId}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        this.downloadingPdf.set(false);
+      },
+      error: () => this.downloadingPdf.set(false)
+    });
+  }
+
+  severityIcon(sev: string): string {
+    if (sev === 'CRITICAL') return '🔴';
+    if (sev === 'HIGH')     return '🟠';
+    if (sev === 'MEDIUM')   return '🟡';
+    return '🟢';
+  }
+
+  statusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      DETECTED: 'Detectado', IN_PROGRESS: 'En progreso',
+      RESOLVED: 'Resuelto', RELAPSED: 'Recaída', CLOSED: 'Cerrado'
+    };
+    return labels[status] ?? status;
+  }
+
+  statusBadge(status: string): string {
+    if (status === 'RELAPSED')    return 'bg-orange-500/20 text-orange-300';
+    if (status === 'IN_PROGRESS') return 'bg-blue-500/20 text-blue-300';
+    if (status === 'DETECTED')    return 'bg-indigo-500/20 text-indigo-300';
+    return 'bg-white/10 text-white/50';
+  }
+
+  macroDomainLabel(domain: string): string {
+    const labels: Record<string, string> = {
+      RELACIONES_PAREJA: 'Relaciones de Pareja',
+      CRIANZA_ADOLESCENCIA: 'Crianza y Adolescencia',
+      SALUD_MENTAL: 'Salud Mental',
+      ADICCIONES: 'Adicciones',
+      EDUCACION_DESARROLLO: 'Educación',
+      ECONOMIA_FAMILIAR: 'Economía',
+      GOBERNANZA: 'Gobernanza',
+      ADULTO_MAYOR: 'Adulto Mayor',
+      LEGADO: 'Legado',
+    };
+    return labels[domain] ?? domain;
+  }
+
   private loadDashboard(): void {
-    this.icafService.getDashboard(this.familyId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(d => { this.data.set(d); this.loading.set(false); });
+    forkJoin({
+      dashboard: this.icafService.getDashboard(this.familyId),
+      trajectories: this.trajectoryService.getFamilyTrajectories(this.familyId)
+    }).pipe(takeUntil(this.destroy$))
+      .subscribe(({ dashboard, trajectories }) => {
+        this.data.set(dashboard);
+        this.trajectories.set(trajectories);
+        this.loading.set(false);
+      });
   }
 }

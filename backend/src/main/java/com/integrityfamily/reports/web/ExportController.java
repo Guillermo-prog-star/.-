@@ -55,6 +55,16 @@ public class ExportController {
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(data);
     }
+
+    @GetMapping("/export/pdf/family/{familyId}/trajectories")
+    public ResponseEntity<byte[]> exportTrajectoryPdf(@PathVariable Long familyId) {
+        byte[] data = pdfExportService.generateTrajectoryReportPdf(familyId);
+        String filename = "IFE_Trayectorias_Familia_" + familyId + "_" + System.currentTimeMillis() + ".pdf";
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(data);
+    }
 }
 
 

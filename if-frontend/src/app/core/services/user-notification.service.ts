@@ -48,11 +48,14 @@ export class UserNotificationService {
          : type === 'EVIDENCE_REJECTED'  ? '❌'
          : type === 'MILESTONE_UP'        ? '🎉'
          : type === 'PLAN_ASSIGNED'       ? '📋'
-         : type === 'CRISIS_ALERT'        ? '🚨'
-         : type === 'SPRINT_COMPLETED'    ? '🎖️'
-         : type === 'CAPSULA_CREATED'     ? '💾'
-         : type === 'MISSION_COMPLETED'   ? '🏆'
-         : type === 'DIMENSION_UNLOCKED'  ? '🔓'
+         : type === 'CRISIS_ALERT'          ? '🚨'
+         : type === 'SPRINT_COMPLETED'      ? '🎖️'
+         : type === 'CAPSULA_CREATED'       ? '💾'
+         : type === 'MISSION_COMPLETED'     ? '🏆'
+         : type === 'DIMENSION_UNLOCKED'    ? '🔓'
+         : type === 'TRAJECTORY_DETECTED'   ? '🗺️'
+         : type === 'TRAJECTORY_RELAPSED'   ? '⚠️'
+         : type === 'TRAJECTORY_RESOLVED'   ? '✅'
          : '🔔';
   }
 }

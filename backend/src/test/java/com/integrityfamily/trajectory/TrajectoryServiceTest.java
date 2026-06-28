@@ -6,6 +6,7 @@ import com.integrityfamily.domain.RiskMacrodomain;
 import com.integrityfamily.domain.RiskTrajectory;
 import com.integrityfamily.domain.TrajectoryImpactIndicator;
 import com.integrityfamily.domain.TrajectoryStatus;
+import com.integrityfamily.common.service.UserNotificationService;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.FamilyRiskTrajectoryRepository;
 import com.integrityfamily.domain.repository.RiskTrajectoryRepository;
@@ -47,6 +48,7 @@ class TrajectoryServiceTest {
     @Mock TrajectoryTimelineEventRepository timelineRepo;
     @Mock TrajectoryImpactIndicatorRepository indicatorRepo;
     @Mock FamilyRepository familyRepo;
+    @Mock UserNotificationService notificationService;
 
     @InjectMocks TrajectoryService service;
 

@@ -1,5 +1,6 @@
 package com.integrityfamily.trajectory.service;
 
+import com.integrityfamily.common.service.UserNotificationService;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import com.integrityfamily.trajectory.dto.TrajectoryDtos.*;
@@ -24,6 +25,7 @@ public class TrajectoryService {
     private final TrajectoryTimelineEventRepository timelineRepo;
     private final TrajectoryImpactIndicatorRepository indicatorRepo;
     private final FamilyRepository familyRepo;
+    private final UserNotificationService notificationService;
 
     // ─── Bank ─────────────────────────────────────────────────────────────────
 
@@ -64,7 +66,12 @@ public class TrajectoryService {
             .notes(notes)
             .assignedBy(assignedBy)
             .build();
-        return toFamilyDto(familyTrajectoryRepo.save(frt));
+        FamilyTrajectoryDto dto = toFamilyDto(familyTrajectoryRepo.save(frt));
+        notificationService.push(family, null, "TRAJECTORY_DETECTED",
+            "Trayectoria de riesgo detectada",
+            "Se ha registrado una nueva trayectoria: " + traj.getName()
+            + ". Severidad: " + traj.getSeverityDefault() + ".");
+        return dto;
     }
 
     @Transactional
@@ -78,6 +85,17 @@ public class TrajectoryService {
         }
         familyTrajectoryRepo.save(frt);
         log.info("Trayectoria {} → estado actualizado a {}", familyTrajectoryId, newStatus);
+
+        String trajName = frt.getTrajectory().getName();
+        if (newStatus == TrajectoryStatus.RELAPSED) {
+            notificationService.push(frt.getFamily(), null, "TRAJECTORY_RELAPSED",
+                "⚠️ Recaída en trayectoria de riesgo",
+                "La trayectoria \"" + trajName + "\" ha registrado una recaída. Revisión urgente recomendada.");
+        } else if (newStatus == TrajectoryStatus.RESOLVED) {
+            notificationService.push(frt.getFamily(), null, "TRAJECTORY_RESOLVED",
+                "Trayectoria resuelta",
+                "La trayectoria \"" + trajName + "\" ha sido marcada como resuelta. ¡Buen trabajo!");
+        }
     }
 
     // ─── Timeline ─────────────────────────────────────────────────────────────

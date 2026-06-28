@@ -21,6 +21,12 @@ public class AdaptiveController {
 
     private final AdaptivePlanService adaptivePlanService;
 
+    @GetMapping("/families/{familyId}/adaptive/adjustments")
+    @Operation(summary = "Listar ajustes adaptativos de la familia", description = "Devuelve todos los ajustes adaptativos ordenados por fecha descendente.")
+    public ApiResponse<List<AdaptiveAdjustmentEntity>> listAdjustments(@PathVariable Long familyId) {
+        return ApiResponse.ok(adaptivePlanService.listForFamily(familyId));
+    }
+
     @PostMapping("/families/{familyId}/adaptive/evaluate")
     @Operation(summary = "Evaluar métricas y proponer ajustes", description = "Construye el contexto real de la familia y devuelve las propuestas guardadas en adaptive_adjustments con estado PROPOSED.")
     public ApiResponse<List<AdaptiveAdjustmentEntity>> evaluateAdaptive(@PathVariable Long familyId) {
@@ -40,6 +46,13 @@ public class AdaptiveController {
     public ApiResponse<AdaptiveAdjustmentEntity> applyAdjustment(
             @PathVariable UUID adjustmentId) {
         return ApiResponse.ok(adaptivePlanService.applyAdjustment(adjustmentId));
+    }
+
+    @PostMapping("/adaptive-adjustments/{adjustmentId}/reject")
+    @Operation(summary = "Rechazar ajuste propuesto", description = "Marca el ajuste como REJECTED sin aplicar cambios al plan.")
+    public ApiResponse<AdaptiveAdjustmentEntity> rejectAdjustment(
+            @PathVariable UUID adjustmentId) {
+        return ApiResponse.ok(adaptivePlanService.rejectAdjustment(adjustmentId));
     }
 
     // Endpoints de compatibilidad para pruebas de QA de contrato en memoria

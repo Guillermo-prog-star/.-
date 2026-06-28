@@ -136,6 +136,9 @@ import { filter } from 'rxjs/operators';
           <a routerLink="/transformation/error-protocol" class="nav-item" routerLinkActive="active">
             <span class="nav-icon">🔄</span><span class="nav-text">Gestión de Errores</span>
           </a>
+          <a routerLink="/transformation/adaptive" class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">🧠</span><span class="nav-text">Motor Adaptativo</span>
+          </a>
         </div>
 
         <div class="divider"></div>

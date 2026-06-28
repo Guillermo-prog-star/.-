@@ -162,6 +162,12 @@ export const routes: Routes = [
             loadComponent: () => import('./features/transformation/error-protocol.component')
               .then(m => m.ErrorProtocolComponent)
           },
+          {
+            path: 'adaptive',
+            title: 'Integración Adaptativa',
+            loadComponent: () => import('./features/transformation/adaptive-plan.component')
+              .then(m => m.AdaptivePlanComponent)
+          },
         ]
       },
 

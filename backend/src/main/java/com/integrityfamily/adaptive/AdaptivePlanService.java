@@ -156,6 +156,11 @@ public class AdaptivePlanService {
         return entities;
     }
 
+    @Transactional(readOnly = true)
+    public List<AdaptiveAdjustmentEntity> listForFamily(Long familyId) {
+        return adaptiveAdjustmentRepository.findByFamilyIdOrderByCreatedAtDesc(familyId);
+    }
+
     /**
      * Integración Real: Aprueba un ajuste persistido.
      */
@@ -276,6 +281,17 @@ public class AdaptivePlanService {
         journalEntryRepository.save(bitacoraEntry);
         log.info("✅ Mutación aplicada y entrada automática en bitácora registrada.");
 
+        return adaptiveAdjustmentRepository.save(entity);
+    }
+
+    @Transactional
+    public AdaptiveAdjustmentEntity rejectAdjustment(UUID adjustmentId) {
+        AdaptiveAdjustmentEntity entity = adaptiveAdjustmentRepository.findById(adjustmentId)
+                .orElseThrow(() -> new BusinessException("Ajuste no encontrado: " + adjustmentId, "ADJUSTMENT_NOT_FOUND", HttpStatus.NOT_FOUND));
+        if (entity.getStatus() != AdjustmentStatus.PROPOSED) {
+            throw new BusinessException("Solo los ajustes PROPOSED pueden rechazarse. Estado actual: " + entity.getStatus(), "ADJUSTMENT_INVALID_STATE", HttpStatus.CONFLICT);
+        }
+        entity.setStatus(AdjustmentStatus.REJECTED);
         return adaptiveAdjustmentRepository.save(entity);
     }
 

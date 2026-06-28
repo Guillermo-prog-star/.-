@@ -44,7 +44,9 @@ public record AiContext(
     // ── Motor de Contexto: estado familiar unificado ──────────────────────────
     String familyContext,     // estado en tiempo real: conexión, estrés, mood, racha; null si sin datos
     // ── Gemelo Digital: firma conductual y predicciones ───────────────────────
-    String digitalTwin        // firma conductual + predicciones activas; null si sin datos
+    String digitalTwin,       // firma conductual + predicciones activas; null si sin datos
+    // ── Banco de Trayectorias: trayectorias de riesgo activas ─────────────────
+    String trajectoryContext  // trayectorias de riesgo activas de la familia; null si ninguna
 ) {
     /** Sprint activo: objetivo, dimensión de riesgo, misiones en curso y avance. */
     public record ActiveSprintSnapshot(

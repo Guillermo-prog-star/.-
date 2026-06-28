@@ -34,6 +34,7 @@ import com.integrityfamily.tree.service.FamilyTreeService;
 import com.integrityfamily.context.service.FamilyContextEngine;
 import com.integrityfamily.twin.service.DigitalTwinService;
 import com.integrityfamily.participation.service.ParticipationService;
+import com.integrityfamily.trajectory.service.TrajectoryService;
 import com.integrityfamily.scanner.domain.FamilyAlert;
 import com.integrityfamily.scanner.repository.FamilyAlertRepository;
 import lombok.RequiredArgsConstructor;
@@ -74,6 +75,7 @@ public class ContextSynthesizer {
     private final FamilyTreeService familyTreeService;
     private final FamilyContextEngine familyContextEngine;
     private final DigitalTwinService  digitalTwinService;
+    private final TrajectoryService   trajectoryService;
     private final ObjectMapper objectMapper;
 
     private static final int MISSION_LIMIT = 5;
@@ -139,7 +141,8 @@ public class ContextSynthesizer {
             ritualEngineService.buildRitualContextBlock(family.getId()), // ← Rituales activos
             familyTreeService.buildTreeContextBlock(family.getId()),     // ← Árbol Generacional
             familyContextEngine.buildContextBlock(family.getId()),       // ← Motor de Contexto
-            digitalTwinService.buildTwinContextBlock(family.getId())    // ← Gemelo Digital
+            digitalTwinService.buildTwinContextBlock(family.getId()),   // ← Gemelo Digital
+            trajectoryService.buildTrajectoryContextBlock(family.getId()) // ← Trayectorias de riesgo
         );
     }
 

@@ -45,7 +45,7 @@ public class AiServiceConversationalTest {
             activeMissions, messageHistory, flag, str1, activeMemberProfile,
             guardianProfile, cognitiveSnapshot, activePlanSnapshot, str2, str3,
             str4, memberIdentitySnapshot, str5, str6, longitudinalContext,
-            activeSprintSnapshot, extraStr1, extraStr2, extraStr3, extraStr4, extraStr5
+            activeSprintSnapshot, extraStr1, extraStr2, extraStr3, extraStr4, extraStr5, null
         );
     }
 

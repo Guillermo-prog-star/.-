@@ -88,6 +88,19 @@ import { filter } from 'rxjs/operators';
 
         <div class="divider"></div>
 
+        <!-- ── BLOQUE 2b: ÍNDICES — Capital y Fortalecimiento ────── -->
+        <div class="nav-section nav-section--indices">
+          <div class="section-label">ÍNDICES</div>
+          <a routerLink="/capital" class="nav-item nav-capital" routerLinkActive="active">
+            <span class="nav-icon">💎</span><span class="nav-text">Capital Familiar — ICaF</span>
+          </a>
+          <a routerLink="/smff" class="nav-item nav-smff" routerLinkActive="active">
+            <span class="nav-icon">📐</span><span class="nav-text">Fortalecimiento — SMFF</span>
+          </a>
+        </div>
+
+        <div class="divider"></div>
+
         <!-- ── BLOQUE 3: PLAN & RUTA — Verde (crecimiento) ─────── -->
         <div class="nav-section nav-section--evolution">
           <div class="section-label">PLAN &amp; RUTA</div>
@@ -140,6 +153,9 @@ import { filter } from 'rxjs/operators';
           </a>
           <a routerLink="/documentation" class="nav-item nav-intel" routerLinkActive="active">
             <span class="nav-icon">📚</span><span class="nav-text">Documentación</span>
+          </a>
+          <a routerLink="/trajectory" class="nav-item nav-traj" routerLinkActive="active">
+            <span class="nav-icon">🗺️</span><span class="nav-text">Trayectorias de Riesgo</span>
           </a>
         </div>
 
@@ -303,6 +319,15 @@ import { filter } from 'rxjs/operators';
     .nav-section--diagnosis .group-active .group-header { color: var(--if-diagnosis-bright) !important; }
     .nav-section--diagnosis .nav-sub.active { background: rgba(6,182,212,0.08) !important; color: var(--if-diagnosis-bright) !important; border-color: rgba(6,182,212,0.2) !important; }
 
+    /* ── ÍNDICES — Azul-violeta: ICaF + SMFF ────────────────────── */
+    .nav-section--indices .section-label { color: #a78bfa; }
+    .nav-capital { color: rgba(167,139,250,0.75) !important; }
+    .nav-capital:hover { color: #c4b5fd !important; background: rgba(139,92,246,0.1) !important; }
+    .nav-capital.active { background: rgba(139,92,246,0.15) !important; color: #ddd6fe !important; border-color: rgba(139,92,246,0.3) !important; }
+    .nav-smff { color: rgba(107,140,255,0.8) !important; }
+    .nav-smff:hover { color: #93c5fd !important; background: rgba(99,102,241,0.1) !important; }
+    .nav-smff.active { background: rgba(99,102,241,0.15) !important; color: #bfdbfe !important; border-color: rgba(99,102,241,0.3) !important; }
+
     /* ── EVOLUCIÓN — Verde: Plan, Ruta, Crecimiento ──────────────── */
     .nav-section--evolution .section-label { color: var(--if-evolution-bright); }
     .nav-section--evolution .nav-item.active { background: rgba(34,197,94,0.12) !important; color: var(--if-evolution-bright) !important; border-color: rgba(34,197,94,0.25) !important; }
@@ -361,6 +386,9 @@ import { filter } from 'rxjs/operators';
     .nav-intel { color: rgba(139,92,246,0.75) !important; }
     .nav-intel:hover { color: var(--if-intel-bright) !important; background: var(--if-intel-faint) !important; }
     .nav-intel.active { background: var(--if-intel-soft) !important; color: var(--if-intel-bright) !important; border-color: var(--if-intel-border) !important; }
+    .nav-traj { color: rgba(251,146,60,0.75) !important; }
+    .nav-traj:hover { color: #fb923c !important; background: rgba(251,146,60,0.08) !important; }
+    .nav-traj.active { background: rgba(251,146,60,0.12) !important; color: #fdba74 !important; border-color: rgba(251,146,60,0.25) !important; }
 
     /* ── LEGADO — Dorado: Gratitud, Constitución, Historia ──────── */
     .nav-section--legacy .section-label { color: var(--if-legacy); }

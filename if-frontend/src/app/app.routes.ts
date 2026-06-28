@@ -6,6 +6,23 @@ import { adminGuard } from './core/guards/admin.guard';
  * SDD: Mapa de Rutas del Nodo Central.
  */
 export const routes: Routes = [
+  // PÁGINAS LEGALES — acceso público sin autenticación
+  {
+    path: 'legal',
+    children: [
+      {
+        path: 'privacy',
+        title: 'Política de Privacidad — Integrity Family',
+        loadComponent: () => import('./features/legal/privacy-policy.component').then(m => m.PrivacyPolicyComponent)
+      },
+      {
+        path: 'terms',
+        title: 'Términos de Uso — Integrity Family',
+        loadComponent: () => import('./features/legal/terms-of-use.component').then(m => m.TermsOfUseComponent)
+      }
+    ]
+  },
+
   // ZONA PÚBLICA
   {
     path: 'auth',
@@ -164,12 +181,49 @@ export const routes: Routes = [
           .then(m => m.LegadoComponent)
       },
 
+      // ── Banco de Trayectorias de Riesgo ──────────────────────────────
+      {
+        path: 'trajectory',
+        title: 'Trayectorias de Riesgo',
+        loadComponent: () => import('./features/trajectory/trajectory-page.component')
+          .then(m => m.TrajectoryPageComponent)
+      },
+
       // ── Centro de Documentación ──────────────────────────────────────
       {
         path: 'documentation',
         title: 'Centro de Documentación',
         loadComponent: () => import('./features/documentation/documentation-page.component')
           .then(m => m.DocumentationPageComponent)
+      },
+
+      // ── Capital Familiar (ICaF) ───────────────────────────────────────────
+      {
+        path: 'capital',
+        title: 'Capital Familiar — ICaF',
+        loadComponent: () => import('./features/capital/icaf-dashboard-page.component')
+          .then(m => m.IcafDashboardPageComponent)
+      },
+      {
+        path: 'capital/questionnaire',
+        title: 'Cuestionario ICaF',
+        loadComponent: () => import('./features/capital/icaf-questionnaire.component')
+          .then(m => m.IcafQuestionnaireComponent)
+      },
+
+      {
+        path: 'capital/observatory',
+        title: 'Observatorio Familiar — ICaF',
+        loadComponent: () => import('./features/capital/observatory-page.component')
+          .then(m => m.ObservatoryPageComponent)
+      },
+
+      // ── SMFF — 20 Indicadores de Fortalecimiento ─────────────────────────
+      {
+        path: 'smff',
+        title: 'Fortalecimiento Familiar — SMFF',
+        loadComponent: () => import('./features/capital/smff-panel.component')
+          .then(m => m.SmffPanelComponent)
       },
 
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }

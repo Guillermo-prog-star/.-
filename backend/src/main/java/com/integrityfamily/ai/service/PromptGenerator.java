@@ -111,6 +111,7 @@ public class PromptGenerator {
                 + buildGenerationalTreeBlock(ctx)
                 + buildFamilyContextBlock(ctx)
                 + buildDigitalTwinBlock(ctx)
+                + buildTrajectoryContextBlock(ctx)
                 + buildCognitiveBlock(ctx)
                 + buildMemoryContextBlock(ctx)
                 + buildRelationalGraphBlock(ctx)
@@ -169,6 +170,7 @@ public class PromptGenerator {
                 + buildGenerationalTreeBlock(ctx)
                 + buildFamilyContextBlock(ctx)
                 + buildDigitalTwinBlock(ctx)
+                + buildTrajectoryContextBlock(ctx)
                 + buildCognitiveBlock(ctx)
                 + buildMemoryContextBlock(ctx)
                 + buildRelationalGraphBlock(ctx)
@@ -219,6 +221,7 @@ public class PromptGenerator {
                 + buildGenerationalTreeBlock(ctx)
                 + buildFamilyContextBlock(ctx)
                 + buildDigitalTwinBlock(ctx)
+                + buildTrajectoryContextBlock(ctx)
                 + buildCognitiveBlock(ctx)
                 + buildMemoryContextBlock(ctx)
                 + buildRelationalGraphBlock(ctx)
@@ -484,6 +487,16 @@ public class PromptGenerator {
     private String buildActiveRitualsBlock(AiContext ctx) {
         if (ctx.activeRituals() == null) return "";
         return String.format("<active_rituals>\n%s\nSi es relevante, guía a la familia a vivir estos rituales.\n</active_rituals>\n", ctx.activeRituals());
+    }
+
+    private String buildTrajectoryContextBlock(AiContext ctx) {
+        if (ctx.trajectoryContext() == null || ctx.trajectoryContext().isBlank()) return "";
+        return String.format(
+            "<trajectory_context>\n%s\n" +
+            "Considera estas trayectorias de riesgo activas al formular tu respuesta. " +
+            "Prioriza las de severidad CRITICAL y HIGH. No menciones los códigos técnicos; " +
+            "habla de las situaciones con lenguaje humano y cálido.\n</trajectory_context>\n",
+            ctx.trajectoryContext());
     }
 
     private String buildCognitiveBlock(AiContext ctx) {

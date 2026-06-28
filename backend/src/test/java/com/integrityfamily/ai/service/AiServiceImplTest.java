@@ -68,7 +68,7 @@ class AiServiceImplTest {
         return new AiContext(
                 null, null, null, null, null, null, null, false, null,
                 null, null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null);
     }
 
     /** Stubs lenient mínimos para que processInteractiveChat no falle (memberId=null). */

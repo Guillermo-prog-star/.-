@@ -128,6 +128,36 @@
             <div class="progress-track"><div class="progress-fill primary-bar" [style.width]="m.responsibilityLevel+'%'"></div></div>
           </div>
         </div>
+
+        <!-- WhatsApp / Teléfono -->
+        <div class="member-phone-section">
+          @if (editingPhoneId === m.id) {
+            <div class="phone-edit-row">
+              <span class="phone-prefix">+57</span>
+              <input class="phone-inp" type="tel" maxlength="10" placeholder="300 123 4567"
+                     [value]="phoneInput" (input)="onPhoneInput($any($event.target).value)"
+                     (keydown.enter)="savePhone(m)" autofocus />
+              <button class="phone-btn-save" (click)="savePhone(m)" [disabled]="phoneSaving">
+                {{ phoneSaving ? '…' : '✓' }}
+              </button>
+              <button class="phone-btn-cancel" (click)="cancelEditPhone()">✕</button>
+            </div>
+            @if (phoneError) { <p class="phone-error">{{ phoneError }}</p> }
+          } @else {
+            <div class="phone-display-row">
+              <span class="phone-icon">📱</span>
+              @if (m.phone) {
+                <span class="phone-number">+57 {{ m.phone }}</span>
+                <span class="phone-wa-badge">WhatsApp</span>
+              } @else {
+                <span class="phone-empty">Sin número WhatsApp</span>
+              }
+              <button class="phone-btn-edit" (click)="startEditPhone(m)" title="Editar número">
+                {{ m.phone ? '✏️' : '+ Agregar' }}
+              </button>
+            </div>
+          }
+        </div>
       </div>
     }
   </div>

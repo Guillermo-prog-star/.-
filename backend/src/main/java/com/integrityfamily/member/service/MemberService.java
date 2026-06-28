@@ -98,6 +98,9 @@ public class MemberService {
         existing.setFullName(request.getFullName());
         existing.setRole(request.getRole());
         existing.setActive(request.isActive());
+        if (request.getPhone() != null) {
+            existing.setPhone(request.getPhone().isBlank() ? null : request.getPhone().trim());
+        }
         return memberRepository.save(existing);
     }
 

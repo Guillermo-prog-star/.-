@@ -30,6 +30,12 @@ export class MemberListPageComponent implements OnInit {
   inviteMessage = ''; inviteSuccess = false;
   pendingDeleteId: number | null = null;
 
+  // Phone editing state
+  editingPhoneId: number | null = null;
+  phoneInput = '';
+  phoneSaving = false;
+  phoneError = '';
+
   get familyId(): number | null {
     const id = this.familyState.currentFamilyId();
     return id > 0 ? id : null;
@@ -139,6 +145,44 @@ export class MemberListPageComponent implements OnInit {
 
   cancelRemove(): void {
     this.pendingDeleteId = null;
+  }
+
+  startEditPhone(m: Member): void {
+    this.editingPhoneId = m.id;
+    this.phoneInput = m.phone ?? '';
+    this.phoneError = '';
+  }
+
+  onPhoneInput(value: string): void {
+    this.phoneInput = value.replace(/\D/g, '');
+  }
+
+  cancelEditPhone(): void {
+    this.editingPhoneId = null;
+    this.phoneInput = '';
+    this.phoneError = '';
+  }
+
+  savePhone(m: Member): void {
+    const digits = this.phoneInput.replace(/\D/g, '');
+    if (digits.length > 0 && digits.length < 10) {
+      this.phoneError = 'Ingresa un número de 10 dígitos.';
+      return;
+    }
+    this.phoneSaving = true;
+    this.phoneError = '';
+    const payload = { ...m, phone: digits || null };
+    this.http.put<any>(`${this.api.base}/members/${m.id}`, payload).subscribe({
+      next: () => {
+        m.phone = digits || null;
+        this.phoneSaving = false;
+        this.editingPhoneId = null;
+      },
+      error: () => {
+        this.phoneSaving = false;
+        this.phoneError = 'No se pudo guardar. Intenta de nuevo.';
+      }
+    });
   }
 
   goToGuardian() {

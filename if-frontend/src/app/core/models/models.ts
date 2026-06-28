@@ -103,7 +103,7 @@ export interface FamilyCreateRequest { name: string; description: string; munici
 export interface Member {
   id: number; familyId: number; familyName: string; fullName: string;
   roleType: string; age: number; autonomyLevel: number;
-  responsibilityLevel: number; active: boolean;
+  responsibilityLevel: number; active: boolean; phone?: string | null;
 }
 export interface MemberRequest {
   familyId: number; fullName: string; roleType: string; age: number;

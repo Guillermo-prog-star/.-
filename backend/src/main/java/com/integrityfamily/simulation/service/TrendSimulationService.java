@@ -21,11 +21,11 @@ public class TrendSimulationService {
 
     /**
      * Provoca un fallo masivo de hitos (Estancamiento Colectivo).
-     * Simula que el 70% de las familias han fallado en su evaluaciÃƒÂ³n de progreso.
+     * Simula que el 70% de las familias han fallado en su evaluación de progreso.
      */
     @Transactional
     public String triggerMassiveMilestoneFailure() {
-        log.warn("Ã°Å¸Å¡Â¨ [SIMULATION-TREND] Iniciando Fallo Masivo de Hitos...");
+        log.warn("🚨 [SIMULATION-TREND] Iniciando Fallo Masivo de Hitos...");
 
         List<Family> families = familyRepository.findAll();
         int affectedCount = 0;
@@ -34,25 +34,25 @@ public class TrendSimulationService {
             // Afectamos al grueso de la muestra (70%)
             if (i % 3 != 0) {
                 Family f = families.get(i);
-                // Simulamos estancamiento en el Hito Inicial o caÃƒÂ­da de ICF
+                // Simulamos estancamiento en el Hito Inicial o caída de ICF
                 f.setCurrentMilestone("MES_00_STALLED"); 
                 familyRepository.save(f);
                 affectedCount++;
             }
         }
 
-        // Generar Alerta de TENDENCIA CRÃƒÂTICA
+        // Generar Alerta de TENDENCIA CRÍTICA
         AdminAlert trendAlert = AdminAlert.builder()
-                .title("ANOMALÃƒÂA SISTÃƒâ€°MICA: Estancamiento Masivo")
+                .title("ANOMALÍA SISTÉMICA: Estancamiento Masivo")
                 .message("Se ha detectado que " + affectedCount + " de " + families.size() + 
-                         " nÃƒÂºcleos familiares han fallado en la transiciÃƒÂ³n al siguiente hito pedagÃƒÂ³gico. Posible resistencia en el diseÃƒÂ±o de misiones.")
+                         " núcleos familiares han fallado en la transición al siguiente hito pedagógico. Posible resistencia en el diseño de misiones.")
                 .severity("CRITICAL")
                 .viewed(false)
                 .build();
         
         alertRepository.save(trendAlert);
 
-        log.error("Ã°Å¸Å¡Â© [WATCHDOG] Tendencia CrÃƒÂ­tica inyectada: {} familias estancadas.", affectedCount);
+        log.error("🚩 [WATCHDOG] Tendencia Crítica inyectada: {} familias estancadas.", affectedCount);
         return "Fallo masivo activado en " + affectedCount + " familias. Verifica el impacto en el Global Stats.";
     }
 }

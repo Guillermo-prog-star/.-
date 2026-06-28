@@ -23,18 +23,18 @@ public class BackupService {
     private final JdbcTemplate jdbcTemplate;
 
     /**
-     * SDD: PROTOCOLO SENTINEL AUTOMÃƒÂTICO
-     * Se ejecuta cada dÃƒÂ­a a las 2:00 AM para asegurar la integridad de la Fase Alfa.
+     * SDD: PROTOCOLO SENTINEL AUTOMÁTICO
+     * Se ejecuta cada día a las 2:00 AM para asegurar la integridad de la Fase Alfa.
      */
     @org.springframework.scheduling.annotation.Scheduled(cron = "0 0 2 * * *")
     public void runAutomaticBackup() {
-        log.info("Ã°Å¸â€¢â€™ [SENTINEL-AUTO] Iniciando ciclo de respaldo programado...");
+        log.info("🕒 [SENTINEL-AUTO] Iniciando ciclo de respaldo programado...");
         try {
             String path = performSecurityBackup();
-            log.info("Ã¢Å“â€¦ [SENTINEL-AUTO] Respaldo diario completado en: {}", path);
+            log.info("✅ [SENTINEL-AUTO] Respaldo diario completado en: {}", path);
             rotateBackups();
         } catch (Exception e) {
-            log.error("Ã¢ÂÅ’ [SENTINEL-AUTO] Falla crÃƒÂ­tica en el auto-respaldo: {}", e.getMessage());
+            log.error("❌ [SENTINEL-AUTO] Falla crítica en el auto-respaldo: {}", e.getMessage());
         }
     }
 
@@ -45,9 +45,9 @@ public class BackupService {
         Path path = Paths.get(backupDir);
         Files.createDirectories(path);
 
-        log.info("Ã°Å¸â€ºÂ¡Ã¯Â¸Â [BACKUP] Resguardando integridad del Nodo en: {}", backupDir);
+        log.info("🛡️ [BACKUP] Resguardando integridad del Nodo en: {}", backupDir);
 
-        // 1. Exportar Tablas CrÃƒÂ­ticas (Estado del Sistema)
+        // 1. Exportar Tablas Críticas (Estado del Sistema)
         String[] tables = {
             "users", "families", "family_members", "evaluations", 
             "evaluation_dimension_scores", "risk_snapshots", 
@@ -58,7 +58,7 @@ public class BackupService {
             try {
                 exportTable(backupDir + "/" + table + ".sql", table);
             } catch (Exception e) {
-                log.warn("Ã¢Å¡Â Ã¯Â¸Â [BACKUP-WARN] No se pudo respaldar la tabla {}: {}", table, e.getMessage());
+                log.warn("⚠️ [BACKUP-WARN] No se pudo respaldar la tabla {}: {}", table, e.getMessage());
             }
         }
 
@@ -66,7 +66,7 @@ public class BackupService {
         String manifest = "INTEGRITY FAMILY BACKUP MANIFEST\n" +
                 "==================================\n" +
                 "Timestamp: " + LocalDateTime.now() + "\n" +
-                "Fase: ProducciÃƒÂ³n Alfa (Sentinel Active)\n" +
+                "Fase: Producción Alfa (Sentinel Active)\n" +
                 "Tablas Procesadas: " + tables.length + "\n" +
                 "Arquitecto Responsable: William\n";
         
@@ -75,7 +75,7 @@ public class BackupService {
     }
 
     /**
-     * Mantenimiento de Disco: Mantiene solo los ÃƒÂºltimos 7 respaldos.
+     * Mantenimiento de Disco: Mantiene solo los últimos 7 respaldos.
      */
     private void rotateBackups() {
         try {
@@ -89,12 +89,12 @@ public class BackupService {
 
             if (dirs.size() > 7) {
                 for (int i = 7; i < dirs.size(); i++) {
-                    log.info("Ã°Å¸Â§Â¹ [BACKUP-ROTATE] Depurando respaldo antiguo: {}", dirs.get(i).getFileName());
+                    log.info("🧹 [BACKUP-ROTATE] Depurando respaldo antiguo: {}", dirs.get(i).getFileName());
                     deleteDirectory(dirs.get(i));
                 }
             }
         } catch (IOException e) {
-            log.error("Ã¢Å¡Â Ã¯Â¸Â [BACKUP-ROTATE] Error al rotar respaldos: {}", e.getMessage());
+            log.error("⚠️ [BACKUP-ROTATE] Error al rotar respaldos: {}", e.getMessage());
         }
     }
 

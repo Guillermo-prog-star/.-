@@ -21,4 +21,10 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
     List<Question> findByPillarNameAndActiveTrue(String pillarName);
     List<Question> findByMilestoneCodeInAndActiveTrue(java.util.Collection<String> milestoneCodes);
     List<Question> findByMilestoneCodeInAndTypeAndActiveTrue(java.util.Collection<String> milestoneCodes, String type);
+
+    // ── Cuestionarios ICaF ────────────────────────────────────────────────────
+    List<Question> findByQuestionTypeAndIcafDomainAndActiveTrueOrderBySortOrder(
+            String questionType, String icafDomain);
+
+    List<Question> findByQuestionTypeAndActiveTrue(String questionType);
 }

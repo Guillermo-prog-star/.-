@@ -32,13 +32,13 @@ public class SentimentAnalyticsService {
     }
 
     public SentimentReport analyzeGlobalFeedback() {
-        log.info("Ã°Å¸Â§Â  [SENTIMENT-ANALYSIS] Iniciando procesamiento de feedback fase Proyectiva...");
+        log.info("🧠 [SENTIMENT-ANALYSIS] Iniciando procesamiento de feedback fase Proyectiva...");
 
         List<Feedback> allFeedback = feedbackRepository.findAll();
         if (allFeedback.isEmpty()) {
             return SentimentReport.builder()
                     .totalComments(0)
-                    .aiExecutiveSummary("AÃƒÂºn no hay feedback suficiente para el anÃƒÂ¡lisis.")
+                    .aiExecutiveSummary("Aún no hay feedback suficiente para el análisis.")
                     .build();
         }
 
@@ -53,31 +53,31 @@ public class SentimentAnalyticsService {
         String prompt = String.format(
                 """
                 <identity>
-                ACTÃƒÅ¡A COMO AUDITOR DE INTEGRIDAD Y ESTRATEGA PEDAGÃƒâ€œGICO.
+                ACTÚA COMO AUDITOR DE INTEGRIDAD Y ESTRATEGA PEDAGÓGICO.
                 </identity>
                 <data_input>
                 %s
                 </data_input>
                 <task_instruction>
-                1. Genera un reporte crÃƒÂ­tico de anÃƒÂ¡lisis de tensiÃƒÂ³n.
-                2. EvalÃƒÂºa de 1.0 a 10.0 la salud de: ComunicaciÃƒÂ³n, Afecto, RegulaciÃƒÂ³n y Estabilidad.
+                1. Genera un reporte crítico de análisis de tensión.
+                2. Evalúa de 1.0 a 10.0 la salud de: Comunicación, Afecto, Regulación y Estabilidad.
                 </task_instruction>
                 <output_constraints>
                 - Formato Markdown.
                 - AL FINAL, incluye este bloque JSON:
                 {
                   "scores": {
-                    "ComunicaciÃƒÂ³n": 0.0, "Afecto": 0.0, "RegulaciÃƒÂ³n": 0.0, "Estabilidad": 0.0
+                    "Comunicación": 0.0, "Afecto": 0.0, "Regulación": 0.0, "Estabilidad": 0.0
                   }
                 }
                 </output_constraints>
                 """,
                 feedbackBlob);
 
-        // 3. InvocaciÃƒÂ³n Sincronizada (Usando el nombre de mÃƒÂ©todo sanado para evitar ambigÃƒÂ¼edad)
+        // 3. Invocación Sincronizada (Usando el nombre de método sanado para evitar ambigüedad)
         String fullAiResponse = aiService.processAnalyticInference(prompt, null);
 
-        // 4. ExtracciÃƒÂ³n de Datos
+        // 4. Extracción de Datos
         String cleanReport = fullAiResponse.split("\\{")[0].trim();
         Map<String, Double> dimensions = extractDimensions(fullAiResponse);
 
@@ -91,7 +91,7 @@ public class SentimentAnalyticsService {
 
     private Map<String, Double> extractDimensions(String response) {
         Map<String, Double> scores = new HashMap<>();
-        String[] keys = { "ComunicaciÃƒÂ³n", "Afecto", "RegulaciÃƒÂ³n", "Estabilidad" };
+        String[] keys = { "Comunicación", "Afecto", "Regulación", "Estabilidad" };
         try {
             for (String key : keys) {
                 if (response.contains(key)) {
@@ -104,7 +104,7 @@ public class SentimentAnalyticsService {
                 }
             }
         } catch (Exception e) {
-            log.error("Ã¢Å¡Â Ã¯Â¸Â [SENTIMENT] Error al extraer dimensiones: {}", e.getMessage());
+            log.error("⚠️ [SENTIMENT] Error al extraer dimensiones: {}", e.getMessage());
             for (String key : keys) scores.putIfAbsent(key, 5.0);
         }
         return scores;

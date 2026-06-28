@@ -20,11 +20,11 @@ public class WatchdogIntegrityService {
 
     /**
      * Prueba de fuego del Modo de Vigilancia.
-     * Simula una crisis en el primer Nodo Alfa y verifica la generaciÃƒÂ³n de alertas.
+     * Simula una crisis en el primer Nodo Alfa y verifica la generación de alertas.
      */
     @Transactional
     public String testWatchdogActivation() {
-        log.info("Ã°Å¸â€ºÂ¡Ã¯Â¸Â [WATCHDOG-TEST] Iniciando prueba de integridad de vigilancia...");
+        log.info("🛡️ [WATCHDOG-TEST] Iniciando prueba de integridad de vigilancia...");
 
         // 1. Encontrar un objetivo Alfa (IF-CO Pattern)
         Family target = familyRepository.findAll().stream()
@@ -35,7 +35,7 @@ public class WatchdogIntegrityService {
         // 2. Forzar Crisis Sentinel
         target.setSentinelActive(true);
         familyRepository.save(target);
-        log.info("Ã°Å¸Å¡Â¨ [WATCHDOG-TEST] Crisis simulada en: {}", target.getFamilyCode());
+        log.info("🚨 [WATCHDOG-TEST] Crisis simulada en: {}", target.getFamilyCode());
 
         // 3. Ejecutar escaneo manualmente para la prueba
         watchdogService.scanForAnomalies();
@@ -45,10 +45,10 @@ public class WatchdogIntegrityService {
                 .anyMatch(a -> a.getTitle().contains(target.getFamilyCode()));
 
         if (alertCreated) {
-            log.info("Ã¢Å“â€¦ [WATCHDOG-TEST] Alerta detectada y registrada exitosamente.");
+            log.info("✅ [WATCHDOG-TEST] Alerta detectada y registrada exitosamente.");
             return "Vigilancia Activa: Alerta de crisis generada para " + target.getFamilyCode();
         } else {
-            return "Error: El watchdog no generÃƒÂ³ la alerta esperada.";
+            return "Error: El watchdog no generó la alerta esperada.";
         }
     }
 }

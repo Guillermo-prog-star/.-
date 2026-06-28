@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * SDD-AI-BRIDGE: Claude Specialized Family Service.
- * ActÃƒÂºa como el cÃƒÂ³rtex especÃƒÂ­fico para la interacciÃƒÂ³n por voz de la familia.
+ * Actúa como el córtex específico para la interacción por voz de la familia.
  */
 @Service
 @Slf4j
@@ -20,19 +20,19 @@ public class ClaudeAiService {
     private final ContextSynthesizer contextSynthesizer;
 
     /**
-     * Procesa una transcripciÃƒÂ³n de voz y genera una respuesta empÃƒÂ¡tica 
+     * Procesa una transcripción de voz y genera una respuesta empática 
      * basada en el contexto actual de la familia.
      */
     public String generateFamilyResponse(String transcription, Family family) {
-        log.info("Ã°Å¸Â§Â  [CLAUDE-SERVICE] Generando respuesta sistÃƒÂ©mica para familia: {}", family.getName());
+        log.info("🧠 [CLAUDE-SERVICE] Generando respuesta sistémica para familia: {}", family.getName());
 
         // 1. Sintetizar el contexto familiar (ICF, miembros, historia reciente)
         AiContext context = contextSynthesizer.synthesize(family, "NEUTRAL");
 
-        // 2. Construir la instrucciÃƒÂ³n especÃƒÂ­fica para interacciÃƒÂ³n por voz
+        // 2. Construir la instrucción específica para interacción por voz
         String voiceInstruction = String.format(
-            "INTERACCIÃƒâ€œN POR VOZ: La familia dice: \"%s\". " +
-            "Responde de forma breve, empÃƒÂ¡tica y directa (mÃƒÂ¡ximo 3 frases) " +
+            "INTERACCIÓN POR VOZ: La familia dice: \"%s\". " +
+            "Responde de forma breve, empática y directa (máximo 3 frases) " +
             "teniendo en cuenta su estado de integridad actual.",
             transcription
         );

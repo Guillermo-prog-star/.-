@@ -3,7 +3,7 @@ package com.integrityfamily.auth.dto;
 import java.util.List;
 
 /**
- * Record optimizado para la respuesta de autenticaciÃƒÂ³n.
+ * Record optimizado para la respuesta de autenticación.
  */
 public record AuthResponse(
     Long id,

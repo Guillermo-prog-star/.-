@@ -21,10 +21,10 @@ public class ExcelExportService {
 
         try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
             
-            // 1. PestaÃƒÂ±a: Resumen Ejecutivo
+            // 1. Pestaña: Resumen Ejecutivo
             createExecutiveSummarySheet(workbook, report);
 
-            // 2. PestaÃƒÂ±a: Casos CrÃƒÂ­ticos (SemaforizaciÃƒÂ³n)
+            // 2. Pestaña: Casos Críticos (Semaforización)
             createCriticalCasesSheet(workbook, report.getCasosAltoRiesgo());
 
             workbook.write(out);
@@ -40,7 +40,7 @@ public class ExcelExportService {
         
         int rowIdx = 0;
         Row headerRow = sheet.createRow(rowIdx++);
-        headerRow.createCell(0).setCellValue("MÃƒÂ©trica Institucional");
+        headerRow.createCell(0).setCellValue("Métrica Institucional");
         headerRow.createCell(1).setCellValue("Valor / Estado");
         headerRow.getCell(0).setCellStyle(headerStyle);
         headerRow.getCell(1).setCellStyle(headerStyle);
@@ -57,7 +57,7 @@ public class ExcelExportService {
 
         // Dimensiones
         Row dimHeader = sheet.createRow(rowIdx++);
-        dimHeader.createCell(0).setCellValue("DimensiÃƒÂ³n PedagÃƒÂ³gica");
+        dimHeader.createCell(0).setCellValue("Dimensión Pedagógica");
         dimHeader.createCell(1).setCellValue("Score Promedio (%)");
         dimHeader.createCell(2).setCellValue("Nivel de Alerta");
         dimHeader.getCell(0).setCellStyle(headerStyle);
@@ -76,7 +76,7 @@ public class ExcelExportService {
     }
 
     private void createCriticalCasesSheet(Workbook workbook, List<ReportService.CaseRegistry> cases) {
-        Sheet sheet = workbook.createSheet("Casos CrÃƒÂ­ticos");
+        Sheet sheet = workbook.createSheet("Casos Críticos");
         CellStyle headerStyle = createHeaderStyle(workbook);
         
         CellStyle criticalStyle = workbook.createCellStyle();
@@ -87,7 +87,7 @@ public class ExcelExportService {
 
         int rowIdx = 0;
         Row headerRow = sheet.createRow(rowIdx++);
-        String[] columns = {"ID Familia", "Score Actual (%)", "DimensiÃƒÂ³n CrÃƒÂ­tica", "Impacto (Delta)"};
+        String[] columns = {"ID Familia", "Score Actual (%)", "Dimensión Crítica", "Impacto (Delta)"};
         
         for (int i = 0; i < columns.length; i++) {
             Cell cell = headerRow.createCell(i);

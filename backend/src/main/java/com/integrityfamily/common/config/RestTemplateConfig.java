@@ -13,11 +13,11 @@ import java.time.Duration;
  * RestTemplateConfig
  *
  * Problema resuelto: StringHttpMessageConverter usa ISO-8859-1 por defecto.
- * Cuando Claude/OpenAI devuelven texto con caracteres UTF-8 (ú, á, ñ, etc.),
+ * Cuando Claude/OpenAI devuelven texto con caracteres UTF-8 (?, ?, ?, etc.),
  * el converter los decodifica como Latin-1, produciendo triple-encoding visible
- * como "AÃƒÂºn" en lugar de "Aún".
+ * como "Aún" en lugar de "A?n".
  *
- * Solución: reemplazar el converter por uno configurado explícitamente con UTF-8.
+ * Soluci?n: reemplazar el converter por uno configurado expl?citamente con UTF-8.
  */
 @Configuration
 public class RestTemplateConfig {

@@ -30,18 +30,18 @@ public class AutomatedReportingService {
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional
     public void processScheduledReports() {
-        log.info("Ã°Å¸Â¤â€“ [AUTO-REPORT] Iniciando escaneo diario de hitos de reportabilidad...");
+        log.info("🤖 [AUTO-REPORT] Iniciando escaneo diario de hitos de reportabilidad...");
         
         LocalDateTime sixMonthsAgo = LocalDateTime.now().minusMonths(6);
         
         // Buscamos familias que:
-        // 1. Nunca han recibido un reporte y se crearon hace mÃƒÂ¡s de 6 meses.
-        // 2. Recibieron su ÃƒÂºltimo reporte hace mÃƒÂ¡s de 6 meses.
+        // 1. Nunca han recibido un reporte y se crearon hace más de 6 meses.
+        // 2. Recibieron su último reporte hace más de 6 meses.
         List<Family> familiesDue = familyRepository.findAll().stream()
                 .filter(f -> isDueForReport(f, sixMonthsAgo))
                 .toList();
 
-        log.info("Ã°Å¸Â¤â€“ [AUTO-REPORT] Se identificaron {} familias candidatas para reporte semestral.", familiesDue.size());
+        log.info("🤖 [AUTO-REPORT] Se identificaron {} familias candidatas para reporte semestral.", familiesDue.size());
 
         for (Family family : familiesDue) {
             sendAutomatedReport(family);
@@ -57,13 +57,13 @@ public class AutomatedReportingService {
 
     private void sendAutomatedReport(Family family) {
         try {
-            log.info("Ã°Å¸Â¤â€“ [AUTO-REPORT] Generando aviso de reporte para la familia {}", family.getId());
+            log.info("🤖 [AUTO-REPORT] Generando aviso de reporte para la familia {}", family.getId());
             
             String message = String.format(
-                "Ã¢Å“Â¨ *REPORTE SEMESTRAL DE INTEGRIDAD*\n\n" +
-                "Hola familia %s, han completado un ciclo de 6 meses de transformaciÃƒÂ³n. " +
-                "Su nuevo Reporte Ejecutivo ya estÃƒÂ¡ disponible en su Dashboard. " +
-                "Ã‚Â¡Sigan cultivando su integridad!", 
+                "✨ *REPORTE SEMESTRAL DE INTEGRIDAD*\n\n" +
+                "Hola familia %s, han completado un ciclo de 6 meses de transformación. " +
+                "Su nuevo Reporte Ejecutivo ya está disponible en su Dashboard. " +
+                "¡Sigan cultivando su integridad!", 
                 family.getName()
             );
 
@@ -72,9 +72,9 @@ public class AutomatedReportingService {
             family.setLastReportSentAt(LocalDateTime.now());
             familyRepository.save(family);
             
-            log.info("Ã°Å¸Â¤â€“ [AUTO-REPORT] Reporte notificado exitosamente a la familia {}", family.getId());
+            log.info("🤖 [AUTO-REPORT] Reporte notificado exitosamente a la familia {}", family.getId());
         } catch (Exception e) {
-            log.error("Ã¢ÂÅ’ [AUTO-REPORT] Error al procesar reporte para familia {}", family.getId(), e);
+            log.error("❌ [AUTO-REPORT] Error al procesar reporte para familia {}", family.getId(), e);
         }
     }
 }

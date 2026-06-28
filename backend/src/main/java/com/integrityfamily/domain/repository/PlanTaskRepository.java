@@ -34,4 +34,16 @@ public interface PlanTaskRepository extends JpaRepository<PlanTask, Long> {
         "SELECT COUNT(t) FROM PlanTask t WHERE t.plan.family.id = :familyId AND t.completed = true")
     long countCompletedByFamilyId(
         @org.springframework.data.repository.query.Param("familyId") Long familyId);
+
+    /** IND-12: promedio de impacto_icf de tareas completadas del plan más reciente */
+    @org.springframework.data.jpa.repository.Query("""
+        SELECT AVG(t.impactoIcf) FROM PlanTask t
+        WHERE t.plan.id = (
+            SELECT p.id FROM ImprovementPlan p WHERE p.family.id = :familyId
+            ORDER BY p.id DESC LIMIT 1
+        )
+        AND t.completed = true AND t.impactoIcf IS NOT NULL
+""")
+    Double avgImpactoIcfCompletedByFamilyId(
+        @org.springframework.data.repository.query.Param("familyId") Long familyId);
 }

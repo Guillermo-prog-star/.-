@@ -24,14 +24,14 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class SecurityExceptionHandler implements AuthenticationEntryPoint, AccessDeniedHandler {
 
-    // Inyectamos el bean de Spring para asegurar consistencia en la serializaciÃƒÂ³n de fechas
+    // Inyectamos el bean de Spring para asegurar consistencia en la serialización de fechas
     private final ObjectMapper objectMapper;
 
     @Override
     public void commence(HttpServletRequest request, 
                          HttpServletResponse response, 
                          AuthenticationException authException) throws IOException {
-        writeErrorResponse(response, HttpStatus.UNAUTHORIZED, "No autenticado: Se requiere token vÃƒÂ¡lido");
+        writeErrorResponse(response, HttpStatus.UNAUTHORIZED, "No autenticado: Se requiere token válido");
     }
 
     @Override

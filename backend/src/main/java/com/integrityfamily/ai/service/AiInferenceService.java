@@ -28,26 +28,26 @@ public class AiInferenceService {
 
     @RabbitListener(queues = "q.ai.inference")
     public void handleCrisisSignal(String familyId) {
-        log.info("Ã°Å¸â€Â¥ [AI-INFERENCE] SEÃƒâ€˜AL CAPTURADA: ID {}", familyId);
+        log.info("🔥 [AI-INFERENCE] SEÑAL CAPTURADA: ID {}", familyId);
 
         try {
             Long id = Long.parseLong(familyId.trim());
             Family family = familyRepository.findById(id)
                     .orElseThrow(() -> new BusinessException("Familia no encontrada: " + id, "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
 
-            log.info("Ã°Å¸Â§Â  Sintetizando contexto para: {}", family.getName());
+            log.info("🧠 Sintetizando contexto para: {}", family.getName());
 
             // 1. Obtener contexto completo (ICF, miembros, historia)
             AiContext context = contextSynthesizer.synthesize(family, "CRISIS");
 
-            // 2. Crisis → siempre proveedor de máxima capacidad
+            // 2. Crisis ? siempre proveedor de m?xima capacidad
             AiProvider aiProvider = aiProviderSelector.selectProvider(TaskType.HIGH_CAPACITY);
             String response = aiProvider.generateResponse(
-                "ALERTA SENTINEL: Se ha detectado una crisis en el nodo. Genera una guÃƒÂ­a de contenciÃƒÂ³n inmediata.",
+                "ALERTA SENTINEL: Se ha detectado una crisis en el nodo. Genera una guía de contención inmediata.",
                 context
             );
 
-            log.info("Ã¢Å“â€¦ INFERENCIA RECIBIDA. Persistiendo en CriticalDay...");
+            log.info("✅ INFERENCIA RECIBIDA. Persistiendo en CriticalDay...");
 
             // 3. Persistir usando el Repositorio (Sincronizado con el cambio en schema.sql)
             CriticalDay criticalDay = CriticalDay.builder()
@@ -60,10 +60,10 @@ public class AiInferenceService {
 
             criticalDayRepository.save(criticalDay);
 
-            log.info("Ã°Å¸â€™Â¾ [AI-INFERENCE] Flujo completado con ÃƒÂ©xito para familia {}", family.getName());
+            log.info("💾 [AI-INFERENCE] Flujo completado con éxito para familia {}", family.getName());
 
         } catch (Exception e) {
-            log.error("Ã¢ÂÅ’ FALLO CRÃƒÂTICO EN PROCESO DE IA: {}", e.getMessage(), e);
+            log.error("❌ FALLO CRÍTICO EN PROCESO DE IA: {}", e.getMessage(), e);
         }
     }
 }

@@ -18,7 +18,7 @@ public class MasterCredentialService {
 
     @Transactional
     public void provisionMasterAdmin() {
-        log.info("Ã°Å¸â€â€˜ [SECURITY] Iniciando provisiÃƒÂ³n de Credenciales Maestras...");
+        log.info("🔑 [SECURITY] Iniciando provisión de Credenciales Maestras...");
 
         // 2. Crear usuario William si no existe
         String adminEmail = "william@integrity.ia";
@@ -32,9 +32,9 @@ public class MasterCredentialService {
                     .build();
             
             userRepository.save(william);
-            log.info("Ã°Å¸ÂÂ [MASTER-ADMIN] Cuenta de William creada exitosamente.");
+            log.info("🏁 [MASTER-ADMIN] Cuenta de William creada exitosamente.");
         } else {
-            log.info("Ã¢â€žÂ¹Ã¯Â¸Â [MASTER-ADMIN] La cuenta de William ya existe.");
+            log.info("ℹ️ [MASTER-ADMIN] La cuenta de William ya existe.");
         }
     }
 }

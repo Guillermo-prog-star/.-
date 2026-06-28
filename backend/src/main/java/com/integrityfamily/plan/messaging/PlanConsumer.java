@@ -54,11 +54,12 @@ public class PlanConsumer {
             // 2. Generar misiones estructuradas usando la IA
             String jsonMissions = aiService.generateMissions(family);
 
-            // 3. Parsear el JSON — fallo aquí es irrecuperable: descartar mensaje
+            // 3. Parsear el JSON — limpiar posible markdown wrapper antes de parsear
             List<AiMissionProposal> proposals;
             try {
+                String cleanJson = stripMarkdownCodeBlock(jsonMissions);
                 proposals = objectMapper.readValue(
-                        jsonMissions,
+                        cleanJson,
                         new TypeReference<List<AiMissionProposal>>() {});
             } catch (Exception parseEx) {
                 log.error("❌ [PLAN-CONSUMER] JSON de IA inválido — descartando mensaje sin reintentar: {}", parseEx.getMessage());
@@ -84,5 +85,21 @@ public class PlanConsumer {
             log.error("❌ [PLAN-CONSUMER] Fallo crítico en el procesamiento de mensajes: {}", e.getMessage());
             throw new RuntimeException("Fallo en PlanConsumer al procesar recomendaciones de la IA", e);
         }
+    }
+
+    /** Elimina bloques markdown ```json ... ``` que la IA puede añadir alrededor del JSON. */
+    private String stripMarkdownCodeBlock(String raw) {
+        if (raw == null) return "[]";
+        String trimmed = raw.strip();
+        // Quitar apertura: ```json o ``` seguido de posible salto de línea
+        if (trimmed.startsWith("```")) {
+            int newline = trimmed.indexOf('\n');
+            if (newline != -1) trimmed = trimmed.substring(newline + 1).strip();
+        }
+        // Quitar cierre: ```
+        if (trimmed.endsWith("```")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 3).strip();
+        }
+        return trimmed;
     }
 }

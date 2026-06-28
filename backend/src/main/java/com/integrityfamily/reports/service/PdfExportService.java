@@ -66,10 +66,31 @@ public class PdfExportService {
      * Reporte Consolidado Global (Estilo Tablero Ejecutivo)
      */
     public byte[] generateConsolidatedPdf() {
-        log.info("📊 [PDF-EXPORT] Generando Reporte de Impacto Consolidado...");
-        ReportService.ConsolidatedReport report = reportService.generateConsolidatedReport();
-        SentimentAnalyticsService.SentimentReport sentiment = sentimentAnalyticsService.analyzeGlobalFeedback();
-        List<AdminAlert> alerts = adminAlertRepository.findAllByOrderByCreatedAtDesc();
+        log.info("[PDF-EXPORT] Generando Reporte de Impacto Consolidado...");
+        ReportService.ConsolidatedReport report;
+        SentimentAnalyticsService.SentimentReport sentiment;
+        List<AdminAlert> alerts;
+        try {
+            report = reportService.generateConsolidatedReport();
+        } catch (Exception e) {
+            log.warn("[PDF-EXPORT] Error en generateConsolidatedReport: {}", e.getMessage());
+            report = ReportService.ConsolidatedReport.builder()
+                    .reportId("N/A").metadata(Map.of("total_familias", 0))
+                    .consolidadoDimensiones(new HashMap<>()).casosAltoRiesgo(new ArrayList<>()).build();
+        }
+        try {
+            sentiment = sentimentAnalyticsService.analyzeGlobalFeedback();
+        } catch (Exception e) {
+            log.warn("[PDF-EXPORT] Error en analyzeGlobalFeedback: {}", e.getMessage());
+            sentiment = SentimentAnalyticsService.SentimentReport.builder()
+                    .totalComments(0).aiExecutiveSummary("Análisis no disponible.").build();
+        }
+        try {
+            alerts = adminAlertRepository.findAllByOrderByCreatedAtDesc();
+        } catch (Exception e) {
+            log.warn("[PDF-EXPORT] Error cargando alertas: {}", e.getMessage());
+            alerts = new ArrayList<>();
+        }
         
         ByteArrayOutputStream out = new ByteArrayOutputStream();
 

@@ -1,0 +1,111 @@
+<div class="legal-page">
+  <div class="legal-card">
+
+    <div class="legal-header">
+      <img src="assets/logo.svg" alt="Integrity Family" class="legal-logo" />
+      <h1>Política de Privacidad</h1>
+      <p class="legal-date">Última actualización: 26 de junio de 2026</p>
+    </div>
+
+    <div class="legal-body">
+
+      <section>
+        <h2>1. ¿Quiénes somos?</h2>
+        <p>Integrity Family es una plataforma de acompañamiento familiar que utiliza inteligencia artificial para apoyar el crecimiento emocional, la comunicación y los hábitos de núcleos familiares. Operamos bajo los principios de privacidad por diseño y mínima recolección de datos.</p>
+      </section>
+
+      <section>
+        <h2>2. Datos que recopilamos</h2>
+        <p>Recopilamos únicamente los datos necesarios para prestar el servicio:</p>
+        <ul>
+          <li><strong>Datos de identificación:</strong> nombre completo, correo electrónico y contraseña (almacenada con cifrado bcrypt).</li>
+          <li><strong>Datos de ubicación:</strong> municipio, departamento y país (para contextualización regional).</li>
+          <li><strong>Datos de evaluación familiar:</strong> respuestas a cuestionarios ICF, planes de mejora, sprints y evidencias. Estos datos son <em>de alta sensibilidad</em> y se tratan con protección especial.</li>
+          <li><strong>Datos de interacción con IA:</strong> conversaciones con el asistente cognitivo, inferencias generadas y contexto familiar utilizado en prompts.</li>
+          <li><strong>Datos técnicos:</strong> registros de acceso, tokens JWT y eventos de auditoría de seguridad.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>3. Datos sensibles — tratamiento especial</h2>
+        <p>Los datos emocionales, psicológicos y relacionales que tu familia comparte en la plataforma se consideran <strong>datos sensibles</strong> según la Ley 1581 de 2012 (Colombia) y el RGPD (Europa). Para estos datos aplicamos:</p>
+        <ul>
+          <li>Cifrado en tránsito (TLS 1.3) y en reposo (AES-256).</li>
+          <li>Acceso restringido: solo tú y los miembros activos de tu familia pueden ver el contenido de tus evaluaciones y conversaciones.</li>
+          <li>No compartimos datos sensibles con terceros sin consentimiento explícito.</li>
+          <li>Los administradores de la plataforma solo acceden a datos anonimizados para métricas agregadas.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>4. Finalidad del tratamiento</h2>
+        <p>Usamos tus datos para:</p>
+        <ul>
+          <li>Calcular el Índice de Cohesión Familiar (ICF) y generar diagnósticos personalizados.</li>
+          <li>Generar planes de mejora y sprints familiares mediante IA.</li>
+          <li>Detectar señales de riesgo y activar protocolos de acompañamiento.</li>
+          <li>Construir la memoria y legado familiar (documentales, línea de tiempo, árbol genealógico).</li>
+          <li>Mejorar el servicio con análisis estadísticos anonimizados.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>5. Base legal del tratamiento</h2>
+        <p>El tratamiento de tus datos se fundamenta en:</p>
+        <ul>
+          <li><strong>Consentimiento explícito</strong> otorgado al registrarte en la plataforma.</li>
+          <li><strong>Ejecución del contrato</strong> de servicio aceptado en los Términos de Uso.</li>
+          <li><strong>Interés legítimo</strong> en la seguridad y mejora del servicio.</li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>6. Tus derechos</h2>
+        <p>Tienes derecho a:</p>
+        <ul>
+          <li><strong>Acceder</strong> a todos los datos que tenemos sobre ti y tu familia.</li>
+          <li><strong>Rectificar</strong> datos inexactos o incompletos.</li>
+          <li><strong>Suprimir</strong> tu cuenta y todos los datos asociados (derecho al olvido).</li>
+          <li><strong>Portabilidad:</strong> recibir tus datos en formato estructurado y legible por máquina.</li>
+          <li><strong>Oponerte</strong> al tratamiento para fines de análisis estadístico.</li>
+          <li><strong>Revocar el consentimiento</strong> en cualquier momento sin afectar la licitud del tratamiento previo.</li>
+        </ul>
+        <p>Para ejercer cualquiera de estos derechos, escríbenos a <strong>privacidad&#64;integrityfamily.app</strong></p>
+      </section>
+
+      <section>
+        <h2>7. Retención de datos</h2>
+        <p>Conservamos tus datos mientras tu cuenta esté activa. Al eliminar tu cuenta, los datos personales identificables se borran en un plazo máximo de 30 días. Los datos anonimizados pueden conservarse con fines de investigación.</p>
+      </section>
+
+      <section>
+        <h2>8. Uso de IA — transparencia</h2>
+        <p>Utilizamos la API de Claude (Anthropic) para generar respuestas, diagnósticos y planes. Los prompts enviados incluyen contexto familiar anonimizado o pseudonimizado. Anthropic no almacena estas conversaciones para entrenar sus modelos según sus políticas de uso empresarial.</p>
+      </section>
+
+      <section>
+        <h2>9. Cookies y almacenamiento local</h2>
+        <p>Usamos almacenamiento local del navegador (<code>localStorage</code>) para tokens de sesión y preferencias de usuario. No utilizamos cookies de rastreo de terceros ni publicidad comportamental.</p>
+      </section>
+
+      <section>
+        <h2>10. Cambios en esta política</h2>
+        <p>Notificaremos cualquier cambio material en esta política a través de la plataforma y por correo electrónico con al menos 15 días de anticipación.</p>
+      </section>
+
+      <section>
+        <h2>11. Contacto</h2>
+        <p>Responsable del tratamiento: <strong>Integrity Family</strong><br>
+        Correo: <strong>privacidad&#64;integrityfamily.app</strong><br>
+        Para reportar incidentes de seguridad: <strong>seguridad&#64;integrityfamily.app</strong></p>
+      </section>
+
+    </div>
+
+    <div class="legal-footer">
+      <a routerLink="/auth/login" class="btn-back">← Volver al inicio</a>
+      <a routerLink="/legal/terms" class="btn-link">Ver Términos de Uso →</a>
+    </div>
+
+  </div>
+</div>

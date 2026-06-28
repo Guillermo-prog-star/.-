@@ -21,7 +21,7 @@ public class RiskController {
     private final RiskService riskService;
 
     /**
-     * Obtiene el histÃƒÂ³rico de estados de riesgo.
+     * Obtiene el histórico de estados de riesgo.
      * SDD FIX: Sincronizado con la firma unificada del Service.
      */
     @GetMapping("/family/{familyId}")
@@ -37,7 +37,7 @@ public class RiskController {
     }
 
     /**
-     * Persiste un nuevo estado de riesgo (Uso técnico/Sentinel).
+     * Persiste un nuevo estado de riesgo (Uso t?cnico/Sentinel).
      */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")

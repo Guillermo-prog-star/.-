@@ -60,6 +60,15 @@ export interface TrajectoryImpactDto {
   improvementPct?: number;
 }
 
+export interface TrajectorySuggestion {
+  code: string;
+  name: string;
+  macrodomain: string;
+  severityDefault: SeverityLevel;
+  reason: string;
+  confidenceScore: number;
+}
+
 export interface AssignTrajectoryRequest {
   code: string;
   notes?: string;

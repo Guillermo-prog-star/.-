@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Pattern;
 public record ResetPasswordRequest(
         @NotBlank String token,
 
-        @NotBlank @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$", message = "MÃƒÂ­nimo 8 caracteres, con mayÃƒÂºscula, minÃƒÂºscula y dÃƒÂ­gito") String newPassword) {
+        @NotBlank @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$", message = "Mínimo 8 caracteres, con mayúscula, minúscula y dígito") String newPassword) {
 }
 
 

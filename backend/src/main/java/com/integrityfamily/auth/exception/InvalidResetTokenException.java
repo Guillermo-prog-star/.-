@@ -3,7 +3,7 @@ package com.integrityfamily.auth.exception;
 
 public class InvalidResetTokenException extends RuntimeException {
     public InvalidResetTokenException() {
-        super("Token de recuperaciÃƒÂ³n invÃƒÂ¡lido o expirado");
+        super("Token de recuperación inválido o expirado");
     }
 }
 

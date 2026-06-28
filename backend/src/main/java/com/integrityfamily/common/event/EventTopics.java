@@ -59,6 +59,12 @@ public final class EventTopics {
     /** Estado longitudinal familiar actualizado */
     public static final String LONGITUDINAL_STATE_UPDATED   = "family.longitudinal.state.updated";
 
+    // ── Capital Familiar (ICaF) ──────────────────────────────────────────────
+    /** ICaF recalculado → notifica estado longitudinal y Observatorio */
+    public static final String ICAF_RECALCULATED            = "family.icaf.recalculated";
+    /** Nivel de madurez familiar cambió (1-5) */
+    public static final String ICAF_MADUREZ_CHANGED         = "family.icaf.madurez.changed";
+
     // ── Sistema ──────────────────────────────────────────────────────────────
     /** Reevaluación sistémica completa disparada (post-crisis o cambio brusco) */
     public static final String SYSTEM_REBALANCED            = "family.system.rebalanced";

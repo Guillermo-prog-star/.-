@@ -14,7 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * SDD: Controlador de AnalÃƒÂ­tica Proyectiva.
+ * SDD: Controlador de Analítica Proyectiva.
  * Proporciona estados de integridad, ICF y resultados del motor Sentinel.
  */
 @Slf4j
@@ -30,13 +30,13 @@ public class AnalyticsController {
 
     /**
      * Obtiene el resumen ejecutivo del dashboard familiar.
-     * SDD: Optimizado para devolver el cálculo más reciente sin re-procesar si no
+     * SDD: Optimizado para devolver el c?lculo m?s reciente sin re-procesar si no
      * es necesario.
      */
     @GetMapping("/dashboard/family/{familyId}")
     @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<DashboardSummaryResponse> getFamilySummary(@PathVariable Long familyId) {
-        log.info("📊 [ANALYTICS] Solicitando resumen ejecutivo para familia: {}", familyId);
+        log.info("?? [ANALYTICS] Solicitando resumen ejecutivo para familia: {}", familyId);
 
         // El servicio debe decidir internamente si calcula de nuevo o entrega cache
         DashboardSummaryResponse response = analyticsService.calculateLatestResults(familyId);
@@ -45,38 +45,38 @@ public class AnalyticsController {
     }
 
     /**
-     * Endpoint de compatibilidad para resultados rápidos.
-     * SDD: Alias para integración con sistemas legados o componentes específicos.
+     * Endpoint de compatibilidad para resultados r?pidos.
+     * SDD: Alias para integraci?n con sistemas legados o componentes espec?ficos.
      */
     @GetMapping("/family/{familyId}/latest")
     @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<DashboardSummaryResponse> getLatestResult(@PathVariable Long familyId) {
-        return getFamilySummary(familyId); // Reutilización de lógica interna
+        return getFamilySummary(familyId); // Reutilizaci?n de l?gica interna
     }
 
     /**
-     * SDD: Obtiene el último análisis de progreso longitudinal (ΔICF).
+     * SDD: Obtiene el ?ltimo an?lisis de progreso longitudinal (?ICF).
      */
     @GetMapping("/family/{familyId}/progress")
     @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<com.integrityfamily.analytics.dto.FamilyProgressResponse> getFamilyProgress(@PathVariable Long familyId) {
-        log.info("📊 [ANALYTICS] Solicitando análisis de progreso para familia: {}", familyId);
+        log.info("?? [ANALYTICS] Solicitando an?lisis de progreso para familia: {}", familyId);
         
         com.integrityfamily.analytics.dto.FamilyProgressResponse response = familyProgressAnalyticsService.getLatestProgress(familyId)
-                .orElseThrow(() -> new BusinessException("No se encontró análisis de progreso para esta familia.", "PROGRESS_NOT_FOUND", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException("No se encontr? an?lisis de progreso para esta familia.", "PROGRESS_NOT_FOUND", HttpStatus.NOT_FOUND));
                 
         return ApiResponse.ok(response);
     }
 
     /**
-     * SDD: Obtiene los datos para el radar de evolución de la familia.
+     * SDD: Obtiene los datos para el radar de evoluci?n de la familia.
      */
     @GetMapping("/radar")
     public ApiResponse<Object> getRadarData(org.springframework.security.core.Authentication auth) {
-        log.info("🎯 [ANALYTICS] Generando datos de radar de evolución dinámicos");
+        log.info("?? [ANALYTICS] Generando datos de radar de evoluci?n din?micos");
         
         if (auth == null) {
-            log.warn("⚠️ [ANALYTICS] Solicitud de radar sin autenticación. Retornando vacío.");
+            log.warn("?? [ANALYTICS] Solicitud de radar sin autenticaci?n. Retornando vac?o.");
             return ApiResponse.ok(java.util.Collections.emptyList());
         }
 
@@ -84,7 +84,7 @@ public class AnalyticsController {
                 .orElseThrow(() -> new BusinessException("Usuario no encontrado", "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
 
         if (user.getFamily() == null) {
-            log.warn("⚠️ [ANALYTICS] Usuario sin familia vinculada: {}", auth.getName());
+            log.warn("?? [ANALYTICS] Usuario sin familia vinculada: {}", auth.getName());
             return ApiResponse.ok(java.util.Collections.emptyList());
         }
 
@@ -95,13 +95,13 @@ public class AnalyticsController {
     }
 
     /**
-     * SDD Analytics v2: Historial de ICF para gráfico de tendencia.
+     * SDD Analytics v2: Historial de ICF para gr?fico de tendencia.
      * Devuelve todos los puntos (id, icf, riskLevel, fecha) de evaluaciones finalizadas.
      */
     @GetMapping("/family/{familyId}/icf-history")
     @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<java.util.List<java.util.Map<String, Object>>> getIcfHistory(@PathVariable Long familyId) {
-        log.info("📈 [ANALYTICS] Solicitando historial ICF para familia: {}", familyId);
+        log.info("?? [ANALYTICS] Solicitando historial ICF para familia: {}", familyId);
 
         java.util.List<java.util.Map<String, Object>> history =
             evaluationService.findByFamilyId(familyId).stream()
@@ -122,15 +122,16 @@ public class AnalyticsController {
     }
 
     /**
-     * SDD Analytics v2: Historial de puntuaciones por dimensión.
-     * Devuelve un punto por evaluación finalizada con las 4 dimensiones normalizadas.
-     * Usado por el gráfico de evolución multidimensional del dashboard.
+     * SDD Analytics v2: Historial de puntuaciones por dimensi?n.
+     * Devuelve un punto por evaluaci?n finalizada con las 4 dimensiones normalizadas.
+     * Usado por el gr?fico de evoluci?n multidimensional del dashboard.
      */
     @GetMapping("/family/{familyId}/dimension-history")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<java.util.List<java.util.Map<String, Object>>> getDimensionHistory(
             @PathVariable Long familyId) {
-        log.info("📊 [ANALYTICS] Solicitando historial de dimensiones para familia: {}", familyId);
+        log.info("?? [ANALYTICS] Solicitando historial de dimensiones para familia: {}", familyId);
 
         java.util.List<java.util.Map<String, Object>> history =
             evaluationService.findByFamilyId(familyId).stream()
@@ -162,24 +163,24 @@ public class AnalyticsController {
     }
 
     /**
-     * SDD EXTRA: Disparador manual de analítica profunda.
-     * Útil cuando el admin quiere forzar una actualización del motor Sentinel.
+     * SDD EXTRA: Disparador manual de anal?tica profunda.
+     * ?til cuando el admin quiere forzar una actualizaci?n del motor Sentinel.
      */
     @PostMapping("/family/{familyId}/recalculate")
     @org.springframework.security.access.prepost.PreAuthorize("@familySecurity.check(#familyId)")
     public ApiResponse<String> forceRecalculation(@PathVariable Long familyId) {
-        log.warn("🔄 [ANALYTICS] Recálculo forzado solicitado para familia: {}", familyId);
+        log.warn("?? [ANALYTICS] Rec?lculo forzado solicitado para familia: {}", familyId);
         analyticsService.invalidateCacheAndRecalculate(familyId);
-        return ApiResponse.ok("Recálculo iniciado exitosamente.");
+        return ApiResponse.ok("Rec?lculo iniciado exitosamente.");
     }
 
     /**
-     * SDD: Obtiene los resultados de una evaluación específica.
-     * Mapea los datos para el frontend, incluyendo el diagnóstico consciente.
+     * SDD: Obtiene los resultados de una evaluaci?n espec?fica.
+     * Mapea los datos para el frontend, incluyendo el diagn?stico consciente.
      */
     @GetMapping("/results/{id}")
     public ApiResponse<Object> getResultById(@PathVariable Long id) {
-        log.info("📊 [ANALYTICS] Solicitando resultados para evaluación ID: {}", id);
+        log.info("?? [ANALYTICS] Solicitando resultados para evaluaci?n ID: {}", id);
         Evaluation eval = evaluationService.findById(id);
         
         Map<String, Object> result = new HashMap<>();

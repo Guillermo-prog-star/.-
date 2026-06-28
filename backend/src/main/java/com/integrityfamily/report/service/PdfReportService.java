@@ -18,7 +18,7 @@ import java.io.ByteArrayOutputStream;
 public class PdfReportService {
 
     public byte[] generateTransformationReport(TransformationSummary summary, String aiNarrative) {
-        log.info("Ã°Å¸â€œâ€ž [PDF-ENGINE] Generating PDF for family {}", summary.familyName());
+        log.info("📄 [PDF-ENGINE] Generating PDF for family {}", summary.familyName());
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
             PdfWriter writer = new PdfWriter(baos);
@@ -26,7 +26,7 @@ public class PdfReportService {
             Document document = new Document(pdf);
 
             // Title & Header
-            document.add(new Paragraph("REPORTE DE TRANSFORMACIÃƒâ€œN INTEGRAL")
+            document.add(new Paragraph("REPORTE DE TRANSFORMACIÓN INTEGRAL")
                     .setBold().setFontSize(18).setTextAlignment(TextAlignment.CENTER));
             document.add(new Paragraph("Familia: " + summary.familyName())
                     .setFontSize(12).setTextAlignment(TextAlignment.CENTER));
@@ -39,12 +39,12 @@ public class PdfReportService {
             document.add(new Paragraph("\n"));
 
             // AI Narrative Section
-            document.add(new Paragraph("ANÃƒÂLISIS ESTRATÃƒâ€°GICO (MENTOR AI)").setBold().setFontSize(14));
+            document.add(new Paragraph("ANÁLISIS ESTRATÉGICO (MENTOR AI)").setBold().setFontSize(14));
             String cleanNarrative = aiNarrative.replace("###", "").replace("**", "");
             document.add(new Paragraph(cleanNarrative).setFontSize(11));
 
             document.add(new Paragraph("\n\n"));
-            document.add(new Paragraph("Documento generado automÃƒÂ¡ticamente por Integrity Family Platform")
+            document.add(new Paragraph("Documento generado automáticamente por Integrity Family Platform")
                     .setFontSize(8).setItalic().setTextAlignment(TextAlignment.RIGHT));
 
             document.close();

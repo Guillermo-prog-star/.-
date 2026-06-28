@@ -48,11 +48,11 @@ public class ReportService {
     }
 
     /**
-     * Genera un reporte consolidado basado en la metodologÃƒÂ­a SDD.
-     * Calcula Deltas de Mejora y Niveles de Riesgo por DimensiÃƒÂ³n.
+     * Genera un reporte consolidado basado en la metodología SDD.
+     * Calcula Deltas de Mejora y Niveles de Riesgo por Dimensión.
      */
     public ConsolidatedReport generateConsolidatedReport() {
-        log.info("Ã°Å¸â€œÅ  [REPORT-SERVICE] Iniciando generaciÃƒÂ³n de reporte consolidado SDD...");
+        log.info("📊 [REPORT-SERVICE] Iniciando generación de reporte consolidado SDD...");
         
         List<com.integrityfamily.domain.repository.FamilySummary> families = familyRepository.findProjectedBy();
         Map<String, List<Double>> dimensionScoresMap = new HashMap<>();
@@ -69,15 +69,15 @@ public class ReportService {
 
             // Calcular Delta de Mejora General
             double delta = calculateDelta(preTest.getIcf(), postTest.getIcf());
-            double currentScorePercent = postTest.getIcf(); // Ya está en escala 0-100%
+            double currentScorePercent = postTest.getIcf(); // Ya est? en escala 0-100%
 
-            // Acumular puntuaciones por dimensión (Mapeo a categorías institucionales)
+            // Acumular puntuaciones por dimensi?n (Mapeo a categor?as institucionales)
             postTest.getDimensionScores().forEach(ds -> {
                 String mappedDim = mapToInstitutionalDimension(ds.getDimensionName());
-                dimensionScoresMap.computeIfAbsent(mappedDim, k -> new ArrayList<>()).add(ds.getScore()); // Ya está en escala 0-100%
+                dimensionScoresMap.computeIfAbsent(mappedDim, k -> new ArrayList<>()).add(ds.getScore()); // Ya est? en escala 0-100%
             });
 
-            // Detectar Casos Críticos (Algoritmo de Semáforo)
+            // Detectar Casos Cr?ticos (Algoritmo de Sem?foro)
             if (currentScorePercent < 50) {
                 String criticalDim = postTest.getDimensionScores().stream()
                         .min(Comparator.comparing(ds -> ds.getScore()))
@@ -91,7 +91,7 @@ public class ReportService {
                         .impactoDelta(String.format("%+.0f%%", delta))
                         .build());
                 
-                log.warn("Ã°Å¸Å¡Â¨ [REPORT-CRITICAL] Caso de alto riesgo detectado: {}", family.getFamilyCode());
+                log.warn("🚨 [REPORT-CRITICAL] Caso de alto riesgo detectado: {}", family.getFamilyCode());
             }
         }
 
@@ -118,7 +118,7 @@ public class ReportService {
     }
 
     /**
-     * Algoritmo Delta: ÃŽâ€ = ((ScorePost - ScorePre) / ScorePre) * 100
+     * Algoritmo Delta: Δ = ((ScorePost - ScorePre) / ScorePre) * 100
      */
     private double calculateDelta(double pre, double post) {
         if (pre == 0) return 0.0;
@@ -126,13 +126,13 @@ public class ReportService {
     }
 
     /**
-     * Mapeo Transaccional: Convierte pilares pedagÃƒÂ³gicos internos a dimensiones institucionales.
+     * Mapeo Transaccional: Convierte pilares pedagógicos internos a dimensiones institucionales.
      */
     private String mapToInstitutionalDimension(String internalDim) {
         return switch (internalDim) {
-            case "Reconocimiento" -> "ComunicaciÃƒÂ³n";
+            case "Reconocimiento" -> "Comunicación";
             case "Amor" -> "Emociones";
-            case "Entrega" -> "HÃƒÂ¡bitos / Tiempos";
+            case "Entrega" -> "Hábitos / Tiempos";
             default -> internalDim;
         };
     }

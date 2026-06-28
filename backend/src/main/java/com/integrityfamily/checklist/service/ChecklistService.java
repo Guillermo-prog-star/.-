@@ -36,21 +36,21 @@ public class ChecklistService {
         item.setCompletedAt(LocalDateTime.now());
         checklistRepository.save(item);
 
-        // [SDD Spec] EvaluaciÃƒÂ³n Determinista de Hito
+        // [SDD Spec] Evaluación Determinista de Hito
         Long familyId = item.getFamily().getId();
         String source = item.getSource();
         
         long pending = checklistRepository.countByFamilyIdAndSourceAndCompletedFalse(familyId, source);
         if (pending == 0) {
-            log.info("Ã°Å¸Å½Â¯ [MILESTONE-READY] Todas las tareas de la fuente '{}' han sido completadas para la familia {}.", source, familyId);
+            log.info("🎯 [MILESTONE-READY] Todas las tareas de la fuente '{}' han sido completadas para la familia {}.", source, familyId);
         } else {
-            log.info("Ã°Å¸â€œË† [PROGRESS] Tareas pendientes para '{}': {}", source, pending);
+            log.info("📈 [PROGRESS] Tareas pendientes para '{}': {}", source, pending);
         }
     }
 
     /**
      * Mapea un texto masivo de la IA (pilar, crisis, etc) y extrae actividades.
-     * Replicando la lÃƒÂ³gica del monolito: extraer lÃƒÂ­neas con -, * o n.
+     * Replicando la lógica del monolito: extraer líneas con -, * o n.
      */
     @Transactional
     public int extractAndAdd(String text, String source, Long familyId) {
@@ -68,7 +68,7 @@ public class ChecklistService {
             added++;
         }
         
-        log.info("Ã°Å¸â€œâ€¹ [CHECKLIST] Se han extraÃƒÂ­do {} nuevas actividades para la familia {}", added, familyId);
+        log.info("📋 [CHECKLIST] Se han extraído {} nuevas actividades para la familia {}", added, familyId);
         return added;
     }
 
@@ -76,7 +76,7 @@ public class ChecklistService {
         List<String> result = new ArrayList<>();
         if (text == null) return result;
 
-        // Regex para lÃƒÂ­neas que empiezan con -, *, o 1. (tal cual el monolito)
+        // Regex para líneas que empiezan con -, *, o 1. (tal cual el monolito)
         Pattern pattern = Pattern.compile("^\\s*([-*]|\\d+\\.)\\s+(.*)$", Pattern.MULTILINE);
         Matcher matcher = pattern.matcher(text);
 
@@ -107,7 +107,7 @@ public class ChecklistService {
     private String detectDimension(String text) {
         String t = text.toLowerCase();
         if (t.contains("reconoci") || t.contains("identidad") || t.contains("ver") || t.contains("observar")) return "Reconocimiento";
-        if (t.contains("amor") || t.contains("afecto") || t.contains("cariÃƒÂ±o") || t.contains("vinculo")) return "Amor";
+        if (t.contains("amor") || t.contains("afecto") || t.contains("cariño") || t.contains("vinculo")) return "Amor";
         if (t.contains("entrega") || t.contains("servicio") || t.contains("compromiso") || t.contains("donacion")) return "Entrega";
         return "General";
     }

@@ -19,7 +19,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * FamilyService: Motor de GestiÃƒÂ³n y VisualizaciÃƒÂ³n del Nodo Familiar.
+ * FamilyService: Motor de Gestión y Visualización del Nodo Familiar.
  * Optimizado para carga masiva de integrantes y trazabilidad con IA.
  */
 @Service
@@ -41,13 +41,13 @@ public class FamilyService {
     }
 
     /**
-     * Recupera el nÃƒÂºcleo familiar completo con todos sus integrantes.
+     * Recupera el núcleo familiar completo con todos sus integrantes.
      * Utiliza la consulta optimizada JOIN FETCH para evitar latencia.
      */
     @Transactional(readOnly = true)
     public Family getFullFamilyContext(String email) {
         return familyRepository.findByCreatedByEmailWithMembers(email)
-                .orElseThrow(() -> new BusinessException("No se encontró un núcleo familiar asociado a: " + email, "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException("No se encontr? un n?cleo familiar asociado a: " + email, "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
     }
 
     /**
@@ -61,9 +61,9 @@ public class FamilyService {
     }
 
     /**
-     * Crea un nuevo núcleo familiar de forma idempotente.
+     * Crea un nuevo n?cleo familiar de forma idempotente.
      * Si el usuario ya tiene familia, la devuelve directamente.
-     * El código IF-{YEAR}-{ID} se deriva del ID asignado por la BD, garantizando unicidad bajo concurrencia.
+     * El c?digo IF-{YEAR}-{ID} se deriva del ID asignado por la BD, garantizando unicidad bajo concurrencia.
      */
     @Transactional
     public FamilyResponse create(Family family, String creatorEmail) {
@@ -83,7 +83,7 @@ public class FamilyService {
 
         Family saved = familyRepository.save(family);
 
-        // Código definitivo basado en el ID autoincremental — siempre único, sin race condition.
+        // C?digo definitivo basado en el ID autoincremental ? siempre ?nico, sin race condition.
         int currentYear = java.time.Year.now().getValue();
         saved.setFamilyCode("IF-" + currentYear + "-" + String.format("%04d", saved.getId()));
         saved = familyRepository.save(saved);
@@ -96,11 +96,11 @@ public class FamilyService {
     }
 
     /**
-     * Actualiza los datos del nÃƒÂºcleo manteniendo la integridad del cÃƒÂ³digo FAM.
+     * Actualiza los datos del núcleo manteniendo la integridad del código FAM.
      */
     @Transactional
     public FamilyResponse update(Long id, Family request) {
-        Family existing = familyRepository.findById(id) // Búsqueda directa para actualización
+        Family existing = familyRepository.findById(id) // B?squeda directa para actualizaci?n
                 .orElseThrow(() -> new BusinessException("Familia con ID " + id + " no encontrada", "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
         
         existing.setName(request.getName());
@@ -142,7 +142,7 @@ public class FamilyService {
                         .map(this::toMemberResponse)
                         .toList();
 
-        // Nombre del guardián (lookup puntual, sin lazy)
+        // Nombre del guardi?n (lookup puntual, sin lazy)
         String guardianName = null;
         if (family.getGuardianMemberId() != null) {
             guardianName = memberRepository.findById(family.getGuardianMemberId())

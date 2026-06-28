@@ -24,13 +24,13 @@ public class SecurityWatchdogService {
     private final AdminAlertRepository alertRepository;
 
     /**
-     * Ciclo de Vigilancia de Datos: Ejecución cada 5 minutos.
-     * Escanea anomalías críticas en los 50 nodos Alfa.
+     * Ciclo de Vigilancia de Datos: Ejecuci?n cada 5 minutos.
+     * Escanea anomal?as cr?ticas en los 50 nodos Alfa.
      */
     @Scheduled(fixedRate = 300000)
     @Transactional
     public void scanForAnomalies() {
-        log.debug("Ã°Å¸â€ºÂ¡Ã¯Â¸Â [WATCHDOG] Escaneando anomalÃƒÂ­as en la red familiar...");
+        log.debug("🛡️ [WATCHDOG] Escaneando anomalías en la red familiar...");
 
         // 1. Detectar Crisis Sentinel Activas (Optimizado)
         List<Family> activeCrises = familyRepository.findBySentinelActiveTrue();
@@ -45,7 +45,7 @@ public class SecurityWatchdogService {
                         .message(alertMessage)
                         .severity("CRITICAL")
                         .build());
-                log.warn("Ã°Å¸Å¡Â¨ [WATCHDOG-ALERT] Alerta crÃƒÂ­tica registrada para William: {}", alertTitle);
+                log.warn("🚨 [WATCHDOG-ALERT] Alerta crítica registrada para William: {}", alertTitle);
             }
         }
 
@@ -55,11 +55,11 @@ public class SecurityWatchdogService {
                 feedbackRepository.findByScoreLessThanEqualAndCreatedAtAfter(1, fiveMinutesAgo);
 
         for (Feedback fb : criticalFeedback) {
-            String fbTitle = "FEEDBACK CRÃƒÂ TICO: " + fb.getFamily().getFamilyCode();
+            String fbTitle = "FEEDBACK CR�? TICO: " + fb.getFamily().getFamilyCode();
             if (alertRepository.findByTitleAndMessage(fbTitle, fb.getComment()).isEmpty()) {
                 alertRepository.save(AdminAlert.builder()
                         .title(fbTitle)
-                        .message("PuntuaciÃƒÂ³n: 1 estrella. Comentario: " + fb.getComment())
+                        .message("Puntuación: 1 estrella. Comentario: " + fb.getComment())
                         .severity("WARNING")
                         .build());
             }

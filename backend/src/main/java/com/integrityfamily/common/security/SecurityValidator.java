@@ -34,7 +34,7 @@ public class SecurityValidator {
         
         String userEmail = principal.getName();
         
-        // 0. Verificar si es Administrador Clínico (Bypass)
+        // 0. Verificar si es Administrador Cl?nico (Bypass)
         User user = userRepository.findByEmailIgnoreCase(userEmail).orElse(null);
         if (user != null && user.getRoles().stream().anyMatch(r -> "ROLE_ADMIN".equals(r.getName()))) {
             return;
@@ -43,17 +43,17 @@ public class SecurityValidator {
         Family family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new NotFoundException("Familia no encontrada"));
         
-        // 1. Verificar si es el Creador (LÃƒÂ­der del Nodo)
+        // 1. Verificar si es el Creador (Líder del Nodo)
         if (family.getCreatedBy() != null && family.getCreatedBy().getEmail().equals(userEmail)) {
             return;
         }
 
         // 2. Verificar si es un Miembro registrado
         FamilyMember FamilyMember = memberRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new AccessDeniedException("No tienes permisos sobre este núcleo familiar"));
+                .orElseThrow(() -> new AccessDeniedException("No tienes permisos sobre este n?cleo familiar"));
 
         if (!FamilyMember.getFamily().getId().equals(familyId)) {
-            log.error("Ã°Å¸Å¡Â¨ [SECURITY-VIOLATION] {} intentÃƒÂ³ acceder a familia {}", userEmail, familyId);
+            log.error("🚨 [SECURITY-VIOLATION] {} intentó acceder a familia {}", userEmail, familyId);
             throw new AccessDeniedException("Acceso denegado");
         }
 

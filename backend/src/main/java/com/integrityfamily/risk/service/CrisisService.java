@@ -5,20 +5,20 @@ import com.integrityfamily.domain.CriticalDay;
 import java.util.List;
 
 /**
- * SDD CONTRACT: GestiÃƒÂ³n de Protocolos de Crisis Sentinel & Registro HistÃƒÂ³rico.
- * Integra el registro de eventos individuales con la respuesta sistÃƒÂ©mica.
+ * SDD CONTRACT: Gestión de Protocolos de Crisis Sentinel & Registro Histórico.
+ * Integra el registro de eventos individuales con la respuesta sistémica.
  */
 public interface CrisisService {
 
     /**
-     * SDD-RECOVERY: Registra un evento crÃƒÂ­tico individual y retorna la entidad
+     * SDD-RECOVERY: Registra un evento crítico individual y retorna la entidad
      * persistida.
      * Recupera la compatibilidad con el flujo actual del CrisisController.
      */
     CriticalDay registerCrisis(Long familyId, Long memberId, String category, String description, String emotion);
 
     /**
-     * SDD-RECOVERY: Recupera el historial de dÃƒÂ­as crÃƒÂ­ticos para una familia.
+     * SDD-RECOVERY: Recupera el historial de días críticos para una familia.
      */
     List<CriticalDay> getHistory(Long familyId);
 
@@ -28,7 +28,7 @@ public interface CrisisService {
     void activateProtocol(Long familyId, String reason);
 
     /**
-     * Procesa la involucraciÃƒÂ³n de miembros especÃƒÂ­ficos en un evento crÃƒÂ­tico.
+     * Procesa la involucración de miembros específicos en un evento crítico.
      */
     void handleMemberCrisis(Long familyId, List<FamilyMember> involvedMembers, String observation);
 

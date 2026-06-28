@@ -10,16 +10,16 @@ public record RegisterFamilyRequest(
 
         @NotBlank @Email String email,
 
-        @NotBlank @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$", message = "MÃƒÂ­nimo 8 caracteres, con mayÃƒÂºscula, minÃƒÂºscula y dÃƒÂ­gito") String password,
+        @NotBlank @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d).{8,}$", message = "Mínimo 8 caracteres, con mayúscula, minúscula y dígito") String password,
 
         @NotBlank String confirmPassword,
         
         @NotBlank(message = "El municipio es obligatorio") String municipio,
         
-        @NotBlank(message = "El código de país es obligatorio") String countryCode,
+        @NotBlank(message = "El c?digo de pa?s es obligatorio") String countryCode,
         
-        @NotBlank(message = "El código de departamento es obligatorio") String departmentCode) {
-    @AssertTrue(message = "Las contraseÃƒÂ±as no coinciden")
+        @NotBlank(message = "El c?digo de departamento es obligatorio") String departmentCode) {
+    @AssertTrue(message = "Las contraseñas no coinciden")
     public boolean isPasswordsMatch() {
         return password != null && password.equals(confirmPassword);
     }

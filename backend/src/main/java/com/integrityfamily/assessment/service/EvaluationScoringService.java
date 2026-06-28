@@ -5,8 +5,8 @@ import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
 
 /**
- * Motor de Scoring: Calcula niveles de riesgo basados en los diagnÃƒÂ³sticos.
- * Migrado al paquete ÃƒÂºnico 'assessment' para evitar conflictos de Beans.
+ * Motor de Scoring: Calcula niveles de riesgo basados en los diagnósticos.
+ * Migrado al paquete único 'assessment' para evitar conflictos de Beans.
  */
 @Service
 public class EvaluationScoringService {
@@ -23,7 +23,7 @@ public class EvaluationScoringService {
     public ScoringResult calculateRisk(BigDecimal globalScore) {
         RiskLevel level;
         
-        // LÃƒÂ³gica de rangos de William:
+        // Lógica de rangos de William:
         // 70+ = Bajo Riesgo, 40-69 = Medio, <40 = Alto
         if (globalScore.compareTo(new BigDecimal("70")) >= 0) {
             level = RiskLevel.LOW;

@@ -5,6 +5,8 @@ import com.integrityfamily.domain.RiskMacrodomain;
 import com.integrityfamily.domain.TrajectoryStatus;
 import com.integrityfamily.trajectory.dto.TrajectoryDtos.*;
 import com.integrityfamily.trajectory.service.TrajectoryService;
+import com.integrityfamily.trajectory.service.TrajectorySuggestionService;
+import com.integrityfamily.trajectory.service.TrajectorySuggestionService.TrajectorySuggestion;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -19,6 +21,7 @@ import java.util.List;
 public class TrajectoryController {
 
     private final TrajectoryService trajectoryService;
+    private final TrajectorySuggestionService suggestionService;
 
     // ─── Bank endpoints ───────────────────────────────────────────────────────
 
@@ -52,6 +55,7 @@ public class TrajectoryController {
     }
 
     @PatchMapping("/family/{id}/status")
+    @PreAuthorize("@familySecurity.checkFamilyTrajectory(#id)")
     public ApiResponse<Void> updateStatus(
             @PathVariable Long id,
             @RequestBody UpdateStatusRequest request) {
@@ -63,11 +67,13 @@ public class TrajectoryController {
     // ─── Timeline endpoints ───────────────────────────────────────────────────
 
     @GetMapping("/family/{id}/timeline")
+    @PreAuthorize("@familySecurity.checkFamilyTrajectory(#id)")
     public ApiResponse<List<TrajectoryTimelineDto>> getTimeline(@PathVariable Long id) {
         return ApiResponse.ok(trajectoryService.getTimeline(id));
     }
 
     @PostMapping("/family/{id}/timeline")
+    @PreAuthorize("@familySecurity.checkFamilyTrajectory(#id)")
     public ApiResponse<TrajectoryTimelineDto> addTimelineEvent(
             @PathVariable Long id,
             @RequestBody TimelineEventRequest request,
@@ -79,14 +85,24 @@ public class TrajectoryController {
     // ─── Impact indicator endpoints ───────────────────────────────────────────
 
     @GetMapping("/family/{id}/impact")
+    @PreAuthorize("@familySecurity.checkFamilyTrajectory(#id)")
     public ApiResponse<List<TrajectoryImpactDto>> getImpact(@PathVariable Long id) {
         return ApiResponse.ok(trajectoryService.getImpactSummary(id));
     }
 
     @PostMapping("/family/{id}/indicator")
+    @PreAuthorize("@familySecurity.checkFamilyTrajectory(#id)")
     public ApiResponse<TrajectoryImpactDto> upsertIndicator(
             @PathVariable Long id,
             @RequestBody IndicatorRequest request) {
         return ApiResponse.ok(trajectoryService.upsertIndicator(id, request));
+    }
+
+    // ─── Sugerencias automáticas ──────────────────────────────────────────────
+
+    @GetMapping("/family/{familyId}/suggestions")
+    @PreAuthorize("@familySecurity.check(#familyId)")
+    public ApiResponse<List<TrajectorySuggestion>> getSuggestions(@PathVariable Long familyId) {
+        return ApiResponse.ok(suggestionService.suggest(familyId));
     }
 }

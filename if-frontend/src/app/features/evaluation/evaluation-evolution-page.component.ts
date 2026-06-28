@@ -138,7 +138,7 @@ export class EvaluationEvolutionPageComponent implements OnInit {
     const pad = 4;
 
     return history.map((pt, i) => {
-      const val = pt.dimensions[dimKey] ?? 3.0; // Puntuación de 1 a 5
+      const val = Math.min(5.0, Math.max(1.0, pt.dimensions[dimKey] ?? 3.0)); // Clamp 1–5
       const x = pad + (i / (history.length - 1)) * (W - pad * 2);
       // Mapear 1.0 - 5.0 a la altura de la caja (invertido)
       const y = H - pad - ((val - 1.0) / 4.0) * (H - pad * 2);

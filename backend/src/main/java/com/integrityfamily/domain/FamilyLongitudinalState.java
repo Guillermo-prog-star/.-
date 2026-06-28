@@ -129,6 +129,36 @@ public class FamilyLongitudinalState {
     @Column(name = "consciousness_label")
     private String consciousnessLabel;
 
+    // ── ICaF — Capital Familiar ───────────────────────────────────────────────
+
+    /** ICaF actual (0-100) — último valor calculado */
+    @Column(name = "icaf_current")
+    private Double icafCurrent;
+
+    /** ICaF hace ~6 meses */
+    @Column(name = "icaf_6m_ago")
+    private Double icaf6mAgo;
+
+    /** ICaF hace ~12 meses */
+    @Column(name = "icaf_12m_ago")
+    private Double icaf12mAgo;
+
+    /** ICaF hace ~36 meses */
+    @Column(name = "icaf_36m_ago")
+    private Double icaf36mAgo;
+
+    /** Nivel de Madurez Familiar 1-5 */
+    @Column(name = "icaf_madurez")
+    private Integer icafMadurez;
+
+    /** Tendencia ICaF: IMPROVING | STABLE | DECLINING */
+    @Column(name = "icaf_trend", length = 20)
+    private String icafTrend;
+
+    /** Timestamp del último cálculo ICaF */
+    @Column(name = "icaf_last_calculated")
+    private java.time.LocalDateTime icafLastCalculated;
+
     // ── Adherencia y Planes ───────────────────────────────────────────────────
 
     /** Porcentaje de adherencia al plan actual (0-100) */

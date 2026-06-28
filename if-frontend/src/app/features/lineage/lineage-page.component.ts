@@ -15,8 +15,8 @@ import {
 } from './lineage.model';
 import { catchError, of } from 'rxjs';
 
-type TreeTab = 'tree' | 'history' | 'narrative' | 'legacy';
-type MemberTab = 'bio' | 'evolution' | 'events' | 'connections';
+type TreeTab = 'tree' | 'history' | 'narrative' | 'legacy' | 'stats';
+type MemberTab = 'bio' | 'evolution' | 'events' | 'connections' | 'capsule';
 
 const STATUS_ICON: Record<string, string> = {
   alive: '🌱', deceased: '🕊️', unknown: '❓', future: '⭐'
@@ -85,6 +85,7 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     <button class="tab" [class.active]="activeTab() === 'history'"   (click)="activeTab.set('history')">📅 Historia</button>
     <button class="tab" [class.active]="activeTab() === 'narrative'" (click)="activeTab.set('narrative')">✍️ Narrativa</button>
     <button class="tab" [class.active]="activeTab() === 'legacy'"    (click)="activeTab.set('legacy')">🏛️ Legado</button>
+    <button class="tab" [class.active]="activeTab() === 'stats'"     (click)="activeTab.set('stats')">📊 Estadísticas</button>
   </div>
 
   <!-- ── LOADING / EMPTY ──────────────────────────────── -->
@@ -124,7 +125,34 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
         <span class="zb-pct">{{ zoomPct() }}%</span>
         <button class="zb-btn" (click)="zoomIn()" title="Acercar (+)">+</button>
         <button class="zb-btn zb-reset" (click)="resetView()" title="Restablecer vista">⊞</button>
+        <button class="zb-btn zb-reorg" [class.active]="ignoreStoredPositions()"
+          (click)="ignoreStoredPositions.set(!ignoreStoredPositions())"
+          title="Reorganizar árbol automáticamente (ignora posiciones manuales)">🔀</button>
         <span class="zb-hint">Alt+arrastrar · rueda = zoom</span>
+        <div class="zb-divider"></div>
+        <button class="zb-btn zb-gen-mode" [class.active]="genMode()"
+          (click)="toggleGenMode()" title="Vista expandible por generación">
+          🌿 {{ genMode() ? 'Vista generacional' : 'Ver todo' }}
+        </button>
+        <div class="zb-divider"></div>
+        <!-- Buscador de miembros -->
+        <div class="zb-search-wrap">
+          <input class="zb-search" type="text" placeholder="🔍 Buscar miembro…"
+            [value]="memberSearch()"
+            (input)="onMemberSearch($event)"
+            (keydown.enter)="jumpToSearchResult()"
+            (keydown.escape)="clearSearch()" />
+          @if (searchResults().length > 0) {
+            <div class="zb-search-dropdown">
+              @for (r of searchResults(); track r.id) {
+                <button class="zb-search-item" (click)="jumpToMember(r)">
+                  <span class="zb-si-name">{{ r.fullName }}</span>
+                  <span class="zb-si-gen">Gen {{ r.generation }}</span>
+                </button>
+              }
+            </div>
+          }
+        </div>
       </div>
 
       <div class="tree-layout">
@@ -168,13 +196,47 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
               }
             }
 
-            <!-- Relationship branches -->
+            <!-- Relationship branches (T-junction tree) -->
             @for (path of branchPaths(); track path.id) {
-              <path [attr.d]="path.d" stroke="#fbbf24" stroke-width="28" fill="none" opacity=".05"/>
-              <path [attr.d]="path.d" stroke="url(#lin-trunk-g)"
-                [attr.stroke-width]="path.isCouple ? 1.5 : 3.5" fill="none"
-                filter="url(#lin-glow)" opacity=".9" stroke-linecap="round"
-                [attr.stroke-dasharray]="path.isCouple ? '6 4' : 'none'"/>
+              @if (!path.isCouple) {
+                @if (!path.isThin) {
+                  <!-- trunk & vertical drops: glowing line -->
+                  <path [attr.d]="path.d" stroke="#fbbf24" stroke-width="20" fill="none" opacity=".05"/>
+                  <path [attr.d]="path.d" stroke="url(#lin-trunk-g)"
+                    stroke-width="3" fill="none"
+                    filter="url(#lin-glow)" opacity=".9" stroke-linecap="round"/>
+                } @else {
+                  <!-- horizontal sibling bar: thinner, no glow -->
+                  <path [attr.d]="path.d" stroke="url(#lin-trunk-g)"
+                    stroke-width="2" fill="none" opacity=".7" stroke-linecap="round"/>
+                }
+              }
+            }
+
+            <!-- Couple connectors: horizontal bar + ❤ badge -->
+            @for (cp of coupleConnectors(); track cp.id) {
+              <!-- background glow bar -->
+              <line [attr.x1]="cp.x1" [attr.y1]="cp.y" [attr.x2]="cp.x2" [attr.y2]="cp.y"
+                stroke="#fbbf24" stroke-width="14" opacity=".08" stroke-linecap="round"/>
+              <!-- dashed line -->
+              <line [attr.x1]="cp.x1" [attr.y1]="cp.y" [attr.x2]="cp.x2" [attr.y2]="cp.y"
+                stroke="#f59e0b" stroke-width="1.5" opacity=".7"
+                stroke-dasharray="5 4" stroke-linecap="round"/>
+              <!-- ❤ at midpoint -->
+              <circle [attr.cx]="cp.mx" [attr.cy]="cp.y" r="9"
+                fill="#1f1410" stroke="#f59e0b" stroke-width="1.2" opacity=".9"/>
+              <text [attr.x]="cp.mx" [attr.y]="cp.y + 1"
+                text-anchor="middle" dominant-baseline="middle"
+                font-size="10" style="pointer-events:none">❤️</text>
+            }
+
+            <!-- Couple background blocks (drawn before nodes so nodes appear on top) -->
+            @for (cp of coupleConnectors(); track cp.id) {
+              <rect
+                [attr.x]="cp.x1 - 32" [attr.y]="cp.y - 32"
+                [attr.width]="cp.x2 - cp.x1 + 64" height="64" rx="20"
+                fill="#fbbf2408" stroke="#f59e0b" stroke-width="0.8"
+                opacity=".5" style="pointer-events:none"/>
             }
 
             <!-- Member nodes -->
@@ -219,11 +281,17 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
                     <circle [attr.cx]="m.px" [attr.cy]="m.py" [attr.r]="nodeRadius(m.generation)"/>
                   </clipPath>
                 </defs>
+                @if (highlightedId() === m.id) {
+                  <circle [attr.cx]="m.px" [attr.cy]="m.py"
+                    [attr.r]="nodeRadius(m.generation) + 10"
+                    fill="none" stroke="#34d399" stroke-width="3" opacity=".8"
+                    class="search-pulse-ring"/>
+                }
                 <circle [attr.cx]="m.px" [attr.cy]="m.py"
                   [attr.r]="nodeRadius(m.generation)"
                   [attr.fill]="nodeFill(m)"
-                  [attr.stroke]="nodeStroke(m.generation)"
-                  [attr.stroke-width]="selectedId() === m.id ? 3 : (m.isAnchor ? 2.5 : 1.8)"
+                  [attr.stroke]="highlightedId() === m.id ? '#34d399' : nodeStroke(m.generation)"
+                  [attr.stroke-width]="highlightedId() === m.id ? 4 : (selectedId() === m.id ? 3 : (m.isAnchor ? 2.5 : 1.8))"
                   filter="url(#lin-glow)" opacity=".95"/>
                 @if (m.photoUrl) {
                   <!-- Foto de perfil circular -->
@@ -259,11 +327,31 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
                   text-anchor="middle" font-size="11" fill="#fde68a" style="pointer-events:none">
                   {{ shortName(m) }}
                 </text>
+                @if (m.birthYear) {
+                  <text [attr.x]="m.px" [attr.y]="m.py + nodeRadius(m.generation) + 25"
+                    text-anchor="middle" font-size="8.5" fill="#9ca3af" opacity=".8"
+                    style="pointer-events:none">
+                    {{ m.birthYearApproximate ? '~' : '' }}{{ m.birthYear }}{{ m.status === 'alive' ? '' : (m.deathYear ? '–' + m.deathYear : '') }}
+                  </text>
+                }
                 @if (m.roleLabel) {
-                  <text [attr.x]="m.px" [attr.y]="m.py + nodeRadius(m.generation) + 26"
+                  <text [attr.x]="m.px" [attr.y]="m.py + nodeRadius(m.generation) + (m.birthYear ? 35 : 26)"
                     text-anchor="middle" font-size="9" [attr.fill]="nodeStroke(m.generation)"
                     opacity=".8" style="pointer-events:none">
                     {{ m.roleLabel }}
+                  </text>
+                }
+                <!-- ▼ badge: nodo con hijos ocultos en genMode -->
+                @if (hasUnexpandedChildren().has(m.id)) {
+                  <rect [attr.x]="m.px - 14" [attr.y]="m.py + nodeRadius(m.generation) + (m.roleLabel ? 30 : 20)"
+                    width="28" height="14" rx="7"
+                    fill="#14532d" stroke="#22c55e" stroke-width="1"
+                    style="pointer-events:none" opacity=".9"/>
+                  <text [attr.x]="m.px" [attr.y]="m.py + nodeRadius(m.generation) + (m.roleLabel ? 37 : 27)"
+                    text-anchor="middle" dominant-baseline="middle"
+                    font-size="8" fill="#4ade80" font-weight="700"
+                    style="pointer-events:none">
+                    ▼ {{ hiddenChildrenCount().get(m.id) ?? '' }}
                   </text>
                 }
               </g>
@@ -275,31 +363,70 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
         <div class="side-panel" [class.open]="!!selectedMember()">
           @if (selectedMember(); as m) {
             <div class="sp-header" [style.border-left]="'4px solid ' + nodeStroke(m.generation)">
-              @if (m.photoUrl) {
-                <img [src]="m.photoUrl" [alt]="m.fullName" class="sp-avatar sp-avatar-photo"/>
-              } @else {
-                <div class="sp-avatar" [style.background]="m.avatarColor || nodeStroke(m.generation)">
-                  {{ m.avatarInitials || initials(m) }}
+
+              @if (selectedMemberSpouse(); as sp) {
+                <!-- Couple header: both members side by side -->
+                <div class="sp-couple-wrap">
+                  <div class="sp-couple-unit">
+                    @if (m.photoUrl) {
+                      <img [src]="m.photoUrl" [alt]="m.fullName" class="sp-avatar sp-avatar-sm sp-avatar-photo"/>
+                    } @else {
+                      <div class="sp-avatar sp-avatar-sm" [style.background]="m.avatarColor || nodeStroke(m.generation)">
+                        {{ m.avatarInitials || initials(m) }}
+                      </div>
+                    }
+                    <span class="sp-couple-name">{{ m.firstName || m.fullName }}</span>
+                  </div>
+                  <span class="sp-couple-heart">❤️</span>
+                  <div class="sp-couple-unit" (click)="selectMember(sp, $event); $event.stopPropagation()" style="cursor:pointer" title="Ver perfil de {{ sp.fullName }}">
+                    @if (sp.photoUrl) {
+                      <img [src]="sp.photoUrl" [alt]="sp.fullName" class="sp-avatar sp-avatar-sm sp-avatar-photo"/>
+                    } @else {
+                      <div class="sp-avatar sp-avatar-sm" [style.background]="sp.avatarColor || nodeStroke(sp.generation)">
+                        {{ sp.avatarInitials || initials(sp) }}
+                      </div>
+                    }
+                    <span class="sp-couple-name">{{ sp.firstName || sp.fullName }}</span>
+                  </div>
                 </div>
-              }
-              <div>
-                <div class="sp-name">{{ m.fullName }}</div>
                 <div class="sp-gen-badge" [style.color]="nodeStroke(m.generation)">
                   {{ getGenMeta(m.generation).label }}
                   @if (m.isAnchor) { <span class="anchor-tag">⚓ Ancla</span> }
+                  @if (memberChildrenCount(m) > 0) {
+                    <span class="sp-children-count">· {{ memberChildrenCount(m) }} hijo{{ memberChildrenCount(m) !== 1 ? 's' : '' }}</span>
+                  }
                 </div>
-                <div class="sp-status">{{ statusIcon(m.status) }} {{ statusLabel(m.status) }}</div>
-                @if (m.familyMemberId && linkedMember(m.familyMemberId); as reg) {
-                  <div class="sp-linked">
-                    🔗 <span>{{ reg.fullName }}</span>
-                    @if (reg.email) { <span class="sp-linked-email">{{ reg.email }}</span> }
+
+              } @else {
+                <!-- Solo member header -->
+                @if (m.photoUrl) {
+                  <img [src]="m.photoUrl" [alt]="m.fullName" class="sp-avatar sp-avatar-photo"/>
+                } @else {
+                  <div class="sp-avatar" [style.background]="m.avatarColor || nodeStroke(m.generation)">
+                    {{ m.avatarInitials || initials(m) }}
                   </div>
                 }
-              </div>
+                <div>
+                  <div class="sp-name">{{ m.fullName }}</div>
+                  <div class="sp-gen-badge" [style.color]="nodeStroke(m.generation)">
+                    {{ getGenMeta(m.generation).label }}
+                    @if (m.isAnchor) { <span class="anchor-tag">⚓ Ancla</span> }
+                  </div>
+                  <div class="sp-status">{{ statusIcon(m.status) }} {{ statusLabel(m.status) }}</div>
+                  @if (m.familyMemberId && linkedMember(m.familyMemberId); as reg) {
+                    <div class="sp-linked">
+                      🔗 <span>{{ reg.fullName }}</span>
+                      @if (reg.email) { <span class="sp-linked-email">{{ reg.email }}</span> }
+                    </div>
+                  }
+                </div>
+              }
             </div>
 
             <!-- Member sub-tabs -->
             <div class="sp-tabs">
+              <button class="sp-tab" [class.active]="memberTab() === 'capsule'"
+                (click)="memberTab.set('capsule')">💎 Cápsula</button>
               <button class="sp-tab" [class.active]="memberTab() === 'bio'"
                 (click)="memberTab.set('bio')">Datos</button>
               <button class="sp-tab" [class.active]="memberTab() === 'evolution'"
@@ -316,6 +443,154 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
             </div>
 
             <div class="sp-body">
+
+              <!-- CÁPSULA DE VIDA -->
+              @if (memberTab() === 'capsule') {
+                <div class="capsule-header">
+                  <div class="ch-name">{{ m.fullName }}</div>
+                  <div class="ch-gen" [style.color]="nodeStroke(m.generation)">
+                    {{ getGenMeta(m.generation).label }}
+                  </div>
+                  <!-- completeness ring summary -->
+                  <div class="ch-completeness">
+                    <div class="ch-ring" [style.background]="
+                      'conic-gradient(' + completenessColor(m) + ' ' + completeness(m) + '%, #1f2937 0)'">
+                      <div class="ch-ring-inner">{{ completeness(m) }}%</div>
+                    </div>
+                    <span class="ch-ring-lbl">Perfil documentado</span>
+                  </div>
+                </div>
+
+                <!-- Grow the tree -->
+                <div class="cap-grow-section">
+                  <div class="cap-section-title">🌱 Hacer crecer el árbol</div>
+                  <div class="cap-grow-row">
+                    <button class="btn-quick child" (click)="quickAdd(m, 'son')">👦 Hijo</button>
+                    <button class="btn-quick child" (click)="quickAdd(m, 'daughter')">👧 Hija</button>
+                    @if (!hasSpouse(m)) {
+                      <button class="btn-quick spouse" (click)="quickAdd(m, 'spouse')">❤️ Cónyuge</button>
+                    }
+                  </div>
+                  @if (memberChildrenCount(m) > 0) {
+                    <div class="cap-children-count">
+                      🌿 {{ memberChildrenCount(m) }} hijo{{ memberChildrenCount(m) !== 1 ? 's' : '' }} registrados en el árbol
+                    </div>
+                  }
+                </div>
+
+                <!-- Familia inferida -->
+                @if (inferredFamily().parents.length || inferredFamily().siblings.length || inferredFamily().children.length || inferredFamily().grandparents.length) {
+                  <div class="cap-family-section">
+                    <div class="cap-section-title">👨‍👩‍👧‍👦 Familia en el árbol</div>
+                    @if (inferredFamily().grandparents.length) {
+                      <div class="cap-fam-row">
+                        <span class="cap-fam-lbl">Abuelos</span>
+                        <span class="cap-fam-names">
+                          @for (gp of inferredFamily().grandparents; track gp.id) {
+                            <button class="cap-fam-chip" (click)="selectMember(gp, $event)">{{ gp.fullName }}</button>
+                          }
+                        </span>
+                      </div>
+                    }
+                    @if (inferredFamily().parents.length) {
+                      <div class="cap-fam-row">
+                        <span class="cap-fam-lbl">Padres</span>
+                        <span class="cap-fam-names">
+                          @for (p of inferredFamily().parents; track p.id) {
+                            <button class="cap-fam-chip" (click)="selectMember(p, $event)">{{ p.fullName }}</button>
+                          }
+                        </span>
+                      </div>
+                    }
+                    @if (inferredFamily().siblings.length) {
+                      <div class="cap-fam-row">
+                        <span class="cap-fam-lbl">Hermanos</span>
+                        <span class="cap-fam-names">
+                          @for (s of inferredFamily().siblings; track s.id) {
+                            <button class="cap-fam-chip" (click)="selectMember(s, $event)">{{ s.fullName }}</button>
+                          }
+                        </span>
+                      </div>
+                    }
+                    @if (inferredFamily().children.length) {
+                      <div class="cap-fam-row">
+                        <span class="cap-fam-lbl">Hijos</span>
+                        <span class="cap-fam-names">
+                          @for (c of inferredFamily().children; track c.id) {
+                            <button class="cap-fam-chip" (click)="selectMember(c, $event)">{{ c.fullName }}</button>
+                          }
+                        </span>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Navigation links -->
+                <div class="capsule-grid">
+                  <button class="cap-link" (click)="navigate('/evaluations/history')">
+                    <span class="cap-icon">📊</span>
+                    <span class="cap-label">Indicadores ICF</span>
+                    <span class="cap-arrow">→</span>
+                  </button>
+                  <button class="cap-link" (click)="navigate('/plans')">
+                    <span class="cap-icon">🎯</span>
+                    <span class="cap-label">Plan de mejora</span>
+                    <span class="cap-arrow">→</span>
+                  </button>
+                  <button class="cap-link" (click)="navigate('/logbook')">
+                    <span class="cap-icon">📋</span>
+                    <span class="cap-label">Bitácora familiar</span>
+                    <span class="cap-arrow">→</span>
+                  </button>
+                  <button class="cap-link" (click)="navigate('/checklist')">
+                    <span class="cap-icon">✅</span>
+                    <span class="cap-label">Misiones activas</span>
+                    <span class="cap-arrow">→</span>
+                  </button>
+                  <button class="cap-link" (click)="navigate('/documentary-maker')">
+                    <span class="cap-icon">🎬</span>
+                    <span class="cap-label">Documental familiar</span>
+                    <span class="cap-arrow">→</span>
+                  </button>
+                  <button class="cap-link" (click)="navigate('/legado')">
+                    <span class="cap-icon">🏛️</span>
+                    <span class="cap-label">Legado del linaje</span>
+                    <span class="cap-arrow">→</span>
+                  </button>
+                  <button class="cap-link" (click)="navigate('/family-dna')">
+                    <span class="cap-icon">🧬</span>
+                    <span class="cap-label">ADN familiar</span>
+                    <span class="cap-arrow">→</span>
+                  </button>
+                  <button class="cap-link" (click)="navigate('/family-timeline')">
+                    <span class="cap-icon">📅</span>
+                    <span class="cap-label">Historia familiar</span>
+                    <span class="cap-arrow">→</span>
+                  </button>
+                  <button class="cap-link" (click)="navigate('/family-pulse')">
+                    <span class="cap-icon">💓</span>
+                    <span class="cap-label">Pulso familiar</span>
+                    <span class="cap-arrow">→</span>
+                  </button>
+                  <button class="cap-link" (click)="navigate('/digital-twin')">
+                    <span class="cap-icon">🤖</span>
+                    <span class="cap-label">Gemelo digital</span>
+                    <span class="cap-arrow">→</span>
+                  </button>
+                  <button class="cap-link" (click)="navigate('/family-council')">
+                    <span class="cap-icon">🏛</span>
+                    <span class="cap-label">Consejo familiar</span>
+                    <span class="cap-arrow">→</span>
+                  </button>
+                  @if (m.familyMemberId) {
+                    <button class="cap-link cap-link-highlight" (click)="navigate('/my-space')">
+                      <span class="cap-icon">👤</span>
+                      <span class="cap-label">Mi espacio personal</span>
+                      <span class="cap-arrow">→</span>
+                    </button>
+                  }
+                </div>
+              }
 
               <!-- BIO -->
               @if (memberTab() === 'bio') {
@@ -478,6 +753,24 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
         </div>
 
       </div><!-- /tree-layout -->
+
+      <!-- Generational controls (solo en genMode) -->
+      @if (genMode()) {
+        <div class="gen-mode-bar">
+          @if (unexpandedNodeCount() > 0) {
+            <div class="gmb-hint">
+              <span class="gmb-dot">▼</span>
+              Toca un nodo para expandir sus hijos · {{ unexpandedNodeCount() }} nodo{{ unexpandedNodeCount() !== 1 ? 's' : '' }} con hijos ocultos
+            </div>
+            <button class="ges-btn" (click)="expandAllVisible()">Expandir todo</button>
+          } @else {
+            <div class="gmb-hint gmb-done">✅ Todas las generaciones visibles están expandidas</div>
+          }
+          @if (expandedParentIds().size > 0) {
+            <button class="gcs-btn" (click)="collapseAll()">▲ Colapsar todo</button>
+          }
+        </div>
+      }
 
       <!-- generation legend (fuera del tree-layout, dentro del @if tree) -->
       <div class="gen-legend">
@@ -745,6 +1038,116 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
             </div>
           }
         </div>
+
+      </div>
+    }
+
+    <!-- ── TAB: ESTADÍSTICAS ──────────────────────────────── -->
+    @if (activeTab() === 'stats') {
+      <div class="content-tab stats-tab">
+
+        <!-- KPIs principales -->
+        <div class="st-kpi-row">
+          <div class="st-kpi">
+            <div class="st-kpi-num">{{ lineageStats().totalMembers }}</div>
+            <div class="st-kpi-lbl">Miembros totales</div>
+          </div>
+          <div class="st-kpi">
+            <div class="st-kpi-num">{{ lineageStats().totalGenerations }}</div>
+            <div class="st-kpi-lbl">Generaciones</div>
+          </div>
+          <div class="st-kpi">
+            <div class="st-kpi-num">{{ lineageStats().totalCouples }}</div>
+            <div class="st-kpi-lbl">Parejas</div>
+          </div>
+          <div class="st-kpi">
+            <div class="st-kpi-num">{{ lineageStats().avgCompleteness }}%</div>
+            <div class="st-kpi-lbl">Completitud media</div>
+          </div>
+        </div>
+
+        <!-- Estado vital -->
+        <div class="st-section">
+          <div class="st-section-title">Estado vital</div>
+          <div class="st-bar-list">
+            <div class="st-bar-item">
+              <span class="st-bar-lbl">Vivos</span>
+              <div class="st-bar-track">
+                <div class="st-bar-fill st-alive"
+                  [style.width.%]="lineageStats().totalMembers ? (lineageStats().alive / lineageStats().totalMembers * 100) : 0"></div>
+              </div>
+              <span class="st-bar-val">{{ lineageStats().alive }}</span>
+            </div>
+            <div class="st-bar-item">
+              <span class="st-bar-lbl">Fallecidos</span>
+              <div class="st-bar-track">
+                <div class="st-bar-fill st-deceased"
+                  [style.width.%]="lineageStats().totalMembers ? (lineageStats().deceased / lineageStats().totalMembers * 100) : 0"></div>
+              </div>
+              <span class="st-bar-val">{{ lineageStats().deceased }}</span>
+            </div>
+            <div class="st-bar-item">
+              <span class="st-bar-lbl">Sin dato</span>
+              <div class="st-bar-track">
+                <div class="st-bar-fill st-unknown"
+                  [style.width.%]="lineageStats().totalMembers ? (lineageStats().unknown / lineageStats().totalMembers * 100) : 0"></div>
+              </div>
+              <span class="st-bar-val">{{ lineageStats().unknown }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Distribución por generación -->
+        <div class="st-section">
+          <div class="st-section-title">Miembros por generación</div>
+          <div class="st-gen-bars">
+            @for (g of lineageStats().byGeneration; track g.gen) {
+              <div class="st-gen-row">
+                <span class="st-gen-lbl">{{ getGenMeta(g.gen).label }}</span>
+                <div class="st-gen-track">
+                  <div class="st-gen-fill"
+                    [style.width.%]="lineageStats().maxInGen ? (g.count / lineageStats().maxInGen * 100) : 0"
+                    [style.background]="getGenMeta(g.gen).color"></div>
+                </div>
+                <span class="st-gen-count">{{ g.count }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Completitud de perfiles -->
+        <div class="st-section">
+          <div class="st-section-title">Completitud de perfiles</div>
+          <div class="st-compl-grid">
+            @for (band of lineageStats().complBands; track band.label) {
+              <div class="st-compl-card" [style.border-color]="band.color">
+                <div class="st-compl-num" [style.color]="band.color">{{ band.count }}</div>
+                <div class="st-compl-lbl">{{ band.label }}</div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Top miembros mejor documentados -->
+        @if (lineageStats().topDocumented.length) {
+          <div class="st-section">
+            <div class="st-section-title">✨ Perfiles más completos</div>
+            <div class="st-top-list">
+              @for (item of lineageStats().topDocumented; track item.member.id) {
+                <div class="st-top-item" (click)="jumpToMember(item.member)">
+                  <div class="st-top-avatar" [style.background]="'#374151'">
+                    {{ (item.member.firstName || item.member.fullName || '?')[0] }}
+                  </div>
+                  <div class="st-top-info">
+                    <div class="st-top-name">{{ item.member.fullName }}</div>
+                    <div class="st-top-gen">{{ getGenMeta(item.member.generation).label }}</div>
+                  </div>
+                  <div class="st-top-pct">{{ item.pct }}%</div>
+                </div>
+              }
+            </div>
+          </div>
+        }
 
       </div>
     }
@@ -1470,6 +1873,52 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     .sp-name     { font-size: 15px; font-weight: 700; color: #fbbf24; }
     .sp-gen-badge{ font-size: 11px; margin-top: 2px; font-weight: 600; }
     .anchor-tag  { margin-left: 6px; font-size: 10px; color: #d97706; }
+
+    /* Couple header in side panel */
+    .sp-couple-wrap {
+      display: flex; align-items: center; gap: 8px;
+      padding: 4px 0; width: 100%;
+    }
+    .sp-couple-unit {
+      display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1;
+    }
+    .sp-couple-name { font-size: 11px; font-weight: 600; color: #fde68a; text-align: center; }
+    .sp-couple-heart { font-size: 18px; flex-shrink: 0; }
+    .sp-avatar-sm { width: 36px !important; height: 36px !important; font-size: 13px !important; }
+    .sp-children-count { font-size: 10px; color: #86efac; margin-left: 8px; }
+
+    /* Grow tree section inside capsule */
+    .cap-grow-section {
+      padding: 10px 12px; border-bottom: 1px solid #1f2937;
+    }
+    .cap-section-title { font-size: 10px; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+    .cap-grow-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .cap-grow-row .btn-quick { flex: 1; min-width: 70px; justify-content: center;
+      padding: 7px 8px; font-size: 11px; }
+    .cap-children-count {
+      font-size: 11px; color: #4ade80; margin-top: 7px;
+    }
+
+    .cap-family-section {
+      padding: 10px 12px; border-bottom: 1px solid #1f2937;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .cap-fam-row {
+      display: flex; align-items: flex-start; gap: 8px; min-height: 22px;
+    }
+    .cap-fam-lbl {
+      font-size: 10px; font-weight: 700; color: #6b7280; text-transform: uppercase;
+      letter-spacing: .05em; min-width: 60px; padding-top: 3px; flex-shrink: 0;
+    }
+    .cap-fam-names { display: flex; flex-wrap: wrap; gap: 4px; }
+    .cap-fam-chip {
+      font-size: 11px; padding: 2px 8px; border-radius: 12px;
+      background: #1f2937; border: 1px solid #374151; color: #d1d5db;
+      cursor: pointer; transition: all .15s;
+    }
+    .cap-fam-chip:hover { background: #fbbf2420; border-color: #fbbf24; color: #fbbf24; }
+
     .sp-status       { font-size: 11px; color: #9ca3af; margin-top: 4px; }
     .sp-linked       { font-size: 11px; color: #6366f1; margin-top: 4px;
       display: flex; flex-direction: column; gap: 1px; }
@@ -1507,6 +1956,43 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .sp-conn-type { font-size: 11px; color: #6b7280; margin-top: 2px; }
     .sp-conn-rel-type { color: #9ca3af; text-transform: capitalize; }
+    /* ── CÁPSULA DE VIDA ──────────────────────────────── */
+    .capsule-header {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 6px; padding: 16px 12px 12px; border-bottom: 1px solid #1f2937;
+      text-align: center;
+    }
+    .ch-name { font-size: 14px; font-weight: 700; color: #fbbf24; }
+    .ch-gen  { font-size: 11px; font-weight: 600; }
+    .ch-completeness { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+    .ch-ring {
+      width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ch-ring-inner {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: #0d1117;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; color: #fbbf24;
+    }
+    .ch-ring-lbl { font-size: 10px; color: #6b7280; }
+
+    .capsule-grid { display: flex; flex-direction: column; gap: 2px; padding: 8px 8px; }
+    .cap-link {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 10px; border-radius: 8px; cursor: pointer;
+      background: transparent; border: none; color: #d1d5db;
+      font-size: 12px; text-align: left; transition: background .15s;
+      width: 100%;
+    }
+    .cap-link:hover { background: #1f2937; color: #fbbf24; }
+    .cap-icon { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+    .cap-label { flex: 1; }
+    .cap-arrow { color: #4b5563; font-size: 11px; }
+    .cap-link:hover .cap-arrow { color: #fbbf24; }
+    .cap-link-highlight { background: #1c1006; color: #fbbf24; }
+    .cap-link-highlight:hover { background: #2d1a00; }
+
     .sp-body       { flex: 1; overflow-y: auto; padding: 12px 14px; }
     .sp-row        { display: flex; gap: 8px; align-items: center; margin-bottom: 8px;
       font-size: 12px; flex-wrap: wrap; }
@@ -1567,6 +2053,25 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
       color: #6b7280; font-size: 12px; cursor: pointer; transition: all .2s; }
     .btn-add-event:hover { border-color: #f59e0b; color: #f59e0b; }
 
+    /* Quick-add family buttons */
+    .sp-quick-add {
+      display: flex; flex-direction: column; gap: 6px;
+      padding: 10px 14px; border-top: 1px solid #1f2937;
+    }
+    .btn-quick {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 12px; border-radius: 8px; font-size: 12px; font-weight: 600;
+      border: 1px solid; cursor: pointer; transition: all .18s; text-align: left;
+    }
+    .btn-quick.spouse {
+      background: #1c1006; border-color: #f59e0b40; color: #fbbf24;
+    }
+    .btn-quick.spouse:hover { background: #2d1a00; border-color: #f59e0b; }
+    .btn-quick.child {
+      background: #0a1a0a; border-color: #22c55e40; color: #86efac;
+    }
+    .btn-quick.child:hover { background: #0d2a0d; border-color: #22c55e; }
+
     .sp-actions{ display: flex; gap: 8px; padding: 10px 14px; border-top: 1px solid #1f2937;
       justify-content: space-between; align-items: center; }
 
@@ -1592,6 +2097,74 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     .zb-hint {
       margin-left: 8px; font-size: 10px; color: #4b5563;
     }
+    .zb-divider { width: 1px; height: 20px; background: #374151; margin: 0 4px; }
+    .zb-gen-mode {
+      width: auto !important; padding: 0 10px !important; font-size: 11px !important;
+      color: #9ca3af;
+    }
+    .zb-gen-mode.active {
+      background: #1c2a0a !important; border-color: #4ade80 !important; color: #86efac !important;
+    }
+    .zb-reorg.active {
+      background: #1a1a2e !important; border-color: #818cf8 !important; color: #a5b4fc !important;
+    }
+    .zb-search-wrap {
+      position: relative; margin-left: 4px;
+    }
+    .zb-search {
+      height: 28px; padding: 0 10px; border-radius: 6px;
+      background: #1f2937; border: 1px solid #374151;
+      color: #d1d5db; font-size: 11px; width: 180px;
+      outline: none; transition: border-color .15s;
+    }
+    .zb-search:focus { border-color: #fbbf24; }
+    .zb-search-dropdown {
+      position: absolute; top: calc(100% + 4px); left: 0; z-index: 200;
+      background: #111827; border: 1px solid #374151; border-radius: 8px;
+      min-width: 200px; overflow: hidden;
+      box-shadow: 0 8px 24px #00000080;
+    }
+    .zb-search-item {
+      display: flex; align-items: center; justify-content: space-between;
+      width: 100%; padding: 7px 12px; background: transparent;
+      border: none; color: #d1d5db; font-size: 12px; cursor: pointer;
+      text-align: left; transition: background .12s;
+    }
+    .zb-search-item:hover { background: #1f2937; color: #fbbf24; }
+    .zb-si-name { font-weight: 600; }
+    .zb-si-gen  { font-size: 10px; color: #6b7280; }
+
+    @keyframes pulse-ring {
+      0%   { r: 0; opacity: .9; }
+      100% { r: 28; opacity: 0; }
+    }
+    .search-pulse-ring { animation: pulse-ring 1.2s ease-out infinite; }
+
+    /* ── GENERATIONAL MODE BAR ──────────────────────────── */
+    .gen-mode-bar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 8px 20px; background: #0a1a0a;
+      border-top: 1px solid #1a2e1a; border-bottom: 1px solid #1a2e1a;
+    }
+    .gmb-hint {
+      flex: 1; font-size: 11px; color: #4ade80;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .gmb-hint.gmb-done { color: #6b7280; }
+    .gmb-dot { font-size: 10px; animation: pulse-dot 1.5s ease-in-out infinite; }
+    @keyframes pulse-dot { 0%,100% { opacity: .4; } 50% { opacity: 1; } }
+    .ges-btn {
+      padding: 5px 14px; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer;
+      background: #0a2a0a; border: 1px solid #22c55e60; color: #4ade80;
+      transition: all .2s; white-space: nowrap;
+    }
+    .ges-btn:hover { background: #0d3a0d; border-color: #22c55e; box-shadow: 0 0 12px #22c55e30; }
+    .gcs-btn {
+      padding: 4px 14px; border-radius: 20px; font-size: 10px; cursor: pointer;
+      background: transparent; border: 1px solid #374151; color: #6b7280;
+      transition: all .2s; white-space: nowrap;
+    }
+    .gcs-btn:hover { border-color: #9ca3af; color: #d1d5db; }
 
     /* ── GENERATION LEGEND ───────────────────────────── */
     .gen-legend {
@@ -1761,6 +2334,73 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
     .lc-name   { font-size: 12px; font-weight: 600; color: #fde68a; }
     .lc-status { font-size: 10px; color: #9ca3af; }
     .lc-legacy { font-size: 11px; color: #9ca3af; font-style: italic; margin-top: 4px; }
+
+    /* ── TAB ESTADÍSTICAS ───────────────────────────── */
+    .stats-tab { padding: 20px 16px; display: flex; flex-direction: column; gap: 24px; }
+
+    .st-kpi-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+    }
+    .st-kpi {
+      background: #111827; border: 1px solid #1f2937; border-radius: 12px;
+      padding: 16px 12px; text-align: center;
+    }
+    .st-kpi-num { font-size: 28px; font-weight: 800; color: #fbbf24; line-height: 1; }
+    .st-kpi-lbl { font-size: 11px; color: #6b7280; margin-top: 4px; }
+
+    .st-section { display: flex; flex-direction: column; gap: 10px; }
+    .st-section-title {
+      font-size: 12px; font-weight: 700; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: .06em;
+    }
+
+    .st-bar-list  { display: flex; flex-direction: column; gap: 8px; }
+    .st-bar-item  { display: flex; align-items: center; gap: 10px; }
+    .st-bar-lbl   { font-size: 12px; color: #d1d5db; min-width: 72px; }
+    .st-bar-track {
+      flex: 1; height: 8px; background: #1f2937; border-radius: 4px; overflow: hidden;
+    }
+    .st-bar-fill  { height: 100%; border-radius: 4px; transition: width .5s ease; }
+    .st-alive     { background: #4ade80; }
+    .st-deceased  { background: #6b7280; }
+    .st-unknown   { background: #374151; }
+    .st-bar-val   { font-size: 12px; color: #9ca3af; min-width: 24px; text-align: right; }
+
+    .st-gen-bars { display: flex; flex-direction: column; gap: 6px; }
+    .st-gen-row  { display: flex; align-items: center; gap: 10px; }
+    .st-gen-lbl  { font-size: 11px; color: #9ca3af; min-width: 160px; }
+    .st-gen-track {
+      flex: 1; height: 10px; background: #1f2937; border-radius: 5px; overflow: hidden;
+    }
+    .st-gen-fill  { height: 100%; border-radius: 5px; transition: width .5s ease; opacity: .85; }
+    .st-gen-count { font-size: 12px; color: #d1d5db; min-width: 24px; text-align: right; }
+
+    .st-compl-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    .st-compl-card {
+      background: #0f172a; border: 1px solid; border-radius: 10px;
+      padding: 12px 8px; text-align: center;
+    }
+    .st-compl-num { font-size: 24px; font-weight: 800; line-height: 1; }
+    .st-compl-lbl { font-size: 10px; color: #6b7280; margin-top: 4px; line-height: 1.3; }
+
+    .st-top-list { display: flex; flex-direction: column; gap: 6px; }
+    .st-top-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 12px; background: #111827; border: 1px solid #1f2937;
+      border-radius: 10px; cursor: pointer; transition: border-color .15s;
+    }
+    .st-top-item:hover { border-color: #fbbf24; }
+    .st-top-avatar {
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; color: #fffbeb;
+    }
+    .st-top-info   { flex: 1; }
+    .st-top-name   { font-size: 13px; font-weight: 600; color: #f3f4f6; }
+    .st-top-gen    { font-size: 10px; color: #6b7280; margin-top: 2px; }
+    .st-top-pct    {
+      font-size: 16px; font-weight: 800; color: #4ade80;
+    }
 
     /* ── MODAL ───────────────────────────────────────── */
     .modal-overlay {
@@ -1961,7 +2601,21 @@ export class LineagePageComponent implements OnInit, OnDestroy {
   memberTab      = signal<MemberTab>('bio');
   selectedId     = signal<number | null>(null);
   selectedMember = signal<LineageMember | null>(null);
-  genFilter      = signal<number | null>(null);
+  genFilter         = signal<number | null>(null);
+  genMode               = signal(false);
+  expandedParentIds     = signal<Set<number>>(new Set());
+  ignoreStoredPositions = signal(true);
+  memberSearch          = signal('');
+  highlightedId     = signal<number | null>(null);
+
+  searchResults = computed<LineageMember[]>(() => {
+    const q = this.memberSearch().trim().toLowerCase();
+    if (q.length < 2) return [];
+    return (this.lineage()?.members ?? [])
+      .filter(m => m.fullName.toLowerCase().includes(q))
+      .slice(0, 8);
+  });
+
   showModal      = signal(false);
   showGenInfoModal     = signal(false);
   showEditLineageModal = signal(false);
@@ -2130,6 +2784,75 @@ export class LineagePageComponent implements OnInit, OnDestroy {
     this.dragId.set(null);
     this.dragOverride.set(new Map());
   }
+
+  // ── Quick-add (cónyuge / hijo / hija) ───────────────────────────────────
+  private quickAddSource: LineageMember | null = null;
+  private quickAddType: 'spouse' | 'son' | 'daughter' | null = null;
+
+  hasSpouse(m: LineageMember): boolean {
+    return (this.lineage()?.relationships ?? [])
+      .some(r => r.isCouple && (r.fromMemberId === m.id || r.toMemberId === m.id));
+  }
+
+  quickAdd(source: LineageMember, type: 'spouse' | 'son' | 'daughter') {
+    this.quickAddSource = source;
+    this.quickAddType   = type;
+    this.editingMember.set(null);
+    const childGen = (source.generation ?? 0) + 1;
+    this.form = {
+      generation:     type === 'spouse' ? (source.generation ?? 0) : childGen,
+      status:         'alive',
+      confidenceLevel: 80,
+      roleLabel: type === 'spouse' ? 'Cónyuge'
+               : type === 'son'   ? 'Hijo'
+               : 'Hija'
+    };
+    this.formTab = 'bio';
+    this.showModal.set(true);
+  }
+
+  selectedMemberSpouse = computed<LineageMember | null>(() => {
+    const m = this.selectedMember();
+    if (!m) return null;
+    const rels = this.lineage()?.relationships ?? [];
+    const rel  = rels.find(r => r.isCouple && (r.fromMemberId === m.id || r.toMemberId === m.id));
+    if (!rel) return null;
+    const spouseId = rel.fromMemberId === m.id ? rel.toMemberId : rel.fromMemberId;
+    return (this.lineage()?.members ?? []).find(mb => mb.id === spouseId) ?? null;
+  });
+
+  memberChildrenCount(m: LineageMember): number {
+    const rels     = this.lineage()?.relationships ?? [];
+    const spouseId = (this.lineage()?.relationships ?? [])
+      .find(r => r.isCouple && (r.fromMemberId === m.id || r.toMemberId === m.id))
+      ?.fromMemberId === m.id
+        ? rels.find(r => r.isCouple && r.fromMemberId === m.id)?.toMemberId
+        : rels.find(r => r.isCouple && r.toMemberId === m.id)?.fromMemberId;
+    const parentIds = new Set([m.id, ...(spouseId ? [spouseId] : [])]);
+    return rels.filter(r => !r.isCouple && parentIds.has(r.fromMemberId)).length;
+  }
+
+  // ── Couple connectors for SVG visual ────────────────────────────────────
+  coupleConnectors = computed<{ id: string; x1: number; x2: number; y: number; mx: number }[]>(() => {
+    const rels = this.lineage()?.relationships ?? [];
+    const mMap = new Map(this.positionedMembers().map(m => [m.id, m]));
+    const seen = new Set<number>();
+    return rels
+      .filter(r => r.isCouple)
+      .map(r => {
+        if (seen.has(r.id)) return null;
+        seen.add(r.id);
+        const a = mMap.get(r.fromMemberId);
+        const b = mMap.get(r.toMemberId);
+        if (!a || !b) return null;
+        const x1 = Math.min(a.px, b.px);
+        const x2 = Math.max(a.px, b.px);
+        // Solo mostrar conector si los cónyuges están realmente adyacentes (< 200px)
+        if (x2 - x1 > 200) return null;
+        return { id: `cp-${r.id}`, x1, x2, y: a.py, mx: (x1 + x2) / 2 };
+      })
+      .filter(Boolean) as { id: string; x1: number; x2: number; y: number; mx: number }[];
+  });
 
   // ── Conectar miembros ─────────────────────────────────────────────────────
   showConnectModal = signal(false);
@@ -2384,56 +3107,466 @@ export class LineagePageComponent implements OnInit, OnDestroy {
     });
   });
 
+  minGen = computed<number>(() => {
+    const gens = (this.lineage()?.members ?? []).map(m => m.generation);
+    return gens.length ? Math.min(...gens) : 0;
+  });
+
   filteredMembers = computed<LineageMember[]>(() => {
     const members = this.lineage()?.members ?? [];
+    const rels    = this.lineage()?.relationships ?? [];
     const f = this.genFilter();
-    return f !== null ? members.filter(m => m.generation === f) : members;
+    if (f !== null) return members.filter(m => m.generation === f);
+    if (!this.genMode()) return members;
+
+    // genMode: show root gen + children/spouses of expanded parents
+    const expanded = this.expandedParentIds();
+    const minGen   = this.minGen();
+
+    // child → parent IDs
+    const parentOf = new Map<number, number[]>();
+    rels.filter(r => !r.isCouple).forEach(r => {
+      if (!parentOf.has(r.toMemberId)) parentOf.set(r.toMemberId, []);
+      parentOf.get(r.toMemberId)!.push(r.fromMemberId);
+    });
+    // couple map
+    const coupleOf = new Map<number, number>();
+    rels.filter(r => r.isCouple).forEach(r => {
+      coupleOf.set(r.fromMemberId, r.toMemberId);
+      coupleOf.set(r.toMemberId, r.fromMemberId);
+    });
+
+    const visible = new Set<number>();
+    members.filter(m => m.generation === minGen).forEach(m => visible.add(m.id));
+
+    members.forEach(m => {
+      const parents = parentOf.get(m.id) ?? [];
+      if (parents.some(pid => expanded.has(pid))) {
+        visible.add(m.id);
+        const spouseId = coupleOf.get(m.id);
+        if (spouseId) visible.add(spouseId);
+      }
+    });
+
+    return members.filter(m => visible.has(m.id));
+  });
+
+  /** Members with unexpanded children — used for ▼ badge on nodes */
+  hasUnexpandedChildren = computed<Set<number>>(() => {
+    if (!this.genMode()) return new Set();
+    const rels     = this.lineage()?.relationships ?? [];
+    const expanded = this.expandedParentIds();
+    const visible  = new Set(this.filteredMembers().map(m => m.id));
+    const result   = new Set<number>();
+    // couple map to also flag spouses
+    const coupleOf = new Map<number, number>();
+    rels.filter(r => r.isCouple).forEach(r => {
+      coupleOf.set(r.fromMemberId, r.toMemberId);
+      coupleOf.set(r.toMemberId, r.fromMemberId);
+    });
+    rels.filter(r => !r.isCouple).forEach(r => {
+      if (visible.has(r.fromMemberId) && !expanded.has(r.fromMemberId)) {
+        result.add(r.fromMemberId);
+        const sp = coupleOf.get(r.fromMemberId);
+        if (sp) result.add(sp);
+      }
+    });
+    return result;
+  });
+
+  /** Count of hidden children per parent (for badge numbers) */
+  hiddenChildrenCount = computed<Map<number, number>>(() => {
+    if (!this.genMode()) return new Map();
+    const rels     = this.lineage()?.relationships ?? [];
+    const expanded = this.expandedParentIds();
+    const visible  = new Set(this.filteredMembers().map(m => m.id));
+    const counts   = new Map<number, number>();
+    rels.filter(r => !r.isCouple).forEach(r => {
+      if (visible.has(r.fromMemberId) && !expanded.has(r.fromMemberId)) {
+        counts.set(r.fromMemberId, (counts.get(r.fromMemberId) ?? 0) + 1);
+      }
+    });
+    return counts;
+  });
+
+  /** Info sobre nodos expandibles restantes en el árbol visible */
+  unexpandedNodeCount = computed<number>(() => this.hasUnexpandedChildren().size);
+
+  lineageStats = computed(() => {
+    const members = this.lineage()?.members ?? [];
+    const rels    = this.lineage()?.relationships ?? [];
+
+    const totalMembers    = members.length;
+    const totalCouples    = rels.filter(r => r.isCouple).length;
+    const alive           = members.filter(m => m.status === 'alive').length;
+    const deceased        = members.filter(m => m.status === 'deceased').length;
+    const unknown         = totalMembers - alive - deceased;
+
+    const gens = [...new Set(members.map(m => m.generation))];
+    const totalGenerations = gens.length;
+
+    const byGeneration = [...gens].sort((a, b) => a - b)
+      .map(gen => ({ gen, count: members.filter(m => m.generation === gen).length }));
+    const maxInGen = Math.max(...byGeneration.map(g => g.count), 1);
+
+    const pcts    = members.map(m => this.completeness(m));
+    const avgCompleteness = totalMembers
+      ? Math.round(pcts.reduce((a, b) => a + b, 0) / totalMembers)
+      : 0;
+
+    const complBands = [
+      { label: 'Completo (80–100%)',  color: '#4ade80', count: pcts.filter(p => p >= 80).length },
+      { label: 'Bueno (50–79%)',      color: '#fbbf24', count: pcts.filter(p => p >= 50 && p < 80).length },
+      { label: 'Parcial (20–49%)',    color: '#f97316', count: pcts.filter(p => p >= 20 && p < 50).length },
+      { label: 'Mínimo (<20%)',       color: '#6b7280', count: pcts.filter(p => p < 20).length },
+    ];
+
+    const topDocumented = members
+      .map(m => ({ member: m, pct: this.completeness(m) }))
+      .sort((a, b) => b.pct - a.pct)
+      .slice(0, 5);
+
+    return { totalMembers, totalCouples, alive, deceased, unknown,
+      totalGenerations, byGeneration, maxInGen,
+      avgCompleteness, complBands, topDocumented };
+  });
+
+  /** Familia inferida para el miembro seleccionado (padres, hermanos, hijos, cónyuge) */
+  inferredFamily = computed<{
+    parents:      LineageMember[];
+    siblings:     LineageMember[];
+    children:     LineageMember[];
+    grandparents: LineageMember[];
+    spouse:       LineageMember | null;
+  }>(() => {
+    const sel     = this.selectedMember();
+    if (!sel) return { parents: [], siblings: [], children: [], grandparents: [], spouse: null };
+    const rels    = this.lineage()?.relationships ?? [];
+    const allM    = this.lineage()?.members ?? [];
+    const mMap    = new Map(allM.map(m => [m.id, m]));
+
+    const coupleOf = new Map<number, number>();
+    rels.filter(r => r.isCouple).forEach(r => {
+      coupleOf.set(r.fromMemberId, r.toMemberId);
+      coupleOf.set(r.toMemberId, r.fromMemberId);
+    });
+
+    // Cónyuge
+    const spouseId = coupleOf.get(sel.id);
+    const spouse   = spouseId ? (mMap.get(spouseId) ?? null) : null;
+
+    // Hijos: nodos cuyo fromMemberId sea sel.id (o su cónyuge) y relación no-couple
+    const selfAndSpouse = new Set([sel.id, ...(spouseId ? [spouseId] : [])]);
+    const children = rels
+      .filter(r => !r.isCouple && selfAndSpouse.has(r.fromMemberId))
+      .map(r => mMap.get(r.toMemberId))
+      .filter((m): m is LineageMember => !!m && m.id !== sel.id && m.id !== spouseId);
+
+    // Padres: nodos cuyo toMemberId sea sel.id y relación no-couple
+    const parents = rels
+      .filter(r => !r.isCouple && r.toMemberId === sel.id)
+      .map(r => mMap.get(r.fromMemberId))
+      .filter((m): m is LineageMember => !!m);
+    // Añadir cónyuge de cada padre (el otro padre)
+    const parentSet = new Set(parents.map(p => p.id));
+    parents.forEach(p => {
+      const ps = coupleOf.get(p.id);
+      if (ps && !parentSet.has(ps)) {
+        const pm = mMap.get(ps);
+        if (pm) { parents.push(pm); parentSet.add(ps); }
+      }
+    });
+
+    // Hermanos: comparten al menos un padre con sel, y no son sel ni cónyuge
+    const siblings: LineageMember[] = [];
+    if (parents.length > 0) {
+      const sibSet = new Set<number>();
+      parents.forEach(p => {
+        rels.filter(r => !r.isCouple && r.fromMemberId === p.id).forEach(r => {
+          if (r.toMemberId !== sel.id && !sibSet.has(r.toMemberId)) {
+            sibSet.add(r.toMemberId);
+            const sm = mMap.get(r.toMemberId);
+            if (sm) siblings.push(sm);
+          }
+        });
+      });
+    }
+
+    // Abuelos: padres de los padres
+    const grandparents: LineageMember[] = [];
+    const gpSet = new Set<number>();
+    parents.forEach(p => {
+      rels.filter(r => !r.isCouple && r.toMemberId === p.id).forEach(r => {
+        if (!gpSet.has(r.fromMemberId)) {
+          gpSet.add(r.fromMemberId);
+          const gm = mMap.get(r.fromMemberId);
+          if (gm) grandparents.push(gm);
+        }
+      });
+    });
+    // Añadir cónyuge de cada abuelo
+    grandparents.slice().forEach(gp => {
+      const gs = coupleOf.get(gp.id);
+      if (gs && !gpSet.has(gs)) {
+        gpSet.add(gs);
+        const gm = mMap.get(gs);
+        if (gm) grandparents.push(gm);
+      }
+    });
+
+    return { parents, siblings, children, grandparents, spouse };
   });
 
   positionedMembers = computed<(LineageMember & { px: number; py: number })[]>(() => {
-    const members  = this.filteredMembers();
-    const w        = this.svgW();
+    const members   = this.filteredMembers();
+    const rels      = this.lineage()?.relationships ?? [];
+    const w         = this.svgW();
     const overrides = this.dragOverride();
-    const grouped  = new Map<number, LineageMember[]>();
+    const MARGIN    = 60;
+
+    // Honour manual / drag overrides
+    const manualPos = new Map<number, { px: number; py: number }>();
+    members.forEach(m => {
+      const drag = overrides.get(m.id);
+      if (drag) { manualPos.set(m.id, drag); return; }
+      if (m.positionX != null && m.positionY != null && (m.positionX !== 0 || m.positionY !== 0)) {
+        manualPos.set(m.id, { px: m.positionX, py: m.positionY });
+      }
+    });
+
+    // ── Constants ──────────────────────────────────────────
+    const COUPLE_GAP = 56;   // px between spouses inside one unit
+    const NODE_W     = 60;   // footprint of a single (non-couple) node
+    const UNIT_GAP   = 80;   // spacing between sibling units (included in subtreeW)
+
+    // ── Relationship maps ──────────────────────────────────
+    const memberMap = new Map(members.map(m => [m.id, m]));
+    const coupleOf  = new Map<number, number>();
+    rels.filter(r => r.isCouple).forEach(r => {
+      coupleOf.set(r.fromMemberId, r.toMemberId);
+      coupleOf.set(r.toMemberId, r.fromMemberId);
+    });
+    const childrenOf = new Map<number, number[]>();
+    rels.filter(r => !r.isCouple).forEach(r => {
+      if (!childrenOf.has(r.fromMemberId)) childrenOf.set(r.fromMemberId, []);
+      childrenOf.get(r.fromMemberId)!.push(r.toMemberId);
+    });
+
+    // ── Build TreeNodes (one node per couple or single) ───
+    interface TN {
+      id: string;
+      primary: LineageMember; spouse?: LineageMember;
+      parentId: string | null; childIds: string[];
+      subtreeW: number; cx?: number;
+    }
+    const nodeMap = new Map<string, TN>();
+    const genNodes = new Map<number, TN[]>();
+
+    const grouped = new Map<number, LineageMember[]>();
     members.forEach(m => {
       if (!grouped.has(m.generation)) grouped.set(m.generation, []);
       grouped.get(m.generation)!.push(m);
     });
+    const gens = [...grouped.keys()].sort((a, b) => a - b);
 
-    return members.map(m => {
-      // Drag override tiene prioridad máxima
-      const drag = overrides.get(m.id);
-      if (drag) return { ...m, px: drag.px, py: drag.py };
-      // Posición manual guardada en BD
-      if (m.positionX != null && m.positionY != null && (m.positionX !== 0 || m.positionY !== 0)) {
-        return { ...m, px: m.positionX, py: m.positionY };
+    // Create nodes
+    for (const gen of gens) {
+      const processed = new Set<number>();
+      const nodes: TN[] = [];
+      for (const m of grouped.get(gen)!) {
+        if (processed.has(m.id)) continue;
+        processed.add(m.id);
+        const spId = coupleOf.get(m.id);
+        const sp   = spId ? memberMap.get(spId) : undefined;
+        let node: TN;
+        if (sp && sp.generation === gen && !processed.has(sp.id)) {
+          processed.add(sp.id);
+          node = { id: `u${m.id}`, primary: m, spouse: sp, parentId: null, childIds: [], subtreeW: 0 };
+        } else {
+          node = { id: `u${m.id}`, primary: m, parentId: null, childIds: [], subtreeW: 0 };
+        }
+        nodes.push(node);
+        nodeMap.set(node.id, node);
       }
-      // Auto-layout por generación
-      const genMembers = grouped.get(m.generation) ?? [m];
-      const idx    = genMembers.indexOf(m);
-      const count  = genMembers.length;
-      const margin = w * 0.12;
-      const usable = w - margin * 2;
-      const px = count === 1
-        ? w / 2
-        : margin + (idx / (count - 1)) * usable;
-      return { ...m, px, py: this.genY(m.generation) };
+      genNodes.set(gen, nodes);
+    }
+
+    // Link parent→child units
+    for (const gen of gens) {
+      const prevNodes = genNodes.get(gen - 1) ?? [];
+      for (const node of genNodes.get(gen)!) {
+        const memberIds = [node.primary.id, node.spouse?.id].filter(Boolean) as number[];
+        for (const pn of prevNodes) {
+          const parentIds = [pn.primary.id, pn.spouse?.id].filter(Boolean) as number[];
+          const linked = parentIds.some(pid =>
+            (childrenOf.get(pid) ?? []).some(cid => memberIds.includes(cid))
+          );
+          if (linked) { node.parentId = pn.id; pn.childIds.push(node.id); break; }
+        }
+      }
+    }
+
+    // ── Pass 1: compute subtreeW bottom-up ────────────────
+    const ownW = (n: TN) => (n.spouse ? COUPLE_GAP : NODE_W) + UNIT_GAP;
+    const computeW = (n: TN): number => {
+      if (n.childIds.length === 0) { n.subtreeW = ownW(n); return n.subtreeW; }
+      const kids = n.childIds.map(id => nodeMap.get(id)!);
+      const kidsW = kids.reduce((s, k) => s + computeW(k), 0);
+      n.subtreeW = Math.max(ownW(n), kidsW);
+      return n.subtreeW;
+    };
+    const roots = genNodes.get(gens[0]) ?? [];
+    // Orphan nodes in later gens also need their own subtree
+    for (const gen of gens) {
+      for (const n of genNodes.get(gen)!) {
+        if (n.parentId === null && n.subtreeW === 0) computeW(n);
+      }
+    }
+    roots.forEach(computeW);
+
+    // ── Pass 2: assign X positions top-down ───────────────
+    const autoPos    = new Map<number, { px: number; py: number }>();
+    const setCx = (n: TN, sliceStart: number) => {
+      const sliceW = n.subtreeW - UNIT_GAP;
+      const cx     = sliceStart + sliceW / 2;
+      n.cx = cx;
+      const py = this.genY(n.primary.generation);
+      if (n.spouse) {
+        autoPos.set(n.primary.id, { px: cx - COUPLE_GAP / 2, py });
+        autoPos.set(n.spouse.id,  { px: cx + COUPLE_GAP / 2, py });
+      } else {
+        autoPos.set(n.primary.id, { px: cx, py });
+      }
+      if (n.childIds.length === 0) return;
+      const kids      = n.childIds.map(id => nodeMap.get(id)!);
+      const kidsTotal = kids.reduce((s, k) => s + k.subtreeW, 0) - UNIT_GAP;
+      let kx = sliceStart + (sliceW - kidsTotal) / 2;
+      for (const k of kids) { setCx(k, kx); kx += k.subtreeW; }
+    };
+
+    // Position root row — each root gets a proportional slice of the canvas
+    const totalRootW = roots.reduce((s, n) => s + n.subtreeW, 0) - UNIT_GAP;
+    const availW     = w - MARGIN * 2;
+    const scale      = totalRootW > 0 ? Math.min(1, availW / totalRootW) : 1;
+    let rx = MARGIN + (availW - totalRootW * scale) / 2;
+    for (const root of roots) {
+      setCx(root, rx);
+      rx += root.subtreeW * scale;
+    }
+
+    // Position orphan units: if orphan has a spouse that IS positioned, place adjacent
+    // Otherwise center the remaining true orphans
+    for (const gen of gens.slice(1)) {
+      const orphans = (genNodes.get(gen) ?? []).filter(n => n.parentId === null && n.cx === undefined);
+      if (!orphans.length) continue;
+
+      // First pass: place spouse-orphans adjacent to their already-positioned spouse
+      const trueOrphans: typeof orphans = [];
+      for (const n of orphans) {
+        const spouseId = n.spouse?.id ?? coupleOf.get(n.primary.id);
+        let spouseNode: typeof orphans[0] | undefined;
+        if (spouseId) {
+          for (const [, sn] of nodeMap) {
+            if ((sn.primary.id === spouseId || sn.spouse?.id === spouseId) && sn.cx !== undefined) {
+              spouseNode = sn; break;
+            }
+          }
+        }
+        if (spouseNode && spouseNode.cx !== undefined) {
+          // Place this orphan's primary member adjacent to the spouse node
+          const py = this.genY(n.primary.generation);
+          const spPx = autoPos.get(spouseId!)?.px ?? spouseNode.cx!;
+          autoPos.set(n.primary.id, { px: spPx + COUPLE_GAP, py });
+          n.cx = spPx + COUPLE_GAP / 2;
+        } else {
+          trueOrphans.push(n);
+        }
+      }
+
+      // Second pass: center true orphans (no spouse relationship found)
+      if (!trueOrphans.length) continue;
+      const totalW = trueOrphans.reduce((s, n) => s + n.subtreeW, 0) - UNIT_GAP;
+      let ox = (w - totalW) / 2;
+      for (const n of trueOrphans) { setCx(n, ox); ox += n.subtreeW; }
+    }
+
+    const skipManual = this.ignoreStoredPositions();
+    return members.map(m => {
+      const manual = skipManual ? undefined : manualPos.get(m.id);
+      if (manual) return { ...m, ...manual };
+      const auto = autoPos.get(m.id);
+      return { ...m, px: auto?.px ?? w / 2, py: auto?.py ?? this.genY(m.generation) };
     });
   });
 
-  branchPaths = computed<{ id: string; d: string; isCouple: boolean }[]>(() => {
-    const rels    = this.lineage()?.relationships ?? [];
-    const mMap    = new Map(this.positionedMembers().map(m => [m.id, m]));
-    return rels.map(r => {
+  branchPaths = computed<{ id: string; d: string; isCouple: boolean; isThin?: boolean }[]>(() => {
+    const rels = this.lineage()?.relationships ?? [];
+    const mMap = new Map(this.positionedMembers().map(m => [m.id, m]));
+
+    const coupleOf = new Map<number, number>();
+    rels.filter(r => r.isCouple).forEach(r => {
+      coupleOf.set(r.fromMemberId, r.toMemberId);
+      coupleOf.set(r.toMemberId, r.fromMemberId);
+    });
+
+    // Group parent→child rels by parent unit (parent + spouse form one source point)
+    type Group = { fromX: number; fromY: number; children: { px: number; py: number; relId: number }[] };
+    const groups = new Map<string, Group>();
+
+    rels.filter(r => !r.isCouple).forEach(r => {
       const from = mMap.get(r.fromMemberId);
       const to   = mMap.get(r.toMemberId);
-      if (!from || !to) return null;
-      const dy     = Math.abs(to.py - from.py);
-      const ctrl1y = from.py + dy * 0.5;
-      const ctrl2y = to.py   - dy * 0.5;
-      const d = `M ${from.px} ${from.py} C ${from.px} ${ctrl1y} ${to.px} ${ctrl2y} ${to.px} ${to.py}`;
-      return { id: `r-${r.id}`, d, isCouple: r.isCouple };
-    }).filter(Boolean) as { id: string; d: string; isCouple: boolean }[];
+      if (!from || !to) return;
+      const spId  = coupleOf.get(from.id);
+      const sp    = spId ? mMap.get(spId) : undefined;
+      const fromX = sp ? (from.px + sp.px) / 2 : from.px;
+      // Normalizar clave para que pareja A+B y B+A compartan el mismo grupo
+      const a = from.id, b = spId ?? 0;
+      const key = b ? `${Math.min(a, b)}:${Math.max(a, b)}` : `${a}:0`;
+      if (!groups.has(key)) groups.set(key, { fromX, fromY: from.py, children: [] });
+      else groups.get(key)!.fromX = fromX; // actualizar con midpoint más reciente
+      // Evitar hijos duplicados (dos padres apuntan al mismo hijo)
+      const existing = groups.get(key)!;
+      if (!existing.children.some(c => c.px === to.px && c.py === to.py)) {
+        existing.children.push({ px: to.px, py: to.py, relId: r.id });
+      }
+    });
+
+    const paths: { id: string; d: string; isCouple: boolean; isThin?: boolean }[] = [];
+
+    for (const [key, g] of groups) {
+      if (!g.children.length) continue;
+      const childY = g.children[0].py;
+      const midY   = g.fromY + (childY - g.fromY) * 0.5;
+
+      if (g.children.length === 1) {
+        // Single child: straight vertical line (no T needed)
+        const c = g.children[0];
+        paths.push({ id: `sv-${key}`,
+          d: `M ${g.fromX} ${g.fromY} L ${c.px} ${c.py}`, isCouple: false });
+      } else {
+        // T-junction: trunk → horizontal bar → drops
+        const xs   = g.children.map(c => c.px);
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+
+        // Vertical trunk: couple midpoint → horizontal bar
+        paths.push({ id: `vt-${key}`,
+          d: `M ${g.fromX} ${g.fromY} L ${g.fromX} ${midY}`, isCouple: false });
+
+        // Horizontal bar spanning all siblings
+        paths.push({ id: `hb-${key}`,
+          d: `M ${minX} ${midY} L ${maxX} ${midY}`, isCouple: false, isThin: true });
+
+        // Vertical drop from bar to each child
+        g.children.forEach((c, i) => {
+          paths.push({ id: `dr-${key}-${i}`,
+            d: `M ${c.px} ${midY} L ${c.px} ${c.py}`, isCouple: false });
+        });
+      }
+    }
+
+    return paths;
   });
 
   allEvents = computed<{ event: any; memberId: number; memberName: string; memberColor: string; isDoc?: boolean; docId?: string }[]>(() => {
@@ -2843,13 +3976,115 @@ export class LineagePageComponent implements OnInit, OnDestroy {
     e.stopPropagation();
     this.selectedId.set(m.id);
     this.selectedMember.set(m);
-    this.memberTab.set('bio');
+    this.memberTab.set('capsule');
     this.addingEvent.set(false);
     this.quickEvent = { title: '' };
+
+    // In genMode: auto-expand children of clicked member
+    if (this.genMode() && this.hasUnexpandedChildren().has(m.id)) {
+      this.expandedParentIds.update(set => {
+        const next = new Set(set);
+        next.add(m.id);
+        // Also expand spouse so both parents' children are visible
+        const rels = this.lineage()?.relationships ?? [];
+        const spouseRel = rels.find(r => r.isCouple &&
+          (r.fromMemberId === m.id || r.toMemberId === m.id));
+        if (spouseRel) {
+          next.add(spouseRel.fromMemberId === m.id ? spouseRel.toMemberId : spouseRel.fromMemberId);
+        }
+        return next;
+      });
+    }
   }
+
+  navigate(path: string) { this.router.navigate([path]); }
+
   clearSelection() { this.selectedId.set(null); this.selectedMember.set(null); }
+
   filterByGen(gen: number) {
     this.genFilter.update(cur => cur === gen ? null : gen);
+  }
+
+  toggleGenMode() {
+    const next = !this.genMode();
+    this.genMode.set(next);
+    if (!next) this.expandedParentIds.set(new Set());
+  }
+
+  expandAllVisible() {
+    const unexpanded = this.hasUnexpandedChildren();
+    this.expandedParentIds.update(set => {
+      const next = new Set(set);
+      unexpanded.forEach(id => next.add(id));
+      return next;
+    });
+  }
+
+  collapseAll() {
+    this.expandedParentIds.set(new Set());
+  }
+
+  // ── Búsqueda de miembros ──────────────────────────────────────────────────
+  onMemberSearch(e: Event) {
+    this.memberSearch.set((e.target as HTMLInputElement).value);
+    this.highlightedId.set(null);
+  }
+
+  clearSearch() {
+    this.memberSearch.set('');
+    this.highlightedId.set(null);
+  }
+
+  jumpToMember(m: LineageMember) {
+    this.memberSearch.set('');
+    this.highlightedId.set(m.id);
+    // Select member and open its capsule
+    this.selectedId.set(m.id);
+    this.selectedMember.set(m);
+    this.memberTab.set('capsule');
+    // In genMode, expand up the ancestor chain so the member is visible
+    if (this.genMode()) {
+      const rels = this.lineage()?.relationships ?? [];
+      const coupleOf = new Map<number, number>();
+      rels.filter(r => r.isCouple).forEach(r => {
+        coupleOf.set(r.fromMemberId, r.toMemberId);
+        coupleOf.set(r.toMemberId, r.fromMemberId);
+      });
+      const parentOf = new Map<number, number[]>();
+      rels.filter(r => !r.isCouple).forEach(r => {
+        if (!parentOf.has(r.toMemberId)) parentOf.set(r.toMemberId, []);
+        parentOf.get(r.toMemberId)!.push(r.fromMemberId);
+      });
+      // Walk ancestors and expand them all
+      const toExpand = new Set<number>(this.expandedParentIds());
+      const walk = (id: number) => {
+        const parents = parentOf.get(id) ?? [];
+        parents.forEach(pid => {
+          toExpand.add(pid);
+          const sp = coupleOf.get(pid);
+          if (sp) toExpand.add(sp);
+          walk(pid);
+        });
+      };
+      walk(m.id);
+      this.expandedParentIds.set(toExpand);
+    }
+    // Center SVG view on the found member node
+    const pm = this.positionedMembers().find(p => p.id === m.id);
+    if (pm) {
+      const z   = this.svgZoom();
+      const vbW = this.svgW() / z;
+      const vbH = this.svgH() / z;
+      this.vbOffX.set(pm.px - vbW / 2);
+      this.vbOffY.set(pm.py - vbH / 2 - 60);
+    }
+    // Clear highlight after a moment
+    setTimeout(() => this.highlightedId.set(null), 2500);
+  }
+
+  jumpToSearchResult() {
+    const results = this.searchResults();
+    if (results.length === 1) this.jumpToMember(results[0]);
   }
 
   // ── Modal member ──────────────────────────────────────────────────────────
@@ -2901,6 +4136,29 @@ export class LineagePageComponent implements OnInit, OnDestroy {
       return of(null);
     })).subscribe(saved => {
         if (saved) {
+          // Auto-link when coming from quickAdd
+          const qSrc  = this.quickAddSource;
+          const qType = this.quickAddType;
+          if (!em && saved.id && qSrc?.id && qType) {
+            this.quickAddSource = null;
+            this.quickAddType   = null;
+            const isCouple    = qType === 'spouse';
+            const relType     = isCouple ? 'couple' : 'biological';
+            const fromId      = isCouple ? qSrc.id : qSrc.id; // parent is source for children
+            const toId        = saved.id;
+            this.svc.addRelationship(this.familyId, fromId, toId, relType, isCouple)
+              .pipe(catchError(() => of(null)))
+              .subscribe(() => {
+                this.loadLineage();
+                this.closeModal();
+                const label = qType === 'spouse' ? 'cónyuge' : qType === 'son' ? 'hijo' : 'hija';
+                this.showToast(`✅ ${saved.firstName || 'Miembro'} agregado como ${label}`);
+                this.saving.set(false);
+              });
+            return;
+          }
+          this.quickAddSource = null;
+          this.quickAddType   = null;
           this.loadLineage();
           this.closeModal();
           this.showToast(em ? '✅ Miembro actualizado' : '✅ Miembro agregado al árbol');

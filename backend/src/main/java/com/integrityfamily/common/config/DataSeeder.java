@@ -35,7 +35,7 @@ public class DataSeeder implements CommandLineRunner {
                         jdbcTemplate.execute(trimmed);
                     }
                 }
-                log.info(">>>> [SDD] Sembrado de data.sql finalizado con ÃƒÂ©xito.");
+                log.info(">>>> [SDD] Sembrado de data.sql finalizado con éxito.");
             } else {
                 log.info(">>>> [SDD] Archivo data.sql no encontrado, se omite el sembrado.");
             }

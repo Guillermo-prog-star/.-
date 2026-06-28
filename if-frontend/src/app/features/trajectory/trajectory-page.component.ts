@@ -9,6 +9,7 @@ import {
   FamilyTrajectoryDto,
   TrajectoryTimelineDto,
   TrajectoryImpactDto,
+  TrajectorySuggestion,
   TrajectoryStatus,
   SeverityLevel,
   TimelineEventRequest,
@@ -97,7 +98,38 @@ type Tab = 'bank' | 'family' | 'impact';
 
       <!-- TAB: Trayectorias de la Familia -->
       <div *ngIf="!loading() && activeTab() === 'family'">
-        <div *ngIf="familyTrajectories().length === 0"
+
+        <!-- Sugerencias automáticas -->
+        <div *ngIf="suggestions().length > 0" class="mb-6 p-4 bg-amber-900/20 border border-amber-700/30 rounded-xl">
+          <div class="flex items-center gap-2 mb-3">
+            <span class="text-amber-400 text-lg">🔍</span>
+            <h3 class="text-sm font-semibold text-amber-300">Señales detectadas — Trayectorias sugeridas</h3>
+          </div>
+          <div class="space-y-2">
+            <div *ngFor="let s of suggestions()"
+              class="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+              <div class="flex-1 min-w-0 mr-3">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <span class="text-xs font-medium text-white">{{ s.name }}</span>
+                  <span class="text-xs px-1.5 py-0.5 rounded-full"
+                    [class]="severityBadge(s.severityDefault)">
+                    {{ severityLabel(s.severityDefault) }}
+                  </span>
+                </div>
+                <p class="text-xs text-slate-400 truncate">{{ s.reason }}</p>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <div class="text-xs text-slate-500">{{ s.confidenceScore }}%</div>
+                <button (click)="openAssignFromSuggestion(s)"
+                  class="text-xs px-2 py-1 bg-amber-600/30 hover:bg-amber-600/50 text-amber-300 rounded transition-colors">
+                  + Asignar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div *ngIf="familyTrajectories().length === 0 && suggestions().length === 0"
           class="text-center py-16 text-slate-400">
           <p class="text-4xl mb-3">🗺️</p>
           <p class="text-lg mb-1">Sin trayectorias registradas</p>
@@ -338,6 +370,7 @@ export class TrajectoryPageComponent implements OnInit {
   readonly bankData = signal<Record<string, TrajectoryBankItem[]>>({});
   readonly familyTrajectories = signal<FamilyTrajectoryDto[]>([]);
   readonly timeline = signal<TrajectoryTimelineDto[]>([]);
+  readonly suggestions = signal<TrajectorySuggestion[]>([]);
 
   readonly assignModal = signal<TrajectoryBankItem | null>(null);
   readonly timelineModal = signal<FamilyTrajectoryDto | null>(null);
@@ -366,12 +399,15 @@ export class TrajectoryPageComponent implements OnInit {
       family: familyId
         ? this.trajectoryService.getFamilyTrajectories(familyId).pipe(catchError(() => of([])))
         : of([]),
-    }).subscribe(({ bank, family }) => {
+      suggestions: familyId
+        ? this.trajectoryService.getSuggestions(familyId).pipe(catchError(() => of([])))
+        : of([]),
+    }).subscribe(({ bank, family, suggestions }) => {
       if (bank) this.bankData.set(bank.byMacrodomain);
       const trajs = family as FamilyTrajectoryDto[];
       this.familyTrajectories.set(trajs);
+      this.suggestions.set(suggestions as TrajectorySuggestion[]);
       this.loading.set(false);
-      // Load impact data for all trajectories
       trajs.forEach(ft => this.loadImpact(ft.id));
     });
   }
@@ -465,6 +501,15 @@ export class TrajectoryPageComponent implements OnInit {
     this.assignModal.set(traj);
   }
 
+  openAssignFromSuggestion(suggestion: TrajectorySuggestion): void {
+    const allItems = Object.values(this.bankData()).flat();
+    const traj = allItems.find(t => t.code === suggestion.code);
+    if (traj) {
+      this.assignNotes = suggestion.reason;
+      this.assignModal.set(traj);
+    }
+  }
+
   confirmAssign(): void {
     const traj = this.assignModal();
     const familyId = this.familyState.currentFamilyId();
@@ -474,6 +519,7 @@ export class TrajectoryPageComponent implements OnInit {
       .subscribe({
         next: (ft) => {
           this.familyTrajectories.update(list => [...list, ft]);
+          this.suggestions.update(list => list.filter(s => s.code !== ft.trajectory.code));
           this.assignModal.set(null);
           this.assigning.set(false);
         },

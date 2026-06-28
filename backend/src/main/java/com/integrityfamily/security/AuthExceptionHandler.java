@@ -21,7 +21,7 @@ import java.util.Map;
 @Component
 public class AuthExceptionHandler implements AuthenticationEntryPoint, AccessDeniedHandler {
 
-    // Ã¢Å“â€¦ ObjectMapper configurado correctamente para fechas ISO-8601
+    // ✅ ObjectMapper configurado correctamente para fechas ISO-8601
     private static final ObjectMapper objectMapper = buildObjectMapper();
 
     private static ObjectMapper buildObjectMapper() {
@@ -31,7 +31,7 @@ public class AuthExceptionHandler implements AuthenticationEntryPoint, AccessDen
         return mapper;
     }
 
-    // Ã¢Å“â€¦ 401 - Token ausente o invÃƒÂ¡lido
+    // ✅ 401 - Token ausente o inválido
     @Override
     public void commence(
             HttpServletRequest request,
@@ -46,7 +46,7 @@ public class AuthExceptionHandler implements AuthenticationEntryPoint, AccessDen
         );
     }
 
-    // Ã¢Å“â€¦ 403 - Autenticado pero sin permisos suficientes
+    // ✅ 403 - Autenticado pero sin permisos suficientes
     @Override
     public void handle(
             HttpServletRequest request,
@@ -77,9 +77,9 @@ public class AuthExceptionHandler implements AuthenticationEntryPoint, AccessDen
         body.put("status", status);
         body.put("message", message);
         body.put("path", path);
-        body.put("timestamp", LocalDateTime.now().toString()); // Ã¢Å“â€¦ "2025-03-17T10:30:00"
+        body.put("timestamp", LocalDateTime.now().toString()); // ✅ "2025-03-17T10:30:00"
 
-        objectMapper.writeValue(response.getWriter(), body); // Ã¢Å“â€¦ writeValue > writeValueAsString
+        objectMapper.writeValue(response.getWriter(), body); // ✅ writeValue > writeValueAsString
     }
 }
 

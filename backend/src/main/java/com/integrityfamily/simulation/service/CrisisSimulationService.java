@@ -22,24 +22,24 @@ public class CrisisSimulationService {
      */
     @Transactional
     public String triggerGlobalCrisisTest() {
-        log.warn("Ã°Å¸Å¡Â¨ [SIMULATION] Iniciando crisis artificial de alta visibilidad...");
+        log.warn("🚨 [SIMULATION] Iniciando crisis artificial de alta visibilidad...");
 
         // 1. Asegurar que existe una familia para la prueba
         Family f = familyRepository.findAll().stream().findFirst().orElseThrow();
         f.setSentinelActive(true);
         familyRepository.save(f);
 
-        // 2. Generar Alerta CrÃƒÂ­tica DIRECTA para el Watchdog
+        // 2. Generar Alerta Crítica DIRECTA para el Watchdog
         AdminAlert alert = AdminAlert.builder()
                 .title("CRISIS SENTINEL: " + f.getFamilyCode())
-                .message("SIMULACIÃƒâ€œN DE PRUEBA: El protocolo Sentinel ha sido activado para verificar la resiliencia del Shell.")
+                .message("SIMULACIÓN DE PRUEBA: El protocolo Sentinel ha sido activado para verificar la resiliencia del Shell.")
                 .severity("CRITICAL")
                 .viewed(false)
                 .build();
         
         alertRepository.save(alert);
         
-        log.error("Ã°Å¸Å¡Â© [WATCHDOG] Alerta crÃƒÂ­tica inyectada para el nodo: {}", f.getFamilyCode());
+        log.error("🚩 [WATCHDOG] Alerta crítica inyectada para el nodo: {}", f.getFamilyCode());
         return "Crisis artificial activada. Verifica el banner global en el Shell.";
     }
 }

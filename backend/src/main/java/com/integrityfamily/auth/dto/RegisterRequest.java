@@ -10,11 +10,11 @@ public record RegisterRequest(
         String fullName,
 
         @NotBlank(message = "El correo es obligatorio")
-        @Email(message = "El correo no tiene un formato vÃƒÂ¡lido")
+        @Email(message = "El correo no tiene un formato válido")
         String email,
 
-        @NotBlank(message = "La contraseÃƒÂ±a es obligatoria")
-        @Size(min = 6, message = "La contraseÃƒÂ±a debe tener al menos 6 caracteres")
+        @NotBlank(message = "La contraseña es obligatoria")
+        @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres")
         String password,
 
         // No es obligatorio, pero si se provee, activa el Onboarding Alfa

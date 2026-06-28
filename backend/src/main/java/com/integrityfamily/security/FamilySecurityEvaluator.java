@@ -6,6 +6,8 @@ import com.integrityfamily.domain.repository.MemberRepository;
 import com.integrityfamily.domain.FamilyMember;
 import com.integrityfamily.domain.Evaluation;
 import com.integrityfamily.domain.repository.EvaluationRepository;
+import com.integrityfamily.domain.FamilyRiskTrajectory;
+import com.integrityfamily.domain.repository.FamilyRiskTrajectoryRepository;
 import com.integrityfamily.domain.RiskSnapshot;
 import com.integrityfamily.domain.repository.RiskSnapshotRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +31,7 @@ public class FamilySecurityEvaluator {
     private final MemberRepository memberRepository;
     private final EvaluationRepository evaluationRepository;
     private final RiskSnapshotRepository riskSnapshotRepository;
+    private final FamilyRiskTrajectoryRepository familyRiskTrajectoryRepository;
 
     /**
      * Valida si el usuario actualmente autenticado tiene permisos para interactuar con la familia dada.
@@ -169,6 +172,31 @@ public class FamilySecurityEvaluator {
             log.error("🚨 [SECURITY-BREACH-WARNING] El usuario {} intentó acceder al snapshot ID: {} de otra familia", email, snapshotId);
         }
 
+        return authorized;
+    }
+
+    public boolean checkFamilyTrajectory(Long familyTrajectoryId) {
+        if (familyTrajectoryId == null) return false;
+
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) return false;
+
+        String email = auth.getName();
+        User user = userRepository.findByEmailIgnoreCase(email).orElse(null);
+        if (user == null) return false;
+
+        if (user.getRoles().stream().anyMatch(r -> "ROLE_ADMIN".equals(r.getName()))) return true;
+
+        FamilyRiskTrajectory frt = familyRiskTrajectoryRepository.findById(familyTrajectoryId).orElse(null);
+        if (frt == null) {
+            log.warn("⚠️ [SECURITY-DENIED] FamilyRiskTrajectory no encontrada con ID: {}", familyTrajectoryId);
+            return false;
+        }
+
+        boolean authorized = user.getFamily() != null && user.getFamily().getId().equals(frt.getFamily().getId());
+        if (!authorized) {
+            log.error("🚨 [SECURITY-BREACH-WARNING] El usuario {} intentó acceder a la trayectoria ID: {} de otra familia", email, familyTrajectoryId);
+        }
         return authorized;
     }
 }

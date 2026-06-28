@@ -354,8 +354,32 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
                         }
                       </div>
                     </div>
-                    <p class="text-white/70 text-xs leading-relaxed">{{ m.content }}</p>
-                    <div class="mt-2 text-[9px] text-white/20">
+                    @if (parseMemoryContent(m.content); as parsed) {
+                      @if (parsed.evaluationId) {
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3">
+                          <div class="bg-white/[0.03] p-2 rounded-lg border border-white/5">
+                            <span class="block text-[9px] text-white/30 uppercase tracking-widest mb-1">Índice ICaF</span>
+                            <span class="text-sm font-black text-indigo-400">{{ parsed.icf }}</span>
+                          </div>
+                          <div class="bg-white/[0.03] p-2 rounded-lg border border-white/5">
+                            <span class="block text-[9px] text-white/30 uppercase tracking-widest mb-1">Nivel de Riesgo</span>
+                            <span class="text-sm font-black"
+                                  [ngClass]="parsed.riskLevel === 'ALTO' ? 'text-red-400' : (parsed.riskLevel === 'MODERADO' ? 'text-amber-400' : 'text-emerald-400')">
+                              {{ parsed.riskLevel }}
+                            </span>
+                          </div>
+                          <div class="bg-white/[0.03] p-2 rounded-lg border border-white/5 md:col-span-1 col-span-2">
+                            <span class="block text-[9px] text-white/30 uppercase tracking-widest mb-1">Atención</span>
+                            <span class="text-xs font-bold text-white/80 capitalize">{{ parsed.criticalDimension || 'Ninguna' }}</span>
+                          </div>
+                        </div>
+                      } @else {
+                        <pre class="text-white/60 text-[10px] bg-black/20 p-2 rounded-lg mt-2 overflow-x-auto">{{ parsed | json }}</pre>
+                      }
+                    } @else {
+                      <p class="text-white/70 text-xs leading-relaxed">{{ m.content }}</p>
+                    }
+                    <div class="mt-3 text-[9px] text-white/20 uppercase tracking-widest">
                       {{ m.sourceType }} · {{ m.createdAt | date:'dd/MM/yy HH:mm' }}
                     </div>
                   </div>
@@ -657,4 +681,15 @@ export class CognitivePageComponent implements OnInit {
   }
 
   trackByDyad(_: number, d: DyadDto) { return `${d.memberAId}-${d.memberBId}`; }
+
+  parseMemoryContent(content: string): any {
+    try {
+      if (content && typeof content === 'string' && content.trim().startsWith('{')) {
+        return JSON.parse(content);
+      }
+    } catch (e) {
+      // Ignorar, no es un JSON válido
+    }
+    return null;
+  }
 }

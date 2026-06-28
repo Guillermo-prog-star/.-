@@ -1,34 +1,50 @@
 package com.integrityfamily.auth.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class EmailService {
 
     @Value("${app.frontend.url:http://localhost:4200}")
     private String frontendUrl;
 
+    @Value("${spring.mail.username:noreply@integrityfamily.com}")
+    private String fromEmail;
+
+    private final JavaMailSender mailSender;
+
     /**
      * Envía el enlace de recuperación de contraseña.
-     * Fase 2: log estructurado con URL completa.
-     * Fase 3: reemplazar por SMTP/SES — agregar spring.mail.* en application.yml
-     *         y JavaMailSender / MimeMessage aquí.
+     * Ahora utiliza JavaMailSender para enviar el correo real (Fase 3).
      */
     public void sendPasswordResetEmail(String email, String rawToken) {
         String resetUrl = frontendUrl + "/auth/reset-password?token=" + rawToken;
 
-        log.warn("\n" +
-                "╔══════════════════════════════════════════════════════════╗\n" +
-                "║         IF ·· RECUPERACIÓN DE CONTRASEÑA                ║\n" +
-                "╠══════════════════════════════════════════════════════════╣\n" +
-                "║  Email  : {}\n" +
-                "║  Expira : 30 minutos\n" +
-                "║  URL    : {}\n" +
-                "╚══════════════════════════════════════════════════════════╝",
-                email, resetUrl);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(email);
+            message.setSubject("Recuperación de Contraseña - Integrity Family");
+            message.setText("Hola,\n\n" +
+                    "Has solicitado restablecer tu contraseña.\n" +
+                    "Por favor, haz clic en el siguiente enlace para crear una nueva (expira en 30 minutos):\n\n" +
+                    resetUrl + "\n\n" +
+                    "Si no solicitaste este cambio, puedes ignorar este mensaje.\n\n" +
+                    "Saludos,\n" +
+                    "El equipo de Integrity Family");
+            
+            mailSender.send(message);
+            log.info("[EmailService] Correo de recuperación enviado a: {}", email);
+        } catch (Exception e) {
+            log.error("[EmailService] Error enviando correo de recuperación a: {}", email, e);
+        }
     }
 
     public void sendInvitation(String email, String name, String familyName, String familyCode) {

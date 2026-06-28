@@ -5,6 +5,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThatNoException;
 
+import org.springframework.mail.javamail.JavaMailSender;
+import org.mockito.Mockito;
+
 /**
  * Smoke tests para EmailService.
  * Ambos métodos son stubs de log — el contrato esencial es que no lancen excepciones.
@@ -12,7 +15,8 @@ import static org.assertj.core.api.Assertions.assertThatNoException;
 @DisplayName("EmailService")
 class EmailServiceTest {
 
-    private final EmailService service = new EmailService();
+    private final JavaMailSender mailSender = Mockito.mock(JavaMailSender.class);
+    private final EmailService service = new EmailService(mailSender);
 
     @Test
     @DisplayName("sendPasswordResetEmail no lanza excepcion con email y token validos")

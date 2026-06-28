@@ -46,7 +46,8 @@ import org.springframework.boot.autoconfigure.flyway.FlywayMigrationStrategy;
         "com.integrityfamily.movie.domain",
         "com.integrityfamily.lineage.domain",
         "com.integrityfamily.documentary.domain",
-        "com.integrityfamily.alexa.domain"
+        "com.integrityfamily.alexa.domain",
+        "com.integrityfamily.documentation.domain"
 })
 public class IntegrityFamilyApplication {
 

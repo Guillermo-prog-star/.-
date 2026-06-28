@@ -88,6 +88,20 @@
         </div>
       }
 
+      <!-- Aceptación de Términos -->
+      <div class="form-group terms-group">
+        <label class="terms-check">
+          <input type="checkbox" [(ngModel)]="termsAccepted" name="terms" />
+          <span>
+            He leído y acepto la
+            <a routerLink="/legal/privacy" target="_blank">Política de Privacidad</a>
+            y los
+            <a routerLink="/legal/terms" target="_blank">Términos de Uso</a>.
+            Entiendo que mis datos familiares son tratados con confidencialidad.
+          </span>
+        </label>
+      </div>
+
       <!-- Error -->
       @if (error) {
         <div class="err-box">
@@ -96,7 +110,7 @@
       }
 
       <!-- Submit -->
-      <button type="submit" class="btn-primary" [disabled]="loading">
+      <button type="submit" class="btn-primary" [disabled]="loading || !termsAccepted">
         @if (!loading) {
           <span>{{ mode === 'VOUCHER' ? '✓ Activar mi acceso' : '🏠 Registrar mi Familia' }}</span>
         } @else {

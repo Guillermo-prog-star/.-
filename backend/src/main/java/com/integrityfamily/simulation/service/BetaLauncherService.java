@@ -20,10 +20,10 @@ public class BetaLauncherService {
     @Transactional
     public String launch(String email) {
         Family family = familyRepository.findByCreatedBy_Email(email)
-                .orElseThrow(() -> new RuntimeException("No se encontró familia asociada al email: " + email));
+                .orElseThrow(() -> new RuntimeException("No se encontr? familia asociada al email: " + email));
         launchSimulation(family.getId());
         return "Beta launch completado para la familia: " + family.getName()
-                + " (código: " + family.getFamilyCode() + ")";
+                + " (c?digo: " + family.getFamilyCode() + ")";
     }
 
     @Transactional
@@ -31,11 +31,11 @@ public class BetaLauncherService {
         Family family = familyRepository.findById(familyId)
                 .orElseThrow(() -> new RuntimeException("Familia no encontrada"));
 
-        log.info(">>>> [SIMULACIÃƒâ€œN] Iniciando Nodo Alfa para: {}", family.getName());
+        log.info(">>>> [SIMULACIÓN] Iniciando Nodo Alfa para: {}", family.getName());
 
-        // SDD: SincronizaciÃƒÂ³n Estricta con el Record (6 parÃƒÂ¡metros exactos)
+        // SDD: Sincronización Estricta con el Record (6 parámetros exactos)
         MemberRequest leader = new MemberRequest(
-                "Líder de Prueba",    // fullName
+                "L?der de Prueba",    // fullName
                 "PADRE",              // roleType
                 40,                   // age
                 5,                    // autonomyLevel
@@ -51,7 +51,7 @@ public class BetaLauncherService {
         family.setSentinelActive(true);
         familyRepository.save(family);
 
-        log.info(">>>> [SIMULACIÃƒâ€œN] Ãƒâ€°XITO: Sentinel activado para {}", family.getFamilyCode());
+        log.info(">>>> [SIMULACIÓN] ÉXITO: Sentinel activado para {}", family.getFamilyCode());
     }
 }
 

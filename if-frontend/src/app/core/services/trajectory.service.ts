@@ -9,6 +9,7 @@ import {
   FamilyTrajectoryDto,
   TrajectoryTimelineDto,
   TrajectoryImpactDto,
+  TrajectorySuggestion,
   AssignTrajectoryRequest,
   TimelineEventRequest,
   IndicatorRequest,
@@ -76,5 +77,11 @@ export class TrajectoryService {
       `${this.api.base}/trajectories/family/${id}/indicator`,
       indicator
     ).pipe(map(r => r.data!));
+  }
+
+  getSuggestions(familyId: number): Observable<TrajectorySuggestion[]> {
+    return this.http.get<ApiResponse<TrajectorySuggestion[]>>(
+      `${this.api.base}/trajectories/family/${familyId}/suggestions`
+    ).pipe(map(r => r.data ?? []));
   }
 }

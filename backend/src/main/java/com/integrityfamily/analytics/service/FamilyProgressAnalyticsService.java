@@ -172,7 +172,12 @@ public class FamilyProgressAnalyticsService {
                 .map(this::mapToResponse);
     }
 
+    @Transactional(readOnly = true)
     private FamilyProgressResponse mapToResponse(ProgressSnapshot snapshot) {
+        // Force-initialize lazy collection inside the transaction before Jackson serializes it
+        java.util.Map<String, Double> dimEvolution = snapshot.getDimensionEvolution() != null
+                ? new java.util.HashMap<>(snapshot.getDimensionEvolution())
+                : new java.util.HashMap<>();
         return FamilyProgressResponse.builder()
                 .familyId(snapshot.getFamily().getId())
                 .currentEvaluationId(snapshot.getCurrentEvaluation().getId())
@@ -183,7 +188,7 @@ public class FamilyProgressAnalyticsService {
                 .deltaIcf(snapshot.getDeltaIcf())
                 .classification(snapshot.getClassification())
                 .interpretation(snapshot.getInterpretation())
-                .dimensionEvolution(snapshot.getDimensionEvolution())
+                .dimensionEvolution(dimEvolution)
                 .recommendedAction(snapshot.getRecommendedAction())
                 .build();
     }

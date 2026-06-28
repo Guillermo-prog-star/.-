@@ -269,3 +269,43 @@ input:not([type='checkbox']):focus {
 .footer a:hover {
     color: #ffffff;
 }
+
+/* ── Términos y Condiciones ── */
+.terms-group {
+    margin-top: 4px;
+}
+
+.terms-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.terms-check input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    margin-top: 2px;
+    accent-color: #6366f1;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.terms-check span {
+    font-size: 13px;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.terms-check a {
+    color: #a5b4fc;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.terms-check a:hover {
+    color: #ffffff;
+}

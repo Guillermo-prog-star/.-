@@ -120,16 +120,24 @@ export class SentinelCoreService {
   simulateCrisis() {
     const mockAlert = {
       id: Date.now(),
-      title: '🚨 CRISIS SIMULADA: Nodo Armenia',
+      title: 'CRISIS SIMULADA: Nodo Armenia',
       message: 'Intrusión emocional detectada. Se requiere intervención proactiva inmediata.',
       severity: 'CRITICAL',
       category: 'SENTINEL',
       viewed: false,
       createdAt: new Date()
     };
-    
-    // Inyectar la alerta al inicio del array para que sea detectada por hasCriticalAlert
     this._alerts.update(current => [mockAlert, ...current]);
-    console.log('🧪 Crisis simulada inyectada en el Signal');
+
+    // Llamar al backend para registrar la simulación
+    this.http.post('/api/simulation/trigger-crisis-test', {}).pipe(
+      catchError(err => {
+        console.warn('Crisis simulation backend call failed (non-critical):', err);
+        return of(null);
+      })
+    ).subscribe(() => {
+      // Refrescar alertas desde el backend tras la simulación
+      setTimeout(() => this.refreshAll(), 1500);
+    });
   }
 }

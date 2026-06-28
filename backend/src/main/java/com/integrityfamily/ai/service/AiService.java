@@ -5,7 +5,7 @@ import com.integrityfamily.domain.Family;
 import java.util.Map;
 
 /**
- * SDD CONTRACT: CÃƒÂ³rtex de Inteligencia Artificial Unificado.
+ * SDD CONTRACT: Córtex de Inteligencia Artificial Unificado.
  */
 public interface AiService {
 
@@ -20,8 +20,8 @@ public interface AiService {
     }
 
     /**
-     * Chat con contexto de transformación inyectado desde el frontend.
-     * El contexto enriquece el sistema de IA con el pilar, mes, sprint y misión activa.
+     * Chat con contexto de transformaci?n inyectado desde el frontend.
+     * El contexto enriquece el sistema de IA con el pilar, mes, sprint y misi?n activa.
      */
     default ChatMessage chatWithTransformation(String message, Family family, Long memberId,
                                                Object transformationContext) {
@@ -47,7 +47,7 @@ public interface AiService {
     String generateEvolutionaryMissions(Family family, Map<String, Double> dimensions, String riskLevel);
 
     /**
-     * SDD SPEC 6.3: Generación de Plan Híbrido con contrato JSON estricto.
+     * SDD SPEC 6.3: Generaci?n de Plan H?brido con contrato JSON estricto.
      */
     String generateHybridPlan(Family family, Map<String, Double> dimensions, String riskLevel);
     

@@ -18,7 +18,7 @@ public class AccountLockService {
     @Transactional
     public void registerFailure(String email) {
         log.warn("[SECURITY] Intento fallido para: {}", email);
-        // AquÃƒÂ­ puedes aÃƒÂ±adir la lÃƒÂ³gica de incremento de intentos y bloqueo de cuenta
+        // Aquí puedes añadir la lógica de incremento de intentos y bloqueo de cuenta
     }
 }
 

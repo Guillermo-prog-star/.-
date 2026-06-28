@@ -16,7 +16,7 @@ export class ScrollPolicyService {
         this.critical.set(true);
         setTimeout(() => this.critical.set(false), 500);
       }
-    });
+    }, { allowSignalWrites: true });
   }
 
   set(policy: ScrollPolicy) {

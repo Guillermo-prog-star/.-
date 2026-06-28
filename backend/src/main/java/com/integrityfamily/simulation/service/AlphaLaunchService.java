@@ -23,7 +23,7 @@ public class AlphaLaunchService {
 
     @Transactional
     public List<Family> provisionAlphaFamilies(int count, String creatorEmail) {
-        log.info("Ã°Å¸Å¡â‚¬ [ALPHA-LAUNCH] Provisionando {} nÃƒÂºcleos familiares para la Fase Alfa...", count);
+        log.info("🚀 [ALPHA-LAUNCH] Provisionando {} núcleos familiares para la Fase Alfa...", count);
         
         User creator = userRepository.findByEmail(creatorEmail)
                 .orElseThrow(() -> new RuntimeException("Usuario creador no encontrado: " + creatorEmail));
@@ -35,10 +35,10 @@ public class AlphaLaunchService {
             String code = "ALFA-" + UUID.randomUUID().toString().substring(0, 6).toUpperCase();
             
             Family family = Family.builder()
-                    .name("NÃƒÂºcleo Alfa " + alphaId)
-                    .description("Nodo oficial de la Fase Alfa de Integrity Family. ValidaciÃƒÂ³n pedagÃƒÂ³gica nivel 1.")
+                    .name("Núcleo Alfa " + alphaId)
+                    .description("Nodo oficial de la Fase Alfa de Integrity Family. Validación pedagógica nivel 1.")
                     .familyCode(code)
-                    .pin("1234") // PIN genÃƒÂ©rico para facilitar el onboarding inicial
+                    .pin("1234") // PIN genérico para facilitar el onboarding inicial
                     .currentMilestone("MES_00_DIAGNOSTICO")
                     .createdBy(creator)
                     .build();
@@ -46,7 +46,7 @@ public class AlphaLaunchService {
             alphaFamilies.add(familyRepository.save(family));
         }
 
-        log.info("Ã¢Å“â€¦ Despliegue completado. {} familias listas para ser habitadas.", count);
+        log.info("✅ Despliegue completado. {} familias listas para ser habitadas.", count);
         return alphaFamilies;
     }
 }

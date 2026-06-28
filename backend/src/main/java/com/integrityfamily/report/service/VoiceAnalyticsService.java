@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * SDD-VOICE-ANALYTICS: Motor de agregaciÃƒÂ³n de mÃƒÂ©tricas de audio.
- * Postura TÃƒÂ©cnica: Se prioriza la eficiencia en BD y la seguridad de tipos en Java 17.
+ * SDD-VOICE-ANALYTICS: Motor de agregación de métricas de audio.
+ * Postura Técnica: Se prioriza la eficiencia en BD y la seguridad de tipos en Java 17.
  */
 @Slf4j
 @Service
@@ -25,10 +25,10 @@ public class VoiceAnalyticsService {
 
     /**
      * Genera un resumen ejecutivo de KPIs.
-     * SDD FIX: HashMap explÃƒÂ­cito evita 'incompatible types' de inferencia de tipos mixtos.
+     * SDD FIX: HashMap explícito evita 'incompatible types' de inferencia de tipos mixtos.
      */
     public Map<String, Object> getSummaryStats() {
-        log.info("Ã°Å¸â€œÅ  [VOICE-ANALYSIS] Calculando resumen global de auditorÃƒÂ­a");
+        log.info("📊 [VOICE-ANALYSIS] Calculando resumen global de auditoría");
         
         long total = voiceAuditRepository.count();
         long successful = voiceAuditRepository.countSuccessfulMessages();
@@ -48,10 +48,10 @@ public class VoiceAnalyticsService {
     }
 
     /**
-     * Recupera trazabilidad de las ÃƒÂºltimas 10 interacciones con resoluciÃƒÂ³n de nombres.
+     * Recupera trazabilidad de las últimas 10 interacciones con resolución de nombres.
      */
     public List<Map<String, Object>> getRecentInteractions() {
-        log.info("Ã°Å¸â€Â [VOICE-ANALYSIS] Recuperando interacciones recientes");
+        log.info("🔍 [VOICE-ANALYSIS] Recuperando interacciones recientes");
         return voiceAuditRepository.findTop10ByOrderByProcessedAtDesc().stream()
                 .map(audit -> {
                     String familyName = familyRepository.findById(audit.getFamilyId())
@@ -69,10 +69,10 @@ public class VoiceAnalyticsService {
     }
 
     /**
-     * Genera mÃƒÂ©tricas de alcance territorial para reportes regionales.
+     * Genera métricas de alcance territorial para reportes regionales.
      */
     public List<Map<String, Object>> getRegionalStats() {
-        log.info("Ã°Å¸â€”ÂºÃ¯Â¸Â [VOICE-ANALYSIS] Generando estadÃƒÂ­sticas regionales");
+        log.info("🗺️ [VOICE-ANALYSIS] Generando estadísticas regionales");
         return voiceAuditRepository.getRegionalUsage().stream()
                 .map(row -> {
                     Map<String, Object> region = new HashMap<>();

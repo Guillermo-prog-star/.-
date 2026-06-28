@@ -258,12 +258,16 @@
   border: 1px solid rgba(255, 255, 255, 0.02);
   border-radius: 16px;
   padding: 16px 20px 8px;
+  overflow: hidden;
+  max-height: 300px;
 }
 
 .evolution-svg {
   width: 100%;
   height: auto;
-  overflow: visible;
+  max-height: 268px;
+  display: block;
+  overflow: hidden;
 }
 
 .grid-line {
@@ -365,7 +369,7 @@
 }
 
 .sparkline-svg {
-  overflow: visible;
+  overflow: hidden;
   filter: drop-shadow(0 2px 8px rgba(99, 102, 241, 0.15));
 }
 

@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 
 /**
  * SDD: ChatController (Protocolo Sentinel)
- * Punto de entrada sincronizado para mensajerÃƒÂ­a y diagnÃƒÂ³sticos rÃƒÂ¡pidos.
+ * Punto de entrada sincronizado para mensajería y diagnósticos rápidos.
  */
 @RestController
 @RequestMapping("/api/chat")
@@ -43,7 +43,7 @@ public class ChatController {
     @GetMapping("/family/{familyId}")
     public ApiResponse<List<com.integrityfamily.domain.repository.ChatMessageSummary>> getHistory(@PathVariable Long familyId, Principal principal) {
         securityValidator.validateFamilyOwnership(familyId, principal);
-        // FIX: Uso de proyecciones para evitar serialización circular
+        // FIX: Uso de proyecciones para evitar serializaci?n circular
         return ApiResponse.ok(chatMessageRepository.findProjectedByFamilyIdOrderByCreatedAtAsc(familyId));
     }
 
@@ -57,15 +57,15 @@ public class ChatController {
     }
 
     /**
-     * Genera reportes de bienestar basados en una evaluaciÃƒÂ³n especÃƒÂ­fica.
-     * ResoluciÃƒÂ³n del error de sÃƒÂ­mbolo para evaluationRepository.
+     * Genera reportes de bienestar basados en una evaluación específica.
+     * Resolución del error de símbolo para evaluationRepository.
      */
     @PostMapping("/report/{evaluationId}")
     public ApiResponse<String> generateAutoReport(@PathVariable Long evaluationId) {
-        log.info("Ã°Å¸â€œÅ  [CHAT-CONTROLLER] Generating auto-report for evaluation: {}", evaluationId);
+        log.info("📊 [CHAT-CONTROLLER] Generating auto-report for evaluation: {}", evaluationId);
 
         Evaluation evaluation = evaluationRepository.findById(evaluationId)
-                .orElseThrow(() -> new NotFoundException("Evaluación no encontrada"));
+                .orElseThrow(() -> new NotFoundException("Evaluaci?n no encontrada"));
 
         Map<String, Double> dimensions = evaluation.getDimensionScores().stream()
                 .collect(Collectors.toMap(
@@ -126,7 +126,7 @@ public class ChatController {
         private Long memberId;
     }
 
-    /** ChatRequest v2: incluye contexto de transformación del frontend */
+    /** ChatRequest v2: incluye contexto de transformaci?n del frontend */
     @Data
     public static class ChatRequestV2 {
         private Long familyId;

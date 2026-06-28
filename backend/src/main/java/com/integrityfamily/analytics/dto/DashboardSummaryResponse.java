@@ -7,8 +7,8 @@ import java.util.Map;
 import java.util.List;
 
 /**
- * DashboardSummaryResponse: Contrato final de la Capa de AnalÃƒÂ­tica.
- * RediseÃƒÂ±ado con @Builder para sanar la orquestaciÃƒÂ³n en AnalyticsService.
+ * DashboardSummaryResponse: Contrato final de la Capa de Analítica.
+ * Rediseñado con @Builder para sanar la orquestación en AnalyticsService.
  */
 @Builder
 public record DashboardSummaryResponse(
@@ -38,18 +38,18 @@ public record DashboardSummaryResponse(
                 Long openLogbookEntriesCount,
                 String latestFamilyAgreement,
 
-                // ── GAP 1 RESUELTO: campos que el frontend usaba pero el backend no devolvía ──
+                // -- GAP 1 RESUELTO: campos que el frontend usaba pero el backend no devolv?a --
 
                 /** Tendencia de riesgo: UP | DOWN | STABLE (compatible con frontend Angular) */
                 String riskTrend,
 
-                /** Número de crisis activas (frontend usa count, backend tenía solo booleano) */
+                /** N?mero de crisis activas (frontend usa count, backend ten?a solo booleano) */
                 Long activeCrisesCount,
 
-                /** Dimensión más crítica: emociones | comunicacion | habitos | tiempos */
+                /** Dimensi?n m?s cr?tica: emociones | comunicacion | habitos | tiempos */
                 String criticalDimension,
 
-                // ── GAP 2 RESUELTO: Estado Longitudinal en el dashboard ──────────────────
+                // -- GAP 2 RESUELTO: Estado Longitudinal en el dashboard ------------------
 
                 /** Fase evolutiva: inconsciente | reactivo | consciente | pleno */
                 String evolutionPhase,
@@ -57,22 +57,22 @@ public record DashboardSummaryResponse(
                 /** Etapa narrativa: RECONOCIMIENTO | AMOR | ENTREGA */
                 String narrativeStage,
 
-                /** Delta ICF vs 30 días atrás (positivo = mejora) */
+                /** Delta ICF vs 30 d?as atr?s (positivo = mejora) */
                 Double icfDelta30d,
 
-                /** Crisis en los últimos 30 días */
+                /** Crisis en los ?ltimos 30 d?as */
                 Integer crisisCount30d,
 
-                /** Deterioraciones consecutivas en bitácora (≥3 = patrón de deterioro) */
+                /** Deterioraciones consecutivas en bit?cora (=3 = patr?n de deterioro) */
                 Integer consecutiveDeteriorations,
 
                 /** true si hay colapso comunicacional activo */
                 Boolean communicationCollapseActive,
 
-                /** true si la familia está en crisis activa (≤ 48h) */
+                /** true si la familia est? en crisis activa (= 48h) */
                 Boolean inActiveCrisis,
 
-                // ── GAP 3 RESUELTO: Motor Inferencial Causal en el dashboard ─────────────
+                // -- GAP 3 RESUELTO: Motor Inferencial Causal en el dashboard -------------
 
                 /** Reglas causales activas del Motor Inferencial (R1-R7) */
                 List<String> activeCausalRules,
@@ -80,7 +80,7 @@ public record DashboardSummaryResponse(
                 /** Explicaciones humanas de cada regla activa */
                 List<String> causalExplanations,
 
-                /** true si requiere intervención inmediata (CRITICO o colapso comunicacional) */
+                /** true si requiere intervenci?n inmediata (CRITICO o colapso comunicacional) */
                 Boolean requiresImmediateIntervention
 ) {
     /** Compatibilidad: convierte tendencia longitudinal al formato esperado por el frontend */

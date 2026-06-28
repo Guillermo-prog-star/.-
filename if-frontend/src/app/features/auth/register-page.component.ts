@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+
 import { RegisterRequest, RegisterFamilyRequest } from '../../core/models/auth.model';
 
 
@@ -29,6 +30,7 @@ export class RegisterPageComponent {
   countryCode = 'CO';
   departmentCode = '';
   
+  termsAccepted = false;
   loading = false;
   error = '';
 
@@ -38,6 +40,11 @@ export class RegisterPageComponent {
   }
 
   submit(): void {
+    if (!this.termsAccepted) {
+      this.error = 'Debes aceptar la Política de Privacidad y los Términos de Uso para continuar.';
+      return;
+    }
+
     if (!this.fullName || !this.email || !this.password) {
       this.error = 'Campos obligatorios: Nombre, Email y Password.';
       return;

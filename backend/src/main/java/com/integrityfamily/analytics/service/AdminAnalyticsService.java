@@ -61,14 +61,14 @@ public class AdminAnalyticsService {
                 .average()
                 .orElse(0.0);
 
-        // DistribuciÃƒÂ³n de Hitos
+        // Distribución de Hitos
         Map<String, Long> milestones = alphaFamilies.stream()
                 .collect(Collectors.groupingBy(
                     f -> f.getCurrentMilestone() != null ? f.getCurrentMilestone() : "SIN_HITO",
                     Collectors.counting()
                 ));
 
-        // Promedios por DimensiÃƒÂ³n
+        // Promedios por Dimensión
         Map<String, Double> dimAvgs = new HashMap<>();
         alphaFamilies.forEach(f -> {
             evaluationRepository.findFirstByFamilyIdAndStatusOrderByFinalizedAtDesc(

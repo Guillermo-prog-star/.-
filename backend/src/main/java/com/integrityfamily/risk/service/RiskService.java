@@ -20,7 +20,7 @@ import java.util.List;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor // SDD: InyecciÃƒÂ³n limpia de dependencias
+@RequiredArgsConstructor // SDD: Inyección limpia de dependencias
 public class RiskService {
 
     private final RiskSnapshotRepository riskSnapshotRepository;
@@ -37,7 +37,7 @@ public class RiskService {
 
     public RiskSnapshot findById(Long id) {
         return riskSnapshotRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Instantánea de riesgo no encontrada", "RISK_SNAPSHOT_NOT_FOUND", HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new BusinessException("Instant?nea de riesgo no encontrada", "RISK_SNAPSHOT_NOT_FOUND", HttpStatus.NOT_FOUND));
     }
 
     @Transactional
@@ -46,18 +46,18 @@ public class RiskService {
     }
 
     /**
-     * SDD SPEC: CÃƒÂ¡lculo dinÃƒÂ¡mico de riesgo Sentinel.
+     * SDD SPEC: Cálculo dinámico de riesgo Sentinel.
      */
     @Transactional
     public RiskSnapshot calculateAndCreate(Family family, Double icf, boolean hasCrisis) {
-        log.info("Ã°Å¸â€ºÂ¡Ã¯Â¸Â [RISK-ENGINE] Iniciando anÃƒÂ¡lisis dinÃƒÂ¡mico para: {}", family.getName());
+        log.info("🛡️ [RISK-ENGINE] Iniciando análisis dinámico para: {}", family.getName());
 
         int months = calculateMonthsSinceRegistration(family);
         String riskLevel = calculateDynamicRisk(icf, months, hasCrisis);
         int conLevel = calculateConsciousnessLevel(icf);
         String conLabel = getLabel(conLevel);
 
-        // SDD: OrquestaciÃƒÂ³n del estado de alerta
+        // SDD: Orquestación del estado de alerta
         if ("CRITICO".equals(riskLevel) || hasCrisis) {
             family.setSentinelActive(true);
             familyRepository.save(family);
@@ -83,7 +83,7 @@ public class RiskService {
         if (hasCrisis)
             return "CRITICO";
 
-        // Umbrales adaptativos: A mÃƒÂ¡s tiempo en el programa, mayor es la exigencia de
+        // Umbrales adaptativos: A más tiempo en el programa, mayor es la exigencia de
         // ICF
         double thresholdLow = (months <= 6) ? 70.0 : (months <= 18) ? 80.0 : 90.0;
         double thresholdMid = (months <= 6) ? 40.0 : (months <= 18) ? 55.0 : 70.0;
@@ -106,10 +106,10 @@ public class RiskService {
         }
         try {
             long parsed = Long.parseLong(digitsOnly);
-            // Si el número es excesivamente grande, limitarlo a un rango razonable (ej. 36 meses max)
+            // Si el n?mero es excesivamente grande, limitarlo a un rango razonable (ej. 36 meses max)
             return (int) Math.min(parsed, 36L);
         } catch (NumberFormatException e) {
-            log.warn("[RISK-ENGINE] No se pudo parsear el hito como número de meses: '{}'. Usando 0.", milestone);
+            log.warn("[RISK-ENGINE] No se pudo parsear el hito como n?mero de meses: '{}'. Usando 0.", milestone);
             return 0;
         }
     }

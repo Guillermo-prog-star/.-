@@ -1,6 +1,7 @@
 package com.integrityfamily.risk.service;
 
 import com.integrityfamily.common.event.*;
+import com.integrityfamily.capital.service.IcafScoringEngine;
 import com.integrityfamily.domain.Family;
 import com.integrityfamily.domain.FamilyLongitudinalState;
 import com.integrityfamily.domain.repository.FamilyLongitudinalStateRepository;
@@ -149,6 +150,65 @@ public class LongitudinalStateService {
         }
 
         longitudinalRepo.save(state);
+    }
+
+    /**
+     * ICaF recalculado → actualiza trayectoria longitudinal ICaF.
+     * Rota histórico (6m, 12m, 36m) y actualiza madurez y tendencia.
+     */
+    @Async
+    @EventListener
+    @Transactional
+    public void onIcafRecalculated(FamilyIcafRecalculatedEvent event) {
+        log.info("[LONGITUDINAL] ICaF {} → {} | Madurez {} → {} | Familia {} | trigger={}",
+                String.format("%.1f", event.previousIcaf()),
+                String.format("%.1f", event.newIcaf()),
+                event.previousMadurez(), event.newMadurez(),
+                event.familyId(), event.trigger());
+
+        FamilyLongitudinalState state = getOrCreate(event.familyId());
+
+        // Rotar histórico longitudinal
+        rotateIcafHistory(state, event.newIcaf());
+
+        state.setIcafMadurez(event.newMadurez());
+        state.setIcafTrend(event.trend());
+        state.setIcafLastCalculated(java.time.LocalDateTime.now());
+
+        longitudinalRepo.save(state);
+
+        if (event.madurezImproved()) {
+            log.info("[LONGITUDINAL] Familia {} alcanzó Nivel {} ({}) de Capital Familiar",
+                    event.familyId(), event.newMadurez(),
+                    IcafScoringEngine.madurezLabel(event.newMadurez()));
+        }
+    }
+
+    /**
+     * Rota el historial ICaF: current → 6m → 12m → 36m.
+     * Solo rota si hay un valor previo distinto (evita duplicar en recálculos rápidos).
+     */
+    private void rotateIcafHistory(FamilyLongitudinalState state, double newIcaf) {
+        Double current = state.getIcafCurrent();
+        if (current == null) {
+            state.setIcafCurrent(newIcaf);
+            return;
+        }
+        if (Double.compare(current, newIcaf) == 0) return;
+
+        // Rotar: current → 6m si 6m está vacío o es más antiguo
+        if (state.getIcaf6mAgo() == null) {
+            state.setIcaf6mAgo(current);
+        } else if (state.getIcaf12mAgo() == null) {
+            state.setIcaf12mAgo(state.getIcaf6mAgo());
+            state.setIcaf6mAgo(current);
+        } else {
+            state.setIcaf36mAgo(state.getIcaf12mAgo());
+            state.setIcaf12mAgo(state.getIcaf6mAgo());
+            state.setIcaf6mAgo(current);
+        }
+
+        state.setIcafCurrent(newIcaf);
     }
 
     // ── API de consulta ───────────────────────────────────────────────────────

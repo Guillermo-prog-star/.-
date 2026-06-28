@@ -121,6 +121,7 @@ if-full/
 | `config` | SecurityConfig, RabbitMQConfig, WebSocketConfig, OpenApiConfig |
 | `errorprotocol` | ErrorProtocolService — manejo de crisis sistémicas |
 | `admin` | AdminAnalyticsService, BackupService, BetaLauncherService |
+| `trajectory` | TrajectoryService, TrajectorySuggestionService — Banco de Trayectorias de Riesgo (35 tipos, 9 macrodominios), sugerencias automáticas por señales LTS, integrado en PromptGenerator |
 
 ---
 
@@ -146,6 +147,8 @@ families
 - `V67` — `task_evidences.documentary_id` FK nullable
 - `V68` — formaliza 11 columnas de `families` que solo existían vía ddl-auto=update
 - `V69` — snapshot idempotente del schema completo de producción 2026-06-16 (99 tablas)
+- `V70`–`V74` — alexa OAuth, chapter progress, project_documents, ICaF schema, ICaF questionnaires
+- `V75` — Banco de Trayectorias de Riesgo (4 tablas + seed 35 trayectorias + 2 docs técnicos)
 
 ---
 
@@ -266,7 +269,7 @@ Dashboard: https://sonarcloud.io/project/overview?id=Guillermo-prog-star_if-full
 - FK nullable (`NULL ok`) cuando la relación es opcional (ej: V65, V67)
 - `ADD COLUMN IF NOT EXISTS` es MariaDB — en MySQL 8.x usar procedure con `information_schema` (ver V68)
 - V69 es un snapshot idempotente de producción 2026-06-16 con `CREATE TABLE IF NOT EXISTS`
-- Próximo número disponible: **V70**
+- Próximo número disponible: **V76**
 
 ---
 

@@ -97,4 +97,14 @@ public class Question {
 
     @Column(name = "mission_generator", length = 100)
     private String missionGenerator; // ESTABILIZACION_EMOCIONAL, LEGADO_CONSCIENTE, etc.
+
+    // ── Clasificación ICaF ────────────────────────────────────────────────────
+
+    /** ICF | ICAF — cuestionario al que pertenece (null = legacy sin clasificar) */
+    @Column(name = "question_type", length = 20)
+    private String questionType;
+
+    /** Dominio ICaF: confianza | bienestar_emocional | autonomia | ... */
+    @Column(name = "icaf_domain", length = 30)
+    private String icafDomain;
 }

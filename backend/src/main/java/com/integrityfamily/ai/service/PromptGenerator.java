@@ -1039,6 +1039,182 @@ public class PromptGenerator {
         );
     }
 
+    // ─── Narrativa Evolutiva del Radar ───────────────────────────────────────
+
+    /**
+     * Genera el prompt para la narrativa evolutiva familiar.
+     * Toma los datos del Radar (Fase 1) y los Escenarios (Fase 2) y pide a Claude
+     * que los traduzca a una historia comprensible del tipo
+     * "La historia de esta familia está cambiando...".
+     *
+     * El resultado es texto Markdown — entre 3 y 5 párrafos, sin tecnicismos,
+     * con la estructura: situación actual → señales sutiles → fortalezas
+     * → bifurcación de futuros → llamada a la acción.
+     */
+    public String buildEvolutiveNarrativePrompt(
+            String familyName,
+            String evolutionPhase,
+            String narrativeStage,
+            double icfCurrent,
+            Double icfDelta30d,
+            String icfDirection,
+            String criticalDimension,
+            int evaluationsCount,
+            java.util.List<String> microSignalDescriptions,
+            java.util.List<String> strengthDescriptions,
+            java.util.List<String> trajectoryNames,
+            // Escenarios
+            double scenarioAIcf12w,
+            String scenarioARisk,
+            double scenarioBIcf12w,
+            String scenarioBRisk,
+            double scenarioCIcf12w,
+            String scenarioCRisk,
+            String pivotMessage,
+            String opportunityWindow
+    ) {
+        String phase = evolutionPhase != null ? evolutionPhase : "consciente";
+        String stage = narrativeStage != null ? narrativeStage : "AMOR";
+        String dimLabel = criticalDimension != null ? criticalDimension : "comunicación";
+
+        String deltaText = icfDelta30d != null
+            ? String.format("%+.1f puntos en los últimos 30 días", icfDelta30d)
+            : "sin variación registrada en 30 días";
+
+        String signalsList = microSignalDescriptions.isEmpty()
+            ? "— Sin señales de riesgo detectadas en este momento —"
+            : microSignalDescriptions.stream()
+                .map(s -> "• " + s)
+                .collect(java.util.stream.Collectors.joining("\n"));
+
+        String strengthsList = strengthDescriptions.isEmpty()
+            ? "— Sin fortalezas registradas aún —"
+            : strengthDescriptions.stream()
+                .map(s -> "• " + s)
+                .collect(java.util.stream.Collectors.joining("\n"));
+
+        String trajectoriesList = trajectoryNames.isEmpty()
+            ? "Ninguna trayectoria de riesgo activa"
+            : trajectoryNames.stream()
+                .map(t -> "• " + t)
+                .collect(java.util.stream.Collectors.joining("\n"));
+
+        return String.format("""
+            %s
+
+            %s
+
+            <mode_context>
+            MODO: NARRATIVA EVOLUTIVA FAMILIAR
+            Estás generando la narrativa evolutiva del Radar de Señales Sutiles para la familia "%s".
+            Este texto será leído directamente por la familia — no por un clínico ni un analista.
+            Tu función es hacer que la familia SEA CONSCIENTE de su propia historia y de los futuros posibles.
+            No eres un auditor. Eres el narrador de su transformación.
+            </mode_context>
+
+            <family_data>
+            Familia: %s
+            ICF actual: %.1f/100 | Variación: %s | Dirección general: %s
+            Fase evolutiva: %s | Etapa narrativa: %s
+            Dimensión más vulnerable: %s
+            Número de evaluaciones completadas: %d
+            </family_data>
+
+            <micro_signals>
+            Señales sutiles detectadas por el sistema (cada una, sola, no indica crisis — juntas, forman una tendencia):
+            %s
+            </micro_signals>
+
+            <invisible_strengths>
+            Fortalezas que la familia no está viendo todavía:
+            %s
+            </invisible_strengths>
+
+            <risk_trajectories>
+            Trayectorias de riesgo que coinciden con las señales (no confirmadas, solo emergentes):
+            %s
+            </risk_trajectories>
+
+            <future_scenarios>
+            El sistema calculó tres futuros posibles para los próximos 3 meses:
+
+            ESCENARIO A — Sin intervención:
+              ICF proyectado: %.1f/100 | Riesgo estimado: %s
+
+            ESCENARIO B — Cumpliendo misiones actuales:
+              ICF proyectado: %.1f/100 | Riesgo estimado: %s
+
+            ESCENARIO C — Intervención intensiva:
+              ICF proyectado: %.1f/100 | Riesgo estimado: %s
+
+            Mensaje clave: %s
+            Ventana de oportunidad: %s
+            </future_scenarios>
+
+            <narrative_task>
+            Escribe la narrativa evolutiva de esta familia. Sigue EXACTAMENTE esta estructura de 5 párrafos:
+
+            PÁRRAFO 1 — "La historia que está contando esta familia":
+            Describe dónde está la familia hoy. No uses el ICF como número — tradúcelo a situación vivida.
+            Ejemplo de tono: "Llevan [N] evaluaciones acumulando historia. En este momento, su familia está..."
+
+            PÁRRAFO 2 — "Las señales que nadie está leyendo":
+            Traduce las microseñales a patrones humanos comprensibles.
+            No uses términos técnicos. Usa situaciones cotidianas que la familia reconocerá.
+            Ejemplo: "Algo que aparece en los datos pero que quizás nadie en casa lo ha nombrado es..."
+
+            PÁRRAFO 3 — "Lo que está naciendo sin que lo vean":
+            Describe las fortalezas invisibles. Celebra lo que está emergiendo.
+            Este párrafo debe generar orgullo y esperanza. Es el más importante.
+            Ejemplo: "Al mismo tiempo, hay algo que el sistema está detectando y que merece ser nombrado..."
+
+            PÁRRAFO 4 — "Los tres futuros posibles":
+            Describe los tres escenarios en lenguaje humano. No menciones cifras de ICF.
+            Usa metáforas de camino, bifurcación, elección. La familia debe sentir que tiene poder.
+            Ejemplo: "Hoy hay tres caminos frente a su familia. El primero..."
+
+            PÁRRAFO 5 — "La invitación":
+            Un cierre cálido y concreto. Una sola acción que la familia puede hacer esta semana
+            que cambiaría la dirección de la historia. No presiones. Invita.
+            Ejemplo: "Si tuvieras que elegir una sola cosa esta semana para escribir un capítulo diferente..."
+
+            REGLAS DE ESCRITURA:
+            - Tono: cálido, honesto, esperanzador. Nunca alarmista. Nunca tecnocrático.
+            - Longitud: entre 350 y 500 palabras en total.
+            - Lenguaje: cotidiano, humano. Sin "déficit", "vectores", "patrones disfuncionales".
+            - Persona gramatical: segunda persona del plural ("su familia", "ustedes").
+            - Tiempo verbal: presente. Lo que está pasando AHORA.
+            - Prohibición absoluta: no menciones el ICF como número. Tradúcelo siempre.
+            - Prohibición absoluta: no uses "Escenario A/B/C" — nómbralos como "camino", "ruta", "posibilidad".
+            - Si hay señales de riesgo HIGH: el párrafo 2 debe ser el más honesto y directo, sin alarmismo.
+            - Si no hay señales de riesgo: el párrafo 2 se convierte en "Lo que el sistema está cuidando".
+            - Comienza con: "La historia de [nombre de la familia] está..."
+            </narrative_task>
+
+            %s
+
+            Genera la narrativa ahora. Solo el texto, sin encabezados adicionales ni JSON.
+            """,
+            MENTOR_IDENTITY,
+            SAFETY_RULES,
+            familyName,
+            familyName,
+            icfCurrent, deltaText, icfDirection,
+            phase, stage,
+            dimLabel,
+            evaluationsCount,
+            signalsList,
+            strengthsList,
+            trajectoriesList,
+            scenarioAIcf12w, scenarioARisk.toLowerCase(),
+            scenarioBIcf12w, scenarioBRisk.toLowerCase(),
+            scenarioCIcf12w, scenarioCRisk.toLowerCase(),
+            pivotMessage,
+            opportunityWindow,
+            RESPONSE_RULES
+        );
+    }
+
     public String buildHybridPlanPrompt(com.integrityfamily.domain.Family family, java.util.Map<String, Double> dimensions, String riskLevel, com.integrityfamily.ai.dto.LogbookCorrelationResult correlation) {
         return buildHybridPlanPrompt(family, dimensions, riskLevel, correlation, null);
     }

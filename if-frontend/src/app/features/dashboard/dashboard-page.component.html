@@ -60,10 +60,10 @@
     <!-- ── EL HOGAR VIVO — Visualización emocional del estado familiar ── -->
     <app-hogar-vivo
       [scores]="{
-        comunicacion: data.dimensionScores?.comunicacion,
-        habitos:      data.dimensionScores?.habitos,
-        tiempos:      data.dimensionScores?.tiempos,
-        emociones:    data.dimensionScores?.emociones
+        comunicacion: data.dimensionScores.comunicacion,
+        habitos:      data.dimensionScores.habitos,
+        tiempos:      data.dimensionScores.tiempos,
+        emociones:    data.dimensionScores.emociones
       }">
     </app-hogar-vivo>
 
@@ -122,6 +122,11 @@
           }
         </div>
       </section>
+    }
+
+    <!-- ── RADAR DE SEÑALES SUTILES — Fases 1·2·3 ── -->
+    @if (guardianFamilyId > 0) {
+      <app-subtle-signal-radar [familyId]="guardianFamilyId"></app-subtle-signal-radar>
     }
 
     <!-- [SDD Spec] MILESTONE ADVANCE REINFORCEMENT -->

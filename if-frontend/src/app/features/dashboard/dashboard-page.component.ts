@@ -41,6 +41,7 @@ import { CausalRulesPanelComponent } from './components/causal-rules-panel/causa
 import { ExperienceBannerComponent } from './components/experience-banner/experience-banner.component';
 import { HogarVivoComponent } from './components/hogar-vivo/hogar-vivo.component';
 import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
+import { SubtleSignalRadarComponent } from './components/subtle-signal-radar/subtle-signal-radar.component';
 
 /**
  * SDD: Dashboard Page Component
@@ -70,7 +71,8 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
     EvolutionPathComponent,
     CausalRulesPanelComponent,
     ExperienceBannerComponent,
-    HogarVivoComponent
+    HogarVivoComponent,
+    SubtleSignalRadarComponent
   ],
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.css'],

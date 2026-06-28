@@ -1,0 +1,327 @@
+<!-- ── Radar de Señales Sutiles ────────────────────────────────────────────── -->
+<section class="radar-root glass-premium rounded-3xl border border-white/8 overflow-hidden">
+
+  <!-- HEADER -->
+  <div class="radar-header">
+    <div class="radar-title-group">
+      <div class="radar-pulse-dot"></div>
+      <div>
+        <h3 class="radar-title">Radar de Señales Sutiles</h3>
+        <p class="radar-subtitle">
+          @if (loading()) {
+            Analizando trayectoria familiar…
+          } @else if (radar()) {
+            {{ radar()!.evaluationsAnalyzed }} evaluaciones · confianza {{ radar()!.confidenceScore }}%
+          } @else {
+            Sin datos disponibles
+          }
+        </p>
+      </div>
+    </div>
+
+    @if (!loading() && highSignals().length > 0) {
+      <div class="radar-alert-badge">
+        🔴 {{ highSignals().length }} señal{{ highSignals().length > 1 ? 'es' : '' }} alta intensidad
+      </div>
+    }
+  </div>
+
+  <!-- LOADING -->
+  @if (loading()) {
+    <div class="radar-loading">
+      <div class="radar-spinner"></div>
+      <p>Calculando pendientes y patrones…</p>
+    </div>
+  }
+
+  @if (!loading() && hasData()) {
+
+    <!-- TABS -->
+    <div class="radar-tabs">
+      <button class="radar-tab" [class.active]="activeTab() === 'signals'"
+              (click)="setTab('signals')">
+        <span>📡</span> Señales
+      </button>
+      <button class="radar-tab" [class.active]="activeTab() === 'scenarios'"
+              (click)="setTab('scenarios')">
+        <span>🗺️</span> Escenarios
+      </button>
+      <button class="radar-tab" [class.active]="activeTab() === 'narrative'"
+              (click)="setTab('narrative')">
+        <span>✨</span> Narrativa IA
+        @if (loadingNarr()) { <span class="tab-spinner"></span> }
+      </button>
+    </div>
+
+    <!-- ── TAB: SEÑALES ─────────────────────────────────────────────────── -->
+    @if (activeTab() === 'signals') {
+
+      <!-- PENDIENTES POR DIMENSIÓN -->
+      <div class="section-label">Pendiente por dimensión ICF</div>
+      <div class="dim-grid">
+        @for (dim of dimensions(); track dim.key) {
+          @if (dim.data) {
+            <div class="dim-card" [style.--accent]="directionColor(dim.data.direction)">
+              <div class="dim-top">
+                <span class="dim-icon">{{ dim.icon }}</span>
+                <span class="dim-label">{{ dim.label }}</span>
+                <span class="dim-arrow" [style.color]="directionColor(dim.data.direction)">
+                  {{ directionIcon(dim.data.direction) }}
+                </span>
+              </div>
+
+              @if (dim.data.currentScore !== null) {
+                <div class="dim-score">{{ dim.data.currentScore | number:'1.0-0' }}</div>
+                <div class="dim-bar-track">
+                  <div class="dim-bar-fill"
+                       [style.width.%]="barWidth(dim.data.currentScore)"
+                       [style.background]="directionColor(dim.data.direction)">
+                  </div>
+                </div>
+                <div class="dim-delta" [class]="deltaClass(dim.data.delta)">
+                  {{ formatDelta(dim.data.delta) }} pts
+                  <span class="dim-direction-label">{{ dim.data.direction | lowercase }}</span>
+                </div>
+              } @else {
+                <div class="dim-nodata">Sin historial</div>
+              }
+
+              <p class="dim-signal-text">{{ dim.data.signal }}</p>
+            </div>
+          }
+        }
+      </div>
+
+      <!-- MICROSEÑALES -->
+      @if (radar()!.microSignals.length > 0) {
+        <div class="section-label mt-6">
+          Microseñales detectadas
+          <span class="section-badge">{{ radar()!.microSignals.length }}</span>
+        </div>
+        <div class="signals-list">
+          @for (s of radar()!.microSignals; track s.signalCode) {
+            <div class="signal-row" [style.--sev-color]="severityColor(s.severity)">
+              <span class="signal-icon">{{ severityIcon(s.severity) }}</span>
+              <div class="signal-body">
+                <div class="signal-dim-tag">{{ s.dimension }}</div>
+                <p class="signal-desc">{{ s.description }}</p>
+              </div>
+              <span class="signal-sev" [style.color]="severityColor(s.severity)">
+                {{ s.severity }}
+              </span>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="no-signals">
+          <span>✅</span>
+          <p>No se detectan señales de riesgo en este momento.</p>
+        </div>
+      }
+
+      <!-- FORTALEZAS INVISIBLES -->
+      @if (radar()!.strengths.length > 0) {
+        <div class="section-label mt-6">
+          Fortalezas invisibles
+          <span class="section-badge green">{{ radar()!.strengths.length }}</span>
+        </div>
+        <div class="strengths-list">
+          @for (str of radar()!.strengths; track str.dimension) {
+            <div class="strength-row">
+              <div class="strength-icon-wrap">✨</div>
+              <div class="strength-body">
+                <p class="strength-desc">{{ str.description }}</p>
+                <p class="strength-evidence">{{ str.evidence }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- TRAYECTORIAS EMERGENTES -->
+      @if (radar()!.trajectoryMatches.length > 0) {
+        <div class="section-label mt-6">
+          Trayectorias emergentes
+          <span class="section-hint">No confirmadas — señales coincidentes</span>
+        </div>
+        <div class="trajectory-tags">
+          @for (t of radar()!.trajectoryMatches; track t.trajectoryCode) {
+            <div class="traj-tag">
+              <span class="traj-conf">{{ t.confidenceScore }}%</span>
+              {{ t.trajectoryName }}
+            </div>
+          }
+        </div>
+      }
+
+    }
+
+    <!-- ── TAB: ESCENARIOS ──────────────────────────────────────────────── -->
+    @if (activeTab() === 'scenarios' && scenarios()) {
+      <div class="scenarios-wrap">
+
+        <!-- Baseline -->
+        <div class="scenarios-baseline">
+          <span class="baseline-label">ICF actual</span>
+          <span class="baseline-value">{{ scenarios()!.icfBaseline | number:'1.0-0' }}</span>
+          <span class="baseline-tag">{{ icfLabel(scenarios()!.icfBaseline) }}</span>
+        </div>
+
+        <!-- Árbol de escenarios -->
+        <div class="scenarios-tree">
+          @for (sc of [scenarios()!.scenarioA, scenarios()!.scenarioB, scenarios()!.scenarioC]; track sc.code) {
+            <div class="scenario-branch" [class.expanded]="expandedScenario() === sc.code">
+
+              <!-- Cabecera del escenario -->
+              <button class="scenario-head" (click)="toggleScenario(sc.code)">
+                <div class="scenario-head-left">
+                  <span class="sc-icon">{{ scenarioIcon(sc.code) }}</span>
+                  <div>
+                    <div class="sc-label">{{ sc.label }}</div>
+                    <div class="sc-prob">Probabilidad {{ sc.probabilityPercent }}%</div>
+                  </div>
+                </div>
+                <div class="scenario-head-right">
+                  <div class="sc-icf-12w">
+                    <span [style.color]="scenarioColor(sc.code)">
+                      {{ sc.week12.icfProjected | number:'1.0-0' }}
+                    </span>
+                    <span class="sc-icf-label">ICF · sem 12</span>
+                  </div>
+                  <span class="sc-risk-badge"
+                        [style.background]="riskColor(sc.estimatedRiskLevel) + '22'"
+                        [style.color]="riskColor(sc.estimatedRiskLevel)">
+                    {{ sc.estimatedRiskLevel }}
+                  </span>
+                  <span class="sc-chevron">{{ expandedScenario() === sc.code ? '▲' : '▼' }}</span>
+                </div>
+              </button>
+
+              <!-- Barra de progresión temporal -->
+              <div class="sc-timeline">
+                @for (pt of [sc.week4, sc.week8, sc.week12]; track pt.weekNumber) {
+                  <div class="sc-point">
+                    <div class="sc-point-dot" [style.background]="scenarioColor(sc.code)"></div>
+                    <div class="sc-point-label">Sem {{ pt.weekNumber }}</div>
+                    <div class="sc-point-val" [style.color]="scenarioColor(sc.code)">
+                      {{ pt.icfProjected | number:'1.0-0' }}
+                    </div>
+                    <div class="sc-point-range">
+                      {{ pt.icfMin | number:'1.0-0' }}–{{ pt.icfMax | number:'1.0-0' }}
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Detalle expandido -->
+              @if (expandedScenario() === sc.code) {
+                <div class="sc-detail animate-in fade-in slide-in-from-top-2 duration-300">
+
+                  <!-- Proyección de dimensiones -->
+                  <div class="sc-dims">
+                    @for (dp of [sc.emociones, sc.comunicacion, sc.habitos, sc.tiempos]; track dp.dimension) {
+                      <div class="sc-dim-row">
+                        <span class="sc-dim-name">{{ dp.dimension }}</span>
+                        <div class="sc-dim-bar-track">
+                          <div class="sc-dim-bar-fill"
+                               [style.width.%]="barWidth(dp.currentScore)"
+                               style="background: rgba(255,255,255,0.15)">
+                          </div>
+                          <div class="sc-dim-bar-proj"
+                               [style.width.%]="barWidth(dp.projectedScore)"
+                               [style.background]="scenarioColor(sc.code) + '99'">
+                          </div>
+                        </div>
+                        <span class="sc-dim-delta" [class]="deltaClass(dp.delta)">
+                          {{ formatDelta(dp.delta) }}
+                        </span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Narrativa del escenario -->
+                  <p class="sc-narrative">{{ sc.narrative }}</p>
+
+                  <!-- Acciones clave -->
+                  <div class="sc-actions-label">
+                    {{ sc.code === 'A' ? 'Qué define este camino' : 'Qué debe hacer la familia' }}
+                  </div>
+                  <ul class="sc-actions">
+                    @for (a of sc.keyActions; track a) {
+                      <li>
+                        <span [style.color]="scenarioColor(sc.code)">
+                          {{ sc.code === 'A' ? '✗' : '✓' }}
+                        </span>
+                        {{ a }}
+                      </li>
+                    }
+                  </ul>
+                </div>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Mensaje pivote -->
+        <div class="pivot-card">
+          <div class="pivot-icon">⚡</div>
+          <div>
+            <div class="pivot-label">Punto de bifurcación</div>
+            <p class="pivot-text">{{ scenarios()!.pivotMessage }}</p>
+          </div>
+        </div>
+
+        <!-- Ventana de oportunidad -->
+        <div class="opportunity-card">
+          <span>🕐</span>
+          <p>{{ scenarios()!.opportunityWindow }}</p>
+        </div>
+
+      </div>
+    }
+
+    <!-- ── TAB: NARRATIVA IA ─────────────────────────────────────────────── -->
+    @if (activeTab() === 'narrative') {
+      <div class="narrative-wrap">
+
+        @if (loadingNarr()) {
+          <div class="narrative-loading">
+            <div class="radar-spinner"></div>
+            <p>Generando narrativa evolutiva con IA…</p>
+          </div>
+        } @else if (narrative()) {
+          <div class="narrative-confidence">
+            Confianza del análisis: {{ narrative()!.radarConfidence }}%
+          </div>
+          <div class="narrative-body">
+            @for (line of narrativeLines(narrative()!.narrative); track $index) {
+              <p>{{ line }}</p>
+            }
+          </div>
+          <button class="narrative-refresh" (click)="narrative.set(null); loadNarrative()">
+            ↺ Regenerar narrativa
+          </button>
+        } @else {
+          <div class="narrative-empty">
+            <span>✨</span>
+            <p>La narrativa evolutiva se genera combinando el radar de señales y los escenarios de futuro.</p>
+            <button class="btn-gen-narrative" (click)="loadNarrative()">
+              Generar narrativa con IA
+            </button>
+          </div>
+        }
+
+      </div>
+    }
+
+  }
+
+  <!-- SIN DATOS -->
+  @if (!loading() && !hasData()) {
+    <div class="radar-empty">
+      <span>📡</span>
+      <p>El radar se activará cuando la familia complete su primera evaluación.</p>
+    </div>
+  }
+
+</section>

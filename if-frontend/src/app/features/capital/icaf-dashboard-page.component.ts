@@ -3,7 +3,7 @@ import {
   ChangeDetectionStrategy, signal, computed
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Subject, forkJoin, takeUntil } from 'rxjs';
 import { FamilyTrajectoryDto } from '../../core/models/trajectory.model';
@@ -356,6 +356,27 @@ import { environment } from '../../../environments/environment';
       </section>
     }
 
+    <!-- Banner de alerta: trayectorias en recaída -->
+    @if (relapsedTrajectories().length > 0) {
+      <div class="rounded-2xl border border-red-500/40 bg-red-500/08 p-4 flex gap-3">
+        <span class="text-red-400 text-xl shrink-0">🚨</span>
+        <div class="flex-1 min-w-0">
+          <p class="text-red-300 font-semibold text-sm">Alerta de recaída activa</p>
+          <p class="text-white/50 text-xs mt-1">
+            {{ relapsedTrajectories().length }} trayectoria(s) han registrado una recaída:
+            {{ relapsedTrajectories().slice(0,2).map(t => t.trajectory.name).join(', ') }}{{ relapsedTrajectories().length > 2 ? '…' : '' }}.
+            Revisión urgente recomendada.
+          </p>
+        </div>
+        <a routerLink="/trajectory"
+           class="shrink-0 self-start px-3 py-1.5 rounded-xl text-xs font-medium
+                  bg-red-500/20 hover:bg-red-500/30 border border-red-500/30
+                  text-red-300 hover:text-red-200 transition-all">
+          Ver →
+        </a>
+      </div>
+    }
+
     <!-- Banner sin datos reales -->
     @if (!data()!.hasRealData) {
       <div class="rounded-2xl border border-amber-500/30 bg-amber-500/08 p-4 flex gap-3">
@@ -390,6 +411,7 @@ export class IcafDashboardPageComponent implements OnInit, OnDestroy {
 
   private readonly icafService       = inject(IcafDataService);
   private readonly trajectoryService = inject(TrajectoryService);
+  private readonly router            = inject(Router);
   private readonly http              = inject(HttpClient);
   private readonly destroy$          = new Subject<void>();
 
@@ -400,6 +422,10 @@ export class IcafDashboardPageComponent implements OnInit, OnDestroy {
 
   readonly activeTrajectories = computed(() =>
     this.trajectories().filter(t => t.status !== 'RESOLVED' && t.status !== 'CLOSED')
+  );
+
+  readonly relapsedTrajectories = computed(() =>
+    this.trajectories().filter(t => t.status === 'RELAPSED')
   );
 
   private familyId = 0;
@@ -486,8 +512,7 @@ export class IcafDashboardPageComponent implements OnInit, OnDestroy {
   }
 
   openQuestionnaire(domain: string): void {
-    // Navegación al cuestionario — implementar cuando el componente del cuestionario esté listo
-    console.log('[ICaF] Abrir cuestionario para dominio:', domain);
+    this.router.navigate(['/capital/questionnaire'], { queryParams: { domain } });
   }
 
   // ── Helpers de template ───────────────────────────────────────────────────

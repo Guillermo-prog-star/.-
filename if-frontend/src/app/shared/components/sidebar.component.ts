@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { TransformationFlowService } from '../../core/services/transformation-flow.service';
+import { UserNotificationService } from '../../core/services/user-notification.service';
 import { filter } from 'rxjs/operators';
 
 /**
@@ -231,10 +232,46 @@ import { filter } from 'rxjs/operators';
 
       </nav>
 
+      <!-- ─── NOTIFICATION PANEL ───────────────────── -->
+      @if (showNotifications()) {
+        <div class="notif-panel">
+          <div class="notif-header">
+            <span class="notif-title">Notificaciones</span>
+            @if (notifService.unreadCount() > 0) {
+              <button class="notif-mark-read" (click)="markAllRead()">Marcar leídas</button>
+            }
+          </div>
+          <div class="notif-list">
+            @if (notifService.notifications().length === 0) {
+              <p class="notif-empty">Sin notificaciones recientes</p>
+            }
+            @for (n of notifService.notifications(); track n.id) {
+              <div class="notif-item" [class.notif-unread]="!n.viewed">
+                <span class="notif-icon">{{ notifService.typeIcon(n.type) }}</span>
+                <div class="notif-body">
+                  <p class="notif-item-title">{{ n.title }}</p>
+                  <p class="notif-msg">{{ n.message }}</p>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
       <!-- ─── FAMILIA BOX ─────────────────────────── -->
       <div class="family-box">
-        <div class="f-name">{{ user()?.fullName }}</div>
-        <div class="f-role">{{ user()?.role }}</div>
+        <div class="f-row">
+          <div class="f-info">
+            <div class="f-name">{{ user()?.fullName }}</div>
+            <div class="f-role">{{ user()?.role }}</div>
+          </div>
+          <button class="notif-bell" (click)="toggleNotifications()" title="Notificaciones">
+            🔔
+            @if (notifService.unreadCount() > 0) {
+              <span class="notif-badge">{{ notifService.unreadCount() }}</span>
+            }
+          </button>
+        </div>
         @if (showLogoutConfirm()) {
           <div class="logout-confirm">
             <span class="confirm-text">¿Finalizar sesión?</span>
@@ -402,8 +439,25 @@ import { filter } from 'rxjs/operators';
     .nav-section--admin .nav-item.active { background: rgba(59,130,246,0.1) !important; color: var(--if-system-bright) !important; border-color: rgba(59,130,246,0.3) !important; }
 
     .family-box { margin: 12px 16px 0; padding: 12px 14px; background: rgba(255,255,255,0.02); border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); flex-shrink: 0; }
+    .f-row   { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .f-info  { min-width: 0; flex: 1; }
     .f-name  { color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .f-role  { color: #6366f1; font-size: 9px; text-transform: uppercase; font-weight: 800; margin-bottom: 6px; letter-spacing: 0.06em; }
+    .f-role  { color: #6366f1; font-size: 9px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.06em; }
+    .notif-bell  { position: relative; background: none; border: none; cursor: pointer; font-size: 16px; padding: 2px 4px; line-height: 1; flex-shrink: 0; }
+    .notif-badge { position: absolute; top: -2px; right: -4px; background: #ef4444; color: #fff; font-size: 8px; font-weight: 800; border-radius: 8px; min-width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; padding: 0 2px; }
+    .notif-panel { margin: 0 8px 4px; background: #111114; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow: hidden; flex-shrink: 0; max-height: 280px; display: flex; flex-direction: column; }
+    .notif-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px 6px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .notif-title  { font-size: 11px; font-weight: 700; color: rgba(255,255,255,0.7); }
+    .notif-mark-read { background: none; border: none; color: #6366f1; font-size: 9px; font-weight: 700; cursor: pointer; padding: 0; }
+    .notif-list   { overflow-y: auto; flex: 1; padding: 6px 0; scrollbar-width: thin; scrollbar-color: rgba(99,102,241,0.2) transparent; }
+    .notif-empty  { color: rgba(255,255,255,0.25); font-size: 11px; text-align: center; padding: 16px; }
+    .notif-item   { display: flex; gap: 10px; padding: 8px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+    .notif-item:last-child { border-bottom: none; }
+    .notif-unread { background: rgba(99,102,241,0.06); }
+    .notif-icon   { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+    .notif-body   { min-width: 0; }
+    .notif-item-title { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.8); margin: 0 0 2px; }
+    .notif-msg    { font-size: 10px; color: rgba(255,255,255,0.4); margin: 0; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     .logout-link { background: none; border: none; color: #ff4444; font-size: 10px; font-weight: 700; cursor: pointer; padding: 0; text-transform: uppercase; }
     .logout-confirm { display: flex; flex-direction: column; gap: 4px; }
     .confirm-text { font-size: 10px; color: rgba(255,255,255,0.5); }
@@ -417,11 +471,21 @@ export class SidebarComponent implements OnInit {
   private router  = inject(Router);
   protected auth  = inject(AuthService);
 
-  readonly familyState = inject(FamilyStateService);
-  readonly flow        = inject(TransformationFlowService);
+  readonly familyState  = inject(FamilyStateService);
+  readonly flow         = inject(TransformationFlowService);
+  readonly notifService = inject(UserNotificationService);
 
-  readonly user              = this.auth.user;
-  readonly showLogoutConfirm = signal(false);
+  readonly user               = this.auth.user;
+  readonly showLogoutConfirm  = signal(false);
+  readonly showNotifications  = signal(false);
+
+  toggleNotifications(): void {
+    this.showNotifications.update(v => !v);
+  }
+
+  markAllRead(): void {
+    this.notifService.markAllRead();
+  }
 
   diagExpanded = false;
 

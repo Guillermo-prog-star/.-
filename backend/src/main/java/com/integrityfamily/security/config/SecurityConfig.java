@@ -88,6 +88,11 @@ public class SecurityConfig {
                                 "/alexa"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Red de Apoyo Humano: catálogo público para autenticados,
+                        // gestión familiar y notas profesionales requieren roles específicos
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/support/professionals").hasRole("ADMIN")
+                        .requestMatchers("/api/support/**").authenticated()
+                        .requestMatchers("/api/families/*/support/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptions -> exceptions

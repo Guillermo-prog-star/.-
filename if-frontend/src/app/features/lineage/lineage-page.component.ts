@@ -399,13 +399,18 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
 
               } @else {
                 <!-- Solo member header -->
-                @if (m.photoUrl) {
-                  <img [src]="m.photoUrl" [alt]="m.fullName" class="sp-avatar sp-avatar-photo"/>
-                } @else {
-                  <div class="sp-avatar" [style.background]="m.avatarColor || nodeStroke(m.generation)">
-                    {{ m.avatarInitials || initials(m) }}
-                  </div>
-                }
+                <div class="sp-avatar-wrap" (click)="triggerPhotoUpload()" title="Cambiar foto">
+                  @if (m.photoUrl) {
+                    <img [src]="m.photoUrl" [alt]="m.fullName" class="sp-avatar sp-avatar-photo"/>
+                  } @else {
+                    <div class="sp-avatar" [style.background]="m.avatarColor || nodeStroke(m.generation)">
+                      {{ m.avatarInitials || initials(m) }}
+                    </div>
+                  }
+                  <div class="sp-avatar-cam">{{ uploadingPhoto() ? '⏳' : '📷' }}</div>
+                </div>
+                <input type="file" id="lin-photo-input" accept="image/*" style="display:none"
+                       (change)="onPhotoSelect($event, m)"/>
                 <div>
                   <div class="sp-name">{{ m.fullName }}</div>
                   <div class="sp-gen-badge" [style.color]="nodeStroke(m.generation)">
@@ -2576,6 +2581,20 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
       .doc-content { padding: 20px 32px; }
       .doc-values-grid { grid-template-columns: repeat(3, 1fr); }
     }
+
+    /* ── AVATAR UPLOAD ──────────────────────────────────────── */
+    .sp-avatar-wrap {
+      position: relative; cursor: pointer; flex-shrink: 0;
+    }
+    .sp-avatar-cam {
+      position: absolute; bottom: -2px; right: -2px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #1f2937; border: 1px solid #4b5563;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; opacity: 0; transition: opacity .2s;
+      pointer-events: none;
+    }
+    .sp-avatar-wrap:hover .sp-avatar-cam { opacity: 1; }
   `]
 })
 export class LineagePageComponent implements OnInit, OnDestroy {
@@ -3760,6 +3779,85 @@ export class LineagePageComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.toastTimer) clearTimeout(this.toastTimer);
+  }
+
+  // ── Foto de perfil ─────────────────────────────────────────────────────────
+  uploadingPhoto = signal(false);
+
+  triggerPhotoUpload() {
+    (document.getElementById('lin-photo-input') as HTMLInputElement)?.click();
+  }
+
+  onPhotoSelect(event: Event, member: LineageMember) {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    this.uploadingPhoto.set(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 200;
+        const scale = Math.min(MAX / img.width, MAX / img.height, 1);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        this.savePhoto(member, dataUrl);
+      };
+      img.src = e.target!.result as string;
+    };
+    reader.readAsDataURL(file);
+    (event.target as HTMLInputElement).value = '';
+  }
+
+  private savePhoto(member: LineageMember, dataUrl: string) {
+    const req: LineageMemberRequest = {
+      generation: member.generation,
+      status: member.status,
+      firstName: member.firstName ?? undefined,
+      lastName: member.lastName ?? undefined,
+      avatarInitials: member.avatarInitials ?? undefined,
+      avatarColor: member.avatarColor ?? undefined,
+      generationType: member.generationType,
+      isAnchor: member.isAnchor,
+      birthYear: member.birthYear ?? undefined,
+      birthYearApproximate: member.birthYearApproximate ?? undefined,
+      deathYear: member.deathYear ?? undefined,
+      origin: member.origin ?? undefined,
+      roleLabel: member.roleLabel ?? undefined,
+      confidenceLevel: member.confidenceLevel,
+      dataSource: member.dataSource ?? undefined,
+      story: member.story ?? undefined,
+      valores: member.valores ?? undefined,
+      aprendizajes: member.aprendizajes ?? undefined,
+      erroresSuperados: member.erroresSuperados ?? undefined,
+      tradiciones: member.tradiciones ?? undefined,
+      misionesCumplidas: member.misionesCumplidas ?? undefined,
+      legadoPersonal: member.legadoPersonal ?? undefined,
+      photoUrl: dataUrl,
+      positionX: member.positionX ?? undefined,
+      positionY: member.positionY ?? undefined,
+      familyMemberId: member.familyMemberId ?? undefined,
+    };
+    this.svc.updateMember(this.familyId, member.id, req)
+      .pipe(catchError(() => {
+        this.uploadingPhoto.set(false);
+        this.showToast('Error al guardar la foto', true);
+        return of(null);
+      }))
+      .subscribe(updated => {
+        this.uploadingPhoto.set(false);
+        if (updated) {
+          this.lineage.update(l => l ? {
+            ...l,
+            members: l.members.map(m => m.id === updated.id ? updated : m)
+          } : l);
+          this.selectedMember.set(updated);
+          this.showToast('✅ Foto actualizada');
+        }
+      });
   }
 
   @HostListener('document:keydown.escape')

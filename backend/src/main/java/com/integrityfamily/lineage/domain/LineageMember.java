@@ -114,7 +114,7 @@ public class LineageMember {
     @Column(name = "legado_personal", columnDefinition = "TEXT")
     private String legadoPersonal;
 
-    @Column(name = "photo_url", length = 500)
+    @Column(name = "photo_url", columnDefinition = "MEDIUMTEXT")
     private String photoUrl;
 
     @Column(name = "position_x")

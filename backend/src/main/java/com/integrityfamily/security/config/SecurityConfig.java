@@ -93,6 +93,10 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/support/professionals").hasRole("ADMIN")
                         .requestMatchers("/api/support/**").authenticated()
                         .requestMatchers("/api/families/*/support/**").authenticated()
+                        // Ecosistema de Apoyo
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/ecosystem/participants").hasRole("ADMIN")
+                        .requestMatchers("/api/ecosystem/**").authenticated()
+                        .requestMatchers("/api/families/*/ecosystem/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptions -> exceptions

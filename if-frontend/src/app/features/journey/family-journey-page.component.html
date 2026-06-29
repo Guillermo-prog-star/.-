@@ -1,0 +1,191 @@
+<div class="journey-page">
+
+  <!-- Header -->
+  <div class="journey-header">
+    <div class="journey-title-block">
+      <span class="journey-emoji">🧭</span>
+      <div>
+        <h1 class="journey-title">Viaje Familiar</h1>
+        <p class="journey-subtitle">El camino de transformación de tu familia</p>
+      </div>
+    </div>
+    <button class="snap-btn" (click)="takeSnapshot()" [disabled]="snapping()">
+      {{ snapping() ? '…' : '📸 Snapshot' }}
+    </button>
+  </div>
+
+  <div *ngIf="snapMsg()" class="snap-msg">{{ snapMsg() }}</div>
+
+  <!-- Loading -->
+  <div *ngIf="loading()" class="journey-loading">
+    <div class="loading-spinner"></div>
+    <p>Evaluando el viaje familiar…</p>
+  </div>
+
+  <ng-container *ngIf="!loading() && journey() as j">
+
+    <!-- Progress hero -->
+    <div class="progress-card">
+      <div class="progress-meta">
+        <div>
+          <span class="progress-label">Progreso total</span>
+          <div class="progress-stats-row">
+            <span class="progress-pct" [style.color]="progressBarColor(j.journeyProgress)">
+              {{ j.journeyProgress }}%
+            </span>
+            <span class="progress-sub">· {{ completedCount() }} de 14 niveles</span>
+          </div>
+        </div>
+        <div class="progress-level-badge">
+          <span class="plb-num">{{ j.currentLevel }}</span>
+          <span class="plb-label">nivel<br>actual</span>
+        </div>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill"
+             [style.width.%]="j.journeyProgress"
+             [style.background]="progressBarColor(j.journeyProgress)">
+        </div>
+      </div>
+      <div class="next-action-box">
+        <span class="next-action-label">Siguiente paso</span>
+        <p class="next-action-text">{{ j.nextAction }}</p>
+      </div>
+    </div>
+
+    <!-- ── Historial (gráfico SVG) ──────────────────────────────────────── -->
+    <ng-container *ngIf="history() as h">
+      <div class="history-card" *ngIf="h.points.length >= 2">
+        <div class="history-header">
+          <span class="history-title">📈 Evolución del nivel</span>
+          <div class="history-meta">
+            <span *ngIf="h.totalLevelUps > 0" class="history-badge">
+              🎉 {{ h.totalLevelUps }} level-up{{ h.totalLevelUps > 1 ? 's' : '' }}
+            </span>
+            <span class="history-dates">
+              {{ h.firstSnapshotDate | date:'dd/MM/yy' }} → {{ h.lastSnapshotDate | date:'dd/MM/yy' }}
+            </span>
+          </div>
+        </div>
+
+        <svg class="history-svg"
+             [attr.viewBox]="'0 0 ' + W + ' ' + H"
+             preserveAspectRatio="none">
+
+          <!-- Grid horizontal lines -->
+          <ng-container *ngFor="let g of yGridLines">
+            <line [attr.x1]="PAD" [attr.x2]="W - PAD"
+                  [attr.y1]="g.y" [attr.y2]="g.y"
+                  stroke="#1e293b" stroke-width="1"/>
+            <text [attr.x]="PAD - 2" [attr.y]="g.y + 3"
+                  font-size="5" fill="#475569" text-anchor="end">{{ g.label }}</text>
+          </ng-container>
+
+          <!-- Path -->
+          <path [attr.d]="chartPath()"
+                fill="none" stroke="#6366f1" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+
+          <!-- Fill area under path -->
+          <path *ngIf="chartPoints().length >= 2"
+                [attr.d]="chartPath() + ' L' + (W - PAD) + ',' + H + ' L' + PAD + ',' + H + ' Z'"
+                fill="url(#journeyGrad)" opacity="0.2"/>
+
+          <defs>
+            <linearGradient id="journeyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#6366f1"/>
+              <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Data points -->
+          <ng-container *ngFor="let pt of chartPoints(); trackBy: trackPoint">
+            <!-- Level-up points: star marker -->
+            <ng-container *ngIf="pt.levelUp">
+              <circle [attr.cx]="pt.x" [attr.cy]="pt.y"
+                      r="4" fill="#fbbf24" stroke="#1e293b" stroke-width="1"/>
+              <text [attr.x]="pt.x" [attr.y]="pt.y - 6"
+                    font-size="6" fill="#fbbf24" text-anchor="middle">{{ pt.level }}</text>
+            </ng-container>
+            <!-- Regular points -->
+            <ng-container *ngIf="!pt.levelUp">
+              <circle [attr.cx]="pt.x" [attr.cy]="pt.y"
+                      r="2" fill="#6366f1" opacity="0.7"/>
+            </ng-container>
+          </ng-container>
+
+        </svg>
+
+        <div class="history-legend">
+          <span><span class="leg-dot gold"></span> Level-up con nivel alcanzado</span>
+          <span><span class="leg-dot indigo"></span> Snapshot de seguimiento</span>
+        </div>
+      </div>
+
+      <div class="history-empty" *ngIf="h.points.length < 2">
+        <p>Toma snapshots diarios para ver la evolución de tu viaje aquí.</p>
+      </div>
+    </ng-container>
+
+    <!-- ── Road map visual ──────────────────────────────────────────────── -->
+    <div class="roadmap-section">
+      <h2 class="roadmap-title">Mapa del Viaje</h2>
+      <div class="roadmap-grid">
+        <div *ngFor="let lvl of j.levels; trackBy: trackLevel"
+             class="rm-node"
+             [class.rm-complete]="lvl.status === 'COMPLETE'"
+             [class.rm-next]="lvl.status === 'NEXT'"
+             [class.rm-progress]="lvl.status === 'IN_PROGRESS'"
+             [class.rm-locked]="lvl.status === 'LOCKED'">
+          <div *ngIf="lvl.level > 0" class="rm-connector"
+               [class.conn-done]="lvl.status === 'COMPLETE'"></div>
+          <div class="rm-circle">
+            <span class="rm-icon">{{ lvl.status === 'LOCKED' ? '🔒' : lvl.icon }}</span>
+          </div>
+          <div class="rm-label">
+            <span class="rm-num">{{ lvl.level }}</span>
+            <span class="rm-name">{{ lvl.name }}</span>
+            <span *ngIf="lvl.metric" class="rm-metric">{{ lvl.metric }}</span>
+          </div>
+          <a *ngIf="lvl.status === 'NEXT' && lvl.route"
+             [routerLink]="lvl.route" class="rm-cta">Comenzar</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Detail list ──────────────────────────────────────────────────── -->
+    <div class="detail-section">
+      <h2 class="detail-title">Detalle por nivel</h2>
+      <div class="levels-list">
+        <div *ngFor="let lvl of j.levels; trackBy: trackLevel"
+             class="level-card"
+             [class.level-complete]="lvl.status === 'COMPLETE'"
+             [class.level-next]="lvl.status === 'NEXT'"
+             [class.level-locked]="lvl.status === 'LOCKED'">
+          <div class="level-icon-block">
+            <span class="level-icon">{{ lvl.icon }}</span>
+            <span class="level-num">{{ lvl.level }}</span>
+          </div>
+          <div class="level-content">
+            <div class="level-top">
+              <span class="level-name">{{ lvl.name }}</span>
+              <span class="level-status-badge" [class]="statusClass(lvl.status)">
+                {{ statusIcon(lvl.status) }} {{ lvl.statusLabel }}
+              </span>
+            </div>
+            <p class="level-desc">{{ lvl.description }}</p>
+            <span *ngIf="lvl.metric" class="level-metric">{{ lvl.metric }}</span>
+          </div>
+          <a *ngIf="lvl.status === 'NEXT' && lvl.route"
+             [routerLink]="lvl.route" class="level-cta">Ir →</a>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <div *ngIf="!loading() && !journey()" class="journey-empty">
+    <p>No se pudo cargar el viaje familiar. Verifica tu conexión.</p>
+  </div>
+
+</div>

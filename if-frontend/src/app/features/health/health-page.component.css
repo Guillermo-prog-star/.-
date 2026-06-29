@@ -1,0 +1,152 @@
+.hp-page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
+  color: #e2e8f0;
+}
+
+/* Header */
+.hp-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.5rem;
+}
+.hp-title-block { display: flex; align-items: center; gap: 0.75rem; }
+.hp-emoji { font-size: 1.8rem; }
+.hp-title { margin: 0; font-size: 1.5rem; font-weight: 700; color: #f1f5f9; }
+.hp-subtitle { margin: 0.1rem 0 0; font-size: 0.78rem; color: #64748b; }
+.hp-refresh {
+  font-size: 1.2rem; background: none; border: 1px solid #334155;
+  border-radius: 8px; color: #64748b; cursor: pointer;
+  padding: 0.3rem 0.6rem; transition: color 0.2s;
+}
+.hp-refresh:hover { color: #e2e8f0; border-color: #475569; }
+
+/* Loading */
+.hp-loading {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.75rem; padding: 3rem; color: #64748b;
+}
+.hp-spinner {
+  width: 32px; height: 32px;
+  border: 3px solid #334155; border-top-color: #6366f1;
+  border-radius: 50%; animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Sentinel */
+.sentinel-banner {
+  background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 10px; padding: 0.75rem 1rem;
+  font-size: 0.8rem; color: #fca5a5; margin-bottom: 1.25rem;
+  animation: sentpulse 2s ease-in-out infinite;
+}
+@keyframes sentpulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.2); }
+  50%      { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+}
+
+/* ── Gauges ──────────────────────────────────────────────────────────── */
+.gauges-row {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem; margin-bottom: 1rem;
+}
+
+.gauge-card {
+  background: #1e293b; border: 1px solid #334155;
+  border-radius: 14px; padding: 1rem 0.875rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+}
+.gauge-card:hover { border-color: #475569; }
+
+.gauge-svg { width: 100%; max-width: 110px; overflow: visible; }
+
+.gauge-label { font-size: 0.8rem; font-weight: 700; }
+.gauge-delta { font-size: 0.7rem; font-weight: 600; }
+.gauge-dir   { font-size: 0.62rem; color: #64748b; text-align: center; }
+
+/* Phase card */
+.phase-card { justify-content: center; }
+.phase-icon { font-size: 2.5rem; line-height: 1; margin-bottom: 0.25rem; }
+.phase-name { font-size: 1rem; font-weight: 700; }
+.phase-sub  { font-size: 0.62rem; color: #64748b; margin-bottom: 0.5rem; }
+
+.risk-row { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; }
+.risk-badge {
+  font-size: 0.65rem; font-weight: 700;
+  padding: 0.15rem 0.5rem; border-radius: 999px;
+}
+.risk-signals { font-size: 0.65rem; color: #fca5a5; }
+
+/* ── Stats row ───────────────────────────────────────────────────────── */
+.stats-row {
+  display: flex; gap: 0.6rem; flex-wrap: wrap;
+  margin-bottom: 1.25rem;
+}
+.stat-pill {
+  display: flex; align-items: center; gap: 0.35rem;
+  background: #1e293b; border: 1px solid #334155;
+  border-radius: 999px; padding: 0.3rem 0.75rem;
+  font-size: 0.75rem;
+}
+.stat-pill.stat-active { border-color: #22c55e; background: rgba(34,197,94,0.08); }
+.stat-icon { font-size: 0.85rem; }
+.stat-val  { font-weight: 700; color: #f1f5f9; }
+.stat-lbl  { color: #64748b; }
+
+/* ── Next action ─────────────────────────────────────────────────────── */
+.next-section {
+  background: #0f172a; border: 1px solid #6366f1;
+  border-radius: 12px; padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.next-title { font-size: 0.7rem; font-weight: 700; color: #818cf8; margin-bottom: 0.4rem; }
+.next-text  { margin: 0 0 0.75rem; font-size: 0.875rem; color: #e2e8f0; line-height: 1.5; }
+.next-cta {
+  font-size: 0.75rem; font-weight: 700; color: #818cf8;
+  text-decoration: none;
+}
+.next-cta:hover { color: #a5b4fc; }
+
+/* ── Quick links ─────────────────────────────────────────────────────── */
+.links-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+}
+
+.link-card {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.4rem; position: relative;
+  background: #1e293b; border: 1px solid #334155;
+  border-radius: 12px; padding: 0.875rem 0.5rem;
+  text-decoration: none; transition: border-color 0.2s, background 0.2s;
+  cursor: pointer;
+}
+.link-card:hover { border-color: #475569; background: #263244; }
+
+.link-icon  { font-size: 1.4rem; }
+.link-label { font-size: 0.68rem; font-weight: 600; color: #94a3b8; text-align: center; }
+
+.link-badge {
+  position: absolute; top: 6px; right: 8px;
+  font-size: 0.6rem; font-weight: 700;
+  padding: 0.1rem 0.35rem; border-radius: 999px;
+}
+.link-badge.red    { background: rgba(239,68,68,0.2);  color: #fca5a5; }
+.link-badge.indigo { background: rgba(99,102,241,0.2); color: #a5b4fc; }
+.link-badge.green  { background: rgba(34,197,94,0.15); color: #86efac; }
+
+/* Empty */
+.hp-empty { text-align: center; padding: 3rem; color: #475569; }
+.hp-retry {
+  margin-top: 1rem; padding: 0.5rem 1.5rem;
+  background: #1e293b; border: 1px solid #334155;
+  border-radius: 8px; color: #94a3b8; cursor: pointer;
+  font-size: 0.8rem;
+}
+.hp-retry:hover { border-color: #6366f1; color: #e2e8f0; }
+
+/* Responsive */
+@media (max-width: 500px) {
+  .gauges-row { grid-template-columns: 1fr 1fr; }
+  .links-grid { grid-template-columns: repeat(2, 1fr); }
+}

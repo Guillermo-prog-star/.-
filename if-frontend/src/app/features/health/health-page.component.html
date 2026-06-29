@@ -1,0 +1,171 @@
+<div class="hp-page">
+
+  <!-- Header -->
+  <div class="hp-header">
+    <div class="hp-title-block">
+      <span class="hp-emoji">❤️‍🔥</span>
+      <div>
+        <h1 class="hp-title">Salud Familiar</h1>
+        <p class="hp-subtitle">Panel ejecutivo de bienestar integral</p>
+      </div>
+    </div>
+    <button class="hp-refresh" (click)="ngOnInit()" title="Actualizar">↻</button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading()" class="hp-loading">
+    <div class="hp-spinner"></div>
+    <p>Calculando salud familiar…</p>
+  </div>
+
+  <ng-container *ngIf="!loading() && summary() as s">
+
+    <!-- Sentinel banner -->
+    <div *ngIf="s.sentinelActive" class="sentinel-banner">
+      🛡️ <strong>Protocolo Sentinel activo</strong> — La familia está en monitoreo intensivo.
+    </div>
+
+    <!-- ── Gauges row ───────────────────────────────────────────────── -->
+    <div class="gauges-row">
+
+      <!-- ICF Gauge -->
+      <div class="gauge-card">
+        <svg class="gauge-svg" viewBox="0 0 100 60">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="#1e293b" stroke-width="8"
+                  stroke-dasharray="141.5 283" stroke-linecap="round"
+                  transform="rotate(-180 50 50)"/>
+          <circle cx="50" cy="50" r="45" fill="none"
+                  [attr.stroke]="icfColor(s.currentIcf)"
+                  stroke-width="8"
+                  stroke-dasharray="141.5 283"
+                  [attr.stroke-dashoffset]="-(141.5 - (s.currentIcf ?? 0) / 100 * 141.5)"
+                  stroke-linecap="round"
+                  transform="rotate(-180 50 50)"/>
+          <text x="50" y="46" text-anchor="middle" font-size="16" font-weight="bold"
+                [attr.fill]="icfColor(s.currentIcf)">
+            {{ s.currentIcf !== null ? (s.currentIcf | number:'1.0-0') : '—' }}
+          </text>
+          <text x="50" y="56" text-anchor="middle" font-size="6" fill="#64748b">ICF</text>
+        </svg>
+        <div class="gauge-label" [style.color]="icfColor(s.currentIcf)">{{ s.icfLabel }}</div>
+        <div *ngIf="s.icfDelta30d !== null" class="gauge-delta"
+             [style.color]="s.icfDelta30d >= 0 ? '#34d399' : '#f87171'">
+          {{ deltaSign(s.icfDelta30d) }} vs 30d
+        </div>
+        <div class="gauge-dir">{{ directionText(s.icfDirection) }}</div>
+      </div>
+
+      <!-- Journey Gauge -->
+      <div class="gauge-card" routerLink="/journey" style="cursor:pointer">
+        <svg class="gauge-svg" viewBox="0 0 100 60">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="#1e293b" stroke-width="8"
+                  stroke-dasharray="141.5 283" stroke-linecap="round"
+                  transform="rotate(-180 50 50)"/>
+          <circle cx="50" cy="50" r="45" fill="none"
+                  [attr.stroke]="progressColor(s.journeyProgress)"
+                  stroke-width="8"
+                  stroke-dasharray="141.5 283"
+                  [attr.stroke-dashoffset]="-(141.5 - s.journeyProgress / 100 * 141.5)"
+                  stroke-linecap="round"
+                  transform="rotate(-180 50 50)"/>
+          <text x="50" y="44" text-anchor="middle" font-size="14" font-weight="bold"
+                [attr.fill]="progressColor(s.journeyProgress)">{{ s.journeyProgress }}%</text>
+          <text x="50" y="54" text-anchor="middle" font-size="5.5" fill="#64748b">
+            Nv. {{ s.journeyCurrentLevel }}/13
+          </text>
+        </svg>
+        <div class="gauge-label" [style.color]="progressColor(s.journeyProgress)">Viaje</div>
+        <div class="gauge-dir">{{ s.journeyCurrentLevel === 13 ? '¡Completo!' : 'Nivel ' + s.journeyCurrentLevel + ' activo' }}</div>
+      </div>
+
+      <!-- Phase + Risk -->
+      <div class="gauge-card phase-card">
+        <div class="phase-icon">{{ phaseIcon(s.evolutionPhase) }}</div>
+        <div class="phase-name" [style.color]="phaseColor(s.evolutionPhase)">
+          {{ phaseLabel(s.evolutionPhase) }}
+        </div>
+        <div class="phase-sub">Fase de evolución</div>
+        <div class="risk-row">
+          <span class="risk-badge" [style.background]="riskColor(s.riskLevel) + '22'"
+                [style.color]="riskColor(s.riskLevel)">
+            Riesgo: {{ s.riskLevel }}
+          </span>
+          <span *ngIf="s.highSignalCount > 0" class="risk-signals">
+            🔴 {{ s.highSignalCount }} alta{{ s.highSignalCount > 1 ? 's' : '' }}
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Stats row ────────────────────────────────────────────────── -->
+    <div class="stats-row">
+      <div class="stat-pill">
+        <span class="stat-icon">👥</span>
+        <span class="stat-val">{{ s.memberCount }}</span>
+        <span class="stat-lbl">miembros</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-icon">📸</span>
+        <span class="stat-val">{{ s.evidenceCount }}</span>
+        <span class="stat-lbl">evidencias</span>
+      </div>
+      <div class="stat-pill">
+        <span class="stat-icon">⚡</span>
+        <span class="stat-val">{{ s.totalSprints }}</span>
+        <span class="stat-lbl">sprints</span>
+      </div>
+      <div class="stat-pill" [class.stat-active]="s.hasActiveSprint">
+        <span class="stat-icon">{{ s.hasActiveSprint ? '🟢' : '⚪' }}</span>
+        <span class="stat-val">{{ s.hasActiveSprint ? 'Activo' : 'Sin sprint' }}</span>
+        <span class="stat-lbl">sprint</span>
+      </div>
+    </div>
+
+    <!-- ── Next action ──────────────────────────────────────────────── -->
+    <div class="next-section">
+      <div class="next-title">🧭 Siguiente paso del viaje</div>
+      <p class="next-text">{{ s.journeyNextAction }}</p>
+      <a routerLink="/journey" class="next-cta">Ver mapa completo →</a>
+    </div>
+
+    <!-- ── Quick links ──────────────────────────────────────────────── -->
+    <div class="links-grid">
+      <a routerLink="/radar" class="link-card">
+        <span class="link-icon">📡</span>
+        <span class="link-label">Radar de Señales</span>
+        <span *ngIf="s.highSignalCount > 0" class="link-badge red">{{ s.highSignalCount }}</span>
+      </a>
+      <a routerLink="/journey" class="link-card">
+        <span class="link-icon">🗺️</span>
+        <span class="link-label">Viaje Familiar</span>
+        <span class="link-badge indigo">Nv. {{ s.journeyCurrentLevel }}</span>
+      </a>
+      <a routerLink="/evaluations/history" class="link-card">
+        <span class="link-icon">📊</span>
+        <span class="link-label">Historial ICF</span>
+      </a>
+      <a routerLink="/bitacora" class="link-card">
+        <span class="link-icon">⚡</span>
+        <span class="link-label">Bitácora</span>
+        <span *ngIf="s.hasActiveSprint" class="link-badge green">Activo</span>
+      </a>
+      <a routerLink="/plans" class="link-card">
+        <span class="link-icon">🗂️</span>
+        <span class="link-label">Plan Familiar</span>
+      </a>
+      <a routerLink="/evidence-capture" class="link-card">
+        <span class="link-icon">📸</span>
+        <span class="link-label">Evidencias</span>
+      </a>
+    </div>
+
+  </ng-container>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading() && !summary()" class="hp-empty">
+    <p>No se pudo cargar el resumen de salud familiar.</p>
+    <button class="hp-retry" (click)="ngOnInit()">Reintentar</button>
+  </div>
+
+</div>

@@ -1,0 +1,420 @@
+<div class="sb-page">
+
+  <!-- ── HEADER ───────────────────────────────────────────────────────── -->
+  <div class="sb-header">
+    <button class="sb-back" (click)="router.navigate(['/dashboard'])">← Dashboard</button>
+    <div class="sb-title-block">
+      <span class="sb-emoji">⚡</span>
+      <div>
+        <h1 class="sb-title">Sprint Familiar</h1>
+        <p class="sb-subtitle">Ciclos de acción · 7–21 días · Misiones de transformación</p>
+      </div>
+    </div>
+    <div class="sb-header-actions">
+      <button class="sb-ghost-btn" (click)="loadHistory()">Historial</button>
+    </div>
+  </div>
+
+  <!-- ── FLASH MESSAGES ────────────────────────────────────────────────── -->
+  <ng-container *ngIf="actionMsg()">
+    <div class="sb-flash ok">{{ actionMsg() }}</div>
+  </ng-container>
+  <ng-container *ngIf="actionErr()">
+    <div class="sb-flash err">{{ actionErr() }}</div>
+  </ng-container>
+
+  <!-- ── LOADING ───────────────────────────────────────────────────────── -->
+  <ng-container *ngIf="loading()">
+    <div class="sb-loading">
+      <div class="sb-spinner"></div>
+      <span>Cargando sprint...</span>
+    </div>
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       VIEW: board (sprint activo)
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="!loading() && view() === 'board'">
+
+    <!-- Sin sprint activo -->
+    <ng-container *ngIf="!sprint()">
+      <div class="sb-empty-state">
+        <div class="sb-empty-icon">⚡</div>
+        <h2 class="sb-empty-title">No hay sprint activo</h2>
+        <p class="sb-empty-sub">Crea un sprint para que tu familia trabaje en equipo durante los próximos días.</p>
+        <button class="sb-primary-btn" (click)="view.set('create-form')">Crear nuevo sprint</button>
+      </div>
+    </ng-container>
+
+    <!-- Sprint activo -->
+    <ng-container *ngIf="sprint() as s">
+
+      <!-- KPI cards row -->
+      <div class="sb-kpi-row">
+        <div class="sb-kpi">
+          <span class="sb-kpi-val">{{ missionPct() }}%</span>
+          <span class="sb-kpi-label">Misiones</span>
+        </div>
+        <div class="sb-kpi">
+          <span class="sb-kpi-val" [class.kpi-warn]="(daysLeft() ?? 99) <= 2">
+            {{ daysLeft() }}
+          </span>
+          <span class="sb-kpi-label">Días restantes</span>
+        </div>
+        <div class="sb-kpi">
+          <span class="sb-kpi-val">{{ (s.dailies || []).length }}</span>
+          <span class="sb-kpi-label">Check-ins</span>
+        </div>
+        <div class="sb-kpi" [class.kpi-done]="todayCheckin()">
+          <span class="sb-kpi-val">{{ todayCheckin() ? '✓' : '—' }}</span>
+          <span class="sb-kpi-label">Daily hoy</span>
+        </div>
+      </div>
+
+      <!-- Sprint card principal -->
+      <div class="sb-main-card">
+        <div class="sb-main-header">
+          <div>
+            <span class="sb-risk-tag">{{ s.riskDimension }}</span>
+            <h2 class="sb-objective">{{ s.objective }}</h2>
+          </div>
+          <div class="sb-status-badge" [class.active]="s.status === 'ACTIVE'">
+            {{ statusLabel(s.status) }}
+          </div>
+        </div>
+
+        <div class="sb-dates">
+          <span>📅 {{ s.startDate | date:'d MMM':'':'es-CO' }}</span>
+          <span class="sb-date-sep">→</span>
+          <span>{{ s.endDate | date:'d MMM':'':'es-CO' }}</span>
+          <span class="sb-date-dur">· {{ s.durationDays }} días</span>
+        </div>
+
+        <!-- Barra de progreso de misiones -->
+        <div class="sb-progress-wrap">
+          <div class="sb-progress-bg">
+            <div class="sb-progress-fill" [style.width.%]="missionPct()"></div>
+          </div>
+          <span class="sb-progress-text">{{ completedMissions() }}/{{ totalMissions() }} misiones</span>
+        </div>
+
+        <!-- Lista de misiones -->
+        <ul class="sb-missions">
+          <li *ngFor="let m of s.missions; trackBy: trackByMission"
+              class="sb-mission" [class.done]="m.status === 'COMPLETADA'"
+              (click)="s.status === 'ACTIVE' && toggle(m.id)">
+            <div class="sb-check-box" [class.checked]="m.status === 'COMPLETADA'">
+              <ng-container *ngIf="m.status === 'COMPLETADA'">✓</ng-container>
+            </div>
+            <span class="sb-mission-text">{{ m.description }}</span>
+            <span *ngIf="m.completedAt" class="sb-mission-date">
+              {{ m.completedAt | date:'d MMM':'':'es-CO' }}
+            </span>
+          </li>
+        </ul>
+
+        <!-- Acciones del sprint -->
+        <div class="sb-actions" *ngIf="s.status === 'ACTIVE'">
+          <button class="sb-primary-btn"
+                  [disabled]="todayCheckin()"
+                  (click)="view.set('daily-form')">
+            {{ todayCheckin() ? '✓ Daily completado' : '📔 Daily de hoy' }}
+          </button>
+          <button class="sb-danger-btn" (click)="view.set('close-form')">
+            Cerrar sprint
+          </button>
+        </div>
+
+        <!-- Acción si ya cerrado -->
+        <div class="sb-actions" *ngIf="s.status !== 'ACTIVE'">
+          <button class="sb-ghost-btn" (click)="s.retrospective && view.set('retro')">
+            Ver retrospectiva
+          </button>
+          <button class="sb-primary-btn" (click)="view.set('create-form')">
+            Nuevo sprint
+          </button>
+        </div>
+      </div>
+
+      <!-- Dailies recientes -->
+      <div class="sb-section" *ngIf="recentDailies().length > 0">
+        <h3 class="sb-section-title">Check-ins recientes</h3>
+        <div class="sb-dailies">
+          <div *ngFor="let d of recentDailies(); trackBy: trackByDaily" class="sb-daily-card">
+            <div class="sb-daily-header">
+              <span class="sb-daily-emoji">{{ emotionEmoji(d.emotionalIndicator) }}</span>
+              <span class="sb-daily-member">{{ d.memberName || 'Anónimo' }}</span>
+              <span class="sb-daily-date">{{ d.checkinDate | date:'d MMM':'':'es-CO' }}</span>
+            </div>
+            <p class="sb-daily-text">{{ d.todayText }}</p>
+            <p class="sb-daily-block" *ngIf="d.blockagesText">
+              <span class="sb-block-label">Bloqueo:</span> {{ d.blockagesText }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       VIEW: daily-form
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="view() === 'daily-form'">
+    <div class="sb-form-card">
+      <div class="sb-form-header">
+        <button class="sb-back-inline" (click)="view.set('board')">← Volver</button>
+        <h2 class="sb-form-title">Daily de Conciencia</h2>
+      </div>
+
+      <div class="sb-field">
+        <label>¿Qué hiciste ayer en el sprint?</label>
+        <textarea [(ngModel)]="dailyYesterday" rows="2" placeholder="Describe tu acción del día anterior..."></textarea>
+      </div>
+      <div class="sb-field">
+        <label>¿Qué harás hoy?</label>
+        <textarea [(ngModel)]="dailyToday" rows="2" placeholder="Tu compromiso de hoy..."></textarea>
+      </div>
+      <div class="sb-field">
+        <label>¿Tienes bloqueos o dificultades?</label>
+        <textarea [(ngModel)]="dailyBlockage" rows="2" placeholder="Obstáculos que frenan el avance..."></textarea>
+      </div>
+      <div class="sb-field">
+        <label>¿Cómo los resolverás?</label>
+        <textarea [(ngModel)]="dailyResolution" rows="2" placeholder="Plan de resolución..."></textarea>
+      </div>
+      <div class="sb-field-row">
+        <div class="sb-field">
+          <label>¿Cómo te sientes hoy?</label>
+          <select [(ngModel)]="dailyEmotion">
+            <option value="EXCELENTE">🤩 Excelente</option>
+            <option value="BIEN">😊 Bien</option>
+            <option value="REGULAR">😐 Regular</option>
+            <option value="MAL">😔 Mal</option>
+            <option value="MUY_MAL">😢 Muy mal</option>
+          </select>
+        </div>
+        <div class="sb-field">
+          <label>Tu nombre</label>
+          <input type="text" [(ngModel)]="dailyMember" placeholder="¿Quién registra?">
+        </div>
+      </div>
+
+      <button class="sb-primary-btn" [disabled]="busy() || !dailyToday.trim()"
+              (click)="submitDaily()">
+        <span *ngIf="busy()" class="btn-spinner"></span>
+        Registrar daily
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       VIEW: create-form
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="view() === 'create-form'">
+    <div class="sb-form-card">
+      <div class="sb-form-header">
+        <button class="sb-back-inline" (click)="view.set('board')">← Volver</button>
+        <h2 class="sb-form-title">Nuevo Sprint Familiar</h2>
+      </div>
+
+      <div class="sb-field">
+        <label>Objetivo del sprint</label>
+        <textarea [(ngModel)]="createObj" rows="2"
+                  placeholder="¿Qué quiere lograr la familia en este sprint?"></textarea>
+      </div>
+      <div class="sb-field-row">
+        <div class="sb-field">
+          <label>Dimensión de riesgo</label>
+          <select [(ngModel)]="createRisk">
+            <option value="emociones">Emociones</option>
+            <option value="comunicacion">Comunicación</option>
+            <option value="habitos">Hábitos</option>
+            <option value="tiempos">Tiempos</option>
+            <option value="convivencia">Convivencia</option>
+            <option value="resiliencia">Resiliencia</option>
+          </select>
+        </div>
+        <div class="sb-field">
+          <label>Duración (días)</label>
+          <select [(ngModel)]="createDuration">
+            <option [value]="7">7 días</option>
+            <option [value]="14">14 días</option>
+            <option [value]="21">21 días</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="sb-field">
+        <label>Misiones del sprint</label>
+        <p class="sb-field-hint">Define entre 1 y 5 misiones concretas.</p>
+        <div *ngFor="let m of createMissions; let i = index" class="sb-mission-input-row">
+          <input type="text" [(ngModel)]="createMissions[i]"
+                 placeholder="Misión {{ i + 1 }}...">
+          <button class="sb-rm-btn" *ngIf="createMissions.length > 1"
+                  (click)="removeMission(i)">✕</button>
+        </div>
+        <button class="sb-ghost-btn sb-add-mission"
+                *ngIf="createMissions.length < 5"
+                (click)="addMissionField()">+ Agregar misión</button>
+      </div>
+
+      <button class="sb-primary-btn"
+              [disabled]="busy() || !createObj.trim()"
+              (click)="submitCreate()">
+        <span *ngIf="busy()" class="btn-spinner"></span>
+        Iniciar sprint
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       VIEW: close-form
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="view() === 'close-form'">
+    <div class="sb-form-card">
+      <div class="sb-form-header">
+        <button class="sb-back-inline" (click)="view.set('board')">← Volver</button>
+        <h2 class="sb-form-title">Retrospectiva — Cierre del Sprint</h2>
+      </div>
+      <p class="sb-form-desc">
+        Esta reflexión colectiva queda en la memoria del viaje familiar.
+        Completarla activa el cálculo del ICaF de resiliencia.
+      </p>
+
+      <div class="sb-field">
+        <label>¿Qué salió bien?</label>
+        <textarea [(ngModel)]="closeWell" rows="2"></textarea>
+      </div>
+      <div class="sb-field">
+        <label>¿Qué fue difícil?</label>
+        <textarea [(ngModel)]="closeDifficult" rows="2"></textarea>
+      </div>
+      <div class="sb-field">
+        <label>¿Qué aprendió la familia?</label>
+        <textarea [(ngModel)]="closeLearn" rows="2"></textarea>
+      </div>
+      <div class="sb-field">
+        <label>¿Qué ajustarán en el próximo sprint?</label>
+        <textarea [(ngModel)]="closeAdjust" rows="2"></textarea>
+      </div>
+
+      <h3 class="sb-sliders-title">Indicadores del equipo (1–10)</h3>
+      <div class="sb-sliders">
+        <div class="sb-slider-row">
+          <label>Nivel de tensión familiar</label>
+          <div class="sb-slider-ctrl">
+            <input type="range" min="1" max="10" [(ngModel)]="closeTension">
+            <span class="sb-slider-val">{{ closeTension }}</span>
+          </div>
+        </div>
+        <div class="sb-slider-row">
+          <label>Cumplimiento mindful</label>
+          <div class="sb-slider-ctrl">
+            <input type="range" min="1" max="10" [(ngModel)]="closeMindful">
+            <span class="sb-slider-val">{{ closeMindful }}</span>
+          </div>
+        </div>
+        <div class="sb-slider-row">
+          <label>Tiempo compartido</label>
+          <div class="sb-slider-ctrl">
+            <input type="range" min="1" max="10" [(ngModel)]="closeShared">
+            <span class="sb-slider-val">{{ closeShared }}</span>
+          </div>
+        </div>
+        <div class="sb-slider-row">
+          <label>Interacciones positivas</label>
+          <div class="sb-slider-ctrl">
+            <input type="range" min="1" max="10" [(ngModel)]="closePositive">
+            <span class="sb-slider-val">{{ closePositive }}</span>
+          </div>
+        </div>
+        <div class="sb-slider-row">
+          <label>Persistencia emocional</label>
+          <div class="sb-slider-ctrl">
+            <input type="range" min="1" max="10" [(ngModel)]="closePersist">
+            <span class="sb-slider-val">{{ closePersist }}</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="sb-primary-btn"
+              [disabled]="busy() || !closeWell.trim()"
+              (click)="submitClose()">
+        <span *ngIf="busy()" class="btn-spinner"></span>
+        Cerrar sprint
+      </button>
+    </div>
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       VIEW: retro (ver retrospectiva)
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="view() === 'retro' && sprint() as s">
+    <ng-container *ngIf="s.retrospective as r">
+      <div class="sb-retro-card">
+        <div class="sb-form-header">
+          <button class="sb-back-inline" (click)="view.set('board')">← Volver</button>
+          <h2 class="sb-form-title">Retrospectiva</h2>
+        </div>
+        <div class="sb-retro-score">
+          <span class="sb-retro-score-num">{{ r.consistencyScore }}</span>
+          <span class="sb-retro-score-label">puntos de consistencia</span>
+        </div>
+        <div class="sb-retro-block">
+          <span class="sb-retro-q">¿Qué salió bien?</span>
+          <p>{{ r.whatWentWell }}</p>
+        </div>
+        <div class="sb-retro-block">
+          <span class="sb-retro-q">¿Qué fue difícil?</span>
+          <p>{{ r.whatWasDifficult }}</p>
+        </div>
+        <div class="sb-retro-block">
+          <span class="sb-retro-q">Aprendizaje</span>
+          <p>{{ r.whatLearned }}</p>
+        </div>
+        <div class="sb-retro-block" *ngIf="r.aiFeedback">
+          <span class="sb-retro-q">💬 Feedback IA</span>
+          <p class="sb-ai-feedback">{{ r.aiFeedback }}</p>
+        </div>
+        <button class="sb-primary-btn" style="margin-top:1.5rem" (click)="view.set('create-form')">
+          Iniciar nuevo sprint
+        </button>
+      </div>
+    </ng-container>
+  </ng-container>
+
+  <!-- ══════════════════════════════════════════════════════════════════
+       VIEW: history
+  ═══════════════════════════════════════════════════════════════════════ -->
+  <ng-container *ngIf="view() === 'history'">
+    <div class="sb-section">
+      <div class="sb-form-header">
+        <button class="sb-back-inline" (click)="view.set('board')">← Volver</button>
+        <h2 class="sb-form-title">Historial de sprints</h2>
+      </div>
+      <div class="sb-history-list" *ngIf="history().length > 0; else noHistory">
+        <div *ngFor="let h of history(); trackBy: trackBySprint" class="sb-history-item">
+          <div class="sb-hi-top">
+            <span class="sb-risk-tag">{{ h.riskDimension }}</span>
+            <span class="sb-hi-status" [class.active]="h.status === 'ACTIVE'">{{ statusLabel(h.status) }}</span>
+          </div>
+          <p class="sb-hi-obj">{{ h.objective }}</p>
+          <div class="sb-hi-meta">
+            <span>{{ h.startDate | date:'d MMM y':'':'es-CO' }}</span>
+            <span>·</span>
+            <span>{{ h.durationDays }} días</span>
+            <span>·</span>
+            <span>{{ (h.missions || []).length }} misiones</span>
+            <span>·</span>
+            <span>{{ (h.dailies || []).length }} dailies</span>
+          </div>
+        </div>
+      </div>
+      <ng-template #noHistory>
+        <p class="sb-empty-sub" style="text-align:center;padding:2rem">Aún no hay sprints completados.</p>
+      </ng-template>
+    </div>
+  </ng-container>
+
+</div>

@@ -265,6 +265,14 @@ export const routes: Routes = [
           .then(m => m.SmffPanelComponent)
       },
 
+      // ── Panel del Profesional (terapeuta, orientador, trabajador social) ─
+      {
+        path: 'professional',
+        title: 'Panel del Profesional',
+        loadComponent: () => import('./features/professional/professional-dashboard.component')
+          .then(m => m.ProfessionalDashboardComponent)
+      },
+
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
   },

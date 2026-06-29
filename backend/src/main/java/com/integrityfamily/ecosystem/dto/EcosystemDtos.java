@@ -9,6 +9,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+// ── Vista de datos filtrada por scope ────────────────────────────────────
+
+// NOTE: EcosystemDataView es una clase top-level en su propio archivo
+
 public class EcosystemDtos {
 
     // ── Registro de participante ──────────────────────────────────────────
@@ -95,6 +99,19 @@ public class EcosystemDtos {
         private String consentedByEmail;
         private LocalDateTime consentedAt;
         private EcosystemAccessScopeDto accessScope;
+    }
+
+    // ── Entrada del log de auditoría ──────────────────────────────────────
+
+    @Data @Builder
+    public static class AuditLogEntry {
+        private Long id;
+        private Long linkId;
+        private String actorEmail;
+        private String action;
+        private String detail;
+        private Integer accessLevel;
+        private LocalDateTime createdAt;
     }
 
     @Data @Builder

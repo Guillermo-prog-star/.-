@@ -27,6 +27,7 @@ class EcosystemServiceTest {
     @Mock FamilyRepository familyRepository;
     @Mock EcosystemParticipantRepository participantRepository;
     @Mock FamilyEcosystemLinkRepository linkRepository;
+    @Mock EcosystemAuditService auditService;
 
     @InjectMocks EcosystemService service;
 

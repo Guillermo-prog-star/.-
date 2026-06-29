@@ -30,6 +30,7 @@ public class EcosystemService {
     private final FamilyRepository familyRepository;
     private final EcosystemParticipantRepository participantRepository;
     private final FamilyEcosystemLinkRepository linkRepository;
+    private final EcosystemAuditService auditService;
 
     // ── Catálogo de participantes ─────────────────────────────────────────
 
@@ -110,6 +111,8 @@ public class EcosystemService {
                 .build();
 
         FamilyEcosystemLink saved = linkRepository.save(link);
+        auditService.record(saved, "INVITED", invitedByEmail,
+                "Familia vinculó a '" + participant.getName() + "' en red " + participant.getNetworkType());
         log.info("[ECOSYSTEM] Familia {} vinculó a '{}' ({})", familyId, participant.getName(), participant.getNetworkType());
         return toLinkResponse(saved);
     }
@@ -143,9 +146,12 @@ public class EcosystemService {
         link.setConsentedByEmail(consentedByEmail);
         link.setConsentedAt(LocalDateTime.now());
 
+        FamilyEcosystemLink saved = linkRepository.save(link);
+        auditService.record(saved, "CONSENT_GRANTED", consentedByEmail,
+                "Consentimiento otorgado a '" + link.getParticipant().getName() + "'");
         log.info("[ECOSYSTEM] Familia {} dio consentimiento al vínculo {} ({})",
                 familyId, link.getId(), link.getNetworkType());
-        return toLinkResponse(linkRepository.save(link));
+        return toLinkResponse(saved);
     }
 
     // ── La familia revoca el acceso ───────────────────────────────────────
@@ -164,8 +170,11 @@ public class EcosystemService {
         link.setRevokedAt(LocalDateTime.now());
         link.setRevocationReason(req.getReason());
 
+        FamilyEcosystemLink saved = linkRepository.save(link);
+        auditService.record(saved, "REVOKED", revokedByEmail,
+                "Acceso revocado" + (req.getReason() != null ? ": " + req.getReason() : ""));
         log.info("[ECOSYSTEM] Familia {} revocó vínculo {} ({})", familyId, link.getId(), link.getNetworkType());
-        return toLinkResponse(linkRepository.save(link));
+        return toLinkResponse(saved);
     }
 
     // ── Consultas ─────────────────────────────────────────────────────────

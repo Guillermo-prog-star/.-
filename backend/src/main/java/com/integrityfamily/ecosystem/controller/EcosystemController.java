@@ -1,7 +1,10 @@
 package com.integrityfamily.ecosystem.controller;
 
 import com.integrityfamily.ecosystem.domain.NetworkType;
+import com.integrityfamily.ecosystem.dto.EcosystemDataView;
 import com.integrityfamily.ecosystem.dto.EcosystemDtos.*;
+import com.integrityfamily.ecosystem.service.EcosystemAuditService;
+import com.integrityfamily.ecosystem.service.EcosystemDataViewService;
 import com.integrityfamily.ecosystem.service.EcosystemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +28,8 @@ import java.util.List;
 public class EcosystemController {
 
     private final EcosystemService service;
+    private final EcosystemDataViewService dataViewService;
+    private final EcosystemAuditService auditService;
 
     // ── Catálogo ──────────────────────────────────────────────────────────
 
@@ -86,5 +91,35 @@ public class EcosystemController {
             @RequestBody RevokeRequest req,
             @AuthenticationPrincipal UserDetails principal) {
         return ResponseEntity.ok(service.revoke(familyId, req, principal.getUsername()));
+    }
+
+    // ── Vista de datos filtrada por scope ─────────────────────────────────
+
+    /**
+     * El participante consulta los datos que le están autorizados.
+     * TERRITORIAL recibe solo datos geográficos anónimos.
+     */
+    @GetMapping("/api/families/{familyId}/ecosystem/links/{linkId}/view")
+    public ResponseEntity<EcosystemDataView> getDataView(
+            @PathVariable Long familyId,
+            @PathVariable Long linkId,
+            @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(dataViewService.getDataView(familyId, linkId, principal.getUsername()));
+    }
+
+    // ── Auditoría ─────────────────────────────────────────────────────────
+
+    /** La familia ve quién accedió a qué y cuándo */
+    @GetMapping("/api/families/{familyId}/ecosystem/audit")
+    public ResponseEntity<List<AuditLogEntry>> getAuditLog(@PathVariable Long familyId) {
+        return ResponseEntity.ok(auditService.getAuditLog(familyId));
+    }
+
+    /** Historial de acceso de un vínculo específico */
+    @GetMapping("/api/families/{familyId}/ecosystem/links/{linkId}/audit")
+    public ResponseEntity<List<AuditLogEntry>> getLinkAuditLog(
+            @PathVariable Long familyId,
+            @PathVariable Long linkId) {
+        return ResponseEntity.ok(auditService.getAuditLogByLink(linkId));
     }
 }

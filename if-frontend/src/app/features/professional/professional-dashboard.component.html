@@ -1,0 +1,233 @@
+<div class="pro-shell">
+
+  <!-- Sidebar: lista de familias asignadas -->
+  <aside class="pro-sidebar">
+    <div class="sidebar-header">
+      <span class="sidebar-icon">🩺</span>
+      <div>
+        <div class="sidebar-title">Mis Familias</div>
+        <div class="sidebar-sub">Red de acompañamiento</div>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <div class="loading-list">
+        <div class="skeleton-row" *ngFor="let i of [1,2,3]"></div>
+      </div>
+    } @else if (families().length === 0) {
+      <div class="empty-list">
+        <div class="empty-icon">👨‍👩‍👧</div>
+        <p>Aún no tienes familias asignadas.</p>
+        <p class="empty-hint">Una vez que una familia te invite y dé consentimiento, aparecerán aquí.</p>
+      </div>
+    } @else {
+      <ul class="family-list">
+        @for (f of families(); track f.id) {
+          <li class="family-item"
+              [class.active]="selectedFamily()?.id === f.id"
+              (click)="selectFamily(f)">
+            <div class="family-avatar">{{ f.familyName[0] }}</div>
+            <div class="family-info">
+              <div class="family-name">{{ f.familyName }}</div>
+              <div class="family-meta">
+                <span class="status-pill" [class]="'s-' + f.status.toLowerCase()">{{ f.status }}</span>
+                <span class="since">{{ formatDate(f.consentedAt) }}</span>
+              </div>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+  </aside>
+
+  <!-- Panel principal -->
+  <main class="pro-main">
+    @if (!selectedFamily()) {
+      <div class="empty-state">
+        <div class="empty-state-icon">🏥</div>
+        <h2>Selecciona una familia</h2>
+        <p>Elige una familia de la lista para ver la información que te ha autorizado y dejar notas de acompañamiento.</p>
+      </div>
+    } @else {
+      <!-- Encabezado de familia seleccionada -->
+      <div class="family-header">
+        <div class="fh-avatar">{{ selectedFamily()!.familyName[0] }}</div>
+        <div class="fh-info">
+          <h2 class="fh-name">{{ selectedFamily()!.familyName }}</h2>
+          <div class="fh-badges">
+            <span class="badge badge-net">{{ selectedFamily()!.networkType }}</span>
+            <span class="badge" [class]="'badge-' + selectedFamily()!.status.toLowerCase()">{{ selectedFamily()!.status }}</span>
+          </div>
+        </div>
+        <div class="fh-scope-summary">
+          <span class="scope-dot" [class.on]="selectedFamily()!.accessScope.canViewIcfScore" title="ICF">ICF</span>
+          <span class="scope-dot" [class.on]="selectedFamily()!.accessScope.canViewRiskLevel" title="Riesgo">RES</span>
+          <span class="scope-dot" [class.on]="selectedFamily()!.accessScope.canViewPlanSummary" title="Plan">PLAN</span>
+          <span class="scope-dot" [class.on]="selectedFamily()!.accessScope.canViewSprintProgress" title="Sprint">SPR</span>
+          <span class="scope-dot" [class.on]="selectedFamily()!.accessScope.canViewCrisisHistory" title="Crisis">CRI</span>
+          <span class="scope-dot" [class.on]="selectedFamily()!.accessScope.canLeaveNotes" title="Notas">NOTA</span>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="pro-tabs">
+        <button class="tab-btn" [class.active]="activeTab() === 'data'" (click)="setTab('data')">Vista de datos</button>
+        <button class="tab-btn" [class.active]="activeTab() === 'notes'" (click)="setTab('notes')">Dejar nota</button>
+        <button class="tab-btn" [class.active]="activeTab() === 'audit'" (click)="setTab('audit')">Registro de acceso</button>
+      </div>
+
+      <!-- TAB: Vista de datos -->
+      @if (activeTab() === 'data') {
+        @if (loadingView()) {
+          <div class="loading-view">Cargando datos autorizados…</div>
+        } @else if (!dataView()) {
+          <div class="no-data-msg">
+            <p>Los datos autorizados no están disponibles en este momento.</p>
+            <p class="hint">Verifica que el vínculo esté activo y vigente.</p>
+          </div>
+        } @else {
+          <div class="data-grid">
+
+            @if (dataView()!.icfScore !== null && dataView()!.icfScore !== undefined) {
+              <div class="data-card icf-card">
+                <div class="dc-label">Índice de Cohesión Familiar</div>
+                <div class="icf-gauge">
+                  <svg viewBox="0 0 120 70" width="120">
+                    <path d="M10 65 A55 55 0 0 1 110 65" fill="none" stroke="#e2e8f0" stroke-width="12" stroke-linecap="round"/>
+                    <path d="M10 65 A55 55 0 0 1 110 65" fill="none"
+                          [attr.stroke]="icfColor()"
+                          stroke-width="12"
+                          stroke-linecap="round"
+                          [attr.stroke-dasharray]="(dataView()!.icfScore! / 100 * 172) + ' 172'"/>
+                  </svg>
+                  <div class="icf-value">{{ dataView()!.icfScore!.toFixed(1) }}</div>
+                </div>
+                <div class="icf-label-row">
+                  <span class="icf-badge" [style.background]="icfColor()">{{ dataView()!.icfLabel }}</span>
+                  <span class="icf-dir">{{ directionIcon(dataView()!.icfDirection) }} {{ dataView()!.icfDirection }}</span>
+                </div>
+              </div>
+            }
+
+            @if (dataView()!.riskLevel) {
+              <div class="data-card risk-card" [class]="'risk-' + dataView()!.riskLevel!.toLowerCase()">
+                <div class="dc-label">Nivel de Riesgo</div>
+                <div class="risk-value">{{ dataView()!.riskLevel }}</div>
+                @if (dataView()!.sentinelActive) {
+                  <div class="sentinel-badge">🔴 Centinela activo</div>
+                }
+              </div>
+            }
+
+            @if (dataView()!.hasActiveSprint !== null) {
+              <div class="data-card sprint-card">
+                <div class="dc-label">Sprint Familiar</div>
+                @if (dataView()!.hasActiveSprint) {
+                  <div class="sprint-active">✅ Sprint activo</div>
+                  <div class="sprint-status">{{ dataView()!.activeSprintStatus }}</div>
+                } @else {
+                  <div class="sprint-none">Sin sprint activo</div>
+                }
+              </div>
+            }
+
+            @if (dataView()!.planSummaryAvailable) {
+              <div class="data-card plan-card">
+                <div class="dc-label">Plan de Mejora</div>
+                <div class="plan-available">📋 Plan disponible</div>
+                <div class="plan-hint">El resumen del plan ha sido autorizado.</div>
+              </div>
+            }
+
+            @if (dataView()!.crisisHistoryAvailable) {
+              <div class="data-card crisis-card">
+                <div class="dc-label">Historial de Crisis</div>
+                <div class="crisis-available">⚠️ Historial disponible</div>
+              </div>
+            }
+
+          </div>
+
+          <div class="scope-notice">
+            <span class="notice-icon">ℹ️</span>
+            Solo ves la información que la familia ha autorizado explícitamente. Nivel de acceso: <strong>{{ dataView()!.accessLevel }}</strong>.
+          </div>
+        }
+      }
+
+      <!-- TAB: Dejar nota -->
+      @if (activeTab() === 'notes') {
+        <div class="notes-panel">
+          @if (!selectedFamily()!.accessScope.canLeaveNotes) {
+            <div class="no-permission-msg">
+              <div class="np-icon">🔒</div>
+              <p>Esta familia no te ha otorgado permiso para dejar notas de acompañamiento.</p>
+            </div>
+          } @else {
+            <div class="note-form">
+              <label class="note-label">Nota de acompañamiento</label>
+              <textarea
+                class="note-textarea"
+                rows="6"
+                placeholder="Escribe tu observación clínica o nota de seguimiento…"
+                [value]="noteForm().content"
+                (input)="updateNoteContent($any($event.target).value)">
+              </textarea>
+
+              <div class="note-visibility">
+                <label class="visibility-toggle">
+                  <input type="checkbox" [checked]="noteForm().visibleToFamily" (change)="toggleNoteVisibility()">
+                  <span>Visible para la familia</span>
+                </label>
+                <span class="visibility-hint">
+                  {{ noteForm().visibleToFamily ? 'La familia podrá leer esta nota.' : 'Nota privada — solo para profesionales del equipo.' }}
+                </span>
+              </div>
+
+              @if (noteSuccess()) {
+                <div class="success-msg">✅ Nota registrada correctamente.</div>
+              }
+
+              <button class="submit-btn" [disabled]="noteLoading() || !noteForm().content.trim()" (click)="submitNote()">
+                {{ noteLoading() ? 'Guardando…' : 'Guardar nota' }}
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- TAB: Registro de acceso -->
+      @if (activeTab() === 'audit') {
+        <div class="audit-panel">
+          @if (auditLog().length === 0) {
+            <div class="empty-audit">No hay registros de acceso para este vínculo.</div>
+          } @else {
+            <table class="audit-table">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Acción</th>
+                  <th>Actor</th>
+                  <th>Detalle</th>
+                  <th>Nivel</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (entry of auditLog(); track entry.id) {
+                  <tr>
+                    <td class="audit-date">{{ formatDate(entry.createdAt) }}</td>
+                    <td><span class="action-pill" [class]="'a-' + entry.action.toLowerCase()">{{ entry.action }}</span></td>
+                    <td class="audit-actor">{{ entry.actorEmail }}</td>
+                    <td class="audit-detail">{{ entry.detail }}</td>
+                    <td class="audit-level">L{{ entry.accessLevel }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      }
+    }
+  </main>
+
+</div>

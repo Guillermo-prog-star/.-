@@ -74,13 +74,15 @@ export class MemberListPageComponent implements OnInit {
   }
 
   create() {
-    console.log('[SDD-MEMBER] Iniciando creación:', this.fullName);
-    
-    if (!this.fullName || !this.fullName.trim()) {
+    const name = (this.fullName ?? '').trim();
+    console.log('[SDD-MEMBER] Iniciando creación:', JSON.stringify(name));
+
+    if (!name) {
       this.error = 'El nombre es obligatorio.';
       return;
     }
 
+    this.fullName = name;
     this.saving = true;
     this.error = '';
     

@@ -2,6 +2,7 @@ import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { interval, switchMap, catchError, of, lastValueFrom } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthService } from './auth.service';
 
 @Injectable({ providedIn: 'root' })
 export class SentinelCoreService {
@@ -22,10 +23,14 @@ export class SentinelCoreService {
     this._alerts().some(a => a.severity === 'CRITICAL' && !a.viewed)
   );
 
+  private auth = inject(AuthService);
+
   constructor(private http: HttpClient) {
-    // Iniciar Vigilancia Automática al instanciar el nodo
-    this.startWatchdog();
-    this.refreshAll(); // Carga inicial de datos
+    // Iniciar Vigilancia Automática solo si es admin
+    if (this.auth.user()?.role === 'ADMIN') {
+      this.startWatchdog();
+      this.refreshAll(); // Carga inicial de datos
+    }
     
     // SDD-NOTIFICATION: Audio/Visual trigger for critical events.
     effect(() => {

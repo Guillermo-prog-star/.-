@@ -94,6 +94,9 @@ public class SecurityConfig {
                         .authenticationEntryPoint((request, response, authException) -> {
                             response.sendError(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
                         })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.sendError(jakarta.servlet.http.HttpServletResponse.SC_FORBIDDEN, "Access Denied");
+                        })
                 )
                 .addFilterBefore(jwtAuthFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 

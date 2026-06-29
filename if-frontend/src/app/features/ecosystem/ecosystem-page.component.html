@@ -1,0 +1,430 @@
+<div class="eco-page">
+
+  <!-- Header -->
+  <div class="eco-header">
+    <div class="eco-header-left">
+      <div class="eco-icon">🌐</div>
+      <div>
+        <h1 class="eco-title">Ecosistema de Apoyo</h1>
+        <p class="eco-subtitle">Gestiona quién acompaña a tu familia y qué información puede ver</p>
+      </div>
+    </div>
+    <div class="eco-stats">
+      <div class="stat-chip">
+        <span class="stat-num">{{ totalActive() }}</span>
+        <span class="stat-lbl">activos</span>
+      </div>
+      <div class="stat-chip">
+        <span class="stat-num">{{ totalLinks() }}</span>
+        <span class="stat-lbl">en total</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mensajes de acción -->
+  @if (actionMsg()) {
+    <div class="msg-success">✓ {{ actionMsg() }}</div>
+  }
+  @if (actionErr()) {
+    <div class="msg-error">✕ {{ actionErr() }}</div>
+  }
+
+  <!-- Alertas de consentimiento pendiente -->
+  @if (pendingLinks().length > 0) {
+    <div class="pending-banner">
+      <span class="pending-icon">🔔</span>
+      <span>Tienes <strong>{{ pendingLinks().length }}</strong> invitación(es) pendiente(s) de consentimiento.</span>
+    </div>
+  }
+
+  <!-- Tabs -->
+  <div class="eco-tabs">
+    <button class="tab-btn" [class.active]="activeTab() === 'network'"  (click)="setTab('network')">
+      🕸️ Mi Red
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'catalog'" (click)="setTab('catalog')">
+      📋 Catálogo
+    </button>
+    <button class="tab-btn" [class.active]="activeTab() === 'audit'"   (click)="setTab('audit')">
+      🔍 Accesos
+    </button>
+  </div>
+
+  <!-- ─────────── TAB: MI RED ─────────── -->
+  @if (activeTab() === 'network') {
+    @if (loading()) {
+      <div class="loading-zone">
+        <div class="skeleton-block"></div>
+        <div class="skeleton-block"></div>
+      </div>
+    } @else if (!summary() || totalLinks() === 0) {
+      <div class="empty-state">
+        <div class="empty-icon">🤝</div>
+        <h2>Tu red está vacía</h2>
+        <p>Ve al <strong>Catálogo</strong> para buscar profesionales, instituciones o redes comunitarias que puedan acompañar a tu familia.</p>
+        <button class="btn-primary" (click)="setTab('catalog')">Ver catálogo</button>
+      </div>
+    } @else {
+      <div class="network-grid">
+
+        <!-- Pendientes de consentimiento -->
+        @if (pendingLinks().length > 0) {
+          <div class="network-section">
+            <div class="section-header pending-header">
+              <span>⏳ Pendientes de consentimiento</span>
+              <span class="section-count">{{ pendingLinks().length }}</span>
+            </div>
+            <div class="link-list">
+              @for (link of pendingLinks(); track link.id) {
+                <div class="link-card pending">
+                  <div class="link-top">
+                    <div class="link-icon">{{ networkIcon(link.networkType) }}</div>
+                    <div class="link-info">
+                      <div class="link-name">{{ link.participant?.name }}</div>
+                      <div class="link-type">{{ networkLabel(link.networkType) }}</div>
+                    </div>
+                    <div class="link-badge badge-invited">Pendiente</div>
+                  </div>
+                  @if (link.objective) {
+                    <div class="link-objective">{{ link.objective }}</div>
+                  }
+                  <div class="link-meta">
+                    Invitado: {{ formatDate(link.invitedAt) }}
+                  </div>
+                  <div class="link-actions">
+                    <button class="btn-consent" (click)="openConsentModal(link)">
+                      Dar consentimiento
+                    </button>
+                    <button class="btn-revoke-sm" (click)="openRevokeModal(link.id)">
+                      Rechazar
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Por nivel de red -->
+        @for (section of [
+          {key: 'familiar',     label: 'Red Familiar',      icon: '👨‍👩‍👧', links: summary()?.familiar     ?? []},
+          {key: 'institutional', label: 'Institucional',     icon: '🏛️',   links: summary()?.institutional ?? []},
+          {key: 'community',    label: 'Comunitaria',        icon: '🤝',   links: summary()?.community    ?? []},
+          {key: 'territorial',  label: 'Territorial',        icon: '🌍',   links: summary()?.territorial  ?? []}
+        ]; track section.key) {
+          @if (section.links.length > 0) {
+            <div class="network-section">
+              <div class="section-header">
+                <span>{{ section.icon }} {{ section.label }}</span>
+                <span class="section-count">{{ section.links.length }}</span>
+              </div>
+              <div class="link-list">
+                @for (link of section.links; track link.id) {
+                  @if (link.status !== 'INVITED') {
+                    <div class="link-card" [class.active]="link.status === 'ACTIVE'" [class.revoked]="link.status === 'REVOKED'">
+                      <div class="link-top">
+                        <div class="link-icon">{{ networkIcon(link.networkType) }}</div>
+                        <div class="link-info">
+                          <div class="link-name">{{ link.participant?.name }}</div>
+                          <div class="link-type">{{ networkLabel(link.networkType) }}</div>
+                        </div>
+                        <div class="link-badge" [class]="'badge-' + link.status.toLowerCase()">
+                          {{ statusLabel(link.status) }}
+                        </div>
+                      </div>
+
+                      @if (link.status === 'ACTIVE') {
+                        <!-- Scope dots -->
+                        <div class="scope-row">
+                          @for (k of scopeKeys(); track k) {
+                            <span class="scope-dot" [class.on]="link.accessScope?.[k]">
+                              {{ scopeLabel(k) }}
+                            </span>
+                          }
+                        </div>
+                      }
+
+                      @if (link.objective) {
+                        <div class="link-objective">{{ link.objective }}</div>
+                      }
+
+                      <div class="link-meta">
+                        @if (link.consentedAt) {
+                          Activo desde {{ formatDate(link.consentedAt) }}
+                        } @else {
+                          Invitado {{ formatDate(link.invitedAt) }}
+                        }
+                        @if (link.validUntil) {
+                          · Válido hasta {{ formatDate(link.validUntil) }}
+                        }
+                        @if (link.expired) {
+                          <span class="expired-badge">⚠ Expirado</span>
+                        }
+                      </div>
+
+                      @if (link.status === 'ACTIVE') {
+                        <div class="link-actions">
+                          <button class="btn-revoke-sm" (click)="openRevokeModal(link.id)">
+                            Revocar acceso
+                          </button>
+                        </div>
+                      }
+                    </div>
+                  }
+                }
+              </div>
+            </div>
+          }
+        }
+
+      </div>
+    }
+  }
+
+  <!-- ─────────── TAB: CATÁLOGO ─────────── -->
+  @if (activeTab() === 'catalog') {
+    <div class="catalog-panel">
+      <div class="catalog-filters">
+        @for (f of [
+          {v: 'ALL',          l: 'Todos'},
+          {v: 'PROFESSIONAL', l: 'Profesionales'},
+          {v: 'INSTITUTIONAL',l: 'Instituciones'},
+          {v: 'COMMUNITY',    l: 'Comunitarias'},
+          {v: 'TERRITORIAL',  l: 'Territoriales'}
+        ]; track f.v) {
+          <button class="filter-chip" [class.active]="catalogFilter() === f.v"
+                  (click)="setCatalogFilter($any(f.v))">
+            {{ f.l }}
+          </button>
+        }
+      </div>
+
+      @if (loadingCat()) {
+        <div class="loading-zone">
+          <div class="skeleton-block"></div>
+          <div class="skeleton-block"></div>
+        </div>
+      } @else if (filteredCatalog().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <h2>No hay participantes en este tipo</h2>
+          <p>El administrador puede agregar profesionales e instituciones al catálogo.</p>
+        </div>
+      } @else {
+        <div class="catalog-grid">
+          @for (p of filteredCatalog(); track p.id) {
+            <div class="participant-card">
+              <div class="p-card-top">
+                <div class="p-icon">{{ networkIcon(p.networkType) }}</div>
+                <div class="p-info">
+                  <div class="p-name">{{ p.name }}</div>
+                  <div class="p-type-badge" [class]="'nt-' + p.networkType.toLowerCase()">
+                    {{ networkLabel(p.networkType) }}
+                  </div>
+                </div>
+              </div>
+              @if (p.description) {
+                <p class="p-desc">{{ p.description }}</p>
+              }
+              <div class="p-contacts">
+                @if (p.contactEmail) {
+                  <span class="p-contact">✉ {{ p.contactEmail }}</span>
+                }
+                @if (p.contactPhone) {
+                  <span class="p-contact">📞 {{ p.contactPhone }}</span>
+                }
+              </div>
+              <button class="btn-invite" (click)="openInviteModal(p)" [disabled]="!p.active">
+                @if (p.active) { Invitar a mi red } @else { No disponible }
+              </button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ─────────── TAB: ACCESOS ─────────── -->
+  @if (activeTab() === 'audit') {
+    <div class="audit-panel">
+      @if (loadingAudit()) {
+        <div class="loading-zone"><div class="skeleton-block"></div></div>
+      } @else if (auditLog().length === 0) {
+        <div class="empty-state">
+          <div class="empty-icon">🔍</div>
+          <h2>Sin registros de acceso</h2>
+          <p>Aquí aparecerá cada vez que alguien de tu ecosistema consulte los datos de tu familia.</p>
+        </div>
+      } @else {
+        <div class="audit-scroll">
+          <table class="audit-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Actor</th>
+                <th>Acción</th>
+                <th>Detalle</th>
+                <th>Nivel</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (e of auditLog(); track e.id) {
+                <tr>
+                  <td class="audit-date">{{ formatDate(e.createdAt) }}</td>
+                  <td class="audit-actor">{{ e.actorEmail }}</td>
+                  <td><span class="action-pill" [class]="'a-' + e.action.toLowerCase()">{{ e.action }}</span></td>
+                  <td class="audit-detail">{{ e.detail }}</td>
+                  <td class="audit-level">L{{ e.accessLevel }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  }
+
+</div>
+
+<!-- ═══════════════════ MODAL: INVITAR ═══════════════════ -->
+@if (showInviteModal()) {
+  <div class="modal-backdrop" (click)="closeInviteModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Invitar al ecosistema</h2>
+        <button class="modal-close" (click)="closeInviteModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <label class="field-label">Objetivo de la relación</label>
+        <input class="field-input" type="text" placeholder="Ej: Acompañamiento terapéutico mensual"
+               [value]="inviteForm().objective"
+               (input)="setInviteObjective($any($event.target).value)" />
+
+        <label class="field-label">Responsabilidades</label>
+        <textarea class="field-input" rows="2" placeholder="Ej: Seguimiento semanal de sprint, elaboración de informes"
+                  [value]="inviteForm().responsibilities"
+                  (input)="setInviteResponsibilities($any($event.target).value)"></textarea>
+
+        <div class="date-row">
+          <div>
+            <label class="field-label">Válido desde</label>
+            <input class="field-input" type="date"
+                   [value]="inviteForm().validFrom"
+                   (input)="setInviteValidFrom($any($event.target).value)" />
+          </div>
+          <div>
+            <label class="field-label">Válido hasta</label>
+            <input class="field-input" type="date"
+                   [value]="inviteForm().validUntil"
+                   (input)="setInviteValidUntil($any($event.target).value)" />
+          </div>
+        </div>
+
+        <div class="scope-section">
+          <label class="field-label">Alcance inicial del acceso (puedes ajustar después)</label>
+          <div class="scope-grid">
+            @for (k of scopeKeys(); track k) {
+              <label class="scope-toggle">
+                <input type="checkbox" [checked]="inviteForm().scope[k]"
+                       (change)="toggleInviteScope(k)" />
+                {{ scopeLabel(k) }}
+              </label>
+            }
+          </div>
+        </div>
+
+        @if (actionErr()) {
+          <div class="msg-error sm">{{ actionErr() }}</div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeInviteModal()">Cancelar</button>
+        <button class="btn-primary" (click)="submitInvite()" [disabled]="actionLoading()">
+          @if (actionLoading()) { Enviando... } @else { Enviar invitación }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ═══════════════════ MODAL: CONSENTIMIENTO ═══════════════════ -->
+@if (showConsentModal()) {
+  <div class="modal-backdrop" (click)="closeConsentModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Dar consentimiento</h2>
+        <button class="modal-close" (click)="closeConsentModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        @if (pendingConsentLink()) {
+          <div class="consent-who">
+            <span class="consent-icon">{{ networkIcon(pendingConsentLink()!.networkType) }}</span>
+            <div>
+              <div class="consent-name">{{ pendingConsentLink()!.participant?.name }}</div>
+              <div class="consent-type">{{ networkLabel(pendingConsentLink()!.networkType) }}</div>
+            </div>
+          </div>
+        }
+
+        <p class="consent-notice">
+          Selecciona qué información puede ver este participante sobre tu familia. Puedes revocar el acceso en cualquier momento.
+        </p>
+
+        <div class="scope-grid">
+          @for (k of scopeKeys(); track k) {
+            <label class="scope-toggle">
+              <input type="checkbox" [checked]="consentForm().scope[k]"
+                     (change)="toggleConsentScope(k)" />
+              {{ scopeLabel(k) }}
+            </label>
+          }
+        </div>
+
+        @if (actionErr()) {
+          <div class="msg-error sm">{{ actionErr() }}</div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeConsentModal()">Cancelar</button>
+        <button class="btn-consent" (click)="submitConsent()" [disabled]="actionLoading()">
+          @if (actionLoading()) { Procesando... } @else { Confirmar consentimiento }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ═══════════════════ MODAL: REVOCAR ═══════════════════ -->
+@if (showRevokeModal()) {
+  <div class="modal-backdrop" (click)="closeRevokeModal()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Revocar acceso</h2>
+        <button class="modal-close" (click)="closeRevokeModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="revoke-warn">Esta acción retira el acceso del participante a los datos de tu familia de forma inmediata.</p>
+        <label class="field-label">Motivo (opcional)</label>
+        <input class="field-input" type="text" placeholder="Ej: Fin del proceso de acompañamiento"
+               [value]="revokeReason()"
+               (input)="setRevokeReason($any($event.target).value)" />
+
+        @if (actionErr()) {
+          <div class="msg-error sm">{{ actionErr() }}</div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeRevokeModal()">Cancelar</button>
+        <button class="btn-revoke" (click)="submitRevoke()" [disabled]="actionLoading()">
+          @if (actionLoading()) { Revocando... } @else { Confirmar revocación }
+        </button>
+      </div>
+    </div>
+  </div>
+}

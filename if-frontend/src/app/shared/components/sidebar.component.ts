@@ -173,6 +173,12 @@ import { filter } from 'rxjs/operators';
           <a routerLink="/journey" class="nav-item nav-journey" routerLinkActive="active">
             <span class="nav-icon">🧭</span><span class="nav-text">Viaje Familiar</span>
           </a>
+          <a routerLink="/ecosystem" class="nav-item nav-ecosystem" routerLinkActive="active">
+            <span class="nav-icon">🌐</span><span class="nav-text">Ecosistema de Apoyo</span>
+          </a>
+          <a routerLink="/professional" class="nav-item nav-professional" routerLinkActive="active">
+            <span class="nav-icon">🩺</span><span class="nav-text">Panel Profesional</span>
+          </a>
         </div>
 
         <div class="divider"></div>
@@ -447,6 +453,12 @@ import { filter } from 'rxjs/operators';
     .nav-journey { color: rgba(99,102,241,0.75) !important; }
     .nav-journey:hover { color: #6366f1 !important; background: rgba(99,102,241,0.08) !important; }
     .nav-journey.active { background: rgba(99,102,241,0.12) !important; color: #a5b4fc !important; border-color: rgba(99,102,241,0.25) !important; }
+    .nav-ecosystem { color: rgba(20,184,166,0.75) !important; }
+    .nav-ecosystem:hover { color: #14b8a6 !important; background: rgba(20,184,166,0.08) !important; }
+    .nav-ecosystem.active { background: rgba(20,184,166,0.12) !important; color: #5eead4 !important; border-color: rgba(20,184,166,0.25) !important; }
+    .nav-professional { color: rgba(59,130,246,0.75) !important; }
+    .nav-professional:hover { color: #3b82f6 !important; background: rgba(59,130,246,0.08) !important; }
+    .nav-professional.active { background: rgba(59,130,246,0.12) !important; color: #93c5fd !important; border-color: rgba(59,130,246,0.25) !important; }
     .nav-sprint { color: rgba(245,158,11,0.75) !important; }
     .nav-sprint:hover { color: #f59e0b !important; background: rgba(245,158,11,0.08) !important; }
     .nav-sprint.active { background: rgba(245,158,11,0.12) !important; color: #fcd34d !important; border-color: rgba(245,158,11,0.25) !important; }

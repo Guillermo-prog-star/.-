@@ -265,6 +265,14 @@ export const routes: Routes = [
           .then(m => m.SmffPanelComponent)
       },
 
+      // ── Ecosistema de Apoyo (5 niveles de red) ──────────────────────────
+      {
+        path: 'ecosystem',
+        title: 'Ecosistema de Apoyo',
+        loadComponent: () => import('./features/ecosystem/ecosystem-page.component')
+          .then(m => m.EcosystemPageComponent)
+      },
+
       // ── Panel del Profesional (terapeuta, orientador, trabajador social) ─
       {
         path: 'professional',

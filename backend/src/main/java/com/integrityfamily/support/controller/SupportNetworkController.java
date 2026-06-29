@@ -2,8 +2,11 @@ package com.integrityfamily.support.controller;
 
 import com.integrityfamily.support.domain.SupportSpecialty;
 import com.integrityfamily.support.dto.SupportNetworkDtos.*;
+import com.integrityfamily.support.repository.SupportNetworkMemberRepository;
 import com.integrityfamily.support.service.SupportNetworkService;
+import com.integrityfamily.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -11,7 +14,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Red de Apoyo Humano — API REST.
@@ -24,6 +26,7 @@ import java.util.Map;
 public class SupportNetworkController {
 
     private final SupportNetworkService service;
+    private final SupportNetworkMemberRepository memberRepository;
 
     // ─────────────────────────────────────────────────────────────────────
     // Catálogo de profesionales (cualquier usuario autenticado puede consultar)
@@ -90,15 +93,15 @@ public class SupportNetworkController {
             @PathVariable Long familyId,
             @RequestBody AddNoteRequest req,
             @AuthenticationPrincipal UserDetails principal) {
-        // En producción: resolver supportMemberId desde el principal del profesional autenticado
-        // Por ahora usamos el assignmentId para validar autoría en el servicio
-        Long supportMemberId = resolveSupportMemberId(principal);
+        Long supportMemberId = resolveSupportMemberId(principal.getUsername());
         return ResponseEntity.ok(service.addNote(familyId, req, supportMemberId));
     }
 
-    private Long resolveSupportMemberId(UserDetails principal) {
-        // El profesional se autentica con su email; el servicio valida que coincida con la asignación
-        // Este método es un stub — en producción se obtiene del token JWT extendido
-        return -1L;
+    private Long resolveSupportMemberId(String email) {
+        return memberRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(
+                        "No existe un perfil profesional asociado a este usuario.",
+                        "SUPPORT_NOT_FOUND", HttpStatus.FORBIDDEN))
+                .getId();
     }
 }

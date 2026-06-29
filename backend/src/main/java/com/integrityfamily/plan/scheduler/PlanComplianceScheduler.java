@@ -73,6 +73,7 @@ public class PlanComplianceScheduler {
      * MONITOR DE CUMPLIMIENTO DIARIO
      */
     @Scheduled(cron = "0 0 0/4 * * *")
+    @Transactional(readOnly = true)
     public void checkTaskCompliance() {
         log.info("🔍 [COMPLIANCE-CLOCK] Revisando tareas vencidas...");
         

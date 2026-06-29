@@ -19,11 +19,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("CrisisServiceImpl")
 class CrisisServiceImplTest {
 
@@ -153,6 +157,138 @@ class CrisisServiceImplTest {
                     && MEM_ID == cd.getMemberId()
                     && "VIOLENCIA".equals(cd.getCategory())
                     && "RABIA".equals(cd.getEmotion())));
+        }
+    }
+
+        @Test
+        @DisplayName("emoción null → prompt usa 'No especificada' y se persiste sin error")
+        void crisis_emotionNull_promptUsesDefault() {
+            Family f = family();
+            when(familyRepository.findById(FAM_ID)).thenReturn(Optional.of(f));
+            when(contextSynthesizer.synthesize(f, "CRISIS")).thenReturn(null);
+            when(aiProvider.generateResponse(any(), any())).thenReturn("Guía OK");
+            when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(familyRepository.save(any())).thenReturn(f);
+            stubCascade();
+
+            CriticalDay result = service.registerCrisis(FAM_ID, MEM_ID, "TENSION", "desc", null);
+
+            assertThat(result.getEmotion()).isNull();
+            verify(aiProvider).generateResponse(argThat(p -> p.contains("No especificada")), any());
+        }
+
+        @Test
+        @DisplayName("WhatsApp lanza excepción → no se propaga al caller")
+        void crisis_whatsappThrows_doesNotPropagateException() {
+            Family f = family();
+            when(familyRepository.findById(FAM_ID)).thenReturn(Optional.of(f));
+            when(contextSynthesizer.synthesize(f, "CRISIS")).thenReturn(null);
+            when(aiProvider.generateResponse(any(), any())).thenReturn("Guía OK");
+            when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(familyRepository.save(any())).thenReturn(f);
+            stubCascade();
+            doThrow(new RuntimeException("WA down")).when(whatsAppService).sendToFamily(any(), any());
+
+            assertThatCode(() -> service.registerCrisis(FAM_ID, MEM_ID, "CONFLICTO", "desc", "MIEDO"))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("cascada ICF: penaliza -15 puntos desde snapshot anterior")
+        void crisis_icfPenalization_snapshotSavedWithCritico() {
+            Family f = family();
+            RiskSnapshot prev = RiskSnapshot.builder().icf(60.0).riskLevel("MODERADO").build();
+            when(familyRepository.findById(FAM_ID)).thenReturn(Optional.of(f));
+            when(contextSynthesizer.synthesize(f, "CRISIS")).thenReturn(null);
+            when(aiProvider.generateResponse(any(), any())).thenReturn("OK");
+            when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(familyRepository.save(any())).thenReturn(f);
+            when(riskSnapshotRepository.findByFamilyIdOrderByCreatedAtDesc(FAM_ID)).thenReturn(List.of(prev));
+            when(riskSnapshotRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            doNothing().when(eventPublisher).publish(any());
+            when(adaptivePlanService.evaluateAndProposeForFamily(FAM_ID)).thenReturn(List.of());
+
+            service.registerCrisis(FAM_ID, MEM_ID, "CONFLICTO", "desc", "RABIA");
+
+            verify(riskSnapshotRepository).save(argThat(snap ->
+                    "CRITICO".equals(snap.getRiskLevel())
+                    && Boolean.TRUE.equals(snap.getHasCrisis())
+                    && snap.getIcf() == 45.0));   // 60 - 15 = 45
+        }
+
+        @Test
+        @DisplayName("cascada ICF: floor en 10 cuando ICF previo es 20")
+        void crisis_icfFloor_minimumTen() {
+            Family f = family();
+            RiskSnapshot prev = RiskSnapshot.builder().icf(20.0).riskLevel("CRITICO").build();
+            when(familyRepository.findById(FAM_ID)).thenReturn(Optional.of(f));
+            when(contextSynthesizer.synthesize(f, "CRISIS")).thenReturn(null);
+            when(aiProvider.generateResponse(any(), any())).thenReturn("OK");
+            when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(familyRepository.save(any())).thenReturn(f);
+            when(riskSnapshotRepository.findByFamilyIdOrderByCreatedAtDesc(FAM_ID)).thenReturn(List.of(prev));
+            when(riskSnapshotRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            doNothing().when(eventPublisher).publish(any());
+            when(adaptivePlanService.evaluateAndProposeForFamily(FAM_ID)).thenReturn(List.of());
+
+            service.registerCrisis(FAM_ID, MEM_ID, "CONFLICTO", "desc", "RABIA");
+
+            verify(riskSnapshotRepository).save(argThat(snap -> snap.getIcf() == 10.0));  // max(10, 20-15)
+        }
+
+        @Test
+        @DisplayName("sin historial de snapshots → usa ICF base 50 y penaliza a 35")
+        void crisis_noSnapshotHistory_usesDefault50() {
+            Family f = family();
+            when(familyRepository.findById(FAM_ID)).thenReturn(Optional.of(f));
+            when(contextSynthesizer.synthesize(f, "CRISIS")).thenReturn(null);
+            when(aiProvider.generateResponse(any(), any())).thenReturn("OK");
+            when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(familyRepository.save(any())).thenReturn(f);
+            when(riskSnapshotRepository.findByFamilyIdOrderByCreatedAtDesc(FAM_ID)).thenReturn(List.of());
+            when(riskSnapshotRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            doNothing().when(eventPublisher).publish(any());
+            when(adaptivePlanService.evaluateAndProposeForFamily(FAM_ID)).thenReturn(List.of());
+
+            service.registerCrisis(FAM_ID, MEM_ID, "CONFLICTO", "desc", "TRISTEZA");
+
+            verify(riskSnapshotRepository).save(argThat(snap -> snap.getIcf() == 35.0));  // max(10, 50-15)
+        }
+
+        @Test
+        @DisplayName("se publican exactamente 2 eventos: FamilyCrisisEvent + FamilyIcfRecalculatedEvent")
+        void crisis_twoEventsPublished() {
+            Family f = family();
+            when(familyRepository.findById(FAM_ID)).thenReturn(Optional.of(f));
+            when(contextSynthesizer.synthesize(f, "CRISIS")).thenReturn(null);
+            when(aiProvider.generateResponse(any(), any())).thenReturn("OK");
+            when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+            when(familyRepository.save(any())).thenReturn(f);
+            stubCascade();
+
+            service.registerCrisis(FAM_ID, MEM_ID, "CONFLICTO", "desc", "RABIA");
+
+            verify(eventPublisher, times(2)).publish(any());
+        }
+
+    // ── handleMemberCrisis ────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("handleMemberCrisis")
+    class HandleMemberCrisis {
+
+        @Test
+        @DisplayName("lista vacía → no lanza excepción (stub vacío)")
+        void emptyList_doesNotThrow() {
+            assertThatCode(() -> service.handleMemberCrisis(FAM_ID, List.of(), "obs"))
+                    .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("lista null → no lanza excepción")
+        void nullList_doesNotThrow() {
+            assertThatCode(() -> service.handleMemberCrisis(FAM_ID, null, "obs"))
+                    .doesNotThrowAnyException();
         }
     }
 

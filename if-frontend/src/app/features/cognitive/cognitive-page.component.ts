@@ -1,7 +1,8 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { forkJoin, catchError, of } from 'rxjs';
 import { CognitiveService } from '../../core/services/cognitive.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { NarrativeCompanionComponent } from '../../shared/components/narrative-companion.component';
@@ -12,6 +13,32 @@ import {
   EffectivenessLevel, AbandonmentLevel
 } from '../../core/models/cognitive.model';
 import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
+import { ApiService } from '../../core/services/api.service';
+
+// ── Copilot types ──────────────────────────────────────────────────────────
+interface CopilotSuggestion {
+  summary: string;
+  priority: string;
+  recommendedActions: string[];
+  containmentSuggestion: string;
+  followUpDays: number;
+}
+interface AiInferenceEntry {
+  id: number;
+  familyId: number;
+  inputSummary: string;
+  inferenceResult: string;
+  priority: string;
+  modelVersion: string;
+  createdAt: string;
+}
+interface ActiveSessionInfo {
+  sessionId: number;
+  goal: string;
+  emotionalArc: string;
+  turnCount: number;
+  startedAt: string;
+}
 
 @Component({
   selector: 'app-cognitive-page',
@@ -53,6 +80,183 @@ import { ScrollPolicyService } from '../../shared/directives/scroll-policy.servi
       }
 
       @if (!loading()) {
+
+        <!-- ══ SECCIÓN 0: COPILOTO IA ════════════════════════════════════════ -->
+        <section class="glass-card border-l-4 border-indigo-500 p-8 rounded-3xl space-y-6">
+
+          <!-- Header copiloto -->
+          <div class="flex items-start justify-between flex-wrap gap-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-indigo-500/20 rounded-xl flex items-center justify-center text-xl">🤖</div>
+              <div>
+                <h2 class="font-bold text-white/90 text-lg">Copiloto IA</h2>
+                <span class="text-[9px] text-white/30 uppercase tracking-[0.2em]">Inferencias Estructuradas · Sesión Activa · Estado Emocional</span>
+              </div>
+            </div>
+            <div class="flex items-center gap-3">
+              @if (copilot()) {
+                <span class="px-3 py-1 rounded-full border text-[10px] font-black uppercase tracking-widest"
+                      [ngClass]="priorityBg(copilot()!.priority)">
+                  {{ priorityLabel(copilot()!.priority) }}
+                </span>
+              }
+              <button (click)="triggerInference()" [disabled]="inferring()"
+                      class="px-4 py-2 rounded-xl bg-indigo-500/20 border border-indigo-500/30
+                             text-indigo-300 text-xs font-semibold uppercase tracking-wide
+                             hover:bg-indigo-500/30 transition-colors disabled:opacity-40
+                             flex items-center gap-2">
+                @if (inferring()) {
+                  <div class="w-3 h-3 border border-indigo-300/40 border-t-indigo-300 rounded-full animate-spin"></div>
+                  Analizando…
+                } @else {
+                  ✦ Nueva inferencia
+                }
+              </button>
+            </div>
+          </div>
+
+          <!-- Última inferencia + sesión activa (2 columnas) -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+            <!-- Card: Última sugerencia del copiloto -->
+            <div class="bg-white/[0.03] rounded-2xl p-5 border border-white/5 space-y-4">
+              <span class="text-[9px] text-indigo-400/60 uppercase tracking-widest block">Última Sugerencia IA</span>
+
+              @if (!copilot()) {
+                <p class="text-white/30 text-xs italic">
+                  Sin inferencia disponible. Genera una para obtener el análisis contextual de la familia.
+                </p>
+              } @else {
+                <!-- Resumen -->
+                <p class="text-white/75 text-sm leading-relaxed">{{ copilot()!.summary }}</p>
+
+                <!-- Acciones recomendadas -->
+                @if (copilot()!.recommendedActions?.length) {
+                  <div class="space-y-2">
+                    <span class="text-[9px] text-white/30 uppercase tracking-widest">Acciones recomendadas</span>
+                    @for (action of copilot()!.recommendedActions; track action) {
+                      <div class="flex items-start gap-2">
+                        <span class="text-indigo-400 mt-0.5 flex-shrink-0">›</span>
+                        <p class="text-white/65 text-xs leading-relaxed">{{ action }}</p>
+                      </div>
+                    }
+                  </div>
+                }
+
+                <!-- Contención -->
+                @if (copilot()!.containmentSuggestion) {
+                  <div class="p-3 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
+                    <span class="text-[9px] text-indigo-400/60 uppercase tracking-widest block mb-1">Contención sugerida</span>
+                    <p class="text-white/60 text-xs leading-relaxed">{{ copilot()!.containmentSuggestion }}</p>
+                  </div>
+                }
+
+                <!-- Follow-up -->
+                @if (copilot()!.followUpDays) {
+                  <div class="flex items-center gap-2 text-xs text-white/40">
+                    <span>🕐</span>
+                    <span>Seguimiento recomendado en <strong class="text-white/70">{{ copilot()!.followUpDays }} días</strong></span>
+                  </div>
+                }
+              }
+            </div>
+
+            <!-- Card: Sesión activa + estado emocional -->
+            <div class="bg-white/[0.03] rounded-2xl p-5 border border-white/5 space-y-4">
+              <span class="text-[9px] text-indigo-400/60 uppercase tracking-widest block">Sesión Conversacional</span>
+
+              @if (!activeSession()) {
+                <div class="flex flex-col items-center justify-center py-6 gap-2 text-white/25">
+                  <span class="text-3xl">💬</span>
+                  <p class="text-xs text-center">Sin sesión activa en las últimas 4 horas</p>
+                  <a routerLink="/chat"
+                     class="mt-2 px-3 py-1.5 text-[10px] uppercase tracking-wide font-semibold
+                            bg-indigo-500/10 border border-indigo-500/20 text-indigo-400
+                            rounded-lg hover:bg-indigo-500/20 transition-colors">
+                    Ir al consultor IA
+                  </a>
+                </div>
+              } @else {
+                <!-- Arco emocional -->
+                <div class="flex items-center gap-3">
+                  <span class="text-3xl">{{ arcEmoji(activeSession()!.emotionalArc) }}</span>
+                  <div>
+                    <span class="px-2.5 py-0.5 rounded-full border text-[10px] font-semibold uppercase tracking-wide"
+                          [ngClass]="arcBg(activeSession()!.emotionalArc)">
+                      {{ arcLabel(activeSession()!.emotionalArc) }}
+                    </span>
+                    <p class="text-[9px] text-white/30 uppercase tracking-widest mt-1">Estado emocional del grupo</p>
+                  </div>
+                </div>
+
+                <!-- Métricas de sesión -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="bg-white/[0.02] rounded-xl p-3 border border-white/5">
+                    <span class="text-[9px] text-white/30 uppercase tracking-widest block mb-1">Objetivo</span>
+                    <span class="text-xs font-semibold text-indigo-300">{{ goalLabel(activeSession()!.goal) }}</span>
+                  </div>
+                  <div class="bg-white/[0.02] rounded-xl p-3 border border-white/5">
+                    <span class="text-[9px] text-white/30 uppercase tracking-widest block mb-1">Turnos</span>
+                    <span class="text-2xl font-black text-white/80">{{ activeSession()!.turnCount }}</span>
+                  </div>
+                </div>
+
+                <!-- Inicio de sesión -->
+                @if (activeSession()!.startedAt) {
+                  <p class="text-[10px] text-white/30">
+                    Iniciada: {{ inferenceDate(activeSession()!.startedAt) }}
+                  </p>
+                }
+                <a routerLink="/chat"
+                   class="block text-center px-3 py-1.5 text-[10px] uppercase tracking-wide font-semibold
+                          bg-indigo-500/10 border border-indigo-500/20 text-indigo-400
+                          rounded-lg hover:bg-indigo-500/20 transition-colors">
+                  Continuar sesión →
+                </a>
+              }
+            </div>
+          </div>
+
+          <!-- Historial de inferencias -->
+          @if (copilotHistory().length) {
+            <div class="space-y-3">
+              <span class="text-[9px] text-white/30 uppercase tracking-widest block">Historial de Inferencias IA</span>
+              <div class="space-y-2">
+                @for (entry of copilotHistory(); track trackByInference($index, entry)) {
+                  <div class="flex items-start gap-4 bg-white/[0.02] rounded-xl p-4 border border-white/5
+                               hover:border-white/10 transition-colors">
+                    <!-- Priority dot -->
+                    <div class="flex-shrink-0 mt-1">
+                      <div class="w-2 h-2 rounded-full"
+                           [ngClass]="{ 'bg-red-400': entry.priority === 'HIGH',
+                                        'bg-amber-400': entry.priority === 'MEDIUM',
+                                        'bg-emerald-400': entry.priority === 'LOW',
+                                        'bg-white/20': !entry.priority }">
+                      </div>
+                    </div>
+                    <!-- Content -->
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center justify-between gap-2 mb-1">
+                        <span class="text-[10px] font-semibold uppercase tracking-wide"
+                              [ngClass]="priorityColor(entry.priority)">
+                          {{ priorityLabel(entry.priority) }}
+                        </span>
+                        <span class="text-[9px] text-white/25 flex-shrink-0">{{ inferenceDate(entry.createdAt) }}</span>
+                      </div>
+                      @if (entry.inputSummary) {
+                        <p class="text-white/50 text-xs truncate">{{ entry.inputSummary }}</p>
+                      }
+                      @if (entry.modelVersion) {
+                        <span class="text-[9px] text-white/20 mt-0.5 block">modelo: {{ entry.modelVersion }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+        </section>
 
         <!-- ── SECCIÓN 1: IDENTIDAD ───────────────────────────────────────── -->
         @if (narrative()) {
@@ -514,16 +718,26 @@ export class CognitivePageComponent implements OnInit {
   private readonly cognitiveService = inject(CognitiveService);
   private readonly familyState     = inject(FamilyStateService);
   private readonly scrollPolicy    = inject(ScrollPolicyService);
+  private readonly http            = inject(HttpClient);
+  private readonly api             = inject(ApiService);
+
+  private familyId = 0;
 
   // ─── State ──────────────────────────────────────────────────────────────
   loading    = signal(true);
   reflecting = signal(false);
+  inferring  = signal(false);
 
   snapshot   = signal<CognitiveSnapshot | null>(null);
   narrative  = signal<NarrativeResponse | null>(null);
   graph      = signal<GraphResponse | null>(null);
   memory     = signal<MemoryResponse | null>(null);
   reflection = signal<ReflectionResponse | null>(null);
+
+  // Copilot state
+  copilot        = signal<CopilotSuggestion | null>(null);
+  copilotHistory = signal<AiInferenceEntry[]>([]);
+  activeSession  = signal<ActiveSessionInfo | null>(null);
 
   activeMemoryTab = signal<'episodic' | 'semantic' | 'procedural'>('episodic');
 
@@ -578,15 +792,16 @@ export class CognitivePageComponent implements OnInit {
   // ─── Lifecycle ───────────────────────────────────────────────────────────
   ngOnInit(): void {
     this.scrollPolicy.set('scroll-to-new');
-    const familyId = this.familyState.getSelectedFamilyId();
-    if (!familyId) { this.loading.set(false); return; }
+    const fid = this.familyState.getSelectedFamilyId();
+    if (!fid) { this.loading.set(false); return; }
+    this.familyId = fid;
 
     forkJoin({
-      snapshot:   this.cognitiveService.getSnapshot(familyId),
-      narrative:  this.cognitiveService.getNarrative(familyId),
-      graph:      this.cognitiveService.getGraph(familyId),
-      memory:     this.cognitiveService.getMemory(familyId),
-      reflection: this.cognitiveService.getLatestReflection(familyId)
+      snapshot:   this.cognitiveService.getSnapshot(fid),
+      narrative:  this.cognitiveService.getNarrative(fid),
+      graph:      this.cognitiveService.getGraph(fid),
+      memory:     this.cognitiveService.getMemory(fid),
+      reflection: this.cognitiveService.getLatestReflection(fid)
     }).subscribe({
       next: ({ snapshot, narrative, graph, memory, reflection }) => {
         this.snapshot.set(snapshot);
@@ -598,13 +813,53 @@ export class CognitivePageComponent implements OnInit {
       },
       error: () => this.loading.set(false)
     });
+
+    // Load copilot data in parallel (non-blocking)
+    this.loadCopilot(fid);
+  }
+
+  private loadCopilot(fid: number): void {
+    forkJoin({
+      suggestion: this.http.get<any>(`${this.api.base}/copilot/family/${fid}`)
+                    .pipe(catchError(() => of(null))),
+      history:    this.http.get<any>(`${this.api.base}/copilot/history/${fid}`)
+                    .pipe(catchError(() => of(null))),
+      session:    this.http.get<any>(`${this.api.base}/chat/session/active?familyId=${fid}`)
+                    .pipe(catchError(() => of(null)))
+    }).subscribe(({ suggestion, history, session }) => {
+      this.copilot.set(suggestion?.data ?? suggestion ?? null);
+      const raw: AiInferenceEntry[] = history?.data ?? history ?? [];
+      this.copilotHistory.set(Array.isArray(raw) ? raw.slice(0, 8) : []);
+      this.activeSession.set(session?.data ?? session ?? null);
+    });
+  }
+
+  triggerInference(): void {
+    if (this.inferring() || !this.familyId) return;
+    this.inferring.set(true);
+    this.http.post<any>(`${this.api.base}/copilot/infer`,
+        { familyId: this.familyId, triggerEvent: 'MANUAL' })
+      .pipe(catchError(() => of(null)))
+      .subscribe(res => {
+        const r = res?.data ?? res ?? null;
+        if (r) {
+          this.copilot.set(r);
+          // prepend synthetic entry to history
+          this.copilotHistory.update(h => [{
+            id: Date.now(), familyId: this.familyId,
+            inputSummary: 'Inferencia manual', inferenceResult: '',
+            priority: r.priority ?? 'MEDIUM',
+            modelVersion: '—', createdAt: new Date().toISOString()
+          } as AiInferenceEntry, ...h].slice(0, 8));
+        }
+        this.inferring.set(false);
+      });
   }
 
   runReflection(): void {
-    const familyId = this.familyState.getSelectedFamilyId();
-    if (!familyId || this.reflecting()) return;
+    if (this.reflecting()) return;
     this.reflecting.set(true);
-    this.cognitiveService.triggerReflection(familyId).subscribe({
+    this.cognitiveService.triggerReflection(this.familyId).subscribe({
       next: r => { this.reflection.set(r); this.reflecting.set(false); },
       error: ()  => this.reflecting.set(false)
     });
@@ -681,6 +936,56 @@ export class CognitivePageComponent implements OnInit {
   }
 
   trackByDyad(_: number, d: DyadDto) { return `${d.memberAId}-${d.memberBId}`; }
+  trackByInference(_: number, i: AiInferenceEntry) { return i.id; }
+
+  // ─── Copilot helpers ─────────────────────────────────────────────────────
+  priorityColor(p: string): string {
+    return { HIGH: 'text-red-400', MEDIUM: 'text-amber-400', LOW: 'text-emerald-400' }[p] ?? 'text-white/40';
+  }
+  priorityBg(p: string): string {
+    return { HIGH: 'bg-red-500/10 border-red-500/20 text-red-400',
+             MEDIUM: 'bg-amber-500/10 border-amber-500/20 text-amber-400',
+             LOW:  'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' }[p]
+           ?? 'bg-white/5 border-white/10 text-white/40';
+  }
+  priorityLabel(p: string): string {
+    return { HIGH: 'ALTA', MEDIUM: 'MEDIA', LOW: 'BAJA' }[p] ?? p ?? '—';
+  }
+  arcEmoji(arc: string): string {
+    return { STABLE: '😌', MILD_TENSION: '😐', ESCALATING: '😟',
+             ESCALATED: '😰', DE_ESCALATING: '😮‍💨',
+             CALM: '😌', ANXIOUS: '😰', FRUSTRATED: '😤',
+             HOPEFUL: '🙂', CONFUSED: '😕', ENGAGED: '😊' }[arc] ?? '❓';
+  }
+  arcLabel(arc: string): string {
+    return { STABLE: 'Estable', MILD_TENSION: 'Tensión leve',
+             ESCALATING: 'Escalando', ESCALATED: 'Escalado',
+             DE_ESCALATING: 'Desescalando', CALM: 'Calmada',
+             ANXIOUS: 'Ansiosa', FRUSTRATED: 'Frustrada',
+             HOPEFUL: 'Esperanzada', CONFUSED: 'Confusa', ENGAGED: 'Comprometida' }[arc] ?? arc;
+  }
+  arcBg(arc: string): string {
+    if (!arc) return 'bg-white/5 border-white/10 text-white/40';
+    if (['ESCALATED','ANXIOUS','FRUSTRATED'].includes(arc))
+      return 'bg-red-500/10 border-red-500/20 text-red-400';
+    if (['ESCALATING','MILD_TENSION','CONFUSED'].includes(arc))
+      return 'bg-amber-500/10 border-amber-500/20 text-amber-400';
+    if (['DE_ESCALATING','HOPEFUL'].includes(arc))
+      return 'bg-teal-500/10 border-teal-500/20 text-teal-400';
+    return 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
+  }
+  goalLabel(g: string): string {
+    return { GENERAL: 'General', SUPPORT: 'Soporte', REFLECTION: 'Reflexión',
+             PLANNING: 'Planificación', GUARDIAN_SYNC: 'Sincronización Guardián' }[g] ?? g;
+  }
+  inferenceDate(iso: string): string {
+    if (!iso) return '—';
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('es', { day: '2-digit', month: 'short' }) +
+             ' ' + d.toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+    } catch { return iso; }
+  }
 
   parseMemoryContent(content: string): any {
     try {

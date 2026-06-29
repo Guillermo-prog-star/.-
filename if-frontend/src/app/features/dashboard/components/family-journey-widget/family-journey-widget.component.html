@@ -1,0 +1,59 @@
+<div class="jw-card">
+
+  <!-- Header -->
+  <div class="jw-header">
+    <span class="jw-title">🧭 Viaje Familiar</span>
+    <a routerLink="/journey" class="jw-link">Ver completo →</a>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading()" class="jw-loading">
+    <div class="jw-spinner"></div>
+  </div>
+
+  <ng-container *ngIf="!loading() && journey() as j">
+
+    <!-- Progress bar -->
+    <div class="jw-progress-row">
+      <span class="jw-progress-label">Nivel {{ j.currentLevel }} de 13</span>
+      <span class="jw-progress-pct" [style.color]="progressColor()">{{ j.journeyProgress }}%</span>
+    </div>
+    <div class="jw-bar-bg">
+      <div class="jw-bar-fill"
+           [style.width.%]="j.journeyProgress"
+           [style.background]="progressColor()">
+      </div>
+    </div>
+
+    <!-- Mini level dots -->
+    <div class="jw-dots">
+      <ng-container *ngFor="let lvl of j.levels; trackBy: trackLevel">
+        <span class="jw-dot"
+              [class.dot-complete]="lvl.status === 'COMPLETE'"
+              [class.dot-next]="lvl.status === 'NEXT'"
+              [class.dot-locked]="lvl.status === 'LOCKED'"
+              [title]="lvl.name + ' — ' + lvl.statusLabel">
+          {{ lvl.status === 'COMPLETE' ? lvl.icon : lvl.status === 'NEXT' ? '👉' : '·' }}
+        </span>
+      </ng-container>
+    </div>
+
+    <!-- Next action -->
+    <div *ngIf="nextLevel() as nl" class="jw-next">
+      <span class="jw-next-label">Siguiente</span>
+      <span class="jw-next-icon">{{ nl.icon }}</span>
+      <div class="jw-next-body">
+        <span class="jw-next-name">{{ nl.name }}</span>
+        <p class="jw-next-action">{{ j.nextAction }}</p>
+      </div>
+      <a *ngIf="nl.route" [routerLink]="nl.route" class="jw-next-cta">Ir →</a>
+    </div>
+
+  </ng-container>
+
+  <!-- Empty -->
+  <div *ngIf="!loading() && !journey()" class="jw-empty">
+    No disponible
+  </div>
+
+</div>

@@ -2,8 +2,15 @@ package com.integrityfamily.family.controller;
 
 import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.domain.Family;
+import com.integrityfamily.family.dto.FamilyHealthSummaryResponse;
+import com.integrityfamily.family.dto.FamilyJourneyResponse;
 import com.integrityfamily.family.dto.FamilyResponse;
+import com.integrityfamily.family.dto.JourneyHistoryResponse;
+import com.integrityfamily.family.service.FamilyHealthSummaryService;
+import com.integrityfamily.family.service.FamilyJourneyService;
 import com.integrityfamily.family.service.FamilyService;
+import com.integrityfamily.family.service.JourneyHistoryService;
+import com.integrityfamily.family.service.JourneyProgressTrackerService;
 import com.integrityfamily.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -25,6 +32,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 public class FamilyController {
 
     private final FamilyService familyService;
+    private final FamilyJourneyService journeyService;
+    private final FamilyHealthSummaryService healthSummaryService;
+    private final JourneyHistoryService historyService;
+    private final JourneyProgressTrackerService trackerService;
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -78,5 +89,33 @@ public class FamilyController {
     public ApiResponse<Void> delete(@PathVariable Long id) {
         familyService.delete(id);
         return ApiResponse.ok(null);
+    }
+
+    @GetMapping("/{id}/journey")
+    @PreAuthorize("@familySecurity.check(#id)")
+    @Transactional(readOnly = true)
+    public ApiResponse<FamilyJourneyResponse> getJourney(@PathVariable Long id) {
+        return ApiResponse.ok(journeyService.evaluate(id));
+    }
+
+    @GetMapping("/{id}/health-summary")
+    @PreAuthorize("@familySecurity.check(#id)")
+    public ApiResponse<FamilyHealthSummaryResponse> getHealthSummary(@PathVariable Long id) {
+        return ApiResponse.ok(healthSummaryService.summarize(id));
+    }
+
+    @GetMapping("/{id}/journey/history")
+    @PreAuthorize("@familySecurity.check(#id)")
+    @Transactional(readOnly = true)
+    public ApiResponse<JourneyHistoryResponse> getJourneyHistory(@PathVariable Long id) {
+        return ApiResponse.ok(historyService.getHistory(id));
+    }
+
+    /** Toma un snapshot manual del viaje (idempotente: solo uno por día). */
+    @PostMapping("/{id}/journey/snapshot")
+    @PreAuthorize("@familySecurity.check(#id)")
+    public ApiResponse<Boolean> takeJourneySnapshot(@PathVariable Long id) {
+        boolean levelUp = trackerService.trackAndCelebrate(id);
+        return ApiResponse.ok(levelUp, levelUp ? "¡Nuevo nivel alcanzado!" : "Snapshot registrado");
     }
 }

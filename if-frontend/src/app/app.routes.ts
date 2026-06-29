@@ -126,7 +126,8 @@ export const routes: Routes = [
       { path: 'family-movie',   title: 'Película Familiar',    loadComponent: () => import('./features/family-movie/family-movie.component').then(m => m.FamilyMovieComponent) },
       { path: 'digital-twin',   title: 'Gemelo Digital',       loadComponent: () => import('./features/digital-twin/digital-twin.component').then(m => m.DigitalTwinComponent) },
       { path: 'chat', loadComponent: () => import('./features/chat/chat-page.component').then(m => m.ChatPageComponent) },
-      { path: 'crisis', loadComponent: () => import('./features/crisis/crisis-page.component').then(m => m.CrisisPageComponent) },
+      { path: 'crisis',   loadComponent: () => import('./features/crisis/crisis-page.component').then(m => m.CrisisPageComponent) },
+      { path: 'reports',  title: 'Reportes', loadComponent: () => import('./features/reports/reports-page.component').then(m => m.ReportsPageComponent) },
       { path: 'logbook', title: 'Bitácora Familiar', loadComponent: () => import('./features/family-logbook/family-logbook.component').then(m => m.FamilyLogbookComponent) },
       { path: 'gratitude', title: 'Muro de Gratitud', loadComponent: () => import('./features/family-gratitude/family-gratitude.component').then(m => m.FamilyGratitudeComponent) },
       { path: 'my-space', title: 'Mi Espacio', loadComponent: () => import('./features/my-space/my-space.component').then(m => m.MySpaceComponent) },
@@ -187,12 +188,36 @@ export const routes: Routes = [
           .then(m => m.LegadoComponent)
       },
 
+      // ── Salud Familiar — panel ejecutivo ─────────────────────────────
+      {
+        path: 'health',
+        title: 'Salud Familiar',
+        loadComponent: () => import('./features/health/health-page.component')
+          .then(m => m.HealthPageComponent)
+      },
+
       // ── Radar de Señales Sutiles ─────────────────────────────────────
       {
         path: 'radar',
         title: 'Radar de Señales Sutiles',
         loadComponent: () => import('./features/radar/radar-page.component')
           .then(m => m.RadarPageComponent)
+      },
+
+      // ── Viaje Familiar (capa rectora) ────────────────────────────────
+      {
+        path: 'journey',
+        title: 'Viaje Familiar',
+        loadComponent: () => import('./features/journey/family-journey-page.component')
+          .then(m => m.FamilyJourneyPageComponent)
+      },
+
+      // ── Sprint Familiar ──────────────────────────────────────────────
+      {
+        path: 'sprint',
+        title: 'Sprint Familiar',
+        loadComponent: () => import('./features/sprint/sprint-board-page.component')
+          .then(m => m.SprintBoardPageComponent)
       },
 
       // ── Banco de Trayectorias de Riesgo ──────────────────────────────

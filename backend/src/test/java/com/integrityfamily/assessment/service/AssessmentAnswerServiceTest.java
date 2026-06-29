@@ -22,6 +22,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.Optional;
 
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
+
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
@@ -33,6 +36,7 @@ import static org.mockito.Mockito.*;
  * y verifica que el refactor batch no introduzca regresiones.
  */
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class AssessmentAnswerServiceTest {
 
     @Mock private EvaluationRepository       evaluationRepository;
@@ -261,6 +265,127 @@ class AssessmentAnswerServiceTest {
                 .isInstanceOf(NotFoundException.class);
     }
 
+    @Test
+    @DisplayName("questionId null en el request se omite sin interrumpir el batch")
+    void saveAnswers_nullQuestionIdInRequest_skippedGracefully() {
+        when(evaluationRepository.findById(10L)).thenReturn(Optional.of(activeEval));
+        when(questionRepository.findAllById(anyList())).thenReturn(List.of(q1));
+        when(answerRepository.findByEvaluationIdOrderByAnsweredAtAsc(10L)).thenReturn(List.of());
+        when(answerRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+        when(answerRepository.countByEvaluationId(10L)).thenReturn(1L);
+
+        // Primer request tiene questionId=null, segundo es válido
+        var requests = List.of(
+                new EvaluationDtos.SaveAnswerRequest(null, 3, null),
+                new EvaluationDtos.SaveAnswerRequest(1L, 4, null)
+        );
+
+        service.saveAnswers(10L, requests);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<EvaluationAnswer>> captor = ArgumentCaptor.forClass(List.class);
+        verify(answerRepository).saveAll(captor.capture());
+        // Solo 1 respuesta guardada (la del questionId válido)
+        assertThat(captor.getValue()).hasSize(1);
+        assertThat(captor.getValue().get(0).getQuestionId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("score 1→Inconsciente, 3→Consciente, 5→Pleno se asigna a consciousnessLevel")
+    void saveAnswers_consciousnessLevel_mappedFromScore() {
+        Question q3 = Question.builder().id(3L).questionKey("Q-HAB-001").dimension("habitos").build();
+
+        when(evaluationRepository.findById(10L)).thenReturn(Optional.of(activeEval));
+        when(questionRepository.findAllById(anyList())).thenReturn(List.of(q1, q2, q3));
+        when(answerRepository.findByEvaluationIdOrderByAnsweredAtAsc(10L)).thenReturn(List.of());
+        when(answerRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+        when(answerRepository.countByEvaluationId(10L)).thenReturn(3L);
+
+        var requests = List.of(
+                new EvaluationDtos.SaveAnswerRequest(1L, 1, null),
+                new EvaluationDtos.SaveAnswerRequest(2L, 3, null),
+                new EvaluationDtos.SaveAnswerRequest(3L, 5, null)
+        );
+
+        service.saveAnswers(10L, requests);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<EvaluationAnswer>> captor = ArgumentCaptor.forClass(List.class);
+        verify(answerRepository).saveAll(captor.capture());
+
+        List<EvaluationAnswer> saved = captor.getValue();
+        String levelForScore1 = saved.stream().filter(a -> "Q-EMO-001".equals(a.getQuestionKey()))
+                .findFirst().map(EvaluationAnswer::getConsciousnessLevel).orElse(null);
+        String levelForScore3 = saved.stream().filter(a -> "Q-COM-001".equals(a.getQuestionKey()))
+                .findFirst().map(EvaluationAnswer::getConsciousnessLevel).orElse(null);
+        String levelForScore5 = saved.stream().filter(a -> "Q-HAB-001".equals(a.getQuestionKey()))
+                .findFirst().map(EvaluationAnswer::getConsciousnessLevel).orElse(null);
+
+        assertThat(levelForScore1).isEqualTo("Inconsciente");
+        assertThat(levelForScore3).isEqualTo("Consciente");
+        assertThat(levelForScore5).isEqualTo("Pleno");
+    }
+
+    @Test
+    @DisplayName("dimensión 'emociones' no existe en DimensionType enum → fallback COMMITMENT")
+    void saveAnswers_unknownDimension_fallsBackToCommitment() {
+        when(evaluationRepository.findById(10L)).thenReturn(Optional.of(activeEval));
+        when(questionRepository.findAllById(anyList())).thenReturn(List.of(q1)); // q1.dimension="emociones"
+        when(answerRepository.findByEvaluationIdOrderByAnsweredAtAsc(10L)).thenReturn(List.of());
+        when(answerRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+        when(answerRepository.countByEvaluationId(10L)).thenReturn(1L);
+
+        service.saveAnswers(10L, List.of(new EvaluationDtos.SaveAnswerRequest(1L, 3, null)));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<EvaluationAnswer>> captor = ArgumentCaptor.forClass(List.class);
+        verify(answerRepository).saveAll(captor.capture());
+
+        assertThat(captor.getValue().get(0).getDimension())
+                .isEqualTo(com.integrityfamily.domain.DimensionType.COMMITMENT);
+    }
+
+    @Test
+    @DisplayName("dimensión null en pregunta → fallback COMMITMENT sin excepción")
+    void saveAnswers_nullDimension_fallsBackToCommitment() {
+        Question qNullDim = Question.builder().id(5L).questionKey("Q-NULL-001").dimension(null).build();
+
+        when(evaluationRepository.findById(10L)).thenReturn(Optional.of(activeEval));
+        when(questionRepository.findAllById(anyList())).thenReturn(List.of(qNullDim));
+        when(answerRepository.findByEvaluationIdOrderByAnsweredAtAsc(10L)).thenReturn(List.of());
+        when(answerRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+        when(answerRepository.countByEvaluationId(10L)).thenReturn(1L);
+
+        assertThatCode(() -> service.saveAnswers(10L,
+                List.of(new EvaluationDtos.SaveAnswerRequest(5L, 3, null))))
+                .doesNotThrowAnyException();
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<EvaluationAnswer>> captor = ArgumentCaptor.forClass(List.class);
+        verify(answerRepository).saveAll(captor.capture());
+        assertThat(captor.getValue().get(0).getDimension())
+                .isEqualTo(com.integrityfamily.domain.DimensionType.COMMITMENT);
+    }
+
+    @Test
+    @DisplayName("questionKey null en Question → la key se resuelve como 'Q-{id}'")
+    void saveAnswers_nullQuestionKey_usesIdFallback() {
+        Question qNoKey = Question.builder().id(7L).questionKey(null).dimension("emociones").build();
+
+        when(evaluationRepository.findById(10L)).thenReturn(Optional.of(activeEval));
+        when(questionRepository.findAllById(anyList())).thenReturn(List.of(qNoKey));
+        when(answerRepository.findByEvaluationIdOrderByAnsweredAtAsc(10L)).thenReturn(List.of());
+        when(answerRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
+        when(answerRepository.countByEvaluationId(10L)).thenReturn(1L);
+
+        service.saveAnswers(10L, List.of(new EvaluationDtos.SaveAnswerRequest(7L, 4, null)));
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<EvaluationAnswer>> captor = ArgumentCaptor.forClass(List.class);
+        verify(answerRepository).saveAll(captor.capture());
+        assertThat(captor.getValue().get(0).getQuestionKey()).isEqualTo("Q-7");
+    }
+
     // ─── getProgress ──────────────────────────────────────────────────────────
 
     @Test
@@ -290,7 +415,24 @@ class AssessmentAnswerServiceTest {
         assertThat(result.totalExpected()).isEqualTo(20);
     }
 
+    @Test
+    @DisplayName("getProgress evaluación inexistente → NotFoundException")
+    void getProgress_evalNotFound_throwsNotFoundException() {
+        when(evaluationRepository.findById(99L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.getProgress(99L))
+                .isInstanceOf(NotFoundException.class);
+    }
+
     // ─── loadAnswersAsDto ─────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("loadAnswersAsDto lista vacía → retorna lista vacía")
+    void loadAnswersAsDto_emptyList_returnsEmpty() {
+        when(answerRepository.findByEvaluationIdOrderByAnsweredAtAsc(10L)).thenReturn(List.of());
+
+        assertThat(service.loadAnswersAsDto(10L)).isEmpty();
+    }
 
     @Test
     @DisplayName("loadAnswersAsDto omite respuestas sin questionId")

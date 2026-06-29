@@ -42,6 +42,8 @@ import { ExperienceBannerComponent } from './components/experience-banner/experi
 import { HogarVivoComponent } from './components/hogar-vivo/hogar-vivo.component';
 import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 import { SubtleSignalRadarComponent } from './components/subtle-signal-radar/subtle-signal-radar.component';
+import { FamilyJourneyWidgetComponent } from './components/family-journey-widget/family-journey-widget.component';
+import { HealthSummaryCardComponent } from './components/health-summary-card/health-summary-card.component';
 
 /**
  * SDD: Dashboard Page Component
@@ -72,7 +74,9 @@ import { SubtleSignalRadarComponent } from './components/subtle-signal-radar/sub
     CausalRulesPanelComponent,
     ExperienceBannerComponent,
     HogarVivoComponent,
-    SubtleSignalRadarComponent
+    SubtleSignalRadarComponent,
+    FamilyJourneyWidgetComponent,
+    HealthSummaryCardComponent
   ],
   templateUrl: './dashboard-page.component.html',
   styleUrls: ['./dashboard-page.component.css'],

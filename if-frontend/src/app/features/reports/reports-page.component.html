@@ -1,0 +1,201 @@
+<div class="rp-page">
+
+  <!-- ── HEADER ─────────────────────────────────────────────────────────── -->
+  <div class="rp-header">
+    <div class="rp-header-left">
+      <div class="rp-icon-wrap">📊</div>
+      <div>
+        <h1 class="rp-title">Reportes de Transformación</h1>
+        <p class="rp-subtitle">Historial ejecutivo, síntesis IA y exportaciones</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LOADING ─────────────────────────────────────────────────────────── -->
+  <div *ngIf="loading()" class="rp-loading">
+    <div class="rp-spinner"></div>
+    <span>Cargando resumen ejecutivo…</span>
+  </div>
+
+  <!-- ── SIN FAMILIA ─────────────────────────────────────────────────────── -->
+  <div *ngIf="!loading() && !familyId" class="rp-empty">
+    <div class="rp-empty-icon">📋</div>
+    <p>Selecciona una familia para ver sus reportes.</p>
+  </div>
+
+  <!-- ── CONTENIDO PRINCIPAL ─────────────────────────────────────────────── -->
+  <ng-container *ngIf="!loading() && familyId">
+
+    <!-- ── KPI CARDS ────────────────────────────────────────────────────── -->
+    <div class="rp-kpi-grid" *ngIf="summary()">
+
+      <!-- ICF Inicial -->
+      <div class="rp-kpi-card">
+        <div class="rp-kpi-label">ICF Inicial</div>
+        <div class="rp-kpi-value" [style.color]="icfColor(summary()!.initialIcf)">
+          {{ summary()!.initialIcf !== null ? (summary()!.initialIcf | number:'1.0-1') : '—' }}
+        </div>
+        <div class="rp-kpi-sub">Primera evaluación</div>
+      </div>
+
+      <!-- ICF Actual + Delta -->
+      <div class="rp-kpi-card rp-kpi-card--highlight">
+        <div class="rp-kpi-label">ICF Actual</div>
+        <div class="rp-kpi-value" [style.color]="icfColor(summary()!.currentIcf)">
+          {{ summary()!.currentIcf !== null ? (summary()!.currentIcf | number:'1.0-1') : '—' }}
+        </div>
+        <div class="rp-kpi-sub" *ngIf="icfDelta() !== null">
+          <span [class]="deltaClass(icfDelta())">{{ icfDeltaSign() }} pts desde el inicio</span>
+        </div>
+      </div>
+
+      <!-- ICF Pico -->
+      <div class="rp-kpi-card">
+        <div class="rp-kpi-label">ICF Pico</div>
+        <div class="rp-kpi-value" [style.color]="icfColor(summary()!.peakIcf)">
+          {{ summary()!.peakIcf !== null ? (summary()!.peakIcf | number:'1.0-1') : '—' }}
+        </div>
+        <div class="rp-kpi-sub">Mejor momento</div>
+      </div>
+
+      <!-- Promedio Regional -->
+      <div class="rp-kpi-card">
+        <div class="rp-kpi-label">Promedio Regional</div>
+        <div class="rp-kpi-value" [style.color]="icfColor(summary()!.regionalAverageIcf)">
+          {{ summary()!.regionalAverageIcf !== null ? (summary()!.regionalAverageIcf | number:'1.0-1') : '—' }}
+        </div>
+        <div class="rp-kpi-sub" *ngIf="icfVsRegion() !== null">
+          <span [class]="deltaClass(icfVsRegion())">
+            {{ (icfVsRegion()! >= 0 ? '+' : '') + (icfVsRegion()! | number:'1.0-1') }} vs región
+          </span>
+        </div>
+      </div>
+
+      <!-- Misiones completadas -->
+      <div class="rp-kpi-card">
+        <div class="rp-kpi-label">Misiones</div>
+        <div class="rp-kpi-value rp-kpi-amber">{{ summary()!.missionsCompleted }}</div>
+        <div class="rp-kpi-sub">Completadas</div>
+      </div>
+
+      <!-- Alertas Sentinel -->
+      <div class="rp-kpi-card" [class.rp-kpi-card--danger]="summary()!.sentinelAlertsTriggered > 0">
+        <div class="rp-kpi-label">Alertas Sentinel</div>
+        <div class="rp-kpi-value"
+             [style.color]="summary()!.sentinelAlertsTriggered > 0 ? '#f87171' : '#34d399'">
+          {{ summary()!.sentinelAlertsTriggered }}
+        </div>
+        <div class="rp-kpi-sub">Activadas en total</div>
+      </div>
+
+    </div>
+
+    <!-- ── HITO ACTUAL + DIMENSIONES ────────────────────────────────────── -->
+    <div class="rp-meta-row" *ngIf="summary()">
+
+      <div class="rp-milestone-card">
+        <div class="rp-milestone-label">Hito Actual</div>
+        <div class="rp-milestone-value">{{ milestoneLabel() }}</div>
+      </div>
+
+      <div class="rp-dims-card" *ngIf="summary()!.dimensionProgress?.length">
+        <div class="rp-dims-label">Progreso por Dimensión</div>
+        <div class="rp-dims-list">
+          <span *ngFor="let d of summary()!.dimensionProgress" class="rp-dim-chip">{{ d }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── SÍNTESIS IA ───────────────────────────────────────────────────── -->
+    <div class="rp-synthesis-card">
+      <div class="rp-synthesis-header">
+        <div class="rp-synthesis-title">
+          <span>✨</span> Síntesis Ejecutiva — IA
+        </div>
+        <button class="rp-btn-synthesize"
+                [disabled]="synthLoading()"
+                (click)="generateSynthesis()">
+          <span *ngIf="synthLoading()" class="rp-spin"></span>
+          <ng-container *ngIf="!synthLoading()">
+            {{ synthesis() ? '↻ Regenerar' : 'Generar síntesis' }}
+          </ng-container>
+        </button>
+      </div>
+
+      <div *ngIf="!synthesis() && !synthLoading()" class="rp-synthesis-placeholder">
+        <p>La IA analizará el historial de evaluaciones, misiones completadas y señales de riesgo
+          para generar un resumen narrativo de la transformación de tu familia.</p>
+        <p class="rp-synthesis-hint">Este proceso tarda ~10–15 segundos.</p>
+      </div>
+
+      <div *ngIf="synthLoading()" class="rp-synthesis-loading">
+        <div class="rp-spin rp-spin--lg"></div>
+        <span>Analizando historial familiar…</span>
+      </div>
+
+      <div *ngIf="synthesis() && !synthLoading()"
+           class="rp-synthesis-body"
+           [innerHTML]="formatSynthesis(synthesis()!)">
+      </div>
+    </div>
+
+    <!-- ── DESCARGAS ─────────────────────────────────────────────────────── -->
+    <div class="rp-downloads-section">
+      <h3 class="rp-downloads-title"><span>⬇️</span> Exportar Reportes</h3>
+
+      <div class="rp-downloads-grid">
+
+        <!-- PDF Ejecutivo (con síntesis IA) -->
+        <div class="rp-dl-card rp-dl-card--primary">
+          <div class="rp-dl-icon">📄</div>
+          <div class="rp-dl-body">
+            <div class="rp-dl-name">Reporte Ejecutivo</div>
+            <div class="rp-dl-desc">
+              Resumen completo con síntesis IA. Incluye ICF, misiones, hitos y análisis narrativo.
+            </div>
+            <div class="rp-dl-badge">PDF · Incluye IA</div>
+          </div>
+          <button class="rp-dl-btn rp-dl-btn--blue" (click)="downloadExecutivePdf()">
+            Descargar
+          </button>
+        </div>
+
+        <!-- PDF Evolutivo -->
+        <div class="rp-dl-card">
+          <div class="rp-dl-icon">📈</div>
+          <div class="rp-dl-body">
+            <div class="rp-dl-name">Reporte Evolutivo</div>
+            <div class="rp-dl-desc">
+              Línea de tiempo del ICF con todas las evaluaciones y progreso por dimensión.
+            </div>
+            <div class="rp-dl-badge">PDF</div>
+          </div>
+          <button class="rp-dl-btn" [disabled]="dlPdf()" (click)="downloadEvolutivePdf()">
+            <span *ngIf="dlPdf()" class="rp-spin rp-spin--sm"></span>
+            <ng-container *ngIf="!dlPdf()">Descargar</ng-container>
+          </button>
+        </div>
+
+        <!-- PDF Trayectorias -->
+        <div class="rp-dl-card">
+          <div class="rp-dl-icon">🗺️</div>
+          <div class="rp-dl-body">
+            <div class="rp-dl-name">Trayectorias de Riesgo</div>
+            <div class="rp-dl-desc">
+              Análisis longitudinal de señales de riesgo detectadas y trayectorias activas.
+            </div>
+            <div class="rp-dl-badge">PDF</div>
+          </div>
+          <button class="rp-dl-btn" [disabled]="dlTraj()" (click)="downloadTrajectoryPdf()">
+            <span *ngIf="dlTraj()" class="rp-spin rp-spin--sm"></span>
+            <ng-container *ngIf="!dlTraj()">Descargar</ng-container>
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

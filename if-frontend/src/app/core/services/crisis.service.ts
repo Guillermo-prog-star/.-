@@ -16,6 +16,12 @@ export class CrisisService {
     );
   }
 
+  getCrisisStatus(familyId: number): Observable<boolean> {
+    return this.http.get<any>(`${this.apiUrl}/status/${familyId}`).pipe(
+      map(res => !!(res?.data ?? res))
+    );
+  }
+
   getHistory(familyId: number): Observable<any[]> {
     return this.http.get<any>(`${this.apiUrl}/family/${familyId}`).pipe(
       map(res => res.data)

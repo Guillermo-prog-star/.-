@@ -19,6 +19,11 @@
       <app-sentinel-alert [active]="data.isSentinelActive"></app-sentinel-alert>
     </header>
 
+    <!-- ── RESUMEN DE SALUD FAMILIAR — Vista ejecutiva ── -->
+    @if (guardianFamilyId > 0) {
+      <app-health-summary-card [familyId]="guardianFamilyId"></app-health-summary-card>
+    }
+
     <!-- ── TARJETA DE TRANSFORMACIÓN — KPI principal del viaje ── -->
     <section class="transformation-hero-card">
 
@@ -122,6 +127,11 @@
           }
         </div>
       </section>
+    }
+
+    <!-- ── VIAJE FAMILIAR — Capa rectora del ecosistema ── -->
+    @if (guardianFamilyId > 0) {
+      <app-family-journey-widget [familyId]="guardianFamilyId"></app-family-journey-widget>
     }
 
     <!-- ── RADAR DE SEÑALES SUTILES — Fases 1·2·3 ── -->

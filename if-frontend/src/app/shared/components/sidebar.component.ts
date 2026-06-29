@@ -121,6 +121,9 @@ import { filter } from 'rxjs/operators';
         <!-- ── BLOQUE 4: TRANSFORMACIÓN DIARIA — Naranja (acción) ── -->
         <div class="nav-section nav-section--family">
           <div class="section-label">TRANSFORMACIÓN DIARIA</div>
+          <a routerLink="/sprint" class="nav-item nav-sprint" routerLinkActive="active">
+            <span class="nav-icon">⚡</span><span class="nav-text">Sprint Familiar</span>
+          </a>
           <a routerLink="/logbook"                     class="nav-item" routerLinkActive="active">
             <span class="nav-icon">📔</span><span class="nav-text">Bitácora &amp; Daily</span>
           </a>
@@ -149,6 +152,9 @@ import { filter } from 'rxjs/operators';
           <a routerLink="/crisis"    class="nav-item nav-crisis" routerLinkActive="active">
             <span class="nav-icon">🆘</span><span class="nav-text">Crisis Familiar</span>
           </a>
+          <a routerLink="/reports"   class="nav-item nav-intel" routerLinkActive="active">
+            <span class="nav-icon">📊</span><span class="nav-text">Reportes</span>
+          </a>
           <a routerLink="/chat"      class="nav-item nav-intel" routerLinkActive="active">
             <span class="nav-icon">✨</span><span class="nav-text">Consultor IA</span>
           </a>
@@ -160,6 +166,12 @@ import { filter } from 'rxjs/operators';
           </a>
           <a routerLink="/trajectory" class="nav-item nav-traj" routerLinkActive="active">
             <span class="nav-icon">🗺️</span><span class="nav-text">Trayectorias de Riesgo</span>
+          </a>
+          <a routerLink="/health" class="nav-item nav-health" routerLinkActive="active">
+            <span class="nav-icon">❤️‍🔥</span><span class="nav-text">Salud Familiar</span>
+          </a>
+          <a routerLink="/journey" class="nav-item nav-journey" routerLinkActive="active">
+            <span class="nav-icon">🧭</span><span class="nav-text">Viaje Familiar</span>
           </a>
         </div>
 
@@ -429,6 +441,15 @@ import { filter } from 'rxjs/operators';
     .nav-traj { color: rgba(251,146,60,0.75) !important; }
     .nav-traj:hover { color: #fb923c !important; background: rgba(251,146,60,0.08) !important; }
     .nav-traj.active { background: rgba(251,146,60,0.12) !important; color: #fdba74 !important; border-color: rgba(251,146,60,0.25) !important; }
+    .nav-health { color: rgba(244,63,94,0.75) !important; }
+    .nav-health:hover { color: #f43f5e !important; background: rgba(244,63,94,0.08) !important; }
+    .nav-health.active { background: rgba(244,63,94,0.12) !important; color: #fda4af !important; border-color: rgba(244,63,94,0.25) !important; }
+    .nav-journey { color: rgba(99,102,241,0.75) !important; }
+    .nav-journey:hover { color: #6366f1 !important; background: rgba(99,102,241,0.08) !important; }
+    .nav-journey.active { background: rgba(99,102,241,0.12) !important; color: #a5b4fc !important; border-color: rgba(99,102,241,0.25) !important; }
+    .nav-sprint { color: rgba(245,158,11,0.75) !important; }
+    .nav-sprint:hover { color: #f59e0b !important; background: rgba(245,158,11,0.08) !important; }
+    .nav-sprint.active { background: rgba(245,158,11,0.12) !important; color: #fcd34d !important; border-color: rgba(245,158,11,0.25) !important; }
 
     /* ── LEGADO — Dorado: Gratitud, Constitución, Historia ──────── */
     .nav-section--legacy .section-label { color: var(--if-legacy); }

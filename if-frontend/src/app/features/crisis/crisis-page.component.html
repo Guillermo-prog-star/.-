@@ -1,0 +1,289 @@
+<div class="cp-page">
+
+  <!-- ══ BANNER: FAMILIA EN CRISIS ACTIVA ════════════════════════════════ -->
+  <ng-container *ngIf="isUnderCrisis()">
+    <div class="cp-crisis-banner">
+      <div class="cp-crisis-banner-pulse"></div>
+      <div class="cp-crisis-banner-content">
+        <span class="cp-crisis-banner-icon">🚨</span>
+        <div>
+          <div class="cp-crisis-banner-title">Protocolo Sentinel Activo</div>
+          <div class="cp-crisis-banner-sub">La familia se encuentra en estado de contención. Sigue los pasos a continuación.</div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ══ HEADER ══════════════════════════════════════════════════════════ -->
+  <div class="cp-header">
+    <div class="cp-sentinel-badge">
+      <span class="cp-pulse-dot"></span>
+      🛡️ Guardián Sentinel Activo
+    </div>
+    <h1 class="cp-title">Protocolo Sentinel: Día Crítico</h1>
+    <p class="cp-subtitle">
+      Un espacio de contención clínica inmediata diseñado para momentos de alta tensión familiar.
+    </p>
+  </div>
+
+  <!-- Narrative Guidance Engine -->
+  <app-narrative-companion module="crisis"></app-narrative-companion>
+
+  <!-- ══ ACCIONES RÁPIDAS ═════════════════════════════════════════════════ -->
+  <div class="cp-quick-actions">
+
+    <!-- Estado del Guardián -->
+    <div class="cp-qa-card" [class.cp-qa-card--active]="hasGuardian()">
+      <div class="cp-qa-icon">🧭</div>
+      <div class="cp-qa-body">
+        <div class="cp-qa-label">Guardián Familiar</div>
+        <div class="cp-qa-value" *ngIf="hasGuardian(); else noGuardian">
+          {{ guardian()?.guardianFullName }}
+        </div>
+        <ng-template #noGuardian>
+          <div class="cp-qa-value cp-qa-muted">Sin guardián asignado</div>
+        </ng-template>
+      </div>
+      <a *ngIf="hasGuardian()"
+         [routerLink]="['/guardian', guardian()?.familyId, 'election']"
+         class="cp-qa-action">Ver</a>
+      <a *ngIf="!hasGuardian()"
+         routerLink="/members" class="cp-qa-action cp-qa-action--warn">Asignar</a>
+    </div>
+
+    <!-- Protocolos de error abiertos -->
+    <div class="cp-qa-card" [class.cp-qa-card--warn]="openProtocolCount() > 0">
+      <div class="cp-qa-icon">🔄</div>
+      <div class="cp-qa-body">
+        <div class="cp-qa-label">Protocolos de Error</div>
+        <div class="cp-qa-value" *ngIf="openProtocolCount() > 0; else noProtocols">
+          {{ openProtocolCount() }} abierto{{ openProtocolCount() > 1 ? 's' : '' }}
+        </div>
+        <ng-template #noProtocols>
+          <div class="cp-qa-value cp-qa-muted">Sin protocolos activos</div>
+        </ng-template>
+      </div>
+      <a routerLink="/transformation/error-protocol" class="cp-qa-action">Ir</a>
+    </div>
+
+    <!-- Activar Protocolo Sentinel -->
+    <div class="cp-qa-card cp-qa-card--danger" [class.cp-qa-card--done]="protocolActivated()">
+      <div class="cp-qa-icon">⚡</div>
+      <div class="cp-qa-body">
+        <div class="cp-qa-label">Protocolo Sentinel</div>
+        <div class="cp-qa-value" *ngIf="!protocolActivated()">Activación de emergencia</div>
+        <div class="cp-qa-value cp-qa-success" *ngIf="protocolActivated()">¡Activado!</div>
+      </div>
+      <button class="cp-qa-action cp-qa-action--red"
+              [disabled]="activatingProto() || isUnderCrisis() || protocolActivated()"
+              (click)="activateProtocol()">
+        <span *ngIf="activatingProto()" class="cp-spin"></span>
+        <ng-container *ngIf="!activatingProto()">
+          {{ isUnderCrisis() ? 'Activo' : 'Activar' }}
+        </ng-container>
+      </button>
+    </div>
+
+    <!-- Chat IA -->
+    <div class="cp-qa-card">
+      <div class="cp-qa-icon">💬</div>
+      <div class="cp-qa-body">
+        <div class="cp-qa-label">Copiloto Familiar</div>
+        <div class="cp-qa-value cp-qa-muted">Apoyo emocional IA</div>
+      </div>
+      <a routerLink="/chat" class="cp-qa-action">Abrir</a>
+    </div>
+
+  </div>
+
+  <!-- Error de activación -->
+  <div class="cp-error-msg" *ngIf="protocolError()">{{ protocolError() }}</div>
+
+  <!-- ══ PANEL PRINCIPAL: Formulario + Respuesta IA ════════════════════ -->
+  <div class="cp-grid-2">
+
+    <!-- FORMULARIO DE REPORTE -->
+    <div class="cp-form-card">
+      <h3 class="cp-section-title">
+        <span>📝</span> Registrar Incidente
+      </h3>
+
+      <div class="cp-field-group">
+        <label class="cp-label">Categoría de la Crisis</label>
+        <select [(ngModel)]="crisis.category" class="cp-input">
+          <option value="Ruptura de Diálogo">🗣️ Ruptura de Diálogo</option>
+          <option value="Tensión Financiera">💵 Tensión Financiera</option>
+          <option value="Crisis de Autoridad">👑 Crisis de Autoridad</option>
+          <option value="Conflicto de Convivencia">🤝 Conflicto de Convivencia</option>
+          <option value="Emergencia Emocional">🚨 Emergencia Emocional</option>
+        </select>
+      </div>
+
+      <div class="cp-field-group">
+        <label class="cp-label">Emoción Predominante</label>
+        <input type="text" [(ngModel)]="crisis.emotion"
+               placeholder="Escribe o selecciona abajo..." class="cp-input">
+        <div class="cp-emotion-tags">
+          <button *ngFor="let tag of emotionTags"
+                  (click)="selectEmotion(tag)"
+                  [class.active]="crisis.emotion === tag"
+                  class="cp-emotion-pill">{{ tag }}</button>
+        </div>
+      </div>
+
+      <div class="cp-field-group">
+        <label class="cp-label">Descripción Breve</label>
+        <textarea [(ngModel)]="crisis.description" rows="4"
+                  placeholder="Describe lo ocurrido brevemente. Tu descripción será procesada clínicamente..."
+                  class="cp-input"></textarea>
+        <div class="cp-char-count">{{ crisis.description.length }} caracteres</div>
+      </div>
+
+      <button (click)="submitCrisis()"
+              [disabled]="loading || !crisis.description"
+              class="cp-btn-sentinel">
+        <ng-container *ngIf="loading">
+          <span class="cp-spin"></span> Invocando Inteligencia Sentinel...
+        </ng-container>
+        <ng-container *ngIf="!loading">🔥 Activar Contención Inmediata</ng-container>
+      </button>
+    </div>
+
+    <!-- RESPUESTA DEL MENTOR IA -->
+    <div class="cp-response-col">
+      <ng-container *ngIf="lastResponse; else placeholder">
+        <div class="cp-ai-card">
+          <div class="cp-ai-card-header">
+            <div class="cp-ai-badges">
+              <span class="cp-badge-sentinel">🚨 GUÍA DE CONTENCIÓN</span>
+              <span class="cp-category-badge"
+                    [style.background]="getCategoryColor(lastResponse.category)">
+                {{ lastResponse.category }}
+              </span>
+            </div>
+            <span class="cp-ai-time">{{ lastResponse.createdAt | date:'shortTime' }}</span>
+          </div>
+
+          <div class="cp-ai-content" [innerHTML]="formatAiResponse(lastResponse.aiContainmentGuide)"></div>
+
+          <div class="cp-quote">"Recuerden: La crisis es la grieta por donde entra la luz para la transformación familiar."</div>
+
+          <!-- Misión pausada -->
+          <div class="cp-paused-mission" *ngIf="pausedMissionId">
+            <span class="cp-paused-icon">⏸️</span>
+            <div class="cp-paused-body">
+              <div class="cp-paused-title">Misión activa pausada</div>
+              <div class="cp-paused-sub">Tu misión fue pausada mientras atiendes esta crisis.</div>
+            </div>
+            <button (click)="resumeMission()" class="cp-paused-btn">Retomar</button>
+          </div>
+
+          <!-- Checklist de contención -->
+          <div class="cp-checklist">
+            <div class="cp-checklist-title"><span>🎯</span> Práctica del Protocolo Familiar</div>
+
+            <div class="cp-check-item" (click)="step1Ticked = !step1Ticked">
+              <div class="cp-checkbox" [class.checked]="step1Ticked">
+                <div class="cp-checkbox-inner"></div>
+              </div>
+              <span class="cp-check-text" [class.checked]="step1Ticked">
+                <strong>Paso 1:</strong> Detención de pensamiento (pausa de 2 minutos de silencio consciente).
+              </span>
+            </div>
+
+            <div class="cp-check-item" (click)="step2Ticked = !step2Ticked">
+              <div class="cp-checkbox" [class.checked]="step2Ticked">
+                <div class="cp-checkbox-inner"></div>
+              </div>
+              <span class="cp-check-text" [class.checked]="step2Ticked">
+                <strong>Paso 2:</strong> Validación mutua (cada miembro comparte su emoción en 1 frase corta).
+              </span>
+            </div>
+
+            <div class="cp-check-item" (click)="step3Ticked = !step3Ticked">
+              <div class="cp-checkbox" [class.checked]="step3Ticked">
+                <div class="cp-checkbox-inner"></div>
+              </div>
+              <span class="cp-check-text" [class.checked]="step3Ticked">
+                <strong>Paso 3:</strong> Sellar un acuerdo mínimo para buscar la calma del nodo familiar.
+              </span>
+            </div>
+
+            <div class="cp-checklist-done" *ngIf="step1Ticked && step2Ticked && step3Ticked">
+              💚 ¡Excelente trabajo de co-regulación! Han completado el protocolo de contención.
+            </div>
+          </div>
+        </div>
+      </ng-container>
+
+      <ng-template #placeholder>
+        <div class="cp-placeholder">
+          <div class="cp-placeholder-icon">🛡️</div>
+          <h4 class="cp-placeholder-title">Mentor Clínico Disponible</h4>
+          <p class="cp-placeholder-desc">
+            Registra cualquier incidente de tensión o desentendimiento familiar.
+            El Guardián Sentinel analizará el contexto para brindarte pautas de contención adaptadas.
+          </p>
+        </div>
+      </ng-template>
+    </div>
+  </div>
+
+  <!-- ══ PROTOCOLOS DE ERROR ABIERTOS ════════════════════════════════════ -->
+  <ng-container *ngIf="openProtocols().length > 0">
+    <div class="cp-protocols-section">
+      <div class="cp-protocols-header">
+        <h3 class="cp-protocols-title">
+          <span>🔄</span>
+          Protocolos de Error en Proceso
+          <span class="cp-protocols-badge">{{ openProtocolCount() }}</span>
+        </h3>
+        <a routerLink="/transformation/error-protocol" class="cp-protocols-link">
+          Ver todos →
+        </a>
+      </div>
+
+      <div class="cp-protocols-grid">
+        <div *ngFor="let p of openProtocols()" class="cp-protocol-card">
+          <div class="cp-protocol-step-tag">{{ stepLabel(p.currentStep) }}</div>
+          <p class="cp-protocol-mission">{{ p.missionFailed || 'Error familiar registrado' }}</p>
+          <div class="cp-protocol-meta">
+            <span>{{ p.createdAt | date:'d MMM':'':'es-CO' }}</span>
+            <span *ngIf="p.followupDate" class="cp-protocol-followup">
+              · Seguimiento: {{ p.followupDate | date:'d MMM':'':'es-CO' }}
+            </span>
+          </div>
+          <div class="cp-protocol-steps">
+            <span *ngFor="let s of ['DETECT','FEEL','UNDERSTAND','ACTION','AGREEMENT','FOLLOWUP','LEARNING']"
+                  class="cp-protocol-step-dot"
+                  [class.done]="isStepDone(p.currentStep, s)"
+                  [class.current]="p.currentStep === s"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ══ HISTORIAL DE CRISIS ══════════════════════════════════════════════ -->
+  <ng-container *ngIf="history.length > 0">
+    <div class="cp-history-section">
+      <h3 class="cp-history-title"><span>🕒</span> Historial de Contención Reciente</h3>
+      <div class="cp-history-grid">
+        <div *ngFor="let item of history" class="cp-history-card"
+             [style.--card-accent]="getCategoryColor(item.category)"
+             (click)="selectHistoryItem(item)">
+          <div class="cp-history-card-top">
+            <span class="cp-cat-badge" [style.background]="getCategoryColor(item.category)">
+              {{ item.category }}
+            </span>
+            <span class="cp-history-date">{{ item.createdAt | date:'mediumDate' }}</span>
+          </div>
+          <p class="cp-history-emotion">Emoción: {{ item.emotion || 'No registrada' }}</p>
+          <p class="cp-history-desc">{{ item.description }}</p>
+          <div class="cp-history-link">Ver guía completa →</div>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+
+</div>

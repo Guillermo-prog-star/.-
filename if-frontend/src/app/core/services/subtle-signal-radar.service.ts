@@ -155,4 +155,14 @@ export class SubtleSignalRadarService {
         catchError(() => of(null))
       );
   }
+
+  triggerAlert(familyId: number): Observable<string> {
+    return this.http
+      .post<{ data: string }>(`${this.base}/families/${familyId}/radar/alert`, {})
+      .pipe(
+        timeout(15000),
+        map(res => res?.data ?? (res as any)),
+        catchError(() => of('Error al verificar la alerta.'))
+      );
+  }
 }

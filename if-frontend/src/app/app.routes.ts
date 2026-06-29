@@ -187,6 +187,14 @@ export const routes: Routes = [
           .then(m => m.LegadoComponent)
       },
 
+      // ── Radar de Señales Sutiles ─────────────────────────────────────
+      {
+        path: 'radar',
+        title: 'Radar de Señales Sutiles',
+        loadComponent: () => import('./features/radar/radar-page.component')
+          .then(m => m.RadarPageComponent)
+      },
+
       // ── Banco de Trayectorias de Riesgo ──────────────────────────────
       {
         path: 'trajectory',

@@ -54,6 +54,20 @@
   animation: pulse-dot 2s ease-in-out infinite;
 }
 
+/* ── Enlace página completa ──────────────────────────────────────────────────── */
+.radar-full-link {
+  display: block;
+  text-align: right;
+  padding: 0.4rem 1.5rem 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(129,140,248,0.65);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.radar-full-link:hover { color: #a5b4fc; }
+
 /* ── Loading ─────────────────────────────────────────────────────────────────── */
 .radar-loading, .narrative-loading {
   display: flex; flex-direction: column; align-items: center;

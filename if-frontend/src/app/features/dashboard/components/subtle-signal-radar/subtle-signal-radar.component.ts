@@ -3,6 +3,7 @@ import {
   ChangeDetectionStrategy, signal, computed, inject
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterModule } from '@angular/router';
 import {
   SubtleSignalRadarService,
   RadarResponse, ScenarioResponse, NarrativeResponse,
@@ -14,7 +15,7 @@ import { catchError } from 'rxjs/operators';
 @Component({
   selector: 'app-subtle-signal-radar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RouterModule],
   templateUrl: './subtle-signal-radar.component.html',
   styleUrls: ['./subtle-signal-radar.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush

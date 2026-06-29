@@ -4,6 +4,7 @@ import com.integrityfamily.ai.service.FamilyNarrativeService;
 import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.common.security.SecurityValidator;
 import com.integrityfamily.scanner.dto.SubtleSignalRadarResponse;
+import com.integrityfamily.scanner.service.RadarAlertService;
 import com.integrityfamily.scanner.service.SubtleSignalRadarService;
 import com.integrityfamily.simulation.dto.FamilyScenarioResponse;
 import com.integrityfamily.simulation.service.FamilyScenarioProjectionService;
@@ -14,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -26,6 +28,7 @@ public class SubtleSignalRadarController {
     private final SubtleSignalRadarService radarService;
     private final FamilyScenarioProjectionService scenarioService;
     private final FamilyNarrativeService narrativeService;
+    private final RadarAlertService alertService;
     private final SecurityValidator securityValidator;
 
     @GetMapping
@@ -65,5 +68,22 @@ public class SubtleSignalRadarController {
     ) {
         securityValidator.validateFamilyOwnership(familyId, authentication);
         return ResponseEntity.ok(ApiResponse.ok(narrativeService.generate(familyId)));
+    }
+
+    @PostMapping("/alert")
+    @Operation(summary = "Envía alerta WhatsApp si el radar detecta señales HIGH",
+               description = "Analiza el radar y envía una notificación WhatsApp proactiva " +
+                             "a la familia si hay al menos una señal de alta intensidad. " +
+                             "Si no hay señales HIGH, no se envía ningún mensaje.")
+    public ResponseEntity<ApiResponse<String>> alert(
+        @PathVariable Long familyId,
+        Authentication authentication
+    ) {
+        securityValidator.validateFamilyOwnership(familyId, authentication);
+        boolean sent = alertService.checkAndAlert(familyId);
+        String msg = sent
+            ? "Alerta enviada por WhatsApp — señales HIGH detectadas."
+            : "Sin señales de alta intensidad en este momento. No se envió alerta.";
+        return ResponseEntity.ok(ApiResponse.ok(msg));
     }
 }

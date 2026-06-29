@@ -49,7 +49,8 @@ public record SubtleSignalRadarResponse(
         Double previousScore,
         Double delta,
         String direction,       // IMPROVING | STABLE | DECLINING | CRITICAL_DECLINE
-        String signal           // mensaje corto sobre qué está pasando
+        String signal,          // mensaje corto sobre qué está pasando
+        java.util.List<Double> scoreHistory  // historial completo de puntuaciones (orden cronológico)
     ) {}
 
     public record IcfTrend(

@@ -158,4 +158,20 @@ export class SubtleSignalRadarComponent implements OnInit, OnChanges {
   narrativeLines(text: string): string[] {
     return text.split('\n').filter(l => l.trim().length > 0);
   }
+
+  /**
+   * Genera el atributo `d` de un <path> SVG para una sparkline de 80×28 px.
+   * Normaliza los valores al rango 0-100 dentro del viewport.
+   */
+  sparklinePath(history: number[], color: string): { d: string; color: string; cx: number; cy: number } {
+    if (!history || history.length < 2) return { d: '', color, cx: 0, cy: 0 };
+    const W = 80, H = 28, pad = 2;
+    const min = Math.min(...history);
+    const max = Math.max(...history);
+    const range = max - min || 1;
+    const xs = history.map((_, i) => pad + (i / (history.length - 1)) * (W - pad * 2));
+    const ys = history.map(v => H - pad - ((v - min) / range) * (H - pad * 2));
+    const pts = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${ys[i].toFixed(1)}`);
+    return { d: pts.join(' '), color, cx: xs[xs.length - 1], cy: ys[ys.length - 1] };
+  }
 }

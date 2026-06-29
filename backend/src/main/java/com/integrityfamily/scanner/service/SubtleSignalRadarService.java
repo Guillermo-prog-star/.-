@@ -157,7 +157,7 @@ public class SubtleSignalRadarService {
         List<Double> scores = series.scores();
         if (scores.isEmpty()) {
             return new DimensionTrend(dimension, null, null, null, "NO_DATA",
-                "Sin datos suficientes para esta dimensión");
+                "Sin datos suficientes para esta dimensión", List.of());
         }
 
         double current = scores.get(scores.size() - 1);
@@ -167,7 +167,7 @@ public class SubtleSignalRadarService {
         String direction = classifyDirection(delta);
         String signal = buildDimensionSignal(dimension, current, delta, direction, scores);
 
-        return new DimensionTrend(dimension, current, previous, delta, direction, signal);
+        return new DimensionTrend(dimension, current, previous, delta, direction, signal, scores);
     }
 
     private String classifyDirection(Double delta) {

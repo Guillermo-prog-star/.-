@@ -13,6 +13,7 @@ export interface DimensionTrend {
   delta: number | null;
   direction: 'IMPROVING' | 'STRONG_IMPROVING' | 'STABLE' | 'DECLINING' | 'CRITICAL_DECLINE' | 'NO_DATA';
   signal: string;
+  scoreHistory: number[];
 }
 
 export interface IcfTrend {

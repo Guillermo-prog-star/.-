@@ -190,6 +190,15 @@
   font-size: .6rem;
 }
 .dim-nodata { font-size: .65rem; color: rgba(255,255,255,.25); }
+
+.dim-sparkline {
+  display: block;
+  width: 100%;
+  height: 28px;
+  margin-top: .5rem;
+  overflow: visible;
+}
+
 .dim-signal-text {
   font-size: .65rem;
   color: rgba(255,255,255,.3);

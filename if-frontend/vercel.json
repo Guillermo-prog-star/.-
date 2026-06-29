@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist/integrity-family-frontend/browser",
-  "installCommand": "npm ci",
+  "installCommand": "npm ci --legacy-peer-deps",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]

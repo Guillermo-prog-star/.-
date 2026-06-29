@@ -2,10 +2,14 @@ package com.integrityfamily.support.service;
 
 import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.Family;
+import com.integrityfamily.domain.Role;
 import com.integrityfamily.domain.repository.FamilyRepository;
+import com.integrityfamily.domain.repository.RoleRepository;
+import com.integrityfamily.domain.repository.UserRepository;
 import com.integrityfamily.support.domain.*;
 import com.integrityfamily.support.dto.SupportNetworkDtos.*;
 import com.integrityfamily.support.repository.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -27,6 +31,9 @@ class SupportNetworkServiceTest {
     @Mock SupportNetworkMemberRepository memberRepository;
     @Mock FamilySupportAssignmentRepository assignmentRepository;
     @Mock SupportProfessionalNoteRepository noteRepository;
+    @Mock UserRepository userRepository;
+    @Mock RoleRepository roleRepository;
+    @Mock PasswordEncoder passwordEncoder;
 
     @InjectMocks SupportNetworkService service;
 
@@ -91,8 +98,12 @@ class SupportNetworkServiceTest {
     @Nested @DisplayName("registerProfessional()")
     class RegisterProfessional {
 
-        @Test @DisplayName("registra un nuevo profesional correctamente")
-        void registra_profesional_nuevo() {
+        private Role therapistRole() {
+            return Role.builder().id(5L).name("ROLE_THERAPIST").build();
+        }
+
+        @Test @DisplayName("registra profesional y crea cuenta de usuario con contraseña temporal")
+        void registra_profesional_y_crea_cuenta() {
             RegisterProfessionalRequest req = new RegisterProfessionalRequest();
             req.setFullName("Dra. Ana Torres");
             req.setEmail("ana@clinic.com");
@@ -104,15 +115,43 @@ class SupportNetworkServiceTest {
                 m.setId(MEMBER_ID);
                 return m;
             });
+            when(roleRepository.findByName("ROLE_THERAPIST")).thenReturn(java.util.Optional.of(therapistRole()));
+            when(userRepository.existsByEmail("ana@clinic.com")).thenReturn(false);
+            when(passwordEncoder.encode(any())).thenReturn("hashed");
+            when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
             ProfessionalResponse resp = service.registerProfessional(req);
 
             assertThat(resp.getFullName()).isEqualTo("Dra. Ana Torres");
             assertThat(resp.getSpecialty()).isEqualTo(SupportSpecialty.THERAPIST);
-            verify(memberRepository).save(any());
+            assertThat(resp.getTemporaryPassword()).isNotNull().hasSize(12);
+            verify(userRepository).save(any());
         }
 
-        @Test @DisplayName("lanza CONFLICT si el email ya existe")
+        @Test @DisplayName("no crea duplicado si el user ya existe por otro canal")
+        void no_duplica_user_existente() {
+            RegisterProfessionalRequest req = new RegisterProfessionalRequest();
+            req.setFullName("Dr. Existente");
+            req.setEmail("existe@clinic.com");
+            req.setSpecialty(SupportSpecialty.ORIENTADOR);
+
+            when(memberRepository.existsByEmail("existe@clinic.com")).thenReturn(false);
+            when(memberRepository.save(any())).thenAnswer(inv -> {
+                SupportNetworkMember m = inv.getArgument(0);
+                m.setId(MEMBER_ID);
+                return m;
+            });
+            when(roleRepository.findByName("ROLE_ORIENTADOR")).thenReturn(java.util.Optional.of(
+                    Role.builder().id(6L).name("ROLE_ORIENTADOR").build()));
+            when(userRepository.existsByEmail("existe@clinic.com")).thenReturn(true);
+
+            ProfessionalResponse resp = service.registerProfessional(req);
+
+            assertThat(resp.getTemporaryPassword()).isNull();
+            verify(userRepository, never()).save(any());
+        }
+
+        @Test @DisplayName("lanza CONFLICT si el email ya existe en support_network_members")
         void lanza_conflict_si_email_duplicado() {
             RegisterProfessionalRequest req = new RegisterProfessionalRequest();
             req.setEmail("duplicado@clinic.com");

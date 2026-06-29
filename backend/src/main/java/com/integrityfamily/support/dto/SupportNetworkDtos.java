@@ -78,6 +78,8 @@ public class SupportNetworkDtos {
         private String licenseNumber;
         private String institutionName;
         private String bio;
+        /** Solo presente al crear. Null en consultas posteriores. */
+        private String temporaryPassword;
     }
 
     @Data @Builder

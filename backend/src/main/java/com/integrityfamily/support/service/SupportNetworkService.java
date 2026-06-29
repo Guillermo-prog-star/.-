@@ -2,18 +2,25 @@ package com.integrityfamily.support.service;
 
 import com.integrityfamily.common.exception.BusinessException;
 import com.integrityfamily.domain.Family;
+import com.integrityfamily.domain.Role;
+import com.integrityfamily.domain.User;
 import com.integrityfamily.domain.repository.FamilyRepository;
+import com.integrityfamily.domain.repository.RoleRepository;
+import com.integrityfamily.domain.repository.UserRepository;
 import com.integrityfamily.support.domain.*;
 import com.integrityfamily.support.dto.SupportNetworkDtos.*;
 import com.integrityfamily.support.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Red de Apoyo Humano.
@@ -31,6 +38,9 @@ public class SupportNetworkService {
     private final SupportNetworkMemberRepository memberRepository;
     private final FamilySupportAssignmentRepository assignmentRepository;
     private final SupportProfessionalNoteRepository noteRepository;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     // ─────────────────────────────────────────────────────────────────────
     // Registro de profesionales (lo hace el admin o el propio profesional)
@@ -41,6 +51,7 @@ public class SupportNetworkService {
         if (memberRepository.existsByEmail(req.getEmail())) {
             throw new BusinessException("Ya existe un profesional registrado con ese email.", "SUPPORT_CONFLICT", HttpStatus.CONFLICT);
         }
+
         SupportNetworkMember member = SupportNetworkMember.builder()
                 .fullName(req.getFullName())
                 .email(req.getEmail())
@@ -50,7 +61,42 @@ public class SupportNetworkService {
                 .institutionName(req.getInstitutionName())
                 .bio(req.getBio())
                 .build();
-        return toResponse(memberRepository.save(member));
+        memberRepository.save(member);
+
+        // Crear cuenta de usuario para que el profesional pueda autenticarse
+        String roleName = resolveRoleName(req.getSpecialty());
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new BusinessException("Rol profesional no configurado: " + roleName,
+                        "ROLE_NOT_FOUND", HttpStatus.INTERNAL_SERVER_ERROR));
+
+        String tempPassword = UUID.randomUUID().toString().substring(0, 12);
+
+        if (!userRepository.existsByEmail(req.getEmail())) {
+            User user = User.builder()
+                    .email(req.getEmail())
+                    .fullName(req.getFullName())
+                    .passwordHash(passwordEncoder.encode(tempPassword))
+                    .roles(new ArrayList<>(List.of(role)))
+                    .enabled(true)
+                    .build();
+            userRepository.save(user);
+            log.info("[SUPPORT] Cuenta creada para profesional {} con rol {}", req.getEmail(), roleName);
+
+            ProfessionalResponse resp = toResponse(member);
+            resp.setTemporaryPassword(tempPassword);
+            return resp;
+        }
+
+        return toResponse(member);
+    }
+
+    private String resolveRoleName(SupportSpecialty specialty) {
+        return switch (specialty) {
+            case THERAPIST -> "ROLE_THERAPIST";
+            case ORIENTADOR -> "ROLE_ORIENTADOR";
+            case SOCIAL_WORKER -> "ROLE_SOCIAL_WORKER";
+            default -> "ROLE_THERAPIST";
+        };
     }
 
     @Transactional(readOnly = true)

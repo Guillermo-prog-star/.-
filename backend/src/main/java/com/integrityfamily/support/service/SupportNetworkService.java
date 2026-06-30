@@ -1,12 +1,8 @@
 package com.integrityfamily.support.service;
 
 import com.integrityfamily.common.exception.BusinessException;
-import com.integrityfamily.domain.Family;
-import com.integrityfamily.domain.Role;
-import com.integrityfamily.domain.User;
-import com.integrityfamily.domain.repository.FamilyRepository;
-import com.integrityfamily.domain.repository.RoleRepository;
-import com.integrityfamily.domain.repository.UserRepository;
+import com.integrityfamily.domain.*;
+import com.integrityfamily.domain.repository.*;
 import com.integrityfamily.support.domain.*;
 import com.integrityfamily.support.dto.SupportNetworkDtos.*;
 import com.integrityfamily.support.repository.*;
@@ -41,6 +37,7 @@ public class SupportNetworkService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EvaluationRepository evaluationRepository;
 
     // ─────────────────────────────────────────────────────────────────────
     // Registro de profesionales (lo hace el admin o el propio profesional)
@@ -267,6 +264,104 @@ public class SupportNetworkService {
     public List<AssignmentResponse> getActive(Long familyId) {
         return assignmentRepository.findByFamilyIdAndStatus(familyId, AssignmentStatus.ACTIVE)
                 .stream().map(this::toAssignmentResponse).toList();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Panel del profesional: mis familias + perfil + vista de datos
+    // ─────────────────────────────────────────────────────────────────────
+
+    @Transactional(readOnly = true)
+    public List<AssignmentResponse> getMyAssignments(String email) {
+        SupportNetworkMember member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(
+                        "No existe un perfil profesional para este usuario.", "SUPPORT_NOT_FOUND", HttpStatus.NOT_FOUND));
+        return assignmentRepository.findBySupportMemberIdAndStatus(member.getId(), AssignmentStatus.ACTIVE)
+                .stream().map(this::toAssignmentResponse).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ProfessionalResponse getMyProfile(String email) {
+        SupportNetworkMember member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(
+                        "No existe un perfil profesional para este usuario.", "SUPPORT_NOT_FOUND", HttpStatus.NOT_FOUND));
+        return toResponse(member);
+    }
+
+    @Transactional
+    public ProfessionalResponse updateMyProfile(String email, UpdateProfileRequest req) {
+        SupportNetworkMember member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException(
+                        "No existe un perfil profesional para este usuario.", "SUPPORT_NOT_FOUND", HttpStatus.NOT_FOUND));
+        if (req.getFullName() != null)       member.setFullName(req.getFullName());
+        if (req.getPhone() != null)          member.setPhone(req.getPhone());
+        if (req.getBio() != null)            member.setBio(req.getBio());
+        if (req.getInstitutionName() != null) member.setInstitutionName(req.getInstitutionName());
+        if (req.getLicenseNumber() != null)  member.setLicenseNumber(req.getLicenseNumber());
+        return toResponse(memberRepository.save(member));
+    }
+
+    @Transactional(readOnly = true)
+    public FamilyDataView getDataView(Long familyId, Long assignmentId, String email) {
+        SupportNetworkMember member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException("Perfil profesional no encontrado.", "SUPPORT_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        FamilySupportAssignment assignment = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new BusinessException("Asignación no encontrada.", "SUPPORT_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        if (!assignment.getFamilyId().equals(familyId) || !assignment.getSupportMember().getId().equals(member.getId())) {
+            throw new BusinessException("No autorizado.", "SUPPORT_FORBIDDEN", HttpStatus.FORBIDDEN);
+        }
+        if (assignment.getStatus() != AssignmentStatus.ACTIVE) {
+            throw new BusinessException("La asignación no está activa.", "SUPPORT_FORBIDDEN", HttpStatus.FORBIDDEN);
+        }
+
+        Family family = getFamily(familyId);
+        FamilyDataView.FamilyDataViewBuilder view = FamilyDataView.builder()
+                .familyId(familyId)
+                .familyName(family.getName())
+                .assignmentId(assignmentId)
+                .specialty(assignment.getSpecialty())
+                .sentinelActive(Boolean.TRUE.equals(family.getSentinelActive()));
+
+        int level = 0;
+
+        if (assignment.isCanViewIcfScore()) {
+            level++;
+            evaluationRepository.findTopByFamilyIdAndStatusOrderByFinalizedAtDesc(familyId, EvaluationStatus.FINALIZED)
+                    .ifPresent(ev -> {
+                        view.icfScore(ev.getIcf() != null ? ev.getIcf().doubleValue() : null);
+                        view.riskLevel(ev.getRiskLevel());
+                        view.icfLabel(labelFromIcf(ev.getIcf()));
+                        view.icfDirection("STABLE");
+                    });
+        }
+        if (assignment.isCanViewRiskLevel()) {
+            level++;
+        }
+        if (assignment.isCanViewPlanSummary()) {
+            level++;
+            view.planSummaryAvailable(true);
+        }
+        if (assignment.isCanViewSprintProgress()) {
+            level++;
+            view.hasActiveSprint(false);
+        }
+        if (assignment.isCanViewCrisisHistory()) {
+            level++;
+            view.crisisHistoryAvailable(true);
+        }
+
+        view.accessLevel(level);
+        return view.build();
+    }
+
+    private String labelFromIcf(Number icf) {
+        if (icf == null) return "Sin datos";
+        double v = icf.doubleValue();
+        if (v >= 80) return "Fortaleza";
+        if (v >= 60) return "Creciendo";
+        if (v >= 40) return "Atención";
+        return "Crítico";
     }
 
     // ─────────────────────────────────────────────────────────────────────

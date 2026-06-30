@@ -86,6 +86,40 @@ public class SupportNetworkController {
         return ResponseEntity.ok(service.revoke(familyId, req, principal.getUsername()));
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // Panel del profesional — mis familias, mi perfil, vista de datos
+    // ─────────────────────────────────────────────────────────────────────
+
+    @GetMapping("/api/support/my-families")
+    public ResponseEntity<List<AssignmentResponse>> getMyFamilies(@AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.getMyAssignments(principal.getUsername()));
+    }
+
+    @GetMapping("/api/support/my-assignments")
+    public ResponseEntity<List<AssignmentResponse>> getMyAssignments(@AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.getMyAssignments(principal.getUsername()));
+    }
+
+    @GetMapping("/api/support/my-profile")
+    public ResponseEntity<ProfessionalResponse> getMyProfile(@AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.getMyProfile(principal.getUsername()));
+    }
+
+    @PutMapping("/api/support/my-profile")
+    public ResponseEntity<ProfessionalResponse> updateMyProfile(
+            @RequestBody UpdateProfileRequest req,
+            @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.updateMyProfile(principal.getUsername(), req));
+    }
+
+    @GetMapping("/api/families/{familyId}/support/data-view")
+    public ResponseEntity<FamilyDataView> getDataView(
+            @PathVariable Long familyId,
+            @RequestParam Long assignmentId,
+            @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.getDataView(familyId, assignmentId, principal.getUsername()));
+    }
+
     /** El profesional deja una nota clínica */
     @PostMapping("/api/families/{familyId}/support/notes")
     @PreAuthorize("hasAnyRole('THERAPIST','ORIENTADOR','ADMIN')")

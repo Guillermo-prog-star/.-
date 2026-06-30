@@ -4,31 +4,34 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { catchError, of } from 'rxjs';
 import { ApiService } from '../../core/services/api.service';
-import { AuthService } from '../../core/services/auth.service';
+
+export interface AccessScope {
+  canViewIcfScore: boolean;
+  canViewRiskLevel: boolean;
+  canViewPlanSummary: boolean;
+  canViewSprintProgress: boolean;
+  canViewCrisisHistory: boolean;
+  canLeaveNotes: boolean;
+}
 
 export interface AssignedFamily {
-  id: number;
-  linkId: number;
+  id: number;       // assignmentId
+  familyId: number;
   familyName: string;
-  networkType: string;
+  specialty: string;
   status: string;
-  accessScope: {
-    canViewIcfScore: boolean;
-    canViewRiskLevel: boolean;
-    canViewPlanSummary: boolean;
-    canViewSprintProgress: boolean;
-    canViewCrisisHistory: boolean;
-    canLeaveNotes: boolean;
-  };
+  accessScope: AccessScope;
   invitedAt: string;
   consentedAt: string | null;
+  professional?: { fullName: string; email: string; specialty: string };
 }
 
 export interface FamilyDataView {
   familyId: number | null;
-  networkType: string;
+  familyName: string;
+  assignmentId: number;
+  specialty: string;
   accessLevel: number;
-  participantName: string;
   icfScore: number | null;
   icfLabel: string | null;
   icfDirection: string | null;
@@ -38,14 +41,20 @@ export interface FamilyDataView {
   hasActiveSprint: boolean | null;
   activeSprintStatus: string | null;
   crisisHistoryAvailable: boolean | null;
-  aggregatedOnly: boolean | null;
 }
 
-export interface NoteForm {
-  assignmentId: number;
-  content: string;
-  visibleToFamily: boolean;
+export interface ProfessionalProfile {
+  id: number;
+  fullName: string;
+  email: string;
+  specialty: string;
+  licenseNumber: string | null;
+  institutionName: string | null;
+  bio: string | null;
 }
+
+type MainTab = 'families' | 'profile';
+type FamilyTab = 'data' | 'notes' | 'audit';
 
 @Component({
   selector: 'app-professional-dashboard',
@@ -55,121 +64,188 @@ export interface NoteForm {
   styleUrls: ['./professional-dashboard.component.css']
 })
 export class ProfessionalDashboardComponent implements OnInit {
-  private api    = inject(ApiService);
-  private auth   = inject(AuthService);
-  private http   = inject(HttpClient);
+  private api = inject(ApiService);
+  private http = inject(HttpClient);
 
-  readonly families      = signal<AssignedFamily[]>([]);
-  readonly selectedFamily = signal<AssignedFamily | null>(null);
+  readonly mainTab        = signal<MainTab>('families');
+  readonly families       = signal<AssignedFamily[]>([]);
+  readonly selected       = signal<AssignedFamily | null>(null);
   readonly dataView       = signal<FamilyDataView | null>(null);
   readonly auditLog       = signal<any[]>([]);
+  readonly profile        = signal<ProfessionalProfile | null>(null);
   readonly loading        = signal(true);
   readonly loadingView    = signal(false);
+  readonly loadingProfile = signal(false);
+  readonly profileSaving  = signal(false);
   readonly noteLoading    = signal(false);
   readonly error          = signal<string | null>(null);
+  readonly profileError   = signal<string | null>(null);
   readonly noteSuccess    = signal(false);
-  readonly activeTab      = signal<'data'|'notes'|'audit'>('data');
+  readonly profileSuccess = signal(false);
+  readonly familyTab      = signal<FamilyTab>('data');
+  readonly noProfile      = signal(false);
 
-  readonly noteForm = signal<NoteForm>({ assignmentId: 0, content: '', visibleToFamily: true });
+  readonly noteContent    = signal('');
+  readonly noteVisible    = signal(true);
+
+  readonly editBio          = signal('');
+  readonly editPhone        = signal('');
+  readonly editInstitution  = signal('');
+  readonly editLicense      = signal('');
+  readonly editFullName     = signal('');
 
   readonly icfColor = computed(() => {
-    const score = this.dataView()?.icfScore;
-    if (!score) return '#94a3b8';
-    if (score >= 80) return '#10b981';
-    if (score >= 60) return '#3b82f6';
-    if (score >= 40) return '#f59e0b';
+    const s = this.dataView()?.icfScore;
+    if (!s) return '#94a3b8';
+    if (s >= 80) return '#10b981';
+    if (s >= 60) return '#3b82f6';
+    if (s >= 40) return '#f59e0b';
     return '#ef4444';
   });
 
-  ngOnInit() {
-    this.loadAssignedFamilies();
-  }
+  readonly specialtyLabel = computed(() => {
+    return this.specialtyMap()[this.profile()?.specialty ?? ''] ?? (this.profile()?.specialty ?? '—');
+  });
 
-  private loadAssignedFamilies() {
+  ngOnInit() { this.loadFamilies(); this.loadProfile(); }
+
+  private get base() { return this.api.base; }
+
+  // ── Cargar familias ───────────────────────────────────────────────────
+
+  loadFamilies() {
     this.loading.set(true);
     this.error.set(null);
-    // El terapeuta consulta sus familias activas a través del endpoint de support
-    this.http.get<any[]>(`${this.api.base}/support/my-families`).pipe(
-      catchError(() => {
-        // Fallback: intentar con el endpoint del ecosistema
-        return this.http.get<any[]>(`${this.api.base}/support/my-assignments`).pipe(
-          catchError(() => of([]))
-        );
-      })
+    this.http.get<any[]>(`${this.base}/support/my-families`).pipe(
+      catchError(() => this.http.get<any[]>(`${this.base}/support/my-assignments`).pipe(
+        catchError(() => of([]))
+      ))
     ).subscribe(data => {
-      this.families.set(data);
+      // normaliza: el backend retorna AssignmentResponse con familyId + professional
+      const mapped: AssignedFamily[] = data.map(a => ({
+        id: a.id,
+        familyId: a.familyId,
+        familyName: a.familyName ?? `Familia #${a.familyId}`,
+        specialty: a.specialty ?? a.professional?.specialty ?? '',
+        status: a.status,
+        accessScope: a.accessScope ?? {},
+        invitedAt: a.invitedAt,
+        consentedAt: a.consentedAt,
+        professional: a.professional
+      }));
+      this.families.set(mapped);
       this.loading.set(false);
     });
   }
 
-  selectFamily(family: AssignedFamily) {
-    this.selectedFamily.set(family);
-    this.noteForm.set({ assignmentId: family.linkId, content: '', visibleToFamily: true });
+  selectFamily(f: AssignedFamily) {
+    this.selected.set(f);
+    this.familyTab.set('data');
     this.noteSuccess.set(false);
-    this.activeTab.set('data');
-    this.loadDataView(family);
+    this.noteContent.set('');
+    this.loadDataView(f);
   }
 
-  private loadDataView(family: AssignedFamily) {
+  private loadDataView(f: AssignedFamily) {
     this.loadingView.set(true);
     this.dataView.set(null);
-    // El terapeuta ve los datos de la familia según su scope autorizado
     this.http.get<FamilyDataView>(
-      `${this.api.base}/families/${family.id}/support/data-view?linkId=${family.linkId}`
-    ).pipe(catchError(() => of(null))).subscribe(view => {
-      this.dataView.set(view);
+      `${this.base}/families/${f.familyId}/support/data-view?assignmentId=${f.id}`
+    ).pipe(catchError(() => of(null))).subscribe(v => {
+      this.dataView.set(v);
       this.loadingView.set(false);
     });
   }
 
-  loadAuditLog(family: AssignedFamily) {
-    this.activeTab.set('audit');
-    this.http.get<any[]>(`${this.api.base}/families/${family.id}/ecosystem/links/${family.linkId}/audit`)
+  setFamilyTab(tab: FamilyTab) {
+    this.familyTab.set(tab);
+    if (tab === 'audit' && this.selected()) this.loadAudit();
+  }
+
+  private loadAudit() {
+    const f = this.selected()!;
+    this.http.get<any[]>(`${this.base}/families/${f.familyId}/ecosystem/links/${f.id}/audit`)
       .pipe(catchError(() => of([])))
       .subscribe(log => this.auditLog.set(log));
   }
 
   submitNote() {
-    const family = this.selectedFamily();
-    if (!family) return;
-    const form = this.noteForm();
-    if (!form.content.trim()) return;
-
+    const f = this.selected();
+    if (!f || !this.noteContent().trim()) return;
     this.noteLoading.set(true);
     this.noteSuccess.set(false);
-    this.http.post<any>(
-      `${this.api.base}/families/${family.id}/support/notes`,
-      { assignmentId: family.linkId, content: form.content, visibleToFamily: form.visibleToFamily }
-    ).pipe(catchError(() => of(null))).subscribe(resp => {
+    this.http.post<any>(`${this.base}/families/${f.familyId}/support/notes`, {
+      assignmentId: f.id,
+      content: this.noteContent(),
+      visibleToFamily: this.noteVisible()
+    }).pipe(catchError(() => of(null))).subscribe(r => {
       this.noteLoading.set(false);
-      if (resp) {
-        this.noteSuccess.set(true);
-        this.noteForm.update(f => ({ ...f, content: '' }));
-      }
+      if (r) { this.noteSuccess.set(true); this.noteContent.set(''); }
     });
   }
 
-  setTab(tab: 'data'|'notes'|'audit') {
-    this.activeTab.set(tab);
-    if (tab === 'audit' && this.selectedFamily()) {
-      this.loadAuditLog(this.selectedFamily()!);
-    }
+  // ── Perfil del profesional ────────────────────────────────────────────
+
+  loadProfile() {
+    this.loadingProfile.set(true);
+    this.http.get<ProfessionalProfile>(`${this.base}/support/my-profile`)
+      .pipe(catchError(() => { this.noProfile.set(true); return of(null); }))
+      .subscribe(p => {
+        this.profile.set(p);
+        if (p) {
+          this.editFullName.set(p.fullName ?? '');
+          this.editBio.set(p.bio ?? '');
+          this.editPhone.set('');
+          this.editInstitution.set(p.institutionName ?? '');
+          this.editLicense.set(p.licenseNumber ?? '');
+        }
+        this.loadingProfile.set(false);
+      });
   }
 
-  icfLabel(score: number | null | undefined): string {
-    if (!score) return 'Sin datos';
-    if (score >= 80) return 'Fortaleza';
-    if (score >= 60) return 'Creciendo';
-    if (score >= 40) return 'Atención';
-    return 'Crítico';
+  saveProfile() {
+    this.profileSaving.set(true);
+    this.profileError.set(null);
+    this.profileSuccess.set(false);
+    this.http.put<ProfessionalProfile>(`${this.base}/support/my-profile`, {
+      fullName: this.editFullName(),
+      phone: this.editPhone() || undefined,
+      bio: this.editBio(),
+      institutionName: this.editInstitution(),
+      licenseNumber: this.editLicense()
+    }).pipe(catchError(e => {
+      this.profileError.set(e?.error?.message ?? 'Error al guardar el perfil.');
+      return of(null);
+    })).subscribe(p => {
+      this.profileSaving.set(false);
+      if (p) { this.profile.set(p); this.profileSuccess.set(true); }
+    });
   }
 
-  directionIcon(dir: string | null | undefined): string {
-    const map: Record<string, string> = {
-      IMPROVING: '↑', STABLE: '→', DECLINING: '↓',
-      CRITICAL_DECLINE: '↓↓', NO_DATA: '—'
+  // ── Helpers ───────────────────────────────────────────────────────────
+
+  setMainTab(t: MainTab) { this.mainTab.set(t); }
+
+  specialtyMap(): Record<string, string> {
+    return {
+      THERAPIST: 'Terapeuta familiar', ORIENTADOR: 'Orientador familiar',
+      SOCIAL_WORKER: 'Trabajador social', DOCTOR: 'Médico',
+      TEACHER: 'Docente', COMMUNITY_LEADER: 'Líder comunitario',
+      COACH: 'Coach familiar', INSTITUTION: 'Institución'
     };
-    return map[dir ?? 'NO_DATA'] ?? '—';
+  }
+
+  specialtyIcon(s: string): string {
+    const m: Record<string, string> = {
+      THERAPIST: '🧠', ORIENTADOR: '🧭', SOCIAL_WORKER: '🤝',
+      DOCTOR: '🩺', TEACHER: '📚', COMMUNITY_LEADER: '🏘️',
+      COACH: '🎯', INSTITUTION: '🏛️'
+    };
+    return m[s] ?? '👤';
+  }
+
+  directionIcon(d: string | null | undefined): string {
+    return ({ IMPROVING: '↑', STABLE: '→', DECLINING: '↓', CRITICAL_DECLINE: '↓↓' } as any)[d ?? ''] ?? '—';
   }
 
   formatDate(iso: string | null | undefined): string {
@@ -177,11 +253,18 @@ export class ProfessionalDashboardComponent implements OnInit {
     return new Date(iso).toLocaleDateString('es-CO', { day: '2-digit', month: 'short', year: 'numeric' });
   }
 
-  updateNoteContent(value: string) {
-    this.noteForm.update(f => ({ ...f, content: value }));
+  scopeDots(scope: AccessScope): { key: string; label: string; on: boolean }[] {
+    return [
+      { key: 'icf',     label: 'ICF',     on: scope?.canViewIcfScore },
+      { key: 'risk',    label: 'Riesgo',  on: scope?.canViewRiskLevel },
+      { key: 'plan',    label: 'Plan',    on: scope?.canViewPlanSummary },
+      { key: 'sprint',  label: 'Sprint',  on: scope?.canViewSprintProgress },
+      { key: 'crisis',  label: 'Crisis',  on: scope?.canViewCrisisHistory },
+      { key: 'notes',   label: 'Notas',   on: scope?.canLeaveNotes },
+    ];
   }
 
-  toggleNoteVisibility() {
-    this.noteForm.update(f => ({ ...f, visibleToFamily: !f.visibleToFamily }));
+  icfGaugeDash(score: number | null): string {
+    return score ? ((score / 100) * 172) + ' 172' : '0 172';
   }
 }

@@ -368,13 +368,16 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
                 <!-- Couple header: both members side by side -->
                 <div class="sp-couple-wrap">
                   <div class="sp-couple-unit">
-                    @if (m.photoUrl) {
-                      <img [src]="m.photoUrl" [alt]="m.fullName" class="sp-avatar sp-avatar-sm sp-avatar-photo"/>
-                    } @else {
-                      <div class="sp-avatar sp-avatar-sm" [style.background]="m.avatarColor || nodeStroke(m.generation)">
-                        {{ m.avatarInitials || initials(m) }}
-                      </div>
-                    }
+                    <div class="sp-avatar-wrap" (click)="triggerPhotoUpload()" title="Cambiar foto">
+                      @if (m.photoUrl) {
+                        <img [src]="m.photoUrl" [alt]="m.fullName" class="sp-avatar sp-avatar-sm sp-avatar-photo"/>
+                      } @else {
+                        <div class="sp-avatar sp-avatar-sm" [style.background]="m.avatarColor || nodeStroke(m.generation)">
+                          {{ m.avatarInitials || initials(m) }}
+                        </div>
+                      }
+                      <div class="sp-avatar-cam">{{ uploadingPhoto() ? '⏳' : '📷' }}</div>
+                    </div>
                     <span class="sp-couple-name">{{ m.firstName || m.fullName }}</span>
                   </div>
                   <span class="sp-couple-heart">❤️</span>
@@ -389,6 +392,8 @@ function genRange(anchor: number, maxPast: number, maxFuture: number): number[] 
                     <span class="sp-couple-name">{{ sp.firstName || sp.fullName }}</span>
                   </div>
                 </div>
+                <input type="file" id="lin-photo-input" accept="image/*" style="display:none"
+                       (change)="onPhotoSelect($event, m)"/>
                 <div class="sp-gen-badge" [style.color]="nodeStroke(m.generation)">
                   {{ getGenMeta(m.generation).label }}
                   @if (m.isAnchor) { <span class="anchor-tag">⚓ Ancla</span> }

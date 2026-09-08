@@ -370,16 +370,19 @@ Estos 3 llevan riesgo de `LazyInitException` en prod (`open-in-view: false`) que
 
 ### Camino recomendado
 
-1. **Ya:** Deployments → ACTIVE → ⋮ → Redeploy. Re-lanza `v1.1.9` con las variables actuales →
-   recoge `JWT_SECRET` (el código de julio usa `${JWT_SECRET:default}`, el env-var gana) → prod
-   deja de usar el secreto público hoy. Cierra el hallazgo 2 en lo que corre.
-2. **Reconectar Railway al repo:** Settings → Source → Disconnect la imagen → Connect Repo
-   (GitHub, rama `main`, Dockerfile `backend/Dockerfile`). A partir de ahí push a `main` = build
-   + deploy real; `deploy-backend.yml` pasa a redundante. Retirar `william195/if-backend` de
-   Docker Hub.
-3. **Antes del primer deploy desde repo:** probar V107→V112 contra un restore del dump de prod.
-4. Arreglar `environment.prod.ts` (→ dominio Railway) y decomisionar el servicio Render + perfil
-   `render` de `application.yml`.
+Procedimiento completo paso a paso en **[`runbook-pipeline-prod.md`](runbook-pipeline-prod.md)**
+(fases A–E, con rollback y checklist). Resumen:
+
+1. **Hecho (2026-09-06):** Redeploy del `v1.1.9` con `JWT_SECRET` → prod dejó de firmar con el
+   secreto público. Cierra el hallazgo 2 en lo que corre.
+2. **Fase A–C:** medir la migración real en prod (`flyway_schema_history`), consolidar la rama de
+   producción, dump de prod, y **ensayar el salto de migraciones en local** contra un restore
+   del dump.
+3. **Fase D:** resolver el conflicto de perfil (`railway.toml` vs `Dockerfile`), Settings →
+   Source → Disconnect la imagen → Connect Repo (GitHub, rama `main`), vigilar el primer boot
+   (Flyway + healthcheck), rollback = redeploy del `v1.1.9`.
+4. **Fase E:** arreglar `environment.prod.ts`, decomisionar Render + perfil `render`, retirar
+   `william195/if-backend` de Docker Hub, decidir el destino de `deploy-backend.yml`.
 
 ---
 

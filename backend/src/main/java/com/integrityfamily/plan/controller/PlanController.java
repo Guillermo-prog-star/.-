@@ -72,6 +72,24 @@ public class PlanController {
         return ApiResponse.ok(null);
     }
 
+    @PutMapping("/{id}/accept")
+    @Operation(summary = "Aceptar plan (ADR-010, Fase 0b)", description = "Registra la declaración de intención de la familia: confirma explícitamente el plan ya generado, con una motivación breve opcional.")
+    public ApiResponse<PlanResponse> acceptPlan(
+            @PathVariable Long id,
+            @RequestBody(required = false) AcceptPlanRequest body,
+            Principal principal,
+            HttpServletRequest httpServletRequest) {
+        String intentionStatement = body != null ? body.intentionStatement() : null;
+        String email = principal != null ? principal.getName() : "ANONYMOUS";
+
+        PlanResponse response = planService.acceptPlan(id, email, intentionStatement);
+
+        String metadata = String.format("{\"planId\":%d}", id);
+        auditService.register(email, AuditEventType.PLAN_ACCEPTED, httpServletRequest, metadata);
+
+        return ApiResponse.ok(response);
+    }
+
     // --- Tareas ---
 
     @GetMapping("/tasks")

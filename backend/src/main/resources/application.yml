@@ -58,7 +58,7 @@ spring:
         smtp:
           auth: true
           starttls:
-            enabled: true
+            enable: true
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
@@ -141,7 +141,8 @@ whatsapp:
     # Tipos de notificación que disparan WhatsApp (alta prioridad)
     priority-types: >
       RISK_CRITICAL_ALERT,TRAJECTORY_RELAPSED,TRAJECTORY_RELAPSE_REMINDER,
-      TRAJECTORY_SUGGESTION_URGENT,SENTINEL_ALERT,CRISIS_ALERT,PLAN_ASSIGNED
+      TRAJECTORY_SUGGESTION_URGENT,TRAJECTORY_SAFETY_PROTOCOL_URGENT,TRAJECTORY_DETECTED_SAFETY_PROTOCOL,
+      SAFETY_PROTOCOL_ACTIVATED,SENTINEL_ALERT,CRISIS_ALERT,PLAN_ASSIGNED
 
 logging:
   file:
@@ -153,8 +154,18 @@ logging:
 integrity:
   security:
     jwt:
-      secret: ${JWT_SECRET:aW50ZWdyaXR5RmFtaWx5U2VjcmV0S2V5Rm9yVGhlVW5pZmllZEludGVncml0eUVuZ2luZTIwMjY=}
+      # Sin valor por defecto a proposito: un secreto HMAC publico en el repo permite
+      # firmar tokens arbitrarios (sub / fid / role=ROLE_ADMIN) y saltarse toda la
+      # autenticacion y la autorizacion por familia. Si falta JWT_SECRET, el arranque
+      # debe fallar fuerte -- mismo criterio que family-home.id-secret.
+      secret: ${JWT_SECRET}
       expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+    family-home:
+      # Sin valor por defecto a proposito: un secreto publico en el repo permitiria
+      # enumerar family_id/user_id offline y calcular su UUID sin acceso a la BD
+      # (ver FamilyIdentifierBridge). Si falta la variable de entorno, el arranque
+      # debe fallar fuerte en vez de degradar en silencio a un secreto inseguro.
+      id-secret: ${FAMILY_HOME_ID_SECRET}
 
 
 ---

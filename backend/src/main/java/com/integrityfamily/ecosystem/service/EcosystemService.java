@@ -8,9 +8,17 @@ import com.integrityfamily.ecosystem.dto.EcosystemDtos.*;
 import com.integrityfamily.ecosystem.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import com.integrityfamily.auth.service.EmailService;
+import com.integrityfamily.domain.User;
+import com.integrityfamily.domain.Role;
+import com.integrityfamily.domain.repository.UserRepository;
+import com.integrityfamily.domain.repository.RoleRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.ArrayList;
+import java.util.UUID;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -31,14 +39,20 @@ public class EcosystemService {
     private final EcosystemParticipantRepository participantRepository;
     private final FamilyEcosystemLinkRepository linkRepository;
     private final EcosystemAuditService auditService;
+    private final EmailService emailService;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
+    private final PasswordEncoder passwordEncoder;
 
     // ── Catálogo de participantes ─────────────────────────────────────────
 
     @Transactional
     public ParticipantResponse registerParticipant(RegisterParticipantRequest req) {
-        if (participantRepository.existsByNameAndNetworkType(req.getName(), req.getNetworkType())) {
+        boolean duplicate = participantRepository.existsByNameAndNetworkTypeAndDescriptionAndContactEmail(
+                req.getName(), req.getNetworkType(), req.getDescription(), req.getContactEmail());
+        if (duplicate) {
             throw new BusinessException(
-                    "Ya existe un participante con ese nombre en la red " + req.getNetworkType(),
+                    "Ya existe un participante registrado con idéntico nombre, tipo, descripción y correo.",
                     "ECOSYSTEM_CONFLICT", HttpStatus.CONFLICT);
         }
         EcosystemParticipant p = EcosystemParticipant.builder()
@@ -50,6 +64,39 @@ public class EcosystemService {
                 .website(req.getWebsite())
                 .build();
         return toParticipantResponse(participantRepository.save(p));
+    }
+
+    @Transactional
+    public ParticipantResponse updateParticipant(Long id, RegisterParticipantRequest req) {
+        EcosystemParticipant p = participantRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        "Participante no encontrado.", "ECOSYSTEM_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        boolean duplicate = participantRepository.existsByNameAndNetworkTypeAndDescriptionAndContactEmailAndIdNot(
+                req.getName(), req.getNetworkType(), req.getDescription(), req.getContactEmail(), id);
+        if (duplicate) {
+            throw new BusinessException(
+                    "Ya existe otro participante registrado con idéntico nombre, tipo, descripción y correo.",
+                    "ECOSYSTEM_CONFLICT", HttpStatus.CONFLICT);
+        }
+
+        p.setName(req.getName());
+        p.setNetworkType(req.getNetworkType());
+        p.setDescription(req.getDescription());
+        p.setContactEmail(req.getContactEmail());
+        p.setContactPhone(req.getContactPhone());
+        p.setWebsite(req.getWebsite());
+
+        return toParticipantResponse(participantRepository.save(p));
+    }
+
+    @Transactional
+    public void deleteParticipant(Long id) {
+        EcosystemParticipant p = participantRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(
+                        "Participante no encontrado.", "ECOSYSTEM_NOT_FOUND", HttpStatus.NOT_FOUND));
+        p.setActive(false);
+        participantRepository.save(p);
     }
 
     @Transactional(readOnly = true)
@@ -117,6 +164,41 @@ public class EcosystemService {
         return toLinkResponse(saved);
     }
 
+    @Transactional
+    public LinkResponse updateLink(Long familyId, Long linkId, LinkRequest req, String updatedByEmail) {
+        FamilyEcosystemLink link = linkRepository.findById(linkId)
+                .orElseThrow(() -> new BusinessException(
+                        "Vínculo no encontrado.", "ECOSYSTEM_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        if (!link.getFamilyId().equals(familyId)) {
+            throw new BusinessException(
+                    "No tienes permiso sobre este vínculo.", "ECOSYSTEM_FORBIDDEN", HttpStatus.FORBIDDEN);
+        }
+
+        EcosystemAccessScopeDto scope = req.getAccessScope() != null
+                ? req.getAccessScope() : new EcosystemAccessScopeDto();
+
+        link.setObjective(req.getObjective());
+        link.setResponsibilities(req.getResponsibilities());
+        link.setValidFrom(req.getValidFrom());
+        link.setValidUntil(req.getValidUntil());
+
+        // Nivel territorial nunca recibe acceso nominal
+        if (link.getNetworkType() != NetworkType.TERRITORIAL) {
+            link.setCanViewIcfScore(scope.isCanViewIcfScore());
+            link.setCanViewRiskLevel(scope.isCanViewRiskLevel());
+            link.setCanViewPlanSummary(scope.isCanViewPlanSummary());
+            link.setCanViewSprintProgress(scope.isCanViewSprintProgress());
+            link.setCanViewCrisisHistory(scope.isCanViewCrisisHistory());
+        }
+        link.setCanReceiveAlerts(scope.isCanReceiveAlerts());
+
+        FamilyEcosystemLink saved = linkRepository.save(link);
+        auditService.record(saved, "UPDATE_LINK", updatedByEmail,
+                "Se actualizaron los detalles del vínculo con " + link.getParticipant().getName());
+        return toLinkResponse(saved);
+    }
+
     // ── La familia otorga consentimiento ──────────────────────────────────
 
     @Transactional
@@ -151,6 +233,55 @@ public class EcosystemService {
                 "Consentimiento otorgado a '" + link.getParticipant().getName() + "'");
         log.info("[ECOSYSTEM] Familia {} dio consentimiento al vínculo {} ({})",
                 familyId, link.getId(), link.getNetworkType());
+
+        // Asegurar cuenta de usuario y rol profesional para acceso directo
+        String contactEmail = saved.getParticipant().getContactEmail();
+        final String[] tempPasswordHolder = new String[1];
+        if (contactEmail != null && !contactEmail.isBlank()) {
+            String roleName = "ROLE_THERAPIST";
+            Role proRole = roleRepository.findByName(roleName).orElse(null);
+            if (proRole != null) {
+                userRepository.findByEmailIgnoreCase(contactEmail).ifPresentOrElse(
+                    user -> {
+                        if (user.getRoles() == null) {
+                            user.setRoles(new ArrayList<>());
+                        }
+                        if (user.getRoles().stream().noneMatch(r -> r.getName().equals(roleName))) {
+                            user.getRoles().add(proRole);
+                            userRepository.save(user);
+                            log.info("[ECOSYSTEM] Se agregó rol profesional {} a usuario existente: {}", roleName, contactEmail);
+                        }
+                    },
+                    () -> {
+                        String tempPassword = UUID.randomUUID().toString().substring(0, 12);
+                        tempPasswordHolder[0] = tempPassword;
+                        User newUser = User.builder()
+                                .email(contactEmail.trim().toLowerCase())
+                                .fullName(saved.getParticipant().getName())
+                                .passwordHash(passwordEncoder.encode(tempPassword))
+                                .roles(new ArrayList<>(List.of(proRole)))
+                                .enabled(true)
+                                .build();
+                        userRepository.save(newUser);
+                        log.info("[ECOSYSTEM] Se creó cuenta profesional para: {} con rol {}", contactEmail, roleName);
+                    }
+                );
+            }
+        }
+
+        // Enviar invitación de correo al participante
+        if (saved.getParticipant().getContactEmail() != null && !saved.getParticipant().getContactEmail().isBlank()) {
+            Family family = familyRepository.findById(familyId).orElse(null);
+            String familyName = family != null ? family.getName() : "Una familia";
+            emailService.sendEcosystemInvitation(
+                    saved.getParticipant().getContactEmail(),
+                    saved.getParticipant().getName(),
+                    familyName,
+                    saved.getObjective(),
+                    tempPasswordHolder[0]
+            );
+        }
+
         return toLinkResponse(saved);
     }
 
@@ -190,7 +321,10 @@ public class EcosystemService {
                 .totalLinks(all.size())
                 .activeLinks((int) active)
                 .familiar(filterByType(all, NetworkType.FAMILIAR))
-                .institutional(filterByType(all, NetworkType.INSTITUTIONAL))
+                .institutional(all.stream()
+                        .filter(l -> l.getNetworkType() == NetworkType.INSTITUTIONAL || l.getNetworkType() == NetworkType.PROFESSIONAL)
+                        .map(this::toLinkResponse)
+                        .toList())
                 .community(filterByType(all, NetworkType.COMMUNITY))
                 .territorial(filterByType(all, NetworkType.TERRITORIAL))
                 .build();

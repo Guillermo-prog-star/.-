@@ -58,13 +58,14 @@ POST /api/evaluations
 ### Flujo de autenticación
 ```
 POST /api/auth/login
-  → CustomUserDetailsService.loadByEmail()
-  → JwtService.generateToken()
-  → Response: { accessToken, refreshToken }
+  → AuthService.login()
+  → CustomUserDetailsService / UserRepository
+  → JwtTokenProvider.generate(user)
+  → Response: { token, ... }
 
 Cada request protegido:
-  → JwtAuthenticationFilter.doFilterInternal()
-  → SecurityValidator.validateFamilyOwnership()
+  → JwtAuthenticationFilter.doFilterInternal()  (JwtTokenProvider.parse)
+  → @PreAuthorize("@familySecurity.check(#familyId)")  o  SecurityValidator.validateFamilyOwnership()
 ```
 
 ---

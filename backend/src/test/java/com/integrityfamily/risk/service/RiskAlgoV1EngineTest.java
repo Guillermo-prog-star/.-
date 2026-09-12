@@ -457,14 +457,14 @@ class RiskAlgoV1EngineTest {
     class ConsciousnessLevel {
 
         @Test
-        @DisplayName("ICF=100 → nivel 1 'Plena'")
+        @DisplayName("ICF=100 → nivel 5 'Plena'")
         void icf100_isPlena() {
             Question q = coreQOtherMilestone(1L, "emociones");
             when(questionRepository.findAllById(anyList())).thenReturn(List.of(q));
 
             RiskAlgoV1Engine.AlgoResult r = engine.compute(List.of(ans(1L, 5)), "M6");
 
-            assertThat(r.consciousnessLevel()).isEqualTo(1);
+            assertThat(r.consciousnessLevel()).isEqualTo(5);
             assertThat(r.consciousnessLabel()).isEqualTo("Plena");
         }
 
@@ -488,7 +488,7 @@ class RiskAlgoV1EngineTest {
         }
 
         @Test
-        @DisplayName("ICF=0 (todas dims=0) → nivel 5 'Inconsciente'")
+        @DisplayName("ICF=0 (todas dims=0) → nivel 1 'Inconsciente'")
         void icf0_isInconsciente() {
             Question qEmo = coreQOtherMilestone(1L, "emociones");
             Question qCom = coreQOtherMilestone(2L, "comunicacion");
@@ -500,7 +500,7 @@ class RiskAlgoV1EngineTest {
                     List.of(ans(1L, 1), ans(2L, 1), ans(3L, 1), ans(4L, 1)), "M6");
 
             assertThat(r.healthyIndex()).isEqualTo(0.0);
-            assertThat(r.consciousnessLevel()).isEqualTo(5);
+            assertThat(r.consciousnessLevel()).isEqualTo(1);
             assertThat(r.consciousnessLabel()).isEqualTo("Inconsciente");
         }
     }
@@ -605,6 +605,97 @@ class RiskAlgoV1EngineTest {
             assertThat(u.reducesRisk()).isTrue();
             assertThat(u.isHigh()).isTrue();
             assertThat(u.level()).isEqualTo("HIGH");
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Micro-simulaciones V1.2 (dimension='Comportamiento' + pillar real)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("micro-simulaciones V1.2 (resolución dimension/pillar)")
+    class ScenarioV1_2DimensionResolution {
+
+        private static Question scenarioQ(long id, String pillar, String phase) {
+            return Question.builder()
+                    .id(id)
+                    .questionKey("Q-SCN-" + id)
+                    .dimension("Comportamiento")
+                    .pillar(pillar)
+                    .phase(phase)
+                    .type("SCENARIO_V1_2")
+                    .severityWeight(1.0)
+                    .milestoneCode("M24")
+                    .build();
+        }
+
+        @Test
+        @DisplayName("pillar='comunicacion' se contabiliza en la dimensión 'comunicacion', no en el fallback 'emociones'")
+        void pillarComunicacion_mapsToComunicacionDimension() {
+            Question q = scenarioQ(1L, "comunicacion", "NOTICE");
+            when(questionRepository.findAllById(anyList())).thenReturn(List.of(q));
+
+            RiskAlgoV1Engine.AlgoResult r = engine.compute(List.of(ans(1L, 5)), "M6");
+
+            assertThat(r.dimensionScores().get("comunicacion")).isEqualTo(100.0);
+            assertThat(r.dimensionScores().get("emociones")).isEqualTo(100.0); // sin datos -> neutro, no contaminado
+        }
+
+        @Test
+        @DisplayName("pillar='tiempo' (singular) se alía a la dimensión canónica 'tiempos'")
+        void pillarTiempo_aliasesToTiemposDimension() {
+            Question q = scenarioQ(1L, "tiempo", "NOTICE");
+            when(questionRepository.findAllById(anyList())).thenReturn(List.of(q));
+
+            RiskAlgoV1Engine.AlgoResult r = engine.compute(List.of(ans(1L, 1)), "M6");
+
+            assertThat(r.dimensionScores().get("tiempos")).isEqualTo(0.0);
+        }
+
+        @Test
+        @DisplayName("pillar='emocion' (singular) se alía a la dimensión canónica 'emociones'")
+        void pillarEmocion_aliasesToEmocionesDimension() {
+            Question q = scenarioQ(1L, "emocion", "NOTICE");
+            when(questionRepository.findAllById(anyList())).thenReturn(List.of(q));
+
+            RiskAlgoV1Engine.AlgoResult r = engine.compute(List.of(ans(1L, 1)), "M6");
+
+            assertThat(r.dimensionScores().get("emociones")).isEqualTo(0.0);
+        }
+
+        @Test
+        @DisplayName("pillares sin mapeo clínico definido (ej. 'confianza') caen en el fallback 'emociones' — limitación conocida, pendiente de decisión clínica antes de aprobar Batch 2")
+        void pillarSinMapeoClinico_fallsBackToEmociones() {
+            Question q = scenarioQ(1L, "confianza", "NOTICE");
+            when(questionRepository.findAllById(anyList())).thenReturn(List.of(q));
+
+            RiskAlgoV1Engine.AlgoResult r = engine.compute(List.of(ans(1L, 1)), "M6");
+
+            assertThat(r.dimensionScores().get("emociones")).isEqualTo(0.0);
+        }
+
+        @Test
+        @DisplayName("fases THINK/ACT del modelo NOTICE-THINK-ACT-AFTERMATH-EFFECT contribuyen al INC retrocompatible, igual que TIMING/ACTION")
+        void thinkAndActPhases_countTowardIncMetric() {
+            Question qThink = scenarioQ(1L, "comunicacion", "THINK");
+            Question qAct   = scenarioQ(2L, "comunicacion", "ACT");
+            when(questionRepository.findAllById(anyList())).thenReturn(List.of(qThink, qAct));
+
+            RiskAlgoV1Engine.AlgoResult r = engine.compute(List.of(ans(1L, 4), ans(2L, 2)), "M6");
+
+            // avgScore = (4+2)/2 = 3.0 -> inc = ((3-1)/4)*100 = 50.0
+            assertThat(r.inc()).isEqualTo(50.0);
+        }
+
+        @Test
+        @DisplayName("type='SCENARIO_V1_2' activa el mismo tratamiento neuro-fenomenológico que 'NEURO_AWARENESS'")
+        void scenarioV1_2Type_isRecognizedAsNeuroAwareness() {
+            Question q = scenarioQ(1L, "comunicacion", "NOTICE");
+            when(questionRepository.findAllById(anyList())).thenReturn(List.of(q));
+
+            RiskAlgoV1Engine.AlgoResult r = engine.compute(List.of(ans(1L, 3)), "M6");
+
+            assertThat(r.neuroProfile()).isNotNull();
         }
     }
 

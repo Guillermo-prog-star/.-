@@ -1,9 +1,11 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { forkJoin, catchError, of } from 'rxjs';
 import { TrajectoryService } from '../../core/services/trajectory.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { ApiService } from '../../core/services/api.service';
 import {
   TrajectoryBankItem,
   FamilyTrajectoryDto,
@@ -14,10 +16,14 @@ import {
   SeverityLevel,
   TimelineEventRequest,
   IndicatorRequest,
+  SafetyProtocolDto,
+  ActivateSafetyProtocolRequest,
   MACRODOMAIN_LABELS,
   SEVERITY_CONFIG,
   STATUS_CONFIG,
 } from '../../core/models/trajectory.model';
+
+interface FamilyMemberOption { id: number; fullName: string; }
 
 type Tab = 'bank' | 'family' | 'impact';
 
@@ -72,12 +78,23 @@ type Tab = 'bank' | 'family' | 'impact';
               class="p-4 bg-white/5 rounded-lg border border-white/10 hover:border-white/20 transition-all">
               <div class="flex items-start justify-between mb-2">
                 <h3 class="font-medium text-white text-sm">{{ traj.name }}</h3>
-                <span class="text-xs px-2 py-0.5 rounded-full ml-2 flex-shrink-0"
-                  [class]="severityBadge(traj.severityDefault)">
-                  {{ severityLabel(traj.severityDefault) }}
-                </span>
+                <div class="flex items-center gap-1 ml-2 flex-shrink-0">
+                  <span *ngIf="traj.requiresSafetyProtocol"
+                    class="text-xs px-2 py-0.5 rounded-full bg-red-600/40 text-red-200 border border-red-500/50"
+                    title="Requiere protocolo de seguridad obligatorio">
+                    🔴 Protocolo
+                  </span>
+                  <span class="text-xs px-2 py-0.5 rounded-full"
+                    [class]="severityBadge(traj.severityDefault)">
+                    {{ severityLabel(traj.severityDefault) }}
+                  </span>
+                </div>
               </div>
               <p class="text-slate-400 text-xs mb-3">{{ traj.description }}</p>
+
+              <div *ngIf="traj.contextualCriticalityRule" class="mb-3 text-xs text-amber-300/90 bg-amber-900/20 border border-amber-700/30 rounded px-2 py-1.5">
+                ⚠️ Criticidad condicional: {{ traj.contextualCriticalityRule }}
+              </div>
 
               <div *ngIf="parseSignals(traj.earlySignals).length > 0" class="mb-3">
                 <p class="text-xs text-slate-500 mb-1 font-medium">Señales tempranas:</p>
@@ -111,6 +128,11 @@ type Tab = 'bank' | 'family' | 'impact';
               <div class="flex-1 min-w-0 mr-3">
                 <div class="flex items-center gap-2 mb-0.5">
                   <span class="text-xs font-medium text-white">{{ s.name }}</span>
+                  <span *ngIf="s.requiresSafetyProtocol"
+                    class="text-xs px-1.5 py-0.5 rounded-full bg-red-600/40 text-red-200 border border-red-500/50"
+                    title="Requiere protocolo de seguridad obligatorio">
+                    🔴 Protocolo
+                  </span>
                   <span class="text-xs px-1.5 py-0.5 rounded-full"
                     [class]="severityBadge(s.severityDefault)">
                     {{ severityLabel(s.severityDefault) }}
@@ -151,6 +173,11 @@ type Tab = 'bank' | 'family' | 'impact';
                 <span class="text-xs font-medium" [class]="statusColor(ft.status)">
                   {{ statusLabel(ft.status) }}
                 </span>
+                <span *ngIf="ft.trajectory.requiresSafetyProtocol"
+                  class="text-xs px-2 py-0.5 rounded-full bg-red-600/40 text-red-200 border border-red-500/50"
+                  title="Requiere protocolo de seguridad obligatorio">
+                  🔴 Protocolo
+                </span>
                 <span class="text-xs px-2 py-0.5 rounded-full"
                   [class]="severityBadge(ft.trajectory.severityDefault)">
                   {{ severityLabel(ft.trajectory.severityDefault) }}
@@ -159,6 +186,33 @@ type Tab = 'bank' | 'family' | 'impact';
             </div>
 
             <p *ngIf="ft.notes" class="text-slate-400 text-xs mb-3">{{ ft.notes }}</p>
+            <div *ngIf="ft.trajectory.contextualCriticalityRule" class="mb-3 text-xs text-amber-300/90 bg-amber-900/20 border border-amber-700/30 rounded px-2 py-1.5">
+              ⚠️ Criticidad condicional: {{ ft.trajectory.contextualCriticalityRule }}
+            </div>
+
+            <!-- Protocolo de seguridad -->
+            <div *ngIf="ft.trajectory.requiresSafetyProtocol" class="mb-3">
+              <ng-container *ngIf="openProtocol(ft.id) as activation; else noProtocol">
+                <div class="p-3 bg-red-950/30 border border-red-700/40 rounded-lg">
+                  <div class="flex items-center justify-between mb-1">
+                    <span class="text-xs font-semibold text-red-300">🔴 Protocolo activo</span>
+                    <button (click)="openCloseProtocolModal(ft, activation)"
+                      class="text-xs px-2 py-0.5 bg-white/10 hover:bg-white/20 text-slate-300 rounded transition-colors">
+                      Cerrar protocolo
+                    </button>
+                  </div>
+                  <p class="text-xs text-slate-300">Responsable: {{ activation.responsibleName }}</p>
+                  <p class="text-xs text-slate-300">Acción inicial: {{ activation.initialAction }}</p>
+                  <p class="text-xs text-slate-400">Seguimiento: {{ activation.followUpDate }}</p>
+                </div>
+              </ng-container>
+              <ng-template #noProtocol>
+                <button (click)="openSafetyProtocolModal(ft)"
+                  class="w-full py-1.5 text-xs bg-red-600/30 hover:bg-red-600/50 text-red-200 rounded transition-colors border border-red-600/40">
+                  🔴 Activar protocolo de seguridad
+                </button>
+              </ng-template>
+            </div>
 
             <!-- Status update buttons -->
             <div class="flex gap-2 flex-wrap mb-3">
@@ -350,11 +404,72 @@ type Tab = 'bank' | 'family' | 'impact';
         </div>
       </div>
     </div>
+
+    <!-- Modal: Activar protocolo de seguridad -->
+    <div *ngIf="safetyProtocolModal()" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div class="bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl border border-red-700/40">
+        <h3 class="font-bold text-white mb-1">🔴 Activar protocolo de seguridad</h3>
+        <p class="text-slate-400 text-sm mb-4">{{ safetyProtocolModal()!.trajectory.name }}</p>
+
+        <label class="block text-xs text-slate-400 mb-1">Responsable *</label>
+        <select [(ngModel)]="newActivation.responsibleId"
+          class="w-full bg-white/10 text-white text-sm rounded-lg p-2.5 mb-3 outline-none border border-white/10 focus:border-red-500">
+          <option [ngValue]="undefined">Selecciona un responsable...</option>
+          <option *ngFor="let m of familyMembers()" [ngValue]="m.id">{{ m.fullName }}</option>
+        </select>
+
+        <label class="block text-xs text-slate-400 mb-1">Acción inicial *</label>
+        <textarea [(ngModel)]="newActivation.initialAction" rows="3"
+          placeholder="¿Qué se va a hacer de inmediato?"
+          class="w-full bg-white/10 text-white text-sm rounded-lg p-3 mb-3 resize-none outline-none border border-white/10 focus:border-red-500">
+        </textarea>
+
+        <label class="block text-xs text-slate-400 mb-1">Fecha de seguimiento *</label>
+        <input type="date" [(ngModel)]="newActivation.followUpDate"
+          class="w-full bg-white/10 text-white text-sm rounded-lg p-2.5 mb-4 outline-none border border-white/10 focus:border-red-500">
+
+        <div class="flex gap-2 justify-end">
+          <button (click)="safetyProtocolModal.set(null)"
+            class="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors">
+            Cancelar
+          </button>
+          <button (click)="confirmActivateProtocol()"
+            [disabled]="activatingProtocol() || !newActivation.responsibleId || !newActivation.initialAction || !newActivation.followUpDate"
+            class="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50">
+            {{ activatingProtocol() ? 'Activando...' : 'Activar protocolo' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Cerrar protocolo de seguridad -->
+    <div *ngIf="closeProtocolModal()" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+      <div class="bg-slate-800 rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <h3 class="font-bold text-white mb-1">Cerrar protocolo de seguridad</h3>
+        <p class="text-slate-400 text-sm mb-4">{{ closeProtocolModal()!.ft.trajectory.name }}</p>
+        <textarea [(ngModel)]="resolutionNotes" rows="3"
+          placeholder="Notas de resolución (opcional)..."
+          class="w-full bg-white/10 text-white text-sm rounded-lg p-3 mb-4 resize-none outline-none border border-white/10 focus:border-blue-500">
+        </textarea>
+        <div class="flex gap-2 justify-end">
+          <button (click)="closeProtocolModal.set(null)"
+            class="px-4 py-2 text-sm text-slate-400 hover:text-white transition-colors">
+            Cancelar
+          </button>
+          <button (click)="confirmCloseProtocol()" [disabled]="closingProtocol()"
+            class="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50">
+            {{ closingProtocol() ? 'Cerrando...' : 'Cerrar protocolo' }}
+          </button>
+        </div>
+      </div>
+    </div>
   `,
 })
 export class TrajectoryPageComponent implements OnInit {
   readonly trajectoryService = inject(TrajectoryService);
   private readonly familyState = inject(FamilyStateService);
+  private readonly http = inject(HttpClient);
+  private readonly api = inject(ApiService);
 
   readonly tabs = [
     { key: 'bank' as Tab, label: 'Banco de Trayectorias' },
@@ -379,9 +494,18 @@ export class TrajectoryPageComponent implements OnInit {
 
   readonly impactMap = signal<Record<number, TrajectoryImpactDto[]>>({});
 
+  readonly protocolMap = signal<Record<number, SafetyProtocolDto[]>>({});
+  readonly familyMembers = signal<FamilyMemberOption[]>([]);
+  readonly safetyProtocolModal = signal<FamilyTrajectoryDto | null>(null);
+  readonly activatingProtocol = signal(false);
+  readonly closeProtocolModal = signal<{ ft: FamilyTrajectoryDto; activation: SafetyProtocolDto } | null>(null);
+  readonly closingProtocol = signal(false);
+
   assignNotes = '';
   newEvent: Partial<TimelineEventRequest> = { riskLevel: 'MEDIUM' };
   newIndicator: Partial<IndicatorRequest> = { higherIsBetter: true };
+  newActivation: Partial<ActivateSafetyProtocolRequest> = {};
+  resolutionNotes = '';
 
   readonly totalTrajectories = computed(() =>
     Object.values(this.bankData()).reduce((s, arr) => s + arr.length, 0)
@@ -409,6 +533,7 @@ export class TrajectoryPageComponent implements OnInit {
       this.suggestions.set(suggestions as TrajectorySuggestion[]);
       this.loading.set(false);
       trajs.forEach(ft => this.loadImpact(ft.id));
+      trajs.filter(ft => ft.trajectory.requiresSafetyProtocol).forEach(ft => this.loadProtocols(ft.id));
     });
   }
 
@@ -417,6 +542,72 @@ export class TrajectoryPageComponent implements OnInit {
       .pipe(catchError(() => of([])))
       .subscribe(indicators => {
         this.impactMap.update(m => ({ ...m, [familyTrajectoryId]: indicators }));
+      });
+  }
+
+  private loadProtocols(familyTrajectoryId: number): void {
+    this.trajectoryService.getSafetyProtocols(familyTrajectoryId)
+      .pipe(catchError(() => of([])))
+      .subscribe(list => {
+        this.protocolMap.update(m => ({ ...m, [familyTrajectoryId]: list }));
+      });
+  }
+
+  openProtocol(familyTrajectoryId: number): SafetyProtocolDto | undefined {
+    return (this.protocolMap()[familyTrajectoryId] ?? []).find(p => !p.closed);
+  }
+
+  openSafetyProtocolModal(ft: FamilyTrajectoryDto): void {
+    if (this.familyMembers().length === 0) {
+      const familyId = this.familyState.currentFamilyId();
+      if (familyId) {
+        this.http.get<any>(`${this.api.base}/members/family/${familyId}`)
+          .pipe(catchError(() => of(null)))
+          .subscribe(res => this.familyMembers.set(res?.data ?? []));
+      }
+    }
+    const urgentDays = ft.trajectory.severityDefault === 'CRITICAL' ? 1 : 3;
+    const suggested = new Date();
+    suggested.setDate(suggested.getDate() + urgentDays);
+    this.newActivation = { followUpDate: suggested.toISOString().slice(0, 10) };
+    this.safetyProtocolModal.set(ft);
+  }
+
+  confirmActivateProtocol(): void {
+    const ft = this.safetyProtocolModal();
+    if (!ft || !this.newActivation.responsibleId || !this.newActivation.initialAction || !this.newActivation.followUpDate) return;
+    this.activatingProtocol.set(true);
+    this.trajectoryService.activateSafetyProtocol(ft.id, this.newActivation as ActivateSafetyProtocolRequest)
+      .subscribe({
+        next: (activation) => {
+          this.protocolMap.update(m => ({ ...m, [ft.id]: [activation, ...(m[ft.id] ?? [])] }));
+          this.safetyProtocolModal.set(null);
+          this.activatingProtocol.set(false);
+        },
+        error: () => this.activatingProtocol.set(false),
+      });
+  }
+
+  openCloseProtocolModal(ft: FamilyTrajectoryDto, activation: SafetyProtocolDto): void {
+    this.resolutionNotes = '';
+    this.closeProtocolModal.set({ ft, activation });
+  }
+
+  confirmCloseProtocol(): void {
+    const ctx = this.closeProtocolModal();
+    if (!ctx) return;
+    this.closingProtocol.set(true);
+    this.trajectoryService.closeSafetyProtocol(ctx.ft.id, ctx.activation.id, { resolutionNotes: this.resolutionNotes })
+      .subscribe({
+        next: (updated) => {
+          this.protocolMap.update(m => ({
+            ...m,
+            [ctx.ft.id]: (m[ctx.ft.id] ?? []).map(p => p.id === updated.id ? updated : p),
+          }));
+          this.closeProtocolModal.set(null);
+          this.closingProtocol.set(false);
+        },
+        error: () => this.closingProtocol.set(false),
       });
   }
 

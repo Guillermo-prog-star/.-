@@ -16,6 +16,10 @@ export interface Mision {
   pasoAPaso?: string[];
   esIniciativaFamiliar?: boolean;
   iniciada?: boolean;
+  /** Miembro responsable de esta misión (PlanTask.responsible.fullName) — ausente = misión familiar compartida. */
+  responsibleName?: string;
+  /** Categoría de rol usada para generar la misión (familia/padre/madre/hijo/hija) — PlanTask.memberType. */
+  memberType?: string;
 }
 
 

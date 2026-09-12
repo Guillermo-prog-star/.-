@@ -1,0 +1,361 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FamilyHomeView",
+  "type": "object",
+  "unevaluatedProperties": false,
+  "required": [
+    "contractVersion",
+    "viewType",
+    "viewer",
+    "family",
+    "journey",
+    "safetyPresentation",
+    "responseMetadata",
+    "moduleAvailability"
+  ],
+  "properties": {
+    "contractVersion": { "type": "string", "pattern": "^0\\.9\\.0-Candidate$" },
+    "viewType": {
+      "type": "string",
+      "enum": ["ONBOARDING", "ASSESSMENT", "RETURN_STAGE", "ACTIVE_HOME", "PAUSED_HOME"]
+    },
+    "viewer": { "$ref": "#/definitions/ViewerContext" },
+    "family": { "$ref": "#/definitions/FamilyContext" },
+    "journey": { "$ref": "#/definitions/JourneyContext" },
+    "safetyPresentation": { "$ref": "#/definitions/SafetyPresentation" },
+    "responseMetadata": { "$ref": "#/definitions/ResponseMetadata" },
+    "moduleAvailability": { "$ref": "#/definitions/ModuleAvailability" }
+  },
+  "oneOf": [
+    { "$ref": "#/definitions/OnboardingHomeView" },
+    { "$ref": "#/definitions/AssessmentHomeView" },
+    { "$ref": "#/definitions/ReturnStageHomeView" },
+    { "$ref": "#/definitions/ActiveHomeView" },
+    { "$ref": "#/definitions/PausedHomeView" }
+  ],
+  "definitions": {
+    "ViewerContext": {
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
+        "role": { "type": "string", "enum": ["ADULT_MEMBER", "YOUNG_MEMBER", "SUPPORT_PERSON"] },
+        "permissions": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "required": ["memberId", "role", "permissions"]
+    },
+    "FamilyContext": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
+        "displayName": { "type": "string" },
+        "featuredImage": { "$ref": "#/definitions/MediaAsset" }
+      },
+      "required": ["id", "displayName"]
+    },
+    "MediaAsset": {
+      "type": "object",
+      "properties": {
+        "assetId": { "type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
+        "url": { "type": "string", "format": "uri" },
+        "altText": { "type": "string" },
+        "ownerId": { "type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
+        "processedStatus": { "type": "string", "enum": ["PENDING", "PROCESSED", "FAILED"] },
+        "consentStatus": { "type": "string", "enum": ["GRANTED", "REVOKED", "PENDING", "NOT_REQUIRED"] },
+        "visibility": { "type": "string", "enum": ["FAMILY_SHARED", "OWNER_ONLY", "PROFESSIONAL_SHARED"] }
+      },
+      "required": ["assetId", "processedStatus", "consentStatus", "visibility"],
+      "if": {
+        "properties": {
+          "consentStatus": { "enum": ["GRANTED", "NOT_REQUIRED"] }
+        }
+      },
+      "then": {
+        "required": ["url"]
+      },
+      "else": {
+        "not": { "required": ["url"] }
+      }
+    },
+    "JourneyContext": {
+      "type": "object",
+      "properties": {
+        "stage": {
+          "type": "string",
+          "enum": [
+            "NEW_FAMILY", "PROFILE_IN_PROGRESS", "ASSESSMENT_IN_PROGRESS",
+            "ASSESSMENT_COMPLETED", "RETURN_AVAILABLE", "FIRST_SPRINT_PENDING",
+            "ACTIVE_HOME", "PAUSED_HOME", "RESUMING_HOME"
+          ]
+        },
+        "progress": { "$ref": "#/definitions/ProgressBlock" },
+        "nextCommand": { "$ref": "#/definitions/Command" }
+      },
+      "required": ["stage", "progress"]
+    },
+    "ProgressBlock": {
+      "type": "object",
+      "properties": {
+        "completed": { "type": "integer", "minimum": 0 },
+        "total": { "type": "integer", "minimum": 1 },
+        "percentage": { "type": "integer", "minimum": 0, "maximum": 100 }
+      },
+      "required": ["completed", "total", "percentage"]
+    },
+    "Command": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "type": { "type": "string", "enum": ["NAVIGATE", "SUBMIT_ACTION", "OPEN_MODAL", "CONTACT_SUPPORT"] },
+        "target": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "requiresConfirmation": { "type": "boolean" },
+        "permission": { "type": "string" },
+        "analyticsEvent": { "type": "string" },
+        "idempotencyRequired": { "type": "boolean" }
+      },
+      "required": ["id", "label", "type", "target", "enabled", "requiresConfirmation"]
+    },
+    "SafetyPresentation": {
+      "type": "object",
+      "properties": {
+        "mode": { "type": "string", "enum": ["NONE", "SUPPORT_AVAILABLE", "CONTACT_PROFESSIONAL", "URGENT_GUIDANCE"] },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "allowedCommands": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Command" }
+        }
+      },
+      "required": ["mode"]
+    },
+    "ResponseMetadata": {
+      "type": "object",
+      "properties": {
+        "generatedAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" },
+        "projectionVersion": { "type": "string" },
+        "dataStatus": { "type": "string", "enum": ["FRESH", "STALE", "PARTIAL", "DEGRADED"] },
+        "correlationId": { "type": "string" }
+      },
+      "required": ["generatedAt", "expiresAt", "projectionVersion", "dataStatus"]
+    },
+    "ModuleAvailability": {
+      "type": "object",
+      "properties": {
+        "todayBlock": { "$ref": "#/definitions/ModuleStatus" },
+        "dimensionsBlock": { "$ref": "#/definitions/ModuleStatus" },
+        "memoryBlock": { "$ref": "#/definitions/ModuleStatus" }
+      },
+      "required": ["todayBlock", "dimensionsBlock", "memoryBlock"]
+    },
+    "ModuleStatus": {
+      "type": "string",
+      "enum": ["AVAILABLE", "INSUFFICIENT_DATA", "PROCESSING", "EXPIRED", "STALE", "DISABLED", "NOT_APPLICABLE", "ERROR"]
+    },
+    "DimensionBlock": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["IMPROVING", "STABLE", "DECLINING", "INSUFFICIENT_DATA"] },
+        "labelKey": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "detailsAvailable": { "type": "boolean" }
+      },
+      "required": ["status", "labelKey", "updatedAt", "detailsAvailable"]
+    },
+    "NarrativeBlock": {
+      "type": "object",
+      "properties": {
+        "text": { "type": "string" },
+        "provenance": {
+          "type": "object",
+          "properties": {
+            "generatorType": { "type": "string", "enum": ["RULE_ENGINE", "AI_GENERATOR", "HUMAN_INPUT"] },
+            "generatorId": { "type": "string" },
+            "promptVersion": { "type": "string" },
+            "sourceIds": { "type": "array", "items": { "type": "string" } },
+            "reviewStatus": { "type": "string", "enum": ["AUTO_APPROVED", "MANUALLY_REVIEWED"] },
+            "evidencePolicy": { "type": "string", "enum": ["FAMILY_APPROVED"] },
+            "generatedAt": { "type": "string", "format": "date-time" },
+            "validUntil": { "type": "string", "format": "date-time" },
+            "locale": { "type": "string" },
+            "editedByHuman": { "type": "boolean" }
+          },
+          "required": ["generatorType", "generatorId", "reviewStatus", "evidencePolicy", "generatedAt"]
+        }
+      },
+      "required": ["text", "provenance"]
+    },
+    "ActiveSprintBlock": {
+      "type": "object",
+      "properties": {
+        "status": { "type": "string", "enum": ["ACTIVE", "NO_MISSION_TODAY", "PROCESSING", "COMPLETED", "PAUSED"] },
+        "sprintId": { "type": "string", "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$" },
+        "title": { "type": "string" },
+        "progress": { "$ref": "#/definitions/ProgressBlock" },
+        "todayMission": { "$ref": "#/definitions/Command" }
+      },
+      "required": ["status", "sprintId", "title", "progress"]
+    },
+    "OnboardingHomeView": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contractVersion": { "type": "string" },
+        "viewType": { "type": "string", "enum": ["ONBOARDING"] },
+        "viewer": { "$ref": "#/definitions/ViewerContext" },
+        "family": { "$ref": "#/definitions/FamilyContext" },
+        "journey": {
+          "type": "object",
+          "properties": {
+            "stage": { "type": "string", "enum": ["NEW_FAMILY", "PROFILE_IN_PROGRESS"] },
+            "progress": { "$ref": "#/definitions/ProgressBlock" },
+            "nextCommand": { "$ref": "#/definitions/Command" }
+          },
+          "required": ["stage", "progress"]
+        },
+        "safetyPresentation": { "$ref": "#/definitions/SafetyPresentation" },
+        "responseMetadata": { "$ref": "#/definitions/ResponseMetadata" },
+        "moduleAvailability": { "$ref": "#/definitions/ModuleAvailability" }
+      },
+      "required": ["viewType", "journey"]
+    },
+    "AssessmentHomeView": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contractVersion": { "type": "string" },
+        "viewType": { "type": "string", "enum": ["ASSESSMENT"] },
+        "viewer": { "$ref": "#/definitions/ViewerContext" },
+        "family": { "$ref": "#/definitions/FamilyContext" },
+        "journey": {
+          "type": "object",
+          "properties": {
+            "stage": { "type": "string", "enum": ["ASSESSMENT_IN_PROGRESS", "ASSESSMENT_COMPLETED"] },
+            "progress": { "$ref": "#/definitions/ProgressBlock" },
+            "nextCommand": { "$ref": "#/definitions/Command" }
+          },
+          "required": ["stage", "progress"]
+        },
+        "safetyPresentation": { "$ref": "#/definitions/SafetyPresentation" },
+        "responseMetadata": { "$ref": "#/definitions/ResponseMetadata" },
+        "moduleAvailability": { "$ref": "#/definitions/ModuleAvailability" }
+      },
+      "required": ["viewType", "journey"]
+    },
+    "ReturnStageHomeView": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contractVersion": { "type": "string" },
+        "viewType": { "type": "string", "enum": ["RETURN_STAGE"] },
+        "viewer": { "$ref": "#/definitions/ViewerContext" },
+        "family": { "$ref": "#/definitions/FamilyContext" },
+        "journey": {
+          "type": "object",
+          "properties": {
+            "stage": { "type": "string", "enum": ["RETURN_AVAILABLE", "FIRST_SPRINT_PENDING"] },
+            "progress": { "$ref": "#/definitions/ProgressBlock" },
+            "nextCommand": { "$ref": "#/definitions/Command" }
+          },
+          "required": ["stage", "progress"]
+        },
+        "safetyPresentation": { "$ref": "#/definitions/SafetyPresentation" },
+        "responseMetadata": { "$ref": "#/definitions/ResponseMetadata" },
+        "moduleAvailability": { "$ref": "#/definitions/ModuleAvailability" }
+      },
+      "required": ["viewType", "journey"]
+    },
+    "ActiveHomeView": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contractVersion": { "type": "string" },
+        "viewType": { "type": "string", "enum": ["ACTIVE_HOME"] },
+        "viewer": { "$ref": "#/definitions/ViewerContext" },
+        "family": { "$ref": "#/definitions/FamilyContext" },
+        "journey": {
+          "type": "object",
+          "properties": {
+            "stage": { "type": "string", "enum": ["ACTIVE_HOME", "RESUMING_HOME"] },
+            "progress": { "$ref": "#/definitions/ProgressBlock" },
+            "nextCommand": { "$ref": "#/definitions/Command" }
+          },
+          "required": ["stage", "progress"]
+        },
+        "today": {
+          "type": "object",
+          "properties": {
+            "narrativeBlock": { "$ref": "#/definitions/NarrativeBlock" },
+            "primaryCommand": { "$ref": "#/definitions/Command" },
+            "displayPace": { "type": "string", "enum": ["LIGHT", "BALANCED", "ACTIVE", "RETURNING"] }
+          },
+          "required": ["narrativeBlock", "primaryCommand", "displayPace"]
+        },
+        "activeSprint": { "$ref": "#/definitions/ActiveSprintBlock" },
+        "dimensions": {
+          "type": "object",
+          "properties": {
+            "emotions": { "$ref": "#/definitions/DimensionBlock" },
+            "communication": { "$ref": "#/definitions/DimensionBlock" },
+            "habits": { "$ref": "#/definitions/DimensionBlock" },
+            "sharedTime": { "$ref": "#/definitions/DimensionBlock" }
+          },
+          "required": ["emotions", "communication", "habits", "sharedTime"]
+        },
+        "safetyPresentation": { "$ref": "#/definitions/SafetyPresentation" },
+        "responseMetadata": { "$ref": "#/definitions/ResponseMetadata" },
+        "moduleAvailability": { "$ref": "#/definitions/ModuleAvailability" },
+        "resumeBlock": {
+          "type": "object",
+          "properties": {
+            "instructionsKey": { "type": "string" },
+            "confirmCommand": { "$ref": "#/definitions/Command" }
+          },
+          "required": ["instructionsKey", "confirmCommand"]
+        }
+      },
+      "required": ["viewType", "journey", "today", "dimensions"],
+      "if": {
+        "properties": {
+          "journey": {
+            "properties": { "stage": { "const": "ACTIVE_HOME" } }
+          }
+        }
+      },
+      "then": {
+        "required": ["activeSprint"]
+      },
+      "else": {
+        "required": ["resumeBlock"]
+      }
+    },
+    "PausedHomeView": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contractVersion": { "type": "string" },
+        "viewType": { "type": "string", "enum": ["PAUSED_HOME"] },
+        "viewer": { "$ref": "#/definitions/ViewerContext" },
+        "family": { "$ref": "#/definitions/FamilyContext" },
+        "journey": {
+          "type": "object",
+          "properties": {
+            "stage": { "type": "string", "enum": ["PAUSED_HOME"] },
+            "progress": { "$ref": "#/definitions/ProgressBlock" },
+            "nextCommand": { "$ref": "#/definitions/Command" }
+          },
+          "required": ["stage", "progress"]
+        },
+        "displayPace": { "type": "string", "enum": ["PAUSED"] },
+        "safetyPresentation": { "$ref": "#/definitions/SafetyPresentation" },
+        "responseMetadata": { "$ref": "#/definitions/ResponseMetadata" },
+        "moduleAvailability": { "$ref": "#/definitions/ModuleAvailability" }
+      },
+      "required": ["viewType", "journey", "displayPace"]
+    }
+  }
+}

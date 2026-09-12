@@ -19,8 +19,11 @@ public interface CrisisService {
 
     /**
      * SDD-RECOVERY: Recupera el historial de días críticos para una familia.
+     *
+     * @param viewerMemberId autor del principal autenticado, para filtrar por
+     *                       visibilidad (ADR-012); null = sin filtrar (admin/creador).
      */
-    List<CriticalDay> getHistory(Long familyId);
+    List<CriticalDay> getHistory(Long familyId, Long viewerMemberId);
 
     /**
      * Activa el protocolo de emergencia para una familia.

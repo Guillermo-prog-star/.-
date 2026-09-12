@@ -5,6 +5,7 @@ import com.integrityfamily.dna.service.FamilyDnaService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -16,6 +17,7 @@ public class FamilyDnaController {
     private final FamilyDnaService dnaService;
 
     /** Obtiene el ADN actual. 404 si aún no se ha sintetizado. */
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @GetMapping
     public ResponseEntity<FamilyDnaDto> get(@PathVariable Long familyId) {
         return dnaService.findByFamilyId(familyId)
@@ -24,6 +26,7 @@ public class FamilyDnaController {
     }
 
     /** Solicita una nueva síntesis del ADN a partir de todo el historial disponible. */
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @PostMapping("/synthesize")
     public ResponseEntity<FamilyDnaDto> synthesize(@PathVariable Long familyId) {
         log.info("[DNA] Síntesis solicitada para familia {}", familyId);

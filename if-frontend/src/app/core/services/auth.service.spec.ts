@@ -25,7 +25,8 @@ const LOGIN_RESPONSE = {
     email:    USER_FIXTURE.email,
     role:     'ROLE_USER',
     familyId: USER_FIXTURE.familyId,
-    familyName: USER_FIXTURE.familyName
+    familyName: USER_FIXTURE.familyName,
+    homeId: 'home-uuid-42'
   }
 };
 
@@ -194,7 +195,7 @@ describe('AuthService', () => {
 
       http.expectOne('/api/auth/login').flush(LOGIN_RESPONSE);
 
-      expect(familyState.setFamily).toHaveBeenCalledWith({ id: 42, name: 'Familia Lopez' });
+      expect(familyState.setFamily).toHaveBeenCalledWith({ id: 42, name: 'Familia Lopez', homeId: 'home-uuid-42' });
     });
 
     it('NO debe llamar a familyState.setFamily() cuando no hay familyId', () => {

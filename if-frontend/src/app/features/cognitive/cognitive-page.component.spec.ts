@@ -1,11 +1,14 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { of, throwError } from 'rxjs';
 
 import { CognitivePageComponent } from './cognitive-page.component';
 import { CognitiveService } from '../../core/services/cognitive.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 import {
   CognitiveSnapshot, NarrativeResponse, GraphResponse,
   MemoryResponse, ReflectionResponse
@@ -107,12 +110,17 @@ function buildComponent(familyId = FAMILY_ID) {
     'FamilyStateService', { getSelectedFamilyId: familyId }
   );
 
+  const scrollPolicySpy = jasmine.createSpyObj<ScrollPolicyService>('ScrollPolicyService', ['set', 'reset']);
+
   TestBed.configureTestingModule({
     imports: [CognitivePageComponent],
     providers: [
       provideRouter([]),
+      provideHttpClient(),
+      provideHttpClientTesting(),
       { provide: CognitiveService, useValue: cogSpy },
-      { provide: FamilyStateService, useValue: fsSpy }
+      { provide: FamilyStateService, useValue: fsSpy },
+      { provide: ScrollPolicyService, useValue: scrollPolicySpy }
     ],
     schemas: [NO_ERRORS_SCHEMA]
   });

@@ -6,11 +6,15 @@ import com.integrityfamily.domain.Role;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.RoleRepository;
 import com.integrityfamily.domain.repository.UserRepository;
+import com.integrityfamily.domain.repository.EvaluationRepository;
+import com.integrityfamily.domain.repository.FamilySprintRepository;
 import com.integrityfamily.support.domain.*;
 import com.integrityfamily.support.dto.SupportNetworkDtos.*;
 import com.integrityfamily.support.repository.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.junit.jupiter.api.*;
+import com.integrityfamily.ecosystem.repository.FamilyEcosystemLinkRepository;
+import com.integrityfamily.family.service.FamilyHealthSummaryService;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,6 +38,11 @@ class SupportNetworkServiceTest {
     @Mock UserRepository userRepository;
     @Mock RoleRepository roleRepository;
     @Mock PasswordEncoder passwordEncoder;
+    @Mock EvaluationRepository evaluationRepository;
+    @Mock FamilySprintRepository sprintRepository;
+    @Mock SupportAccessLogRepository accessLogRepository;
+    @Mock FamilyEcosystemLinkRepository linkRepository;
+    @Mock FamilyHealthSummaryService healthSummaryService;
 
     @InjectMocks SupportNetworkService service;
 
@@ -463,7 +472,7 @@ class SupportNetworkServiceTest {
             when(assignmentRepository.findById(ASSIGNMENT_ID)).thenReturn(Optional.of(assignment));
             when(noteRepository.save(any())).thenReturn(note(ASSIGNMENT_ID));
 
-            NoteResponse resp = service.addNote(FAMILY_ID, req, MEMBER_ID);
+            NoteResponse resp = service.addNote(FAMILY_ID, req, "ana@clinic.com", MEMBER_ID);
 
             assertThat(resp.getContent()).isEqualTo("Observación clínica");
             assertThat(resp.isVisibleToFamily()).isTrue();
@@ -477,7 +486,7 @@ class SupportNetworkServiceTest {
             FamilySupportAssignment assignment = invitedAssignment(activeProfessional());
             when(assignmentRepository.findById(ASSIGNMENT_ID)).thenReturn(Optional.of(assignment));
 
-            assertThatThrownBy(() -> service.addNote(FAMILY_ID, req, MEMBER_ID))
+            assertThatThrownBy(() -> service.addNote(FAMILY_ID, req, "ana@clinic.com", MEMBER_ID))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("Solo se pueden agregar notas en asignaciones activas");
         }
@@ -492,7 +501,7 @@ class SupportNetworkServiceTest {
             assignment.setCanLeaveNotes(false);
             when(assignmentRepository.findById(ASSIGNMENT_ID)).thenReturn(Optional.of(assignment));
 
-            assertThatThrownBy(() -> service.addNote(FAMILY_ID, req, MEMBER_ID))
+            assertThatThrownBy(() -> service.addNote(FAMILY_ID, req, "ana@clinic.com", MEMBER_ID))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("no tiene permiso para dejar notas");
         }
@@ -506,9 +515,55 @@ class SupportNetworkServiceTest {
             when(assignmentRepository.findById(ASSIGNMENT_ID)).thenReturn(Optional.of(assignment));
 
             // supportMemberId 999 ≠ MEMBER_ID 10
-            assertThatThrownBy(() -> service.addNote(FAMILY_ID, req, 999L))
+            assertThatThrownBy(() -> service.addNote(FAMILY_ID, req, "ana@clinic.com", 999L))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("No autorizado para esta asignación");
+        }
+
+        @Test @DisplayName("profesional conectado vía Ecosistema de Apoyo (sin FamilySupportAssignment) también puede dejar nota")
+        void profesional_ecosistema_deja_nota() {
+            AddNoteRequest req = new AddNoteRequest();
+            req.setAssignmentId(ASSIGNMENT_ID);
+            req.setContent("Nota vía ecosistema");
+
+            when(assignmentRepository.findById(ASSIGNMENT_ID)).thenReturn(Optional.empty());
+
+            com.integrityfamily.ecosystem.domain.EcosystemParticipant participant =
+                    com.integrityfamily.ecosystem.domain.EcosystemParticipant.builder()
+                            .id(50L).contactEmail("eco@clinic.com").build();
+            com.integrityfamily.ecosystem.domain.FamilyEcosystemLink link =
+                    com.integrityfamily.ecosystem.domain.FamilyEcosystemLink.builder()
+                            .id(ASSIGNMENT_ID).familyId(FAMILY_ID).participant(participant)
+                            .status(com.integrityfamily.ecosystem.domain.EcosystemLinkStatus.ACTIVE)
+                            .build();
+            when(linkRepository.findById(ASSIGNMENT_ID)).thenReturn(Optional.of(link));
+            when(noteRepository.save(any())).thenReturn(note(ASSIGNMENT_ID));
+
+            NoteResponse resp = service.addNote(FAMILY_ID, req, "eco@clinic.com", MEMBER_ID);
+
+            assertThat(resp).isNotNull();
+        }
+
+        @Test @DisplayName("lanza FORBIDDEN si el email no coincide con el participante del vínculo de Ecosistema")
+        void lanza_forbidden_si_email_no_coincide_con_participante_ecosistema() {
+            AddNoteRequest req = new AddNoteRequest();
+            req.setAssignmentId(ASSIGNMENT_ID);
+
+            when(assignmentRepository.findById(ASSIGNMENT_ID)).thenReturn(Optional.empty());
+
+            com.integrityfamily.ecosystem.domain.EcosystemParticipant participant =
+                    com.integrityfamily.ecosystem.domain.EcosystemParticipant.builder()
+                            .id(50L).contactEmail("eco@clinic.com").build();
+            com.integrityfamily.ecosystem.domain.FamilyEcosystemLink link =
+                    com.integrityfamily.ecosystem.domain.FamilyEcosystemLink.builder()
+                            .id(ASSIGNMENT_ID).familyId(FAMILY_ID).participant(participant)
+                            .status(com.integrityfamily.ecosystem.domain.EcosystemLinkStatus.ACTIVE)
+                            .build();
+            when(linkRepository.findById(ASSIGNMENT_ID)).thenReturn(Optional.of(link));
+
+            assertThatThrownBy(() -> service.addNote(FAMILY_ID, req, "otro@clinic.com", MEMBER_ID))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("No autorizado");
         }
     }
 

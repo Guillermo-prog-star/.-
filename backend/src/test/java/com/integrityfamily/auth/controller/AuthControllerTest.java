@@ -50,7 +50,7 @@ public class AuthControllerTest {
     @DisplayName("Debe autenticar exitosamente y devolver JWT y Refresh Token")
     void shouldLoginSuccessfully() throws Exception {
         LoginRequest request = new LoginRequest("william@integrityfamily.com", "Password123!");
-        UserResponse userResponse = new UserResponse(1L, "william@integrityfamily.com", "William Lopez", "ROLE_ADMIN", 100L, "Familia Lopez Rivera");
+        UserResponse userResponse = new UserResponse(1L, "william@integrityfamily.com", "William Lopez", "ROLE_ADMIN", 100L, "Familia Lopez Rivera", null);
         LoginResponse response = new LoginResponse("mock-jwt-token", "mock-refresh-token", 3600000L, userResponse);
 
         Mockito.when(authService.login(any(LoginRequest.class), any(), any())).thenReturn(response);
@@ -91,7 +91,7 @@ public class AuthControllerTest {
     @DisplayName("Debe refrescar exitosamente el token de acceso usando un Refresh Token válido")
     void shouldRefreshTokenSuccessfully() throws Exception {
         RefreshTokenRequest request = new RefreshTokenRequest("valid-refresh-token");
-        UserResponse userResponse = new UserResponse(1L, "william@integrityfamily.com", "William Lopez", "ROLE_ADMIN", 100L, "Familia Lopez Rivera");
+        UserResponse userResponse = new UserResponse(1L, "william@integrityfamily.com", "William Lopez", "ROLE_ADMIN", 100L, "Familia Lopez Rivera", null);
         LoginResponse response = new LoginResponse("new-jwt-token", "valid-refresh-token", 3600000L, userResponse);
 
         Mockito.when(authService.refreshToken(any(RefreshTokenRequest.class), any(), any())).thenReturn(response);

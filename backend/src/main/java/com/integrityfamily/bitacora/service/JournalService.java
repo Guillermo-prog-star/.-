@@ -31,6 +31,7 @@ public class JournalService {
     private final ReflectionRepository reflectionRepository;
     private final LearningEntryRepository learningEntryRepository;
     private final JournalEntryRepository journalEntryRepository;
+    private final MemberRepository memberRepository;
     private final EventPublisher eventPublisher;
 
     @Transactional
@@ -129,10 +130,17 @@ public class JournalService {
     }
 
     @Transactional
-    public JournalEntry createJournal(JournalCreateRequest req) {
+    public JournalEntry createJournal(JournalCreateRequest req, Long authorMemberId) {
         log.info("📖 [JOURNAL] Registrando entrada de bitácora para familia ID: {}", req.familyId());
         Family family = familyRepository.findById(req.familyId())
                 .orElseThrow(() -> new BusinessException("Familia no encontrada: " + req.familyId(), "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        // Autor real resuelto del principal autenticado (ADR-012), nunca del
+        // cuerpo de la petición -- evita que un miembro firme una entrada
+        // como si fuera de otro.
+        FamilyMember author = authorMemberId != null
+                ? memberRepository.findById(authorMemberId).orElse(null)
+                : null;
 
         PlanTask task = null;
         if (req.relatedTaskId() != null) {
@@ -148,6 +156,7 @@ public class JournalService {
 
         JournalEntry journal = JournalEntry.builder()
                 .family(family)
+                .member(author)
                 .origin(origin)
                 .riskDimension(req.riskDimension())
                 .emotion(req.emotion())
@@ -211,7 +220,7 @@ public class JournalService {
     }
 
     @Transactional(readOnly = true)
-    public List<TimelineEntryDto> getTimeline(Long familyId) {
+    public List<TimelineEntryDto> getTimeline(Long familyId, Long viewerMemberId) {
         List<TimelineEntryDto> timeline = new ArrayList<>();
 
         // Evidencias
@@ -255,8 +264,9 @@ public class JournalService {
                     .build());
         }
 
-        // Bitácoras
-        List<JournalEntry> journals = journalEntryRepository.findByFamilyIdOrderByCreatedAtDesc(familyId);
+        // Bitácoras — filtradas por visibilidad (ADR-012): un miembro no ve
+        // las entradas PRIVATE de otro.
+        List<JournalEntry> journals = journalEntryRepository.findVisibleToMember(familyId, viewerMemberId);
         for (JournalEntry j : journals) {
             timeline.add(TimelineEntryDto.builder()
                     .entryType("JOURNAL")

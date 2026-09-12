@@ -13,5 +13,7 @@ public record MemberRequest(
         Integer responsibilityLevel,
         String email,
         String phone,
-        Long familyId) {
+        Long familyId,
+        String documentType,
+        String documentNumber) {
 }

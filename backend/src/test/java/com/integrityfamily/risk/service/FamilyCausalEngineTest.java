@@ -611,27 +611,27 @@ class FamilyCausalEngineTest {
     class ConsciousnessLevel {
 
         @Test
-        @DisplayName("ICF=90 → nivel 1, Plena")
-        void icf90_level1() {
+        @DisplayName("ICF=90 → nivel 5, Plena")
+        void icf90_level5() {
             stubNoData(40L, safeState(90.0, 90.0));
             FamilyCausalEngine.CausalInferenceResult r = engine.evaluate(40L);
-            assertThat(r.consciousnessLevel()).isEqualTo(1);
+            assertThat(r.consciousnessLevel()).isEqualTo(5);
             assertThat(r.consciousnessLabel()).isEqualTo("Plena");
         }
 
         @Test
-        @DisplayName("ICF=85 → nivel 1 (límite exacto)")
-        void icf85_level1() {
+        @DisplayName("ICF=85 → nivel 5 (límite exacto)")
+        void icf85_level5() {
             stubNoData(41L, safeState(85.0, 85.0));
-            assertThat(engine.evaluate(41L).consciousnessLevel()).isEqualTo(1);
+            assertThat(engine.evaluate(41L).consciousnessLevel()).isEqualTo(5);
         }
 
         @Test
-        @DisplayName("ICF=72 → nivel 2, Madurando")
-        void icf72_level2() {
+        @DisplayName("ICF=72 → nivel 4, Madurando")
+        void icf72_level4() {
             stubNoData(42L, safeState(72.0, 72.0));
             FamilyCausalEngine.CausalInferenceResult r = engine.evaluate(42L);
-            assertThat(r.consciousnessLevel()).isEqualTo(2);
+            assertThat(r.consciousnessLevel()).isEqualTo(4);
             assertThat(r.consciousnessLabel()).isEqualTo("Madurando");
         }
 
@@ -645,20 +645,20 @@ class FamilyCausalEngineTest {
         }
 
         @Test
-        @DisplayName("ICF=45 → nivel 4, Reactiva")
-        void icf45_level4() {
+        @DisplayName("ICF=45 → nivel 2, Reactiva")
+        void icf45_level2() {
             stubNoData(44L, safeState(45.0, 45.0));
             FamilyCausalEngine.CausalInferenceResult r = engine.evaluate(44L);
-            assertThat(r.consciousnessLevel()).isEqualTo(4);
+            assertThat(r.consciousnessLevel()).isEqualTo(2);
             assertThat(r.consciousnessLabel()).isEqualTo("Reactiva");
         }
 
         @Test
-        @DisplayName("ICF=20 → nivel 5, Inconsciente")
-        void icf20_level5() {
+        @DisplayName("ICF=20 → nivel 1, Inconsciente")
+        void icf20_level1() {
             stubNoData(45L, safeState(20.0, 20.0));
             FamilyCausalEngine.CausalInferenceResult r = engine.evaluate(45L);
-            assertThat(r.consciousnessLevel()).isEqualTo(5);
+            assertThat(r.consciousnessLevel()).isEqualTo(1);
             assertThat(r.consciousnessLabel()).isEqualTo("Inconsciente");
         }
     }

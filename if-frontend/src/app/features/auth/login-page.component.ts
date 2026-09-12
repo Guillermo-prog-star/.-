@@ -54,6 +54,8 @@ export class LoginPageComponent {
         const returnUrl = params.get('returnUrl') || this.route.snapshot.queryParams['returnUrl'];
         if (returnUrl && !returnUrl.includes('/auth/login')) {
           this.router.navigateByUrl(returnUrl);
+        } else if (user && user.isProfessional) {
+          this.router.navigate(['/professional']);
         } else if (user && user.familyId) {
           this.flow.getRouteForNextStep(user.familyId).subscribe(route => {
             this.router.navigateByUrl(route);

@@ -857,9 +857,10 @@ export class CognitivePageComponent implements OnInit {
   }
 
   runReflection(): void {
-    if (this.reflecting()) return;
+    const fid = this.familyState.getSelectedFamilyId();
+    if (!fid || this.reflecting()) return;
     this.reflecting.set(true);
-    this.cognitiveService.triggerReflection(this.familyId).subscribe({
+    this.cognitiveService.triggerReflection(fid).subscribe({
       next: r => { this.reflection.set(r); this.reflecting.set(false); },
       error: ()  => this.reflecting.set(false)
     });

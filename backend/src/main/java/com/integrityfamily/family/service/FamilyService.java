@@ -9,6 +9,7 @@ import com.integrityfamily.domain.repository.UserRepository;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.MemberRepository;
 import com.integrityfamily.common.exception.BusinessException;
+import com.integrityfamily.familyhome.security.FamilyIdentifierBridge;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,11 +29,17 @@ public class FamilyService {
     private final FamilyRepository familyRepository;
     private final UserRepository userRepository;
     private final MemberRepository memberRepository;
+    private final FamilyIdentifierBridge idBridge;
 
-    public FamilyService(FamilyRepository familyRepository, UserRepository userRepository, MemberRepository memberRepository) {
+    public FamilyService(
+            FamilyRepository familyRepository,
+            UserRepository userRepository,
+            MemberRepository memberRepository,
+            FamilyIdentifierBridge idBridge) {
         this.familyRepository = familyRepository;
         this.userRepository = userRepository;
         this.memberRepository = memberRepository;
+        this.idBridge = idBridge;
     }
 
     @Transactional(readOnly = true)
@@ -163,6 +170,7 @@ public class FamilyService {
                 .guardianFullName(guardianName)
                 .guardianSince(family.getGuardianSince())
                 .participationScore(family.getParticipationScore())
+                .homeId(idBridge.toFamilyUuid(family.getId()))
                 .build();
     }
 

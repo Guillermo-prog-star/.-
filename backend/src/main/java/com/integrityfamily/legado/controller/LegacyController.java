@@ -6,6 +6,7 @@ import com.integrityfamily.legado.dto.LegacyRequest;
 import com.integrityfamily.legado.service.LegacyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -25,6 +26,7 @@ public class LegacyController {
 
     private final LegacyService legacyService;
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @GetMapping
     public ResponseEntity<Map<String, Object>> getLegacy(@PathVariable Long familyId) {
         FamilyLegacy legacy = legacyService.getOrCreate(familyId);
@@ -32,6 +34,7 @@ public class LegacyController {
         return ResponseEntity.ok(Map.of("legacy", legacy, "values", values));
     }
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @PutMapping
     public ResponseEntity<FamilyLegacy> saveLegacy(
             @PathVariable Long familyId,
@@ -39,6 +42,7 @@ public class LegacyController {
         return ResponseEntity.ok(legacyService.save(familyId, request));
     }
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @GetMapping("/values")
     public ResponseEntity<List<FamilyValue>> getValues(@PathVariable Long familyId) {
         return ResponseEntity.ok(legacyService.getValues(familyId));

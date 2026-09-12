@@ -34,6 +34,7 @@ public class TrajectorySuggestionService {
         String name,
         String macrodomain,
         String severityDefault,
+        Boolean requiresSafetyProtocol,
         String reason,
         int confidenceScore   // 1-100
     ) {}
@@ -156,6 +157,6 @@ public class TrajectorySuggestionService {
         boolean exists = list.stream().anyMatch(s -> s.code().equals(code));
         if (exists) return;
         list.add(new TrajectorySuggestion(t.getCode(), t.getName(),
-            t.getMacrodomain().name(), t.getSeverityDefault(), reason, score));
+            t.getMacrodomain().name(), t.getSeverityDefault(), t.getRequiresSafetyProtocol(), reason, score));
     }
 }

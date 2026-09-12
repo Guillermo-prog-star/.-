@@ -14,6 +14,7 @@ export interface AuthUser {
   role: 'ADMIN' | 'USER' | 'SENTINEL';
   familyId?: number;
   familyName?: string;
+  isProfessional?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -57,6 +58,7 @@ export class AuthService {
         if (res?.token) {
           const roleStr = res.user?.role || res.role || '';
           const roleMapping = (roleStr.includes('ADMIN') || roleStr.includes('SENTINEL')) ? 'ADMIN' : 'USER';
+          const isPro = roleStr.includes('THERAPIST') || roleStr.includes('ORIENTADOR') || roleStr.includes('SOCIAL_WORKER');
 
           const userData: AuthUser = {
             token: res.token,
@@ -64,12 +66,13 @@ export class AuthService {
             email: res.user?.email || res.email,
             role: roleMapping,
             familyId: res.user?.familyId || res.familyId,
-            familyName: res.user?.familyName || res.familyName
+            familyName: res.user?.familyName || res.familyName,
+            isProfessional: isPro
           };
           this.saveUserToStorage(userData);
           this._user.set(userData);
           if (userData.familyId) {
-            this.familyState.setFamily({ id: userData.familyId, name: userData.familyName || 'Familia' });
+            this.familyState.setFamily({ id: userData.familyId, name: userData.familyName || 'Familia', homeId: res.user?.homeId });
           }
         }
       })
@@ -86,18 +89,20 @@ export class AuthService {
         if (res?.token) {
           const roleStr = res.user?.role || res.role || '';
           const roleMapping = (roleStr.includes('ADMIN') || roleStr.includes('SENTINEL')) ? 'ADMIN' : 'USER';
+          const isPro = roleStr.includes('THERAPIST') || roleStr.includes('ORIENTADOR') || roleStr.includes('SOCIAL_WORKER');
           const userData: AuthUser = {
             token: res.token,
             fullName: res.user?.fullName || res.fullName || 'Usuario',
             email: res.user?.email || res.email,
             role: roleMapping,
             familyId: res.user?.familyId || res.familyId,
-            familyName: res.user?.familyName || res.familyName
+            familyName: res.user?.familyName || res.familyName,
+            isProfessional: isPro
           };
           this.saveUserToStorage(userData);
           this._user.set(userData);
           if (userData.familyId) {
-            this.familyState.setFamily({ id: userData.familyId, name: userData.familyName || 'Familia' });
+            this.familyState.setFamily({ id: userData.familyId, name: userData.familyName || 'Familia', homeId: res.user?.homeId });
           }
         }
       })
@@ -122,7 +127,7 @@ export class AuthService {
           this.saveUserToStorage(userData);
           this._user.set(userData);
           if (userData.familyId) {
-            this.familyState.setFamily({ id: userData.familyId, name: userData.familyName || 'Familia' });
+            this.familyState.setFamily({ id: userData.familyId, name: userData.familyName || 'Familia', homeId: res.user?.homeId });
           }
         }
       })

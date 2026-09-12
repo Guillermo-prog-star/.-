@@ -1,5 +1,5 @@
 <!-- PANTALLA PRINCIPAL DE DIAGNÓSTICO -->
-@if (questions && questions.length > 0 && !isLoadingResults) {
+@if (questions && scenarios.length > 0 && !isLoadingResults) {
 
   <div class="assessment-container">
 
@@ -15,7 +15,7 @@
         </div>
         <div class="pb-counter">
           <span class="pb-num" [style.color]="pillarMeta.color">{{ currentIndex + 1 }}</span>
-          <span class="pb-den"> / {{ questions.length }}</span>
+          <span class="pb-den"> / {{ scenarios.length }}</span>
         </div>
       </div>
     }
@@ -27,19 +27,22 @@
           <span class="icon">🏡</span> {{ familyName }}
         </div>
         <div class="step-counter">
-          REACTIVO <span class="current">{{ currentIndex + 1 }}</span> DE <span class="total">{{ questions.length }}</span>
+          REACTIVO <span class="current">{{ currentIndex + 1 }}</span> DE <span class="total">{{ scenarios.length }}</span>
         </div>
       </div>
 
       <!-- Barra de Progreso Segmentada de Alta Fidelidad -->
       <div class="segmented-track-container">
         <div class="segmented-track">
-          @for (q of questions; track q.id; let idx = $index) {
+        @for (sc of scenarios; track sc.parentKey; let idx = $index) {
             <div class="progress-segment"
-                 [class.completed]="idx < currentIndex"
+                 [class.completed]="isScenarioCompleted(idx)"
                  [class.active]="idx === currentIndex"
-                 [style.background-color]="idx < currentIndex ? getDimensionColor(q.dimension) : (idx === currentIndex ? getDimensionColor(questions[currentIndex].dimension) : '')"
-                 [style.box-shadow]="idx === currentIndex ? '0 0 12px ' + getDimensionColor(questions[currentIndex].dimension) : ''">
+                 [class.clickable]="isScenarioCompleted(idx) && idx !== currentIndex"
+                 (click)="goToScenario(idx)"
+                 [attr.title]="isScenarioCompleted(idx) ? '✓ Escenario completado (clic para revisar)' : (idx === currentIndex ? 'Escenario actual' : 'Pendiente')"
+                 [style.background-color]="isScenarioCompleted(idx) ? getDimensionColor(sc.dimension) : (idx === currentIndex ? getDimensionColor(scenarios[currentIndex].dimension) : '')"
+                 [style.box-shadow]="idx === currentIndex ? '0 0 12px ' + getDimensionColor(scenarios[currentIndex].dimension) : ''">
             </div>
           }
         </div>
@@ -67,104 +70,103 @@
       <div class="taxonomy-bar">
         <!-- Badge de Dimensión Dinámico -->
         <div class="taxonomy-badge dimension-badge"
-             [style.color]="getDimensionColor(questions[currentIndex].dimension)"
-             [style.border-color]="getDimensionColor(questions[currentIndex].dimension)"
-             [style.background]="getDimensionColorGlow(questions[currentIndex].dimension)">
-          <span class="dot" [style.background-color]="getDimensionColor(questions[currentIndex].dimension)"></span>
-          {{ getDimensionName(questions[currentIndex].dimension) }}
+             [style.color]="getDimensionColor(scenarios[currentIndex].dimension)"
+             [style.border-color]="getDimensionColor(scenarios[currentIndex].dimension)"
+             [style.background]="getDimensionColorGlow(scenarios[currentIndex].dimension)">
+          <span class="dot" [style.background-color]="getDimensionColor(scenarios[currentIndex].dimension)"></span>
+          {{ getDimensionName(scenarios[currentIndex].dimension) }}
         </div>
 
         <!-- Badge de Tipo de Reactivo -->
-        <div class="taxonomy-badge type-badge" [attr.data-type]="questions[currentIndex].type">
-          {{ getQuestionTypeLabel(questions[currentIndex].type) }}
+        <div class="taxonomy-badge type-badge" [attr.data-type]="scenarios[currentIndex].type">
+          {{ getQuestionTypeLabel(scenarios[currentIndex].type) }}
         </div>
 
         <!-- Área/Categoría -->
-        @if (questions[currentIndex].area) {
+        @if (scenarios[currentIndex].area) {
           <div class="taxonomy-badge area-badge">
-            🎯 {{ questions[currentIndex].area }}
+            🎯 {{ scenarios[currentIndex].area }}
           </div>
         }
       </div>
+
+      <!-- Recordatorio experiencial compacto (visible en todos los escenarios) -->
+      <div class="neuro-reminder">
+        <span class="neuro-reminder-icon">🔍</span>
+        <span>Responda desde lo que <strong>su cuerpo, emociones y pensamientos</strong> hacen normalmente — no desde lo que considera correcto.</span>
+      </div>
+
+      <!-- Hint de retorno: aparece tras auto-avance y se desvanece -->
+      @if (showReturnHint) {
+        <div class="return-hint">
+          <span>↩️</span> Puedes volver atrás si deseas corregir una respuesta — toca la barra de progreso o el botón "Volver".
+        </div>
+      }
 
       <!-- Tarjeta de Reactivo Principal (Glassmorphism) -->
-      <div class="question-card" [style.border-top]="'4px solid ' + getDimensionColor(questions[currentIndex].dimension)">
+      
+      <!-- Tarjeta del Escenario Principal -->
+      <div class="question-card" [style.border-top]="'4px solid ' + getDimensionColor(scenarios[currentIndex].dimension)">
 
-        <!-- Indicadores Clínicos / Alertas del Reactivo -->
-        @if (questions[currentIndex].requiresEvidence || questions[currentIndex].detectsRelapse) {
-          <div class="clinical-alerts">
-            @if (questions[currentIndex].requiresEvidence) {
-              <span class="alert-badge evidence" title="Este reactivo medirá compromisos reales que requerirán subir evidencias fotográficas o de bitácora en tu plan de transformación.">
-                📷 Requiere Evidencia
-              </span>
-            }
-            @if (questions[currentIndex].detectsRelapse) {
-              <span class="alert-badge relapse" title="Este reactivo actúa como un sensor clínico para monitorear sostenibilidad y mitigar retrocesos conductuales.">
-                ⚠️ Sensor de Sostenibilidad
-              </span>
-            }
-          </div>
-        }
-
-        <!-- Enunciado de la Pregunta -->
-        <h2 class="question-text">
-          {{ questions[currentIndex].text }}
+        <!-- Enunciado del Escenario -->
+        <h2 class="question-text" style="font-size: 1.5rem; margin-bottom: 30px;">
+          {{ scenarios[currentIndex].textBase }}
         </h2>
 
-        <!-- Nivel de Severidad / Peso Psicométrico -->
-        <div class="severity-rating">
-          <span class="label">{{ getSeverityLevel(questions[currentIndex].severityWeight) }}</span>
-          <div class="stars">
-            @for (s of getSeverityStars(questions[currentIndex].severityWeight); track s) {
-              <span class="star" [style.color]="getDimensionColor(questions[currentIndex].dimension)">✦</span>
-            }
-          </div>
-        </div>
-
-        <!-- Grilla de Respuestas Rediseñada (Escala de Consciencia de Primera Persona Adaptativa) -->
-        <div class="scale-section">
-          <div class="options-stack">
-            @for (opt of getCustomOptions(questions[currentIndex].dimension); track opt.score) {
-              <button type="button"
-                      (click)="selectAnswer(opt.score)"
-                      class="option-card"
-                      [class.active]="answers.get(questions[currentIndex].id) === opt.score"
-                      [style.--active-shadow-color]="opt.hexColor"
-                      [style.--active-border-color]="opt.hexColor">
-                <!-- Fila 1: Índice -->
-                <div class="option-indicator" [style.background-color]="opt.hexColor">
-                  <span class="level-num">{{ opt.score }}</span>
-                </div>
-
-                <div class="option-content">
-                  <!-- Fila 2: Descripción -->
-                  <p class="option-first-person">"{{ opt.text }}"</p>
-
-                  <!-- Fila 3 y 4: Estado y Código de Color -->
-                  <div class="option-header-row">
-                    <span class="level-title" [style.color]="opt.hexColor">{{ opt.label }}</span>
-                    <span class="level-badge" [style.background-color]="opt.hexColor + '15'" [style.color]="opt.hexColor">
-                      {{ opt.colorClass }}
-                    </span>
+        <!-- Renderizar Fases (dinámico: 3 fases legado ENTRY/TIMING/ACTION o
+             hasta 5 fases NOTICE/THINK/ACT/AFTERMATH/EFFECT de SCENARIO_V1_2) -->
+        <div class="scenario-phases">
+          @for (phase of scenarios[currentIndex].phases; track phase.id; let i = $index) {
+            @if (i === 0 || answers.has(scenarios[currentIndex].phases[i - 1].id)) {
+              <div class="phase-section" [class.answered]="answers.has(phase.id)">
+                @if (getPhaseLabel(phase.phase!); as pl) {
+                  <h3 class="phase-title">{{ pl.title }}</h3>
+                  <div class="phase-guidance">
+                    <span class="phase-guidance-icon">{{ pl.icon }}</span>
+                    <div>
+                      <strong class="phase-guidance-title">{{ pl.title }}</strong>
+                      <p class="phase-guidance-text">{{ pl.text }}</p>
+                    </div>
                   </div>
+                }
+                @if ((phase.phasePrompt || phase.text) !== scenarios[currentIndex].textBase) {
+                  <p class="phase-desc">{{ phase.phasePrompt || phase.text }}</p>
+                }
+                <div class="options-row experiential-scale" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px;">
+                  @for (opt of getCustomOptions(phase); track opt.score) {
+                    <div class="phase-option experiential-card"
+                         [class.active]="answers.get(phase.id) === opt.score"
+                         (click)="selectAnswer(opt.score, phase.id)"
+                         [style.--active-shadow-color]="opt.hexColor || '#8b5cf6'"
+                         [style.--active-border-color]="opt.hexColor || '#8b5cf6'"
+                         style="display: flex; flex-direction: column; padding: 15px; border-radius: 8px; cursor: pointer; border: 1px solid #334155; background: rgba(30, 41, 59, 0.4); text-align: center; height: 100%;">
+                      @if (opt.icon) {
+                        <div class="level-header" style="font-size: 1.4rem; margin-bottom: 5px;">{{ opt.icon }}</div>
+                      }
+                      <div class="level-desc" style="font-size: 0.85rem; color: #cbd5e1; flex-grow: 1;">{{ opt.text || opt.label }}</div>
+                    </div>
+                  }
                 </div>
-              </button>
+              </div>
             }
-          </div>
+          }
         </div>
 
-        <!-- Footer de Navegación del Reactivo -->
-        <div class="form-navigation-footer">
+        <!-- Botón de Siguiente Escenario -->
+        <div class="form-navigation-footer" style="margin-top: 30px;">
           @if (currentIndex > 0) {
             <button type="button" class="nav-btn prev-btn" (click)="prevQuestion()">
-              ← Volver al reactivo anterior
+              ← Volver
             </button>
           }
-          @if (currentIndex === 0) {
-            <span class="desc">Selecciona con absoluta honestidad para un diagnóstico asertivo.</span>
-          }
+          <div style="flex:1"></div>
+          <button type="button" class="nav-btn next-btn" [disabled]="!canAdvance()" (click)="nextScenario()"
+                  [style.opacity]="canAdvance() ? 1 : 0.5">
+            {{ currentIndex === scenarios.length - 1 ? 'Finalizar' : 'Siguiente Situación →' }}
+          </button>
         </div>
       </div>
+
     </div>
 
   </div>

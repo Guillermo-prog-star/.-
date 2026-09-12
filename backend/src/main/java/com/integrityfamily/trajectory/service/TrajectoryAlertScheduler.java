@@ -93,8 +93,26 @@ public class TrajectoryAlertScheduler {
         List<TrajectorySuggestionService.TrajectorySuggestion> suggestions =
             suggestionService.suggest(family.getId());
 
+        // Protocolo de seguridad obligatorio: umbral de confianza más bajo, alerta prioritaria
+        List<TrajectorySuggestionService.TrajectorySuggestion> safetyProtocol = suggestions.stream()
+            .filter(s -> Boolean.TRUE.equals(s.requiresSafetyProtocol()) && s.confidenceScore() >= 50)
+            .toList();
+
+        if (!safetyProtocol.isEmpty()) {
+            String names = safetyProtocol.stream()
+                .map(TrajectorySuggestionService.TrajectorySuggestion::name)
+                .collect(Collectors.joining(", "));
+            notificationService.push(family, null, "TRAJECTORY_SAFETY_PROTOCOL_URGENT",
+                "🔴 Señales compatibles con protocolo de seguridad",
+                "El análisis automático detectó señales compatibles con: " + names +
+                ". Estas trayectorias requieren protocolo de seguridad — revisión y contacto humano prioritarios.");
+            sent++;
+        }
+
+        // Resto de sugerencias de alta severidad (sin protocolo obligatorio)
         List<TrajectorySuggestionService.TrajectorySuggestion> urgent = suggestions.stream()
-            .filter(s -> ("CRITICAL".equals(s.severityDefault()) || "HIGH".equals(s.severityDefault()))
+            .filter(s -> !Boolean.TRUE.equals(s.requiresSafetyProtocol())
+                      && ("CRITICAL".equals(s.severityDefault()) || "HIGH".equals(s.severityDefault()))
                       && s.confidenceScore() >= 65)
             .toList();
 

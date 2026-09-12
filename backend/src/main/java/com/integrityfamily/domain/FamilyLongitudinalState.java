@@ -80,6 +80,28 @@ public class FamilyLongitudinalState {
     @Column(name = "critical_dimension")
     private String criticalDimension;
 
+    // ── Streaks de Identidad Familiar (ADR-003) ──────────────────────────────
+    // Ciclos consecutivos con dimScore >= 90 por dimensión. No es una escala
+    // nueva ni un sexto nivel de conciencia: es un contador inferido, mismo
+    // patrón que consecutiveImprovements/consecutiveDeteriorations más abajo.
+    // Se resetea a 0 en cuanto la dimensión cae por debajo del umbral.
+
+    @Builder.Default
+    @Column(name = "emociones_pleno_streak")
+    private Integer emocionesPlenoStreak = 0;
+
+    @Builder.Default
+    @Column(name = "comunicacion_pleno_streak")
+    private Integer comunicacionPlenoStreak = 0;
+
+    @Builder.Default
+    @Column(name = "habitos_pleno_streak")
+    private Integer habitosPlenoStreak = 0;
+
+    @Builder.Default
+    @Column(name = "tiempos_pleno_streak")
+    private Integer tiemposPlenoStreak = 0;
+
     // ── Crisis y Señales ──────────────────────────────────────────────────────
 
     /** Número de crisis en los últimos 30 días */

@@ -45,6 +45,21 @@ public class EcosystemController {
         return ResponseEntity.ok(service.registerParticipant(req));
     }
 
+    @PutMapping("/api/ecosystem/participants/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ParticipantResponse> update(
+            @PathVariable Long id,
+            @RequestBody RegisterParticipantRequest req) {
+        return ResponseEntity.ok(service.updateParticipant(id, req));
+    }
+
+    @DeleteMapping("/api/ecosystem/participants/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.deleteParticipant(id);
+        return ResponseEntity.noContent().build();
+    }
+
     // ── Ecosistema de una familia ─────────────────────────────────────────
 
     @GetMapping("/api/families/{familyId}/ecosystem")
@@ -73,6 +88,16 @@ public class EcosystemController {
             @RequestBody LinkRequest req,
             @AuthenticationPrincipal UserDetails principal) {
         return ResponseEntity.ok(service.link(familyId, req, principal.getUsername()));
+    }
+
+    /** La familia edita los detalles de una conexión existente */
+    @PutMapping("/api/families/{familyId}/ecosystem/links/{linkId}")
+    public ResponseEntity<LinkResponse> updateLink(
+            @PathVariable Long familyId,
+            @PathVariable Long linkId,
+            @RequestBody LinkRequest req,
+            @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.updateLink(familyId, linkId, req, principal.getUsername()));
     }
 
     /** La familia otorga consentimiento explícito */

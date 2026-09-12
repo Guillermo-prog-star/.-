@@ -1,0 +1,13 @@
+package com.integrityfamily.dto.home;
+
+public enum JourneyStage {
+    NEW_FAMILY,
+    PROFILE_IN_PROGRESS,
+    ASSESSMENT_IN_PROGRESS,
+    ASSESSMENT_COMPLETED,
+    RETURN_AVAILABLE,
+    FIRST_SPRINT_PENDING,
+    ACTIVE_HOME,
+    PAUSED_HOME,
+    RESUMING_HOME
+}

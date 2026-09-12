@@ -281,9 +281,9 @@ class AnalyticsServiceImplTest {
         }
 
         @Test
-        @DisplayName("sin snapshot, ICF=65 → deriveConsciousnessLevel: 60≤65<80 → nivel 4, Madurando")
+        @DisplayName("sin snapshot, ICF=75 → deriveConsciousnessLevel: 70≤75<85 → nivel 4, Madurando")
         void consciousnessDerivedFromIcf_level4() {
-            Evaluation last = eval(1L, 65.0);
+            Evaluation last = eval(1L, 75.0);
             when(evaluationRepository.findByFamilyIdOrderByFinalizedAtAsc(1L))
                     .thenReturn(List.of(last));
 

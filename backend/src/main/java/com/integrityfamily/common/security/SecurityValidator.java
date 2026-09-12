@@ -61,6 +61,38 @@ public class SecurityValidator {
             throw new AccessDeniedException("Cuenta inactiva");
         }
     }
+
+    /**
+     * Resuelve el FamilyMember del principal autenticado, para filtrar
+     * visibilidad por autoria (ADR-012, H2 -- JournalEntry/CriticalDay
+     * PRIVATE por defecto).
+     *
+     * Retorna null para ROLE_ADMIN o el creador de la familia: mismo bypass
+     * que validateFamilyOwnership ya les da sobre el resto de datos de la
+     * familia (this ADR no restringe ese acceso preexistente, solo gobierna
+     * visibilidad miembro-a-miembro). null se interpreta en el repositorio
+     * como "sin filtrar, ver todo".
+     */
+    public Long resolveViewerMemberId(Long familyId, Principal principal) {
+        validateFamilyOwnership(familyId, principal);
+
+        String userEmail = principal.getName();
+
+        User user = userRepository.findByEmailIgnoreCase(userEmail).orElse(null);
+        if (user != null && user.getRoles().stream().anyMatch(r -> "ROLE_ADMIN".equals(r.getName()))) {
+            return null;
+        }
+
+        Family family = familyRepository.findById(familyId)
+                .orElseThrow(() -> new NotFoundException("Familia no encontrada"));
+        if (family.getCreatedBy() != null && family.getCreatedBy().getEmail().equals(userEmail)) {
+            return null;
+        }
+
+        return memberRepository.findByEmail(userEmail)
+                .map(FamilyMember::getId)
+                .orElse(null);
+    }
 }
 
 

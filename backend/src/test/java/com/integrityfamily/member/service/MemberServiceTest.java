@@ -123,7 +123,7 @@ class MemberServiceTest {
             when(familyRepository.findById(99L)).thenReturn(Optional.empty());
 
             MemberRequest req = new MemberRequest(
-                    "Test", "HIJO", null, null, null, null, null, 99L);
+                    "Test", "HIJO", null, null, null, null, null, 99L, null, null);
 
             assertThatThrownBy(() -> memberService.createMember(req))
                     .isInstanceOf(BusinessException.class)
@@ -144,7 +144,7 @@ class MemberServiceTest {
             });
 
             MemberRequest req = new MemberRequest(
-                    "Ana Martínez", "MADRE", 35, 70, 80, "ana@test.com", "3001234567", 1L);
+                    "Ana Martínez", "MADRE", 35, 70, 80, "ana@test.com", "3001234567", 1L, "CC", "1020304050");
             FamilyMember result = memberService.createMember(req);
 
             ArgumentCaptor<FamilyMember> captor = ArgumentCaptor.forClass(FamilyMember.class);
@@ -158,6 +158,21 @@ class MemberServiceTest {
             assertThat(saved.getResponsibilityLevel()).isEqualTo(80);
             assertThat(saved.getFamily()).isEqualTo(family);
             assertThat(saved.isActive()).isTrue();
+            assertThat(saved.getDocumentType()).isEqualTo("CC");
+            assertThat(saved.getDocumentNumber()).isEqualTo("1020304050");
+        }
+
+        @Test
+        @DisplayName("documentType/documentNumber nulos → se guardan como null (no bloquean creación)")
+        void shouldAllowNullDocument() {
+            when(memberRepository.save(any(FamilyMember.class))).thenAnswer(i -> i.getArgument(0));
+
+            MemberRequest req = new MemberRequest(
+                    "Sin Documento", "HIJO", 8, null, null, null, null, 1L, null, null);
+            FamilyMember result = memberService.createMember(req);
+
+            assertThat(result.getDocumentType()).isNull();
+            assertThat(result.getDocumentNumber()).isNull();
         }
 
         @Test
@@ -166,7 +181,7 @@ class MemberServiceTest {
             when(memberRepository.save(any(FamilyMember.class))).thenAnswer(i -> i.getArgument(0));
 
             memberService.createMember(new MemberRequest(
-                    "Pedro Ramírez", "PADRE", 40, null, null, null, null, 1L));
+                    "Pedro Ramírez", "PADRE", 40, null, null, null, null, 1L, null, null));
 
             ArgumentCaptor<FamilyMember> captor = ArgumentCaptor.forClass(FamilyMember.class);
             verify(memberRepository).save(captor.capture());
@@ -179,7 +194,7 @@ class MemberServiceTest {
             when(memberRepository.save(any(FamilyMember.class))).thenAnswer(i -> i.getArgument(0));
 
             memberService.createMember(new MemberRequest(
-                    "Luisa", "HIJA", 12, null, null, null, null, 1L));
+                    "Luisa", "HIJA", 12, null, null, null, null, 1L, null, null));
 
             ArgumentCaptor<FamilyMember> captor = ArgumentCaptor.forClass(FamilyMember.class);
             verify(memberRepository).save(captor.capture());
@@ -192,7 +207,7 @@ class MemberServiceTest {
             when(memberRepository.save(any(FamilyMember.class))).thenAnswer(i -> i.getArgument(0));
 
             memberService.createMember(new MemberRequest(
-                    "X", "HIJO", null, null, null, null, null, 1L));
+                    "X", "HIJO", null, null, null, null, null, 1L, null, null));
 
             ArgumentCaptor<FamilyMember> captor = ArgumentCaptor.forClass(FamilyMember.class);
             verify(memberRepository).save(captor.capture());
@@ -209,7 +224,7 @@ class MemberServiceTest {
 
             // No debe lanzar aunque RabbitMQ falle
             assertThat(memberService.createMember(
-                    new MemberRequest("Test", "HIJO", null, null, null, null, null, 1L)))
+                    new MemberRequest("Test", "HIJO", null, null, null, null, null, 1L, null, null)))
                     .isNotNull();
         }
     }

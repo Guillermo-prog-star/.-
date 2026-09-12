@@ -3,6 +3,7 @@ import { inject } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
+import { SILENT_ON_401 } from './silent-request.token';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
@@ -15,7 +16,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401) {
+      if (error.status === 401 && !req.context.get(SILENT_ON_401)) {
         // Token inexistente o expirado: redirigir a login conservando returnUrl.
         // NO se llama logout() para no borrar el nombre/familia del localStorage
         // (permite mostrar UX de "usuario recurrente" en la pantalla de login).

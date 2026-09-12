@@ -10,4 +10,5 @@ public interface FamilyRiskTrajectoryRepository extends JpaRepository<FamilyRisk
     List<FamilyRiskTrajectory> findByFamilyId(Long familyId);
     List<FamilyRiskTrajectory> findByFamilyIdAndStatus(Long familyId, TrajectoryStatus status);
     List<FamilyRiskTrajectory> findByFamilyIdAndStatusIn(Long familyId, List<TrajectoryStatus> statuses);
+    java.util.Optional<FamilyRiskTrajectory> findByFamilyIdAndTrajectoryId(Long familyId, Long trajectoryId);
 }

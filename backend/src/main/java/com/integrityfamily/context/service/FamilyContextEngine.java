@@ -70,10 +70,10 @@ public class FamilyContextEngine {
         var activeRituals = ritualRepository.findByFamilyIdAndStatusOrderByTriggeredAtDesc(familyId, RitualStatus.PENDING);
 
         // ── Señales básicas ──────────────────────────────────────────────────
-        int daysWithoutActivity = computeDaysWithoutActivity(gratitudes, evidences, logbooks);
+        int daysWithoutActivity = computeDaysWithoutActivity(gratitudes, evidences, logbooks, family.getCreatedAt());
         int streak              = computeStreak(gratitudes, evidences, logbooks);
 
-        String connection    = computeConnectionLevel(gratitudes, evidences, logbooks);
+        String connection    = computeConnectionLevel(gratitudes, evidences, logbooks, family.getCreatedAt());
         String stress        = computeStressLevel(lts, crises);
         String communication = computeCommunicationTrend(lts);
         String participation = computeParticipationLevel(family, daysWithoutActivity);
@@ -122,13 +122,21 @@ public class FamilyContextEngine {
 
     private String computeConnectionLevel(List<FamilyGratitudeEntry> gratitudes,
                                           List<TaskEvidence> evidences,
-                                          List<FamilyLogbookEntry> logbooks) {
+                                          List<FamilyLogbookEntry> logbooks,
+                                          LocalDateTime familyCreatedAt) {
+        // Una familia con menos de 7 días de existencia no ha tenido ni una semana
+        // completa para generar eventos — "BAJA" aquí no describía conexión débil,
+        // describía que la semana todavía no ha terminado (ver ADR-002, action item 7).
+        boolean hasHadAFullWeek = familyCreatedAt != null
+                && ChronoUnit.DAYS.between(familyCreatedAt, LocalDateTime.now()) >= 7;
+
         LocalDateTime week = LocalDateTime.now().minusDays(7);
         long events = countRecent(gratitudes, g -> g.getCreatedAt(), week)
                     + countRecent(evidences,  e -> e.getCreatedAt(), week)
                     + countRecent(logbooks,   l -> l.getCreatedAt(), week);
         if (events >= 7) return "ALTA";
         if (events >= 3) return "MEDIA";
+        if (!hasHadAFullWeek) return "MEDIA";
         return "BAJA";
     }
 
@@ -189,17 +197,25 @@ public class FamilyContextEngine {
         }
     }
 
+    /**
+     * Días desde el último registro de actividad. Si la familia nunca ha
+     * registrado nada, el punto de referencia es su fecha de creación —no un
+     * centinela arbitrario— para que una familia recién llegada no aparezca
+     * con "999 días sin actividad" (violaba el principio de vision.md de no
+     * etiquetar sin datos: ver ADR-001/ADR-002).
+     */
     private int computeDaysWithoutActivity(List<FamilyGratitudeEntry> gratitudes,
                                            List<TaskEvidence> evidences,
-                                           List<FamilyLogbookEntry> logbooks) {
+                                           List<FamilyLogbookEntry> logbooks,
+                                           LocalDateTime familyCreatedAt) {
         Optional<LocalDateTime> last = java.util.stream.Stream.of(
                 gratitudes.isEmpty() ? Optional.<LocalDateTime>empty() : Optional.ofNullable(gratitudes.get(0).getCreatedAt()),
                 evidences.stream().map(TaskEvidence::getCreatedAt).filter(Objects::nonNull).max(Comparator.naturalOrder()),
                 logbooks.isEmpty() ? Optional.<LocalDateTime>empty() : Optional.ofNullable(logbooks.get(0).getCreatedAt())
         ).filter(Optional::isPresent).map(Optional::get).max(Comparator.naturalOrder());
 
-        return last.map(t -> (int) ChronoUnit.DAYS.between(t, LocalDateTime.now()))
-                   .orElse(999);
+        LocalDateTime baseline = last.orElse(familyCreatedAt != null ? familyCreatedAt : LocalDateTime.now());
+        return (int) ChronoUnit.DAYS.between(baseline, LocalDateTime.now());
     }
 
     private int computeStreak(List<FamilyGratitudeEntry> gratitudes,

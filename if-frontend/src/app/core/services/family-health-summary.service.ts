@@ -36,7 +36,7 @@ export interface FamilyHealthSummary {
 @Injectable({ providedIn: 'root' })
 export class FamilyHealthSummaryService {
   private readonly http = inject(HttpClient);
-  private readonly base = environment.apiUrl;
+  private readonly base = environment.apiBaseUrl;
 
   getSummary(familyId: number): Observable<FamilyHealthSummary> {
     return this.http

@@ -55,6 +55,10 @@ public class PlanDtos {
             String vision3y,
             String aiReport,
             LocalDateTime aiGeneratedAt,
+            String acceptanceStatus,
+            LocalDateTime acceptedAt,
+            String acceptedBy,
+            String intentionStatement,
             List<PlanTaskResponse> tasks
     ) {}
 
@@ -104,6 +108,9 @@ public class PlanDtos {
     ) {}
 
     public record TaskCompleteRequest(Boolean completed) {}
+
+    /** ADR-010: body opcional de PUT /api/plans/{id}/accept -- la motivacion nunca bloquea la aceptacion. */
+    public record AcceptPlanRequest(String intentionStatement) {}
 
     public record PlanGenerateRequest(Long evaluationId) {}
 }

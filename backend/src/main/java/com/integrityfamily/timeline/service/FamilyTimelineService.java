@@ -33,15 +33,31 @@ public class FamilyTimelineService {
      * Agrega todos los eventos familiares de todas las fuentes en un único timeline
      * ordenado cronológicamente descendente (más reciente primero).
      */
+    /**
+     * @deprecated sin filtro de visibilidad (ADR-012) -- conservado solo para
+     * los consumidores no interactivos que aun no resuelven un viewer
+     * (integracion Alexa). El endpoint HTTP directo al usuario debe usar
+     * {@link #getTimeline(Long, Long)}.
+     */
+    @Deprecated
     @Transactional(readOnly = true)
     public List<TimelineEventDto> getTimeline(Long familyId) {
+        return getTimeline(familyId, null);
+    }
+
+    /**
+     * @param viewerMemberId autor del principal autenticado, para filtrar por
+     *                       visibilidad (ADR-012); null = sin filtrar (admin/creador).
+     */
+    @Transactional(readOnly = true)
+    public List<TimelineEventDto> getTimeline(Long familyId, Long viewerMemberId) {
         List<TimelineEventDto> events = new ArrayList<>();
 
         events.addAll(fromEvaluations(familyId));
         events.addAll(fromGratitudes(familyId));
         events.addAll(fromLogbook(familyId));
         events.addAll(fromEvidences(familyId));
-        events.addAll(fromCrises(familyId));
+        events.addAll(fromCrises(familyId, viewerMemberId));
         events.addAll(fromMissions(familyId));
         events.addAll(fromDna(familyId));
         events.addAll(fromMemberJoins(familyId));
@@ -160,8 +176,8 @@ public class FamilyTimelineService {
 
     // ─── Crisis ───────────────────────────────────────────────────────────────
 
-    private List<TimelineEventDto> fromCrises(Long familyId) {
-        return criticalDayRepository.findByFamilyIdOrderByCreatedAtDesc(familyId).stream()
+    private List<TimelineEventDto> fromCrises(Long familyId, Long viewerMemberId) {
+        return criticalDayRepository.findVisibleToMember(familyId, viewerMemberId).stream()
                 .map(c -> new TimelineEventDto(
                         c.getId(),
                         TimelineEventDto.EventType.CRISIS,

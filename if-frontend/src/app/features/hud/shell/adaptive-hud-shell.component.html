@@ -1,0 +1,83 @@
+<div class="hud-container" [ngClass]="viewData?.hudType === 'PROFESSIONAL' ? 'professional-hud' : 'family-hud'">
+  <!-- Top Bar / Context Header -->
+  <header class="hud-header">
+    <div class="header-left">
+      <span class="family-badge">🏠 {{ familyName }}</span>
+      <span class="hud-indicator">{{ viewData?.hudType === 'PROFESSIONAL' ? 'HUD Clínico / Analítico' : 'HUD Vivencial / Familiar' }}</span>
+    </div>
+
+    <div class="header-right">
+      <!-- La vista (Familiar/Profesional) la decide el rol de login, no un control manual -->
+      <span class="role-badge" *ngIf="viewData?.viewerContext?.role">
+        Rol: {{ viewData?.viewerContext?.role }}
+      </span>
+    </div>
+  </header>
+
+  <!-- Layout: Sidebar Navigation + Main Workspace -->
+  <div class="hud-workspace">
+    <!-- Sidebar Navigation -->
+    <aside class="hud-sidebar">
+      <nav class="hud-nav">
+        <ul>
+          <li *ngFor="let item of viewData?.navigation" class="nav-item" (click)="onNavigate(item)">
+            <span class="nav-bullet">✦</span> {{ item }}
+          </li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="hud-content">
+      <!-- Primary Status Card / Message -->
+      <section class="status-section card-glass" *ngIf="viewData">
+        <h2 class="section-title">Estado de la Familia</h2>
+        
+        <!-- Family view tailored language vs Professional analytic metrics -->
+        <div class="status-grid">
+          <div class="status-block" *ngIf="viewData?.hudType === 'FAMILY'">
+            <p class="status-phrase">✨ {{ viewData.statusMessage }}</p>
+            <p class="status-sub">{{ viewData.paceMessage }}</p>
+            <div class="safety-tip">🌱 {{ viewData.communicationMessage }}</div>
+          </div>
+
+          <div class="status-block" *ngIf="viewData?.hudType === 'PROFESSIONAL'">
+            <div class="clinical-metric">📊 {{ viewData.icafStatus }}</div>
+            <div class="clinical-metric">📈 {{ viewData.adaptiveCapacity }}</div>
+            <div class="clinical-metric">⚠️ {{ viewData.riskAssessment }}</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Clinical Notes & Interventions (Professional HUD only) -->
+      <section class="clinical-info-section card-glass" *ngIf="viewData?.hudType === 'PROFESSIONAL'">
+        <h2 class="section-title">Registro Clínico e Intervenciones</h2>
+        <div class="clinical-grid">
+          <div class="clinical-column">
+            <h3>Notas Clínicas</h3>
+            <ul>
+              <li *ngFor="let note of viewData?.clinicalNotes">📝 {{ note }}</li>
+            </ul>
+          </div>
+          <div class="clinical-column">
+            <h3>Planes de Intervención</h3>
+            <ul>
+              <li *ngFor="let intervention of viewData?.activeInterventions">🎯 {{ intervention }}</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Dimensions Block -->
+      <section class="dimensions-section card-glass" *ngIf="viewData?.dimensions">
+        <h2 class="section-title">Dimensiones Relacionales</h2>
+        <div class="dimensions-grid">
+          <div class="dimension-card" *ngFor="let dim of viewData.dimensions | keyvalue">
+            <span class="dim-name">{{ $any(dim.key) }}</span>
+            <span class="dim-status badge-stable">Estable</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>

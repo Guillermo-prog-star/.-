@@ -1,10 +1,13 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
-import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { NO_ERRORS_SCHEMA, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 import { of, throwError, Subject } from 'rxjs';
 
 import { CrisisPageComponent } from './crisis-page.component';
 import { CrisisService } from '../../core/services/crisis.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -23,16 +26,31 @@ function buildComponent(familyId: number | null = FAMILY_ID) {
 
   const crisisServiceSpy = jasmine.createSpyObj<CrisisService>(
     'CrisisService', {
-      getHistory:   of(HISTORY_STUB),
-      reportCrisis: of({ id: 99, category: 'Conflicto de Convivencia', aiContainmentGuide: 'Guía OK' })
+      getHistory:      of(HISTORY_STUB),
+      reportCrisis:    of({ id: 99, category: 'Conflicto de Convivencia', aiContainmentGuide: 'Guía OK' }),
+      getCrisisStatus: of(false)
     }
   );
+
+  const flowSpy = jasmine.createSpyObj<TransformationFlowService>(
+    'TransformationFlowService', ['setActiveMission'],
+    { activeMissionId: signal<string | null>(null) }
+  );
+
+  const httpSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['get', 'post', 'put', 'delete']);
+  httpSpy.get.and.returnValue(of([]));
+  httpSpy.post.and.returnValue(of(null));
+  httpSpy.put.and.returnValue(of(null));
+  httpSpy.delete.and.returnValue(of(null));
 
   TestBed.configureTestingModule({
     imports: [CrisisPageComponent],
     providers: [
+      provideRouter([]),
+      { provide: HttpClient, useValue: httpSpy },
       { provide: CrisisService,     useValue: crisisServiceSpy },
-      { provide: FamilyStateService, useValue: familyStateSpy }
+      { provide: FamilyStateService, useValue: familyStateSpy },
+      { provide: TransformationFlowService, useValue: flowSpy }
     ],
     schemas: [NO_ERRORS_SCHEMA]
   });
@@ -162,16 +180,16 @@ describe('CrisisPageComponent', () => {
       component = ctx.component;
     }));
 
-    it('Emergencia Emocional → rojo', () => {
-      expect(component.getCategoryColor('Emergencia Emocional')).toBe('#ef4444');
+    it('Emergencia Emocional → var(--if-crisis)', () => {
+      expect(component.getCategoryColor('Emergencia Emocional')).toBe('var(--if-crisis)');
     });
 
     it('Crisis de Autoridad → púrpura', () => {
       expect(component.getCategoryColor('Crisis de Autoridad')).toBe('#a855f7');
     });
 
-    it('Tensión Financiera → ámbar', () => {
-      expect(component.getCategoryColor('Tensión Financiera')).toBe('#f59e0b');
+    it('Tensión Financiera → var(--if-family)', () => {
+      expect(component.getCategoryColor('Tensión Financiera')).toBe('var(--if-family)');
     });
 
     it('Ruptura de Diálogo → azul', () => {
@@ -316,7 +334,7 @@ describe('CrisisPageComponent', () => {
 
     it('1. item numerado → <li> con decimal', () => {
       const html = component.formatAiResponse('1. Primer paso');
-      expect(html).toContain('list-style-type: decimal');
+      expect(html).toContain('list-style-type:decimal');
     });
 
     it('salto de línea → <br>', () => {

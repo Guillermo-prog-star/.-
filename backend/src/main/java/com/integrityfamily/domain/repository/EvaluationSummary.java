@@ -18,6 +18,13 @@ public interface EvaluationSummary {
     LocalDateTime getStartedAt();
     LocalDateTime getFinalizedAt();
     Double getIcf();
+    Double getInc();
+    Double getSomaticAwareness();
+    Double getEmotionalAwareness();
+    Double getCognitiveAwareness();
+    Double getImpulsiveAwareness();
+    Double getPauseCapacity();
+    Double getIntegrationScore();
     String getRiskLevel();
     String getCriticalDimension();
 }

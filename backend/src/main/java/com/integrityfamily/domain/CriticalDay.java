@@ -25,6 +25,15 @@ public class CriticalDay {
     @Column(name = "member_id")
     private Long memberId;
 
+    /** Clave opaca asignada por el cliente para vincular relatos del mismo evento real (ADR-012, H2). */
+    @Column(name = "perceived_event_key", length = 64)
+    private String perceivedEventKey;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visibility", nullable = false, length = 20)
+    @Builder.Default
+    private EntryVisibility visibility = EntryVisibility.PRIVATE;
+
     @Column(nullable = false)
     private String category;
 

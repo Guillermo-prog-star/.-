@@ -47,7 +47,7 @@ export interface FamilyJourneyResponse {
 @Injectable({ providedIn: 'root' })
 export class FamilyJourneyService {
   private readonly http = inject(HttpClient);
-  private readonly base = environment.apiUrl;
+  private readonly base = environment.apiBaseUrl;
 
   getJourney(familyId: number): Observable<FamilyJourneyResponse> {
     return this.http.get<{ data: FamilyJourneyResponse }>(`${this.base}/families/${familyId}/journey`)

@@ -1,6 +1,6 @@
 # Integrity Family — Visión y Principios
 
-**Última actualización:** 2026-07-16  
+**Última actualización:** 2026-09-12  
 **Versión del sistema:** v1.1.9
 
 ---
@@ -200,6 +200,40 @@ Esto no es una capa nueva de arquitectura ni un módulo aislado — es, igual qu
 De las cinco alturas, cuatro (H1, H3 parcial, H4, H5) ya tenían mecanismo operacional — no ameritan infraestructura nueva, solo esta lectura conjunta. **H2 era la única con un hueco de captura verificado contra el código real**: `JournalEntry` no tenía autor y `CriticalDay` no tenía forma de vincular dos relatos del mismo incidente — ver la verificación completa en [ADR-012](adr/ADR-012-perspectivas-multiples-mismo-evento.md), cerrado por V112.
 
 H2 opera bajo la misma restricción ética que gobierna el resto del sistema: hacer visible lo que normalmente permanece invisible **sin apropiarse de la voz de las personas**. Por eso ADR-012 fija visibilidad privada por defecto — ninguna perspectiva se expone a otro miembro de la familia salvo que su propio autor la comparta explícitamente. Esto conecta directamente con el **CCSF** (arriba): H2 es, en términos operacionales, el instante anterior a que "las experiencias individuales dejen de ser interpretaciones aisladas" — hoy el sistema no tiene dónde guardar la interpretación aislada de cada quien antes de que se convierta en comprensión colectiva.
+
+---
+
+## Ciclo IF-7 — un experimento familiar, no una tarea completada
+
+Varios textos externos analizados en la misma sesión (técnica de Feynman, adaptación del método galileano, «Neurociencia del cuerpo» de Castellanos, conversatorio de José Luis Díaz, prácticas de Tolle) convergen en el mismo circuito, condensable como **IF-7**: **VER → PREGUNTAR → PROPONER → PREDECIR → ACTUAR → CONTRASTAR → APRENDER**.
+
+Igual que "El eje de regulación", IF-CAM y el Principio de Altura de Observación (arriba), IF-7 **no introduce fases, columnas ni servicios nuevos** — es una lectura del ciclo `Diagnóstico → Plan → Misiones → Evidencias → Reevaluación → Aprendizaje → Legado` que ya existe, y de las 5 fases de `SCENARIO_V1_2` (`NOTICE/THINK/ACT/AFTERMATH/EFFECT`):
+
+| Paso IF-7 | Pregunta que responde | Dónde vive hoy |
+|---|---|---|
+| **VER** | ¿Qué está pasando realmente, sin ponerle todavía una etiqueta? | `JournalEntry`, `CriticalDay`, fase `NOTICE` |
+| **PREGUNTAR** | ¿Qué creemos que lo está produciendo? | Diagnóstico / banco de evaluación |
+| **PROPONER** | ¿Qué explicación provisional construimos? | `ImprovementPlan`, fase `THINK` |
+| **PREDECIR** | ¿Qué esperamos que ocurra si actuamos así? | `FamilyPrediction` (`twin`) — **hueco verificado, ver abajo** |
+| **ACTUAR** | El experimento concreto | `PlanTask`, `SprintMission`, fase `ACT` |
+| **CONTRASTAR** | ¿Qué ocurrió realmente? | `TaskEvidence`, `SprintDaily`, fase `AFTERMATH` |
+| **APRENDER** | ¿Qué sabemos ahora que no sabíamos antes? | `SprintRetrospective`, fase `EFFECT`, Reevaluación |
+
+El paso PREDECIR es, hoy, el eslabón más débil: `DigitalTwinService` crea predicciones (`family_predictions`, `status=ACTIVE`) pero nada las contrasta después — el loop PREDECIR→CONTRASTAR está abierto, sin `plan_task_id` que ate una predicción a una misión concreta. Se registra como deuda técnica conocida, no se construye el pre-registro ni el servicio de contraste hasta que un caso real lo reclame (ver [ADR-013](adr/ADR-013-ciclo-if7-marco-conceptual.md)). `FamilyCausalEngine`, pese a su nombre, implementa reglas heurísticas de correlación con explicabilidad — no causalidad `misión → resultado`; IF-7 no cambia eso.
+
+### Métrica ≠ propósito (riesgo de Goodhart)
+
+Un segundo texto de la misma sesión plantea un riesgo distinto: que el indicador sustituya aquello que originalmente medía —`actividad valiosa → métrica → recompensa` invertido en `actividad → medio para conseguir recompensa`—. Aplicado a Integrity: una familia podría aprender a completar misiones, subir adherencia o avanzar de nivel sin que la convivencia real cambie.
+
+Verificado contra el código antes de escribir esto (ver ADR-013): **no existe sistema de puntos, insignias ni niveles desbloqueables**, y el ICF se calcula desde evaluaciones, no desde volumen de misiones completadas — el "juego de puntos" que el riesgo describe no está construido. El único vector real y verificado es más estrecho: `MilestoneService.evaluate()` liga el avance de hito a `% de tareas completadas`, además del ICF. Por eso esto se documenta como **principio de diseño hacia adelante**, no como corrección de algo roto:
+
+> Cualquier métrica de adherencia o cumplimiento que se proponga debe describir el proceso — nunca convertirse en el objetivo que la familia persigue.
+
+### Autonomía Familiar — hipótesis candidata, no métrica
+
+El mismo texto sugiere que el éxito de Integrity no debería medirse por cuánto usa la familia la plataforma, sino por cuánto deja de necesitarla — con la autoría de misiones desplazándose gradualmente de la IA hacia la familia. El modelo de datos ya no lo bloquea del todo: `ChecklistController.createItem()` acepta un `source` sin forzar un enum cerrado a "IA". Pero **no existe hoy ningún constructo, medición ni umbral de autonomía** — formalizarlo ahora repetiría el error que la Regla V1.1.1 y [ADR-004](adr/ADR-004-hypothesis-evidence-pattern.md) existen para evitar.
+
+Queda registrado como hipótesis candidata a `hypothesis_evidence`, mismo estado que hoy tiene CCTF (ver IF-CAM, arriba): sin instrumento propio, a la espera de un disparador concreto — por ejemplo, que el piloto V1.2 muestre familias con ICF estable o ascendente pero dependientes de forma sostenida de las sugerencias de la IA.
 
 ---
 

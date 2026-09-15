@@ -6,6 +6,7 @@ import com.integrityfamily.domain.User;
 import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.UserRepository;
 import com.integrityfamily.family.dto.FamilyResponse;
+import com.integrityfamily.familyhome.security.FamilyIdentifierBridge;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -39,6 +40,7 @@ class FamilyServiceTest {
 
     @Mock FamilyRepository familyRepository;
     @Mock UserRepository   userRepository;
+    @Mock FamilyIdentifierBridge idBridge;
 
     @InjectMocks
     FamilyService familyService;
@@ -378,6 +380,17 @@ class FamilyServiceTest {
 
             assertThat(response).isNotNull();
             assertThat(response.id()).isEqualTo(10L);
+        }
+
+        @Test
+        @DisplayName("homeId se deriva del FamilyIdentifierBridge para el id real de la familia")
+        void shouldIncludeHomeId_derivedFromBridge() {
+            java.util.UUID expected = java.util.UUID.randomUUID();
+            when(idBridge.toFamilyUuid(10L)).thenReturn(expected);
+
+            FamilyResponse response = familyService.toResponse(family);
+
+            assertThat(response.homeId()).isEqualTo(expected);
         }
     }
 }

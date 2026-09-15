@@ -48,6 +48,23 @@ public class ImprovementPlan {
     @Column(name = "ai_generated_at")
     private LocalDateTime aiGeneratedAt;
 
+    // ADR-010: declaracion de intencion (Fase 0b) -- confirmacion explicita
+    // de la familia sobre el plan ya generado, distinta de una seleccion de
+    // prioridades (ver ADR-010, Decision 1).
+    @Enumerated(EnumType.STRING)
+    @Column(name = "acceptance_status", nullable = false, length = 20)
+    @Builder.Default
+    private PlanAcceptanceStatus acceptanceStatus = PlanAcceptanceStatus.PROPOSED;
+
+    @Column(name = "accepted_at")
+    private LocalDateTime acceptedAt;
+
+    @Column(name = "accepted_by", length = 120)
+    private String acceptedBy;
+
+    @Column(name = "intention_statement", columnDefinition = "TEXT")
+    private String intentionStatement;
+
     @Builder.Default
     @OneToMany(mappedBy = "plan", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PlanTask> tasks = new ArrayList<>();

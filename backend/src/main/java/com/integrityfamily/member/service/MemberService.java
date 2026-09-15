@@ -64,7 +64,9 @@ public class MemberService {
         member.setAge(req.age() != null ? req.age() : 0);
         member.setEmail(req.email());
         member.setPhone(req.phone());
-        
+        member.setDocumentType(req.documentType());
+        member.setDocumentNumber(req.documentNumber());
+
         // Niveles de Desarrollo (Valores por defecto de 50 si son nulos)
 
         member.setAutonomyLevel(req.autonomyLevel() != null ? req.autonomyLevel() : 50);
@@ -100,6 +102,12 @@ public class MemberService {
         existing.setActive(request.isActive());
         if (request.getPhone() != null) {
             existing.setPhone(request.getPhone().isBlank() ? null : request.getPhone().trim());
+        }
+        if (request.getDocumentType() != null) {
+            existing.setDocumentType(request.getDocumentType().isBlank() ? null : request.getDocumentType().trim());
+        }
+        if (request.getDocumentNumber() != null) {
+            existing.setDocumentNumber(request.getDocumentNumber().isBlank() ? null : request.getDocumentNumber().trim());
         }
         return memberRepository.save(existing);
     }

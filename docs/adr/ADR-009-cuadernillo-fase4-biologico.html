@@ -1,0 +1,579 @@
+<title>Integrity Family — Cuadernillo Fase 4: Panel Biológico</title>
+<style>
+  :root{
+    --paper:      #E9ECEE;
+    --surface:    #F8F9F8;
+    --ink:        #1B2430;
+    --ink-soft:   #4B5563;
+    --line:       #C4C9CD;
+    --line-soft:  #DADEE1;
+    --dusk:       #2F4858;
+    --dawn:       #B8862B;
+    --dawn-soft:  #E7D3AE;
+    --rest:       #3E6E6B;
+    --rest-soft:  #D8E6E4;
+    --danger:     #8B3A3A;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans:  -apple-system, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    --mono:  ui-monospace, "SF Mono", "Cascadia Code", "Consolas", monospace;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root{
+      --paper:      #14181D;
+      --surface:    #1B2026;
+      --ink:        #EDEAE2;
+      --ink-soft:   #A9AFB6;
+      --line:       #333A42;
+      --line-soft:  #262C33;
+      --dusk:       #8FB4C9;
+      --dawn:       #D99A52;
+      --dawn-soft:  #3A2E1C;
+      --rest:       #5B9C97;
+      --rest-soft:  #1C2C2A;
+      --danger:     #C97575;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:      #14181D;
+    --surface:    #1B2026;
+    --ink:        #EDEAE2;
+    --ink-soft:   #A9AFB6;
+    --line:       #333A42;
+    --line-soft:  #262C33;
+    --dusk:       #8FB4C9;
+    --dawn:       #D99A52;
+    --dawn-soft:  #3A2E1C;
+    --rest:       #5B9C97;
+    --rest-soft:  #1C2C2A;
+    --danger:     #C97575;
+  }
+  :root[data-theme="light"]{
+    --paper:      #E9ECEE;
+    --surface:    #F8F9F8;
+    --ink:        #1B2430;
+    --ink-soft:   #4B5563;
+    --line:       #C4C9CD;
+    --line-soft:  #DADEE1;
+    --dusk:       #2F4858;
+    --dawn:       #B8862B;
+    --dawn-soft:  #E7D3AE;
+    --rest:       #3E6E6B;
+    --rest-soft:  #D8E6E4;
+    --danger:     #8B3A3A;
+  }
+
+  *{ box-sizing:border-box; }
+  body{ margin:0; }
+  .booklet{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    padding:32px 16px 64px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:28px;
+  }
+
+  .toolbar{
+    width:100%; max-width:210mm;
+    display:flex; justify-content:flex-end; gap:8px;
+  }
+  .toolbar button{
+    font-family:var(--mono); font-size:12px; letter-spacing:.03em;
+    background:var(--surface); color:var(--ink); border:1px solid var(--line);
+    padding:8px 14px; border-radius:3px; cursor:pointer;
+  }
+  .toolbar button:hover{ border-color:var(--dawn); }
+  .toolbar button:focus-visible{ outline:2px solid var(--dawn); outline-offset:2px; }
+
+  .sheet{
+    width:100%; max-width:210mm; min-height:296mm;
+    background:var(--surface);
+    border:1px solid var(--line-soft);
+    box-shadow:0 1px 3px rgba(0,0,0,.12), 0 8px 24px rgba(0,0,0,.10);
+    padding:0 0 40px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .band{
+    background:var(--ink); color:var(--paper);
+    padding:28px 40px 24px;
+    border-bottom:3px solid var(--dawn);
+  }
+  .band .eyebrow{
+    font-family:var(--mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--dawn); margin:0 0 10px;
+  }
+  .band h1{
+    font-family:var(--serif); font-weight:600; font-size:30px; line-height:1.15;
+    margin:0 0 6px; text-wrap:balance;
+  }
+  .band h2{
+    font-family:var(--serif); font-style:italic; font-weight:400; font-size:16px;
+    margin:0; color:var(--paper); opacity:.82;
+  }
+  .band .meta{
+    font-family:var(--mono); font-size:11px; color:var(--paper); opacity:.7;
+    margin-top:14px; display:flex; gap:18px; flex-wrap:wrap;
+  }
+
+  .content{ padding:32px 40px 0; }
+
+  .instrument-band{
+    background:var(--dusk); color:var(--paper);
+    padding:16px 40px;
+    display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+    border-bottom:3px solid var(--dawn);
+  }
+  .instrument-band .code{ font-family:var(--mono); font-size:13px; letter-spacing:.06em; opacity:.85; }
+  .instrument-band h3{ font-family:var(--serif); font-weight:600; font-size:22px; margin:0; text-wrap:balance; }
+
+  .instruction{
+    font-size:13px; color:var(--ink-soft); line-height:1.55;
+    border-left:3px solid var(--rest); padding:10px 16px;
+    background:var(--rest-soft);
+    margin:0 0 24px;
+  }
+  .instruction strong{ color:var(--ink); }
+
+  .field-line{ margin-bottom:26px; }
+  .field-line label{
+    display:block; font-size:12px; font-weight:600; letter-spacing:.02em;
+    color:var(--ink-soft); text-transform:uppercase; margin-bottom:8px;
+  }
+  .fill{
+    border:none; border-bottom:1.5px solid var(--line); background:transparent;
+    width:100%; padding:6px 2px; font-size:15px; font-family:var(--mono); color:var(--ink);
+    font-variant-numeric:tabular-nums;
+  }
+  .fill:focus{ outline:none; border-color:var(--dawn); }
+  .row{ display:flex; gap:24px; }
+  .row > *{ flex:1; }
+
+  table.matrix{
+    width:100%; border-collapse:collapse; margin:0 0 24px;
+    font-size:13.5px;
+  }
+  table.matrix caption{
+    text-align:left; font-size:12px; color:var(--ink-soft); font-weight:600;
+    text-transform:uppercase; letter-spacing:.02em; margin-bottom:10px;
+  }
+  table.matrix th, table.matrix td{
+    border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:middle;
+  }
+  table.matrix thead th{
+    background:var(--line-soft); font-family:var(--mono); font-size:11px;
+    text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); font-weight:600;
+  }
+  table.matrix td.check, table.matrix th.check{ text-align:center; width:64px; }
+  .box{
+    display:inline-block; width:16px; height:16px; border:1.5px solid var(--ink-soft);
+    border-radius:2px; vertical-align:middle;
+  }
+
+  .note{
+    font-size:12px; color:var(--ink-soft); font-style:italic;
+    border-top:1px dashed var(--line); padding-top:10px; margin-top:-8px;
+  }
+
+  .method-note{
+    background:var(--dawn-soft); border:1px solid var(--dawn);
+    border-radius:3px; padding:16px 20px; font-size:13px; line-height:1.6; color:var(--ink);
+    margin:0 0 8px;
+  }
+  .method-note strong{ font-family:var(--serif); font-style:italic; }
+
+  .toc{ list-style:none; padding:0; margin:0; }
+  .toc li{
+    display:flex; gap:16px; align-items:baseline; padding:10px 0;
+    border-bottom:1px solid var(--line-soft);
+  }
+  .toc .code{ font-family:var(--mono); font-size:12.5px; color:var(--dusk); width:64px; flex:none; }
+  .toc .name{ font-size:14.5px; }
+  .toc .field{ margin-left:auto; font-family:var(--mono); font-size:11px; color:var(--ink-soft); }
+
+  .footer-strip{
+    position:absolute; bottom:0; left:0; right:0;
+    padding:12px 40px; border-top:1px solid var(--line-soft);
+    font-family:var(--mono); font-size:10.5px; letter-spacing:.04em; color:var(--ink-soft);
+    display:flex; justify-content:space-between;
+  }
+
+  .weekly thead th{ font-size:10.5px; }
+  .weekly td{ height:34px; }
+
+  @media print{
+    .toolbar{ display:none; }
+    .booklet{ padding:0; background:#fff; gap:0; }
+    .sheet{ box-shadow:none; border:none; page-break-after:always; }
+    .sheet:last-child{ page-break-after:auto; }
+  }
+
+  @media (max-width:720px){
+    .band, .content, .instrument-band{ padding-left:20px; padding-right:20px; }
+    .row{ flex-direction:column; gap:14px; }
+  }
+</style>
+
+<div class="booklet">
+
+  <div class="toolbar">
+    <button class="no-print" onclick="window.print()">Imprimir cuadernillo</button>
+  </div>
+
+  <!-- PORTADA -->
+  <section class="sheet">
+    <div class="band">
+      <p class="eyebrow">Integrity Family · Instrumento de campo</p>
+      <h1>Cuadernillo de Panel Biológico</h1>
+      <h2>Fase 4 — Base biológica del método de transformación familiar</h2>
+      <div class="meta">
+        <span>REF. NORMATIVA: ADR-009</span>
+        <span>ESTADO: PROPOSED</span>
+        <span>ENTIDAD FUTURA: daily_vitality_logs</span>
+        <span>MIGRACIÓN: V110 (no ejecutada)</span>
+      </div>
+    </div>
+    <div class="content">
+      <p class="method-note">
+        <strong>Aviso de estado.</strong> Este cuadernillo es un instrumento piloto en papel. Cada campo
+        corresponde de forma exacta a una columna de <code>DailyVitalityLog</code>, la entidad diseñada en
+        ADR-009 y todavía sin implementar. Hoy no existe módulo digital que reciba estos datos — se
+        diligencia en campo y se transcribe manualmente hasta que el módulo <code>vitality</code> exista.
+        Ningún campo de este documento fue inventado fuera de ese diseño.
+      </p>
+
+      <table class="matrix" style="margin-top:28px;">
+        <caption>Índice de instrumentos</caption>
+        <thead>
+          <tr><th>Código</th><th>Instrumento</th><th>Campo de <code>DailyVitalityLog</code></th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="code" style="font-family:var(--mono);">F4-01</td><td>Identificación y fecha</td><td style="font-family:var(--mono); font-size:12px;">family_member_id · log_date</td></tr>
+          <tr><td class="code" style="font-family:var(--mono);">F4-02</td><td>Sueño</td><td style="font-family:var(--mono); font-size:12px;">sleep_hours · sleep_quality</td></tr>
+          <tr><td class="code" style="font-family:var(--mono);">F4-03</td><td>Actividad física</td><td style="font-family:var(--mono); font-size:12px;">exercise_minutes</td></tr>
+          <tr><td class="code" style="font-family:var(--mono);">F4-04</td><td>Alimentación</td><td style="font-family:var(--mono); font-size:12px;">nutrition_quality</td></tr>
+          <tr><td class="code" style="font-family:var(--mono);">F4-05</td><td>Pantallas antes de dormir</td><td style="font-family:var(--mono); font-size:12px;">screen_time_before_bed_minutes</td></tr>
+          <tr><td class="code" style="font-family:var(--mono);">F4-06</td><td>Fatiga</td><td style="font-family:var(--mono); font-size:12px;">fatigue_level</td></tr>
+          <tr><td class="code" style="font-family:var(--mono);">F4-07</td><td>Consolidado semanal (7 días)</td><td style="font-family:var(--mono); font-size:12px;">todas las anteriores, por lote</td></tr>
+        </tbody>
+      </table>
+
+      <p class="method-note" style="background:var(--rest-soft); border-color:var(--rest);">
+        <strong>Sin criterio de salida.</strong> A diferencia de otros instrumentos de campo, este cuadernillo
+        no define ningún <em>gate</em> ni umbral de avance. Es únicamente captura de datos crudos para
+        <code>RECOVERY_INDEX_HYPOTHESIS</code> (ADR-004 / ADR-009, Decisión 4). El índice de recuperación se
+        calculará después, del lado del sistema, y no determina por sí mismo ninguna decisión clínica, de
+        plan o de riesgo mientras la hipótesis no acumule evidencia suficiente.
+      </p>
+
+      <p class="method-note">
+        <strong>Cómo se usa.</strong> Diligenciar F4-02 a F4-06 al final de cada día, o consolidar la semana
+        directamente en F4-07. Todos los campos son opcionales de forma independiente — registrar solo el
+        sueño un día, y solo el ejercicio otro, es válido. No forzar el panel completo.
+      </p>
+    </div>
+    <div class="footer-strip"><span>ADR-009 · Cuadernillo Fase 4</span><span>Portada</span></div>
+  </section>
+
+  <!-- F4-01 -->
+  <section class="sheet">
+    <div class="instrument-band">
+      <h3>F4-01 · Identificación y fecha</h3>
+      <span class="code">family_member_id · log_date</span>
+    </div>
+    <div class="content">
+      <p class="instruction">
+        Un registro corresponde a <strong>un miembro de la familia, en un día concreto</strong>. Complete
+        esta hoja de identificación una sola vez por sesión de registro.
+      </p>
+
+      <div class="row field-line">
+        <div>
+          <label>Nombre del miembro de familia</label>
+          <input class="fill" type="text">
+        </div>
+        <div>
+          <label>Fecha del registro</label>
+          <input class="fill" type="text" placeholder="DD / MM / AAAA">
+        </div>
+      </div>
+
+      <table class="matrix">
+        <caption>Origen del registro (campo <code>source</code>)</caption>
+        <thead><tr><th>Diligenciado por</th><th class="check">Marcar</th></tr></thead>
+        <tbody>
+          <tr><td>Participante / miembro de familia</td><td class="check"><span class="box"></span></td></tr>
+          <tr><td>Profesional / acompañante</td><td class="check"><span class="box"></span></td></tr>
+        </tbody>
+      </table>
+      <p class="note">Todo registro en papel se transcribe con <code>source = MANUAL</code>, sin excepción.</p>
+    </div>
+    <div class="footer-strip"><span>ADR-009 · Cuadernillo Fase 4</span><span>F4-01</span></div>
+  </section>
+
+  <!-- F4-02 -->
+  <section class="sheet">
+    <div class="instrument-band">
+      <h3>F4-02 · Sueño</h3>
+      <span class="code">sleep_hours · sleep_quality</span>
+    </div>
+    <div class="content">
+      <p class="instruction">
+        Registre el sueño de la noche anterior al día que está documentando. Si no lo recuerda con
+        precisión, estime — un dato aproximado es preferible a dejar el campo vacío.
+      </p>
+
+      <div class="field-line">
+        <label>Horas dormidas anoche (sleep_hours)</label>
+        <input class="fill" type="text" placeholder="Ej. 6.5">
+      </div>
+
+      <table class="matrix">
+        <caption>Calidad del sueño (sleep_quality)</caption>
+        <thead>
+          <tr><th></th><th class="check">1</th><th class="check">2</th><th class="check">3</th><th class="check">4</th><th class="check">5</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Muy malo — interrumpido, sin descanso</td>
+            <td class="check"><span class="box"></span></td>
+            <td class="check"><span class="box"></span></td>
+            <td class="check"><span class="box"></span></td>
+            <td class="check"><span class="box"></span></td>
+            <td class="check"><span class="box"></span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="note">1 = muy malo · 5 = muy reparador. Marque una sola casilla en la fila.</p>
+
+      <div class="field-line" style="margin-top:24px;">
+        <label>Notas de campo (opcional — no se transcribe al sistema)</label>
+        <input class="fill" type="text">
+      </div>
+    </div>
+    <div class="footer-strip"><span>ADR-009 · Cuadernillo Fase 4</span><span>F4-02</span></div>
+  </section>
+
+  <!-- F4-03 -->
+  <section class="sheet">
+    <div class="instrument-band">
+      <h3>F4-03 · Actividad física</h3>
+      <span class="code">exercise_minutes</span>
+    </div>
+    <div class="content">
+      <p class="instruction">
+        Sume el total de minutos de actividad física intencional del día (caminata, ejercicio, deporte).
+        No incluya movimiento incidental (tareas domésticas ligeras, desplazamientos cortos).
+      </p>
+
+      <div class="field-line">
+        <label>Minutos de actividad física hoy (exercise_minutes)</label>
+        <input class="fill" type="text" placeholder="Ej. 30">
+      </div>
+
+      <div class="field-line" style="margin-top:24px;">
+        <label>Notas de campo (opcional — no se transcribe al sistema)</label>
+        <input class="fill" type="text">
+      </div>
+    </div>
+    <div class="footer-strip"><span>ADR-009 · Cuadernillo Fase 4</span><span>F4-03</span></div>
+  </section>
+
+  <!-- F4-04 -->
+  <section class="sheet">
+    <div class="instrument-band">
+      <h3>F4-04 · Alimentación</h3>
+      <span class="code">nutrition_quality</span>
+    </div>
+    <div class="content">
+      <p class="instruction">
+        Evaluación autoreportada general del día — no es un diario de comidas. Considere variedad,
+        regularidad de horarios y proporción de alimentos integrales frente a ultraprocesados.
+      </p>
+
+      <table class="matrix">
+        <caption>Calidad general de la alimentación hoy (nutrition_quality)</caption>
+        <thead>
+          <tr><th></th><th class="check">1</th><th class="check">2</th><th class="check">3</th><th class="check">4</th><th class="check">5</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Muy poco saludable — irregular, ultraprocesada</td>
+            <td class="check"><span class="box"></span></td>
+            <td class="check"><span class="box"></span></td>
+            <td class="check"><span class="box"></span></td>
+            <td class="check"><span class="box"></span></td>
+            <td class="check"><span class="box"></span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="note">1 = muy poco saludable · 5 = muy saludable. Marque una sola casilla en la fila.</p>
+
+      <div class="field-line" style="margin-top:24px;">
+        <label>Notas de campo (opcional — no se transcribe al sistema)</label>
+        <input class="fill" type="text">
+      </div>
+    </div>
+    <div class="footer-strip"><span>ADR-009 · Cuadernillo Fase 4</span><span>F4-04</span></div>
+  </section>
+
+  <!-- F4-05 -->
+  <section class="sheet">
+    <div class="instrument-band">
+      <h3>F4-05 · Pantallas antes de dormir</h3>
+      <span class="code">screen_time_before_bed_minutes</span>
+    </div>
+    <div class="content">
+      <p class="instruction">
+        Registre el tiempo de exposición a pantallas (teléfono, televisión, computador) en la hora previa
+        a acostarse a dormir.
+      </p>
+
+      <div class="field-line">
+        <label>Minutos de pantalla antes de dormir (screen_time_before_bed_minutes)</label>
+        <input class="fill" type="text" placeholder="Ej. 45">
+      </div>
+
+      <div class="field-line" style="margin-top:24px;">
+        <label>Notas de campo (opcional — no se transcribe al sistema)</label>
+        <input class="fill" type="text">
+      </div>
+    </div>
+    <div class="footer-strip"><span>ADR-009 · Cuadernillo Fase 4</span><span>F4-05</span></div>
+  </section>
+
+  <!-- F4-06 -->
+  <section class="sheet">
+    <div class="instrument-band">
+      <h3>F4-06 · Fatiga</h3>
+      <span class="code">fatigue_level</span>
+    </div>
+    <div class="content">
+      <p class="instruction">
+        Nivel de fatiga percibida al final del día, independiente de cuánto se durmió o se hizo ejercicio —
+        es la sensación subjetiva de agotamiento en este momento.
+      </p>
+
+      <table class="matrix">
+        <caption>Nivel de fatiga (fatigue_level)</caption>
+        <thead>
+          <tr><th></th><th class="check">1</th><th class="check">2</th><th class="check">3</th><th class="check">4</th><th class="check">5</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Sin fatiga — energía plena</td>
+            <td class="check"><span class="box"></span></td>
+            <td class="check"><span class="box"></span></td>
+            <td class="check"><span class="box"></span></td>
+            <td class="check"><span class="box"></span></td>
+            <td class="check"><span class="box"></span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="note">1 = sin fatiga · 5 = agotamiento extremo. Marque una sola casilla en la fila.</p>
+
+      <div class="field-line" style="margin-top:24px;">
+        <label>Notas de campo (opcional — no se transcribe al sistema)</label>
+        <input class="fill" type="text">
+      </div>
+    </div>
+    <div class="footer-strip"><span>ADR-009 · Cuadernillo Fase 4</span><span>F4-06</span></div>
+  </section>
+
+  <!-- F4-07 CONSOLIDADO SEMANAL -->
+  <section class="sheet">
+    <div class="instrument-band">
+      <h3>F4-07 · Consolidado semanal</h3>
+      <span class="code">7 registros de daily_vitality_logs</span>
+    </div>
+    <div class="content">
+      <p class="instruction">
+        Alternativa a diligenciar F4-02 a F4-06 día por día: consolide una semana completa en esta única
+        tabla. Cada fila es un registro independiente de <code>daily_vitality_logs</code> — puede haber
+        celdas vacías, un día sin dato no invalida la fila.
+      </p>
+
+      <div class="field-line" style="max-width:260px;">
+        <label>Miembro de familia</label>
+        <input class="fill" type="text">
+      </div>
+
+      <table class="matrix weekly">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Sueño (h)</th>
+            <th>Calidad sueño (1-5)</th>
+            <th>Ejercicio (min)</th>
+            <th>Alimentación (1-5)</th>
+            <th>Pantallas (min)</th>
+            <th>Fatiga (1-5)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Lunes</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>Martes</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>Miércoles</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>Jueves</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>Viernes</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>Sábado</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+          <tr><td>Domingo</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+        </tbody>
+      </table>
+
+      <p class="method-note" style="margin-top:8px;">
+        <strong>Recordatorio.</strong> Esta tabla no calcula ningún índice ni promedio — el cálculo de
+        <code>RECOVERY_INDEX_HYPOTHESIS</code> ocurre después, en <code>RecoveryIndexService</code>
+        (ADR-009, Acción 3), a partir de estas mismas filas una vez transcritas.
+      </p>
+    </div>
+    <div class="footer-strip"><span>ADR-009 · Cuadernillo Fase 4</span><span>F4-07</span></div>
+  </section>
+
+  <!-- CONTROL DOCUMENTAL -->
+  <section class="sheet">
+    <div class="instrument-band">
+      <h3>Control documental</h3>
+      <span class="code">cierre</span>
+    </div>
+    <div class="content">
+      <table class="matrix">
+        <tbody>
+          <tr><td style="width:220px; font-weight:600;">Documento</td><td>Cuadernillo de Campo — Panel Biológico (Fase 4)</td></tr>
+          <tr><td style="font-weight:600;">Referencia normativa</td><td>ADR-009 — <code>docs/adr/ADR-009-panel-biologico-recovery-index-hypothesis.md</code></td></tr>
+          <tr><td style="font-weight:600;">Estado del ADR</td><td>Proposed — sin implementación en backend</td></tr>
+          <tr><td style="font-weight:600;">Entidad futura</td><td><code>DailyVitalityLog</code> / tabla <code>daily_vitality_logs</code></td></tr>
+          <tr><td style="font-weight:600;">Migración futura</td><td><code>V110__daily_vitality_log.sql</code> (no ejecutada)</td></tr>
+          <tr><td style="font-weight:600;">Versión del cuadernillo</td><td>1.0 — Piloto</td></tr>
+          <tr><td style="font-weight:600;">Alcance</td><td>Único cuadernillo de campo derivado de ADR-009. No sustituye evaluación clínica.</td></tr>
+        </tbody>
+      </table>
+
+      <p class="method-note" style="margin-top:24px;">
+        <strong>Sobre la transcripción.</strong> Mientras el módulo <code>vitality</code> no exista, la
+        persona responsable del acompañamiento transcribe estos registros manualmente. Cada fila de F4-07,
+        o cada hoja individual F4-02 a F4-06, corresponde exactamente a una fila futura de
+        <code>daily_vitality_logs</code> — sin transformación, sin inferencia, sin promedios calculados a
+        mano.
+      </p>
+
+      <div class="row" style="margin-top:32px;">
+        <div>
+          <label style="display:block; font-size:12px; color:var(--ink-soft); margin-bottom:28px;">Responsable de transcripción</label>
+          <div style="border-bottom:1.5px solid var(--line); height:1px;"></div>
+        </div>
+        <div>
+          <label style="display:block; font-size:12px; color:var(--ink-soft); margin-bottom:28px;">Fecha de transcripción</label>
+          <div style="border-bottom:1.5px solid var(--line); height:1px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="footer-strip"><span>ADR-009 · Cuadernillo Fase 4</span><span>Control documental</span></div>
+  </section>
+
+</div>

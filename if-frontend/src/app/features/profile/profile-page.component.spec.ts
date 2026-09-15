@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 
 import { ProfilePageComponent } from './profile-page.component';
 import { AuthService } from '../../core/services/auth.service';
@@ -51,6 +52,7 @@ describe('ProfilePageComponent', () => {
       imports: [ProfilePageComponent],
       providers: [
         provideHttpClient(),
+        provideRouter([]),
         { provide: AuthService, useValue: authServiceMock }
       ]
     }).compileComponents();

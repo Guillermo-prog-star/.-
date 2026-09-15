@@ -225,9 +225,17 @@ public class FamilyReflectionService {
         List<String> signals = new ArrayList<>();
         int riskScore = 0;
 
-        // Señal 1: Sin actividad en 14+ días
+        // Señal 1: Sin actividad en 14+ días — solo aplica si la familia lleva
+        // al menos 14 días registrada. Sin este resguardo, toda familia nueva
+        // (cero reflexiones/aprendizajes porque acaba de llegar, no porque
+        // esté abandonando) recibía automáticamente riskScore=3 → HIGH desde
+        // el primer minuto (violaba "el ICF nunca etiqueta" de vision.md).
         boolean recentlyActive = !recentReflections.isEmpty() || !recentLearnings.isEmpty();
-        if (!recentlyActive) {
+        boolean familyOldEnoughToJudge = familyRepository.findById(familyId)
+                .map(Family::getCreatedAt)
+                .map(createdAt -> ChronoUnit.DAYS.between(createdAt, LocalDateTime.now()) >= 14)
+                .orElse(false);
+        if (!recentlyActive && familyOldEnoughToJudge) {
             signals.add("INACTIVITY_14D");
             riskScore += 3;
         }

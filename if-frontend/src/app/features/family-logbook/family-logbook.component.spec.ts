@@ -1,6 +1,7 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 
@@ -8,6 +9,8 @@ import { FamilyLogbookComponent } from './family-logbook.component';
 import { FamilyLogbookService } from './family-logbook.service';
 import { SprintService } from './sprint.service';
 import { AuthService, AuthUser } from '../../core/services/auth.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 import { FamilyLogbookEntry } from './family-logbook.model';
 import { SprintResponse, SprintMissionResponse } from './sprint.model';
 
@@ -80,21 +83,39 @@ function buildComponent(user: AuthUser | null = USER_STUB) {
     'AuthService', [], { user: signal(user) }
   );
 
+  const flowSpy = jasmine.createSpyObj<TransformationFlowService>(
+    'TransformationFlowService', ['setActiveMission', 'setSprint'],
+    { activeMissionId: signal<string | null>(null), currentSprintNumber: signal(1) }
+  );
+
+  const scrollPolicySpy = jasmine.createSpyObj<ScrollPolicyService>('ScrollPolicyService', ['set', 'reset']);
+
+  const httpSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['get', 'post', 'put', 'delete']);
+  httpSpy.get.and.returnValue(of(null));
+  httpSpy.post.and.returnValue(of(null));
+  httpSpy.put.and.returnValue(of(null));
+  httpSpy.delete.and.returnValue(of(null));
+
   TestBed.configureTestingModule({
     imports: [FamilyLogbookComponent],
     providers: [
       provideRouter([]),
+      { provide: HttpClient, useValue: httpSpy },
       { provide: FamilyLogbookService, useValue: logSpy },
       { provide: SprintService,        useValue: sprintSpy },
-      { provide: AuthService,          useValue: authSpy }
+      { provide: AuthService,          useValue: authSpy },
+      { provide: TransformationFlowService, useValue: flowSpy },
+      { provide: ScrollPolicyService,  useValue: scrollPolicySpy }
     ],
     schemas: [NO_ERRORS_SCHEMA]
   });
 
   const fixture   = TestBed.createComponent(FamilyLogbookComponent);
   const component = fixture.componentInstance;
+  const router    = TestBed.inject(Router);
+  spyOn(router, 'navigate').and.returnValue(Promise.resolve(true));
 
-  return { fixture, component, logSpy, sprintSpy, authSpy };
+  return { fixture, component, logSpy, sprintSpy, authSpy, router };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -665,8 +686,8 @@ describe('FamilyLogbookComponent', () => {
       expect(sprintSpy.closeSprint).not.toHaveBeenCalled();
     }));
 
-    it('closeSprint éxito → activeSprint=null y setTab(HISTORY)', fakeAsync(() => {
-      const { fixture, component, sprintSpy } = buildComponent();
+    it('closeSprint éxito → activeSprint=null y redirige a /gratitude', fakeAsync(() => {
+      const { fixture, component, sprintSpy, router } = buildComponent();
       fixture.detectChanges();
       tick();
 
@@ -674,10 +695,10 @@ describe('FamilyLogbookComponent', () => {
       component.patchRetroForm('whatWentWell', 'Fue bien');
       component.patchRetroForm('whatWasDifficult', 'Fue difícil');
       component.closeSprint();
-      tick();
+      tick(400); // drena el setTimeout de redirección al Muro de Gratitud
 
       expect(component.activeSprint()).toBeNull();
-      expect(component.activeTab()).toBe('HISTORY');
+      expect(router.navigate).toHaveBeenCalledWith(['/gratitude'], jasmine.any(Object));
     }));
 
     it('closeSprint error → savingRetro=false y error.set', fakeAsync(() => {

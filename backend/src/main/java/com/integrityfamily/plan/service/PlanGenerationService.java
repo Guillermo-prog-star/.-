@@ -407,10 +407,12 @@ public class PlanGenerationService {
                     ? Map.of("emociones", 60.0, "comunicacion", 55.0, "habitos", 65.0, "tiempos", 70.0)
                     : persistedScores,
                 icf,
+                0.0,    // inc
+                null,   // neuroProfile
                 riskLevel,
                 criticalDim,
-                false,  // simulationSuspected — no disponible en fallback
-                false,  // relapseDetected — no disponible en fallback
+                false,  // simulationSuspected
+                false,  // relapseDetected
                 "ESTABILIZACION_EMOCIONAL",
                 "Reactiva",
                 4,

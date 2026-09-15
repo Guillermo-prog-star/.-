@@ -121,9 +121,23 @@ class FamilyContextEngineTest {
         }
 
         @Test
-        @DisplayName("sin entradas en ningún repositorio → BAJA")
-        void noEvents_baja() {
+        @DisplayName("sin entradas y familia con más de 7 días → BAJA")
+        void noEvents_establishedFamily_baja() {
+            Family established = Family.builder().id(FAM).name("Familia Establecida")
+                    .createdAt(LocalDateTime.now().minusDays(30)).build();
+            when(familyRepository.findById(FAM)).thenReturn(Optional.of(established));
+
             assertThat(engine.compute(FAM, false).connectionLevel()).isEqualTo("BAJA");
+        }
+
+        @Test
+        @DisplayName("sin entradas pero familia con menos de 7 días → MEDIA, no BAJA (no ha tenido ni una semana completa)")
+        void noEvents_brandNewFamily_media() {
+            Family brandNew = Family.builder().id(FAM).name("Familia Nueva")
+                    .createdAt(LocalDateTime.now()).build();
+            when(familyRepository.findById(FAM)).thenReturn(Optional.of(brandNew));
+
+            assertThat(engine.compute(FAM, false).connectionLevel()).isEqualTo("MEDIA");
         }
     }
 
@@ -334,9 +348,22 @@ class FamilyContextEngineTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("sin ninguna actividad registrada → daysWithoutActivity=999")
-    void noActivity_returns999() {
-        assertThat(engine.compute(FAM, false).daysWithoutActivity()).isEqualTo(999);
+    @DisplayName("familia recién creada sin actividad → daysWithoutActivity=0 (no el centinela 999 de antes)")
+    void newFamilyNoActivity_returnsZero() {
+        Family brandNew = Family.builder().id(FAM).name("Familia Nueva").createdAt(LocalDateTime.now()).build();
+        when(familyRepository.findById(FAM)).thenReturn(Optional.of(brandNew));
+
+        assertThat(engine.compute(FAM, false).daysWithoutActivity()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("familia creada hace 20 días sin actividad → daysWithoutActivity=20, usando su fecha de creación como base")
+    void oldFamilyNoActivity_usesCreatedAtAsBaseline() {
+        Family created20DaysAgo = Family.builder().id(FAM).name("Familia Antigua")
+                .createdAt(LocalDateTime.now().minusDays(20)).build();
+        when(familyRepository.findById(FAM)).thenReturn(Optional.of(created20DaysAgo));
+
+        assertThat(engine.compute(FAM, false).daysWithoutActivity()).isEqualTo(20);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -371,7 +398,11 @@ class FamilyContextEngineTest {
     @Test
     @DisplayName("connectionLevel=BAJA → recomendaciones incluyen actividad presencial")
     void lowConnection_recommendationPresent() {
-        // sin entradas → connectionLevel=BAJA
+        // sin entradas + familia establecida (>7 días) → connectionLevel=BAJA
+        Family established = Family.builder().id(FAM).name("Familia Establecida")
+                .createdAt(LocalDateTime.now().minusDays(30)).build();
+        when(familyRepository.findById(FAM)).thenReturn(Optional.of(established));
+
         List<String> recs = engine.compute(FAM, false).recommendations();
 
         assertThat(recs).anyMatch(r -> r.contains("actividad presencial"));

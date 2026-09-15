@@ -5,6 +5,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 import { UserNotificationService } from '../../core/services/user-notification.service';
+import { MilestoneDepthService } from '../../core/services/milestone-depth.service';
 import { filter } from 'rxjs/operators';
 
 /**
@@ -28,7 +29,7 @@ import { filter } from 'rxjs/operators';
       </div>
 
       <!-- ─── ESTADO EVOLUTIVO ──────────────────── -->
-      @if (familyState.currentFamilyCode()) {
+      @if (familyState.currentFamilyCode() && (!isProUser() || isObserving())) {
         <div class="evolution-card">
           <div class="ev-code">{{ familyState.currentFamilyCode() }}</div>
           <div class="ev-pillar">{{ flow.pillarLabel() }}</div>
@@ -44,6 +45,79 @@ import { filter } from 'rxjs/operators';
       }
 
       <nav>
+        <div class="nav-section nav-section--system">
+          @if (isProUser()) {
+            <a routerLink="/hud" class="nav-item" routerLinkActive="active">
+              <span class="nav-icon">🛰️</span><span class="nav-text">HUD Clínico</span>
+            </a>
+          } @else {
+            <a routerLink="/family-home" class="nav-item" routerLinkActive="active">
+              <span class="nav-icon">🏠</span><span class="nav-text">Hogar Digital</span>
+            </a>
+          }
+        </div>
+        <div class="divider"></div>
+        @if (isProUser()) {
+          @if (isObserving()) {
+            <!-- ── MODO OBSERVACIÓN CLÍNICA ── -->
+            <div class="nav-section nav-section--system">
+              <div class="section-label">OBSERVACIÓN CLÍNICA</div>
+              <button (click)="exitObserverMode()" class="nav-item nav-back-pro" style="width: 100%; text-align: left; background: rgba(59,130,246,0.12); border: 1px solid rgba(59,130,246,0.25); color: #93c5fd; cursor: pointer; border-radius: 6px; padding: 10px; margin-bottom: 12px; font-weight: bold; display: flex; align-items: center; gap: 8px; font-family: inherit; font-size: 11px;">
+                <span>←</span><span>Volver al Panel</span>
+              </button>
+            </div>
+            
+            <div class="nav-section nav-section--diagnosis">
+              <div class="section-label">DIAGNÓSTICO</div>
+              <a routerLink="/evaluations/evolution" class="nav-item" routerLinkActive="active">
+                <span class="nav-icon">📈</span><span class="nav-text">Evolución</span>
+              </a>
+              <a routerLink="/evaluations/history" class="nav-item" routerLinkActive="active">
+                <span class="nav-icon">📋</span><span class="nav-text">Historial Clínico</span>
+              </a>
+            </div>
+
+            <div class="nav-section nav-section--indices">
+              <div class="section-label">ÍNDICES</div>
+              <a routerLink="/capital" class="nav-item nav-capital" routerLinkActive="active">
+                <span class="nav-icon">💎</span><span class="nav-text">Capital - ICaF</span>
+              </a>
+              <a routerLink="/smff" class="nav-item nav-smff" routerLinkActive="active">
+                <span class="nav-icon">📐</span><span class="nav-text">Fortalecimiento - SMFF</span>
+              </a>
+            </div>
+
+            <div class="nav-section nav-section--evolution">
+              <div class="section-label">PLAN &amp; RUTA</div>
+              <a routerLink="/plans" class="nav-item" routerLinkActive="active">
+                <span class="nav-icon">📋</span><span class="nav-text">Plan Familiar</span>
+              </a>
+            </div>
+
+            <div class="nav-section nav-section--support">
+              <div class="section-label">SALUD &amp; APOYO</div>
+              <a routerLink="/health" class="nav-item nav-health" routerLinkActive="active">
+                <span class="nav-icon">❤️‍🔥</span><span class="nav-text">Salud Familiar</span>
+              </a>
+              <a routerLink="/trajectory" class="nav-item nav-traj" routerLinkActive="active">
+                <span class="nav-icon">🗺️</span><span class="nav-text">Trayectorias de Riesgo</span>
+              </a>
+              <a routerLink="/ecosystem" class="nav-item nav-ecosystem" routerLinkActive="active">
+                <span class="nav-icon">🌐</span><span class="nav-text">Ecosistema de Apoyo</span>
+              </a>
+            </div>
+          } @else {
+            <!-- ── MODO CRM PROFESIONAL (Normal) ── -->
+            <div class="nav-section nav-section--support">
+              <div class="section-label">ACCESO PROFESIONAL</div>
+              <a routerLink="/professional" class="nav-item nav-professional" routerLinkActive="active">
+                <span class="nav-icon">🩺</span><span class="nav-text">Panel Profesional</span>
+              </a>
+            </div>
+          }
+        } @else {
+          <!-- ── MODO FAMILIA ESTÁNDAR ── -->
+
 
         <!-- ── BLOQUE 1: CONFIGURACIÓN — Azul (infraestructura) ──── -->
         <div class="nav-section nav-section--system">
@@ -78,7 +152,9 @@ import { filter } from 'rxjs/operators';
             </button>
             @if (diagExpanded) {
               <div class="sub-menu">
-                <a routerLink="/evaluations/start"     class="nav-sub" routerLinkActive="active">🔍 Iniciar evaluación</a>
+                <a routerLink="/evaluations/start"     class="nav-sub" routerLinkActive="active">🔍 Iniciar evaluación
+                  @if (isGrowing('/evaluations/start')) { <span class="nav-growing" [title]="growingTooltip('/evaluations/start')">🌱</span> }
+                </a>
                 <a routerLink="/evaluations/history"   class="nav-sub" routerLinkActive="active">📋 Historial</a>
                 <a routerLink="/evaluations/evolution" class="nav-sub" routerLinkActive="active">📈 Evolución</a>
                 <a routerLink="/evaluations/analytics" class="nav-sub" routerLinkActive="active">🧪 Panel Clínico</a>
@@ -94,9 +170,11 @@ import { filter } from 'rxjs/operators';
           <div class="section-label">ÍNDICES</div>
           <a routerLink="/capital" class="nav-item nav-capital" routerLinkActive="active">
             <span class="nav-icon">💎</span><span class="nav-text">Capital Familiar — ICaF</span>
+            @if (isGrowing('/capital')) { <span class="nav-growing" [title]="growingTooltip('/capital')">🌱</span> }
           </a>
           <a routerLink="/smff" class="nav-item nav-smff" routerLinkActive="active">
             <span class="nav-icon">📐</span><span class="nav-text">Fortalecimiento — SMFF</span>
+            @if (isGrowing('/smff')) { <span class="nav-growing" [title]="growingTooltip('/smff')">🌱</span> }
           </a>
         </div>
 
@@ -109,10 +187,12 @@ import { filter } from 'rxjs/operators';
             <span class="step-dot" [class.done]="isSetupDone('plan')">{{ isSetupDone('plan') ? '✓' : '5' }}</span>
             <span class="nav-text">Plan Familiar</span>
             <span class="badge-auto">AUTO</span>
+            @if (isGrowing('/plans')) { <span class="nav-growing" [title]="growingTooltip('/plans')">🌱</span> }
           </a>
           <a routerLink="/transformation/route" class="nav-item" routerLinkActive="active">
             <span class="step-dot neutral">◈</span>
             <span class="nav-text">Ruta de 36 Meses</span>
+            @if (isGrowing('/transformation/route')) { <span class="nav-growing" [title]="growingTooltip('/transformation/route')">🌱</span> }
           </a>
         </div>
 
@@ -123,24 +203,34 @@ import { filter } from 'rxjs/operators';
           <div class="section-label">TRANSFORMACIÓN DIARIA</div>
           <a routerLink="/sprint" class="nav-item nav-sprint" routerLinkActive="active">
             <span class="nav-icon">⚡</span><span class="nav-text">Sprint Familiar</span>
+            @if (isGrowing('/sprint')) { <span class="nav-growing" [title]="growingTooltip('/sprint')">🌱</span> }
           </a>
           <a routerLink="/logbook"                     class="nav-item" routerLinkActive="active">
             <span class="nav-icon">📔</span><span class="nav-text">Bitácora &amp; Daily</span>
+            @if (isGrowing('/logbook')) { <span class="nav-growing" [title]="growingTooltip('/logbook')">🌱</span> }
+          </a>
+          <a routerLink="/vitality" class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">🌿</span><span class="nav-text">Bienestar Biológico</span>
           </a>
           <a routerLink="/transformation/weekly-plan"  class="nav-item" routerLinkActive="active">
             <span class="nav-icon">📅</span><span class="nav-text">Planeación Mensual</span>
+            @if (isGrowing('/transformation/weekly-plan')) { <span class="nav-growing" [title]="growingTooltip('/transformation/weekly-plan')">🌱</span> }
           </a>
           <a routerLink="/checklist"         class="nav-item" routerLinkActive="active">
             <span class="nav-icon">📸</span><span class="nav-text">Evidencias</span>
+            @if (isGrowing('/checklist')) { <span class="nav-growing" [title]="growingTooltip('/checklist')">🌱</span> }
           </a>
           <a routerLink="/evidence/capture" class="nav-item nav-capsule" routerLinkActive="active">
             <span class="nav-icon">🎴</span><span class="nav-text">Cápsula Familiar</span>
+            @if (isGrowing('/evidence/capture')) { <span class="nav-growing" [title]="growingTooltip('/evidence/capture')">🌱</span> }
           </a>
           <a routerLink="/transformation/error-protocol" class="nav-item" routerLinkActive="active">
             <span class="nav-icon">🔄</span><span class="nav-text">Gestión de Errores</span>
+            @if (isGrowing('/transformation/error-protocol')) { <span class="nav-growing" [title]="growingTooltip('/transformation/error-protocol')">🌱</span> }
           </a>
           <a routerLink="/transformation/adaptive" class="nav-item" routerLinkActive="active">
             <span class="nav-icon">🧠</span><span class="nav-text">Motor Adaptativo</span>
+            @if (isGrowing('/transformation/adaptive')) { <span class="nav-growing" [title]="growingTooltip('/transformation/adaptive')">🌱</span> }
           </a>
         </div>
 
@@ -191,27 +281,35 @@ import { filter } from 'rxjs/operators';
           </a>
           <a routerLink="/documentary-maker" class="nav-item nav-ritual" routerLinkActive="active">
             <span class="nav-icon">🎬</span><span class="nav-text">Ensamblaje Documental</span>
+            @if (isGrowing('/documentary-maker')) { <span class="nav-growing" [title]="growingTooltip('/documentary-maker')">🌱</span> }
           </a>
           <a routerLink="/gratitude" class="nav-item" routerLinkActive="active">
             <span class="nav-icon">💖</span><span class="nav-text">Gratitud Familiar</span>
+            @if (isGrowing('/gratitude')) { <span class="nav-growing" [title]="growingTooltip('/gratitude')">🌱</span> }
           </a>
           <a routerLink="/my-space"  class="nav-item" routerLinkActive="active">
             <span class="nav-icon">🔒</span><span class="nav-text">Mi Espacio</span>
+            @if (isGrowing('/my-space')) { <span class="nav-growing" [title]="growingTooltip('/my-space')">🌱</span> }
           </a>
           <a routerLink="/legado"          class="nav-item" routerLinkActive="active">
             <span class="nav-icon">🏛️</span><span class="nav-text">Legado Familiar</span>
+            @if (isGrowing('/legado')) { <span class="nav-growing" [title]="growingTooltip('/legado')">🌱</span> }
           </a>
           <a routerLink="/family-movie"   class="nav-item nav-movie" routerLinkActive="active">
             <span class="nav-icon">🎬</span><span class="nav-text">Película Familiar</span>
+            @if (isGrowing('/family-movie')) { <span class="nav-growing" [title]="growingTooltip('/family-movie')">🌱</span> }
           </a>
           <a routerLink="/family-timeline" class="nav-item nav-timeline" routerLinkActive="active">
             <span class="nav-icon">📜</span><span class="nav-text">Historia Familiar</span>
+            @if (isGrowing('/family-timeline')) { <span class="nav-growing" [title]="growingTooltip('/family-timeline')">🌱</span> }
           </a>
           <a routerLink="/family-tree"    class="nav-item nav-tree" routerLinkActive="active">
             <span class="nav-icon">🌳</span><span class="nav-text">Árbol Generacional</span>
+            @if (isGrowing('/family-tree')) { <span class="nav-growing" [title]="growingTooltip('/family-tree')">🌱</span> }
           </a>
           <a routerLink="/lineage" class="nav-item nav-lineage" routerLinkActive="active">
             <span class="nav-icon">🌿</span><span class="nav-text">Linaje Generacional</span>
+            @if (isGrowing('/lineage')) { <span class="nav-growing" [title]="growingTooltip('/lineage')">🌱</span> }
           </a>
         </div>
 
@@ -222,12 +320,14 @@ import { filter } from 'rxjs/operators';
           <div class="section-label">SISTEMA</div>
           <a routerLink="/digital-twin"  class="nav-item nav-twin" routerLinkActive="active">
             <span class="nav-icon">🪞</span><span class="nav-text">Gemelo Digital</span>
+            @if (isGrowing('/digital-twin')) { <span class="nav-growing" [title]="growingTooltip('/digital-twin')">🌱</span> }
           </a>
           <a routerLink="/family-council" class="nav-item nav-council" routerLinkActive="active">
             <span class="nav-icon">⚜️</span><span class="nav-text">Consejo Familiar</span>
           </a>
           <a routerLink="/family-pulse" class="nav-item nav-pulse" routerLinkActive="active">
             <span class="nav-icon">💓</span><span class="nav-text">Pulso Familiar</span>
+            @if (isGrowing('/family-pulse')) { <span class="nav-growing" [title]="growingTooltip('/family-pulse')">🌱</span> }
           </a>
           <a routerLink="/dashboard" class="nav-item" routerLinkActive="active">
             <span class="nav-icon">📊</span><span class="nav-text">Panel Analítico</span>
@@ -240,10 +340,13 @@ import { filter } from 'rxjs/operators';
           </a>
         </div>
 
+
+        }
         @if (user()?.role === 'ADMIN') {
           <div class="divider"></div>
           <div class="nav-section nav-section--admin">
             <div class="section-label">ADMINISTRACIÓN</div>
+            <a routerLink="/admin/families"      class="nav-item" routerLinkActive="active"><span class="nav-icon">👨‍👩‍👧‍👦</span><span class="nav-text">Familias Registradas</span></a>
             <a routerLink="/admin/stats"         class="nav-item" routerLinkActive="active"><span class="nav-icon">⚙️</span><span class="nav-text">Estadísticas</span></a>
             <a routerLink="/admin/eedsl"         class="nav-item" routerLinkActive="active"><span class="nav-icon">🔧</span><span class="nav-text">Reglas EEDSL</span></a>
             <a routerLink="/admin/sandbox"       class="nav-item" routerLinkActive="active"><span class="nav-icon">🧪</span><span class="nav-text">Sandbox</span></a>
@@ -349,6 +452,7 @@ import { filter } from 'rxjs/operators';
     .step-dot.neutral { background: transparent; border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.25); font-size: 11px; }
 
     .badge-auto { font-size: 7px; font-weight: 900; padding: 1px 5px; border-radius: 4px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .nav-growing { margin-left: auto; font-size: 10px; opacity: 0.5; flex-shrink: 0; cursor: help; }
 
     .group-header { background: none; border: none; width: 100%; text-align: left; cursor: pointer; font-family: inherit; }
     .chevron { font-size: 9px; transition: transform 0.25s; color: rgba(255,255,255,0.25); margin-left: auto; }
@@ -510,6 +614,7 @@ export class SidebarComponent implements OnInit {
   readonly familyState  = inject(FamilyStateService);
   readonly flow         = inject(TransformationFlowService);
   readonly notifService = inject(UserNotificationService);
+  private readonly milestoneDepth = inject(MilestoneDepthService);
 
   readonly user               = this.auth.user;
   readonly showLogoutConfirm  = signal(false);
@@ -528,6 +633,36 @@ export class SidebarComponent implements OnInit {
   readonly guardianRoute = computed(() =>
     ['/guardian', String(this.familyState.currentFamilyId()), 'election']
   );
+
+  isProUser(): boolean {
+    return !!this.user()?.isProfessional;
+  }
+
+  /**
+   * ADR-002 — divulgación progresiva por hito: "esto irá creciendo con ustedes",
+   * nunca se oculta el enlace. Solo aplica a familias (el profesional ve todo,
+   * regla dura del ADR).
+   */
+  isGrowing(route: string): boolean {
+    if (this.isProUser()) return false;
+    return !this.milestoneDepth.hasDepth(route);
+  }
+
+  growingTooltip(route: string): string {
+    const unlocksAt = this.milestoneDepth.unlocksAt(route);
+    return unlocksAt
+      ? `Este espacio irá creciendo con ustedes — contenido completo desde el hito ${unlocksAt}`
+      : '';
+  }
+
+  isObserving(): boolean {
+    return this.familyState.isObserving();
+  }
+
+  exitObserverMode(): void {
+    this.familyState.clearFamily();
+    this.router.navigate(['/professional']);
+  }
 
   ngOnInit() {
     this.checkActiveRoute();

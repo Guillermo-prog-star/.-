@@ -1,0 +1,168 @@
+.vitality-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.vitality-header {
+  margin-bottom: 24px;
+}
+
+.vitality-title {
+  margin: 0 0 6px 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.vitality-subtitle {
+  margin: 0;
+  color: #94a3b8;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.member-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.member-selector select {
+  padding: 8px 12px;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.empty-state {
+  padding: 20px;
+  color: #64748b;
+  font-size: 13px;
+  text-align: center;
+}
+
+.recovery-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 22px;
+  border: 1px solid;
+  border-radius: 14px;
+  margin-bottom: 24px;
+}
+
+.recovery-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 12px currentColor;
+}
+
+.recovery-info {
+  flex: 1;
+}
+
+.recovery-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin-bottom: 2px;
+}
+
+.recovery-score {
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.log-form {
+  padding: 22px 24px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  border-radius: 14px;
+}
+
+.form-title {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #e2e8f0;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #94a3b8;
+}
+
+.form-field input,
+.form-field select {
+  padding: 9px 12px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 8px;
+  color: #e2e8f0;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+.form-hint {
+  margin: 4px 0 16px 0;
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
+}
+
+.form-message {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.form-message.error {
+  background: rgba(248, 113, 113, 0.1);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #fca5a5;
+}
+
+.form-message.success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #6ee7b7;
+}
+
+.save-btn {
+  padding: 11px 24px;
+  background: #10b981;
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

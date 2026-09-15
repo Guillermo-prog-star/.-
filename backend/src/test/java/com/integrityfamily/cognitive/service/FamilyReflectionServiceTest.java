@@ -39,7 +39,10 @@ class FamilyReflectionServiceTest {
 
     @BeforeEach
     void setUp() {
-        family = Family.builder().id(1L).name("Test Family").build();
+        // createdAt = hace 60 días: familia ya "vieja" para las pruebas de efectividad/abandono,
+        // que asumen historial de hasta 30 días — así la señal INACTIVITY_14D (que ahora exige
+        // que la familia lleve ≥14 días para aplicar, ver ADR-002 action item 7) sigue evaluable.
+        family = Family.builder().id(1L).name("Test Family").createdAt(LocalDateTime.now().minusDays(60)).build();
 
         FamilyIdentityProfile defaultProfile = FamilyIdentityProfile.builder().family(family).build();
 
@@ -52,6 +55,7 @@ class FamilyReflectionServiceTest {
         lenient().when(identityRepository.save(any())).thenReturn(defaultProfile);
         lenient().when(memoryRepository.save(any())).thenAnswer(i -> i.getArgument(0));
         lenient().when(familyRepository.getReferenceById(1L)).thenReturn(family);
+        lenient().when(familyRepository.findById(1L)).thenReturn(Optional.of(family));
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -181,6 +185,19 @@ class FamilyReflectionServiceTest {
         assertThat(report.abandonmentRisk().level())
                 .isIn(FamilyReflectionService.AbandonmentLevel.HIGH,
                       FamilyReflectionService.AbandonmentLevel.CRITICAL);
+    }
+
+    @Test
+    @DisplayName("Familia recién creada (< 14 días) sin actividad → NO agrega INACTIVITY_14D (antes marcaba HIGH desde el minuto uno)")
+    void brandNewFamily_noActivity_doesNotAddInactivitySignal() {
+        Family brandNew = Family.builder().id(1L).name("Familia Nueva").createdAt(LocalDateTime.now()).build();
+        when(familyRepository.findById(1L)).thenReturn(Optional.of(brandNew));
+        // Sin evaluaciones, sin snapshots, sin reflexiones — exactamente el estado de una familia el día 0
+        FamilyReflectionService.ReflectionReport report = service.reflect(1L);
+
+        assertThat(report.abandonmentRisk().signals()).doesNotContain("INACTIVITY_14D");
+        assertThat(report.abandonmentRisk().level())
+                .isEqualTo(FamilyReflectionService.AbandonmentLevel.LOW);
     }
 
     @Test

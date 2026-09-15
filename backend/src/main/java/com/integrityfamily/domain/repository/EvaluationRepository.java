@@ -15,6 +15,7 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     List<Evaluation> findByFamilyIdOrderByStartedAtDesc(Long familyId);
     Optional<Evaluation> findFirstByFamilyIdAndStatusOrderByFinalizedAtDesc(Long familyId, EvaluationStatus status);
     Optional<Evaluation> findTopByFamilyIdAndStatusOrderByFinalizedAtDesc(Long familyId, EvaluationStatus status);
+    List<Evaluation> findTop2ByFamilyIdAndStatusOrderByFinalizedAtDesc(Long familyId, EvaluationStatus status);
     List<Evaluation> findByFamilyIdOrderByFinalizedAtAsc(Long familyId);
     /**
      * Closed projection: alias JPQL → getter name.

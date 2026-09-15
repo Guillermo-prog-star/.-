@@ -58,6 +58,45 @@
     </div>
   </div>
 
+  <!-- ADR-010: Declaración de intención (Fase 0b) — confirmación del plan antes de comenzar -->
+  @if (plans.length > 0 && plans[0].acceptanceStatus === 'PROPOSED') {
+    <div style="margin-bottom: 24px; padding: 22px 26px; background: linear-gradient(135deg, rgba(56,189,248,0.08) 0%, rgba(59,130,246,0.06) 100%); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px;">
+      <div style="display:flex; align-items:flex-start; gap:16px; flex-wrap:wrap;">
+        <div style="font-size:32px; line-height:1;">🤝</div>
+        <div style="flex:1; min-width:260px;">
+          <h3 style="margin:0 0 6px 0; color:#e2e8f0; font-size:16px; font-weight:800;">Antes de comenzar: confirmen su plan</h3>
+          <p style="margin:0 0 14px 0; color:#94a3b8; font-size:13px; line-height:1.5;">
+            Este es el plan que preparamos para ustedes. Cuando lo confirmen, comienza oficialmente su camino de transformación.
+          </p>
+          <textarea
+            [(ngModel)]="planIntentionStatement"
+            placeholder="¿Qué los motiva a empezar ahora? (opcional)"
+            rows="2"
+            style="width:100%; max-width:520px; padding:10px 12px; background:rgba(15,23,42,0.5); border:1px solid rgba(148,163,184,0.25); border-radius:10px; color:#e2e8f0; font-size:13px; font-family:inherit; resize:vertical; margin-bottom:12px; box-sizing:border-box;"
+          ></textarea>
+          <div>
+            <button
+              (click)="acceptPlan()"
+              [disabled]="acceptingPlan"
+              [style.opacity]="acceptingPlan ? 0.6 : 1"
+              style="padding:10px 22px; background:#0ea5e9; border:none; border-radius:10px; color:#fff; font-weight:700; font-size:13px; cursor:pointer;">
+              {{ acceptingPlan ? 'Confirmando…' : '✅ Aceptar y comenzar' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  @if (plans.length > 0 && plans[0].acceptanceStatus === 'ACCEPTED' && plans[0].acceptedAt) {
+    <div style="margin-bottom: 16px; font-size: 12px; color: #64748b;">
+      ✅ Plan aceptado{{ plans[0].acceptedBy ? ' por ' + plans[0].acceptedBy : '' }}
+      @if (plans[0].intentionStatement) {
+        <span> — "{{ plans[0].intentionStatement }}"</span>
+      }
+    </div>
+  }
+
   <!-- Narrative Guidance Engine -->
   <app-narrative-companion module="plans"></app-narrative-companion>
 
@@ -537,6 +576,9 @@
                         }
                         @if (mision.id === 'mis-tiempos-1') {
                           <span style="font-size: 9px; padding: 2px 6px; background: rgba(245,176,65,0.15); color: #f5b041; border: 1px solid rgba(245,176,65,0.4); border-radius: 4px; font-weight: 700; text-transform: uppercase;">🔑 Llave del Bloque Dorado</span>
+                        }
+                        @if (mision.responsibleName) {
+                          <span style="font-size: 9px; padding: 2px 6px; background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 4px; font-weight: 700;">👤 {{ mision.responsibleName }}</span>
                         }
                       </div>
                     </div>

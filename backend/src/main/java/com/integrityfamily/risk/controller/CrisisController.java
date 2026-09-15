@@ -1,8 +1,10 @@
 package com.integrityfamily.risk.controller;
 
 import com.integrityfamily.common.dto.ApiResponse;
+import com.integrityfamily.common.security.SecurityValidator;
 import com.integrityfamily.domain.CriticalDay;
 import com.integrityfamily.domain.FamilyMember;
+import com.integrityfamily.domain.repository.MemberRepository;
 import com.integrityfamily.dto.CreateCrisisRequest;
 import com.integrityfamily.risk.service.CrisisService;
 import jakarta.validation.Valid;
@@ -10,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
@@ -23,16 +26,23 @@ import java.util.Map;
 public class CrisisController {
 
     private final CrisisService crisisService;
+    private final SecurityValidator securityValidator;
+    private final MemberRepository memberRepository;
 
     /**
      * POST /api/crisis/report — Registra una crisis e invoca al Mentor IA para contención.
      */
     @PostMapping("/report")
     @PreAuthorize("@familySecurity.check(#request.familyId)")
-    public ApiResponse<CriticalDay> reportCrisis(@Valid @RequestBody CreateCrisisRequest request) {
+    public ApiResponse<CriticalDay> reportCrisis(@Valid @RequestBody CreateCrisisRequest request, Principal principal) {
+        // Autor real resuelto del principal autenticado (ADR-012) -- antes se
+        // pasaba null hardcodeado, dejando cada CriticalDay sin autor.
+        Long memberId = principal != null
+                ? memberRepository.findByEmail(principal.getName()).map(FamilyMember::getId).orElse(null)
+                : null;
         CriticalDay response = crisisService.registerCrisis(
                 request.familyId(),
-                null, // memberId (opcional)
+                memberId,
                 request.category(),
                 request.description(),
                 request.emotion()
@@ -42,11 +52,13 @@ public class CrisisController {
 
     /**
      * GET /api/crisis/family/{familyId} — Recupera el historial de días críticos/crisis de una familia.
+     * Filtrado por visibilidad (ADR-012): un miembro no ve los relatos PRIVATE de otro.
      */
     @GetMapping("/family/{familyId}")
     @PreAuthorize("@familySecurity.check(#familyId)")
-    public ApiResponse<List<CriticalDay>> getHistory(@PathVariable Long familyId) {
-        List<CriticalDay> history = crisisService.getHistory(familyId);
+    public ApiResponse<List<CriticalDay>> getHistory(@PathVariable Long familyId, Principal principal) {
+        Long viewerMemberId = securityValidator.resolveViewerMemberId(familyId, principal);
+        List<CriticalDay> history = crisisService.getHistory(familyId, viewerMemberId);
         return ApiResponse.ok(history, "Historial de contención recuperado.");
     }
 

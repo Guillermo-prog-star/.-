@@ -73,6 +73,26 @@ public class PlanService {
         planRepository.deleteById(id);
     }
 
+    /**
+     * ADR-010: declaracion de intencion (Fase 0b). Idempotente -- volver a
+     * llamarla sobre un plan ya ACCEPTED actualiza accepted_at/accepted_by/
+     * intention_statement en vez de fallar (ver ADR-010, Decision 6).
+     * intentionStatement puede ser null: la motivacion nunca bloquea la
+     * aceptacion (ver ADR-010, Decision 3).
+     */
+    @Transactional
+    public PlanResponse acceptPlan(Long id, String acceptedByEmail, String intentionStatement) {
+        ImprovementPlan plan = planRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("Plan no encontrado: " + id, "PLAN_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        plan.setAcceptanceStatus(PlanAcceptanceStatus.ACCEPTED);
+        plan.setAcceptedAt(LocalDateTime.now());
+        plan.setAcceptedBy(acceptedByEmail);
+        plan.setIntentionStatement(intentionStatement);
+
+        return toPlanResponse(planRepository.save(plan));
+    }
+
     // --- Motor Determinístico (Sprint 3) ---
 
     @Transactional
@@ -468,6 +488,10 @@ public class PlanService {
                 .vision3y(plan.getVision3y())
                 .aiReport(plan.getAiReport())
                 .aiGeneratedAt(plan.getAiGeneratedAt())
+                .acceptanceStatus(plan.getAcceptanceStatus() != null ? plan.getAcceptanceStatus().name() : null)
+                .acceptedAt(plan.getAcceptedAt())
+                .acceptedBy(plan.getAcceptedBy())
+                .intentionStatement(plan.getIntentionStatement())
                 .tasks(tasks)
                 .build();
     }

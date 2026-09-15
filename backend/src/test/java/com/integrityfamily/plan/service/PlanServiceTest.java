@@ -227,6 +227,71 @@ class PlanServiceTest {
     }
 
     // ═══════════════════════════════════════════════════════════════════
+    //  acceptPlan() -- ADR-010
+    // ═══════════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("acceptPlan()")
+    class AcceptPlan {
+
+        @Test
+        @DisplayName("Plan PROPOSED → ACCEPTED con accepted_at/accepted_by/intention_statement correctos")
+        void shouldAcceptPlan_withCorrectFields() {
+            when(planRepository.findById(10L)).thenReturn(Optional.of(plan));
+            when(planRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            PlanResponse response = planService.acceptPlan(10L, "mama@familia.com", "Queremos empezar con calma.");
+
+            assertThat(response.acceptanceStatus()).isEqualTo("ACCEPTED");
+            assertThat(response.acceptedBy()).isEqualTo("mama@familia.com");
+            assertThat(response.acceptedAt()).isNotNull();
+            assertThat(response.intentionStatement()).isEqualTo("Queremos empezar con calma.");
+
+            ArgumentCaptor<ImprovementPlan> captor = ArgumentCaptor.forClass(ImprovementPlan.class);
+            verify(planRepository).save(captor.capture());
+            assertThat(captor.getValue().getAcceptanceStatus()).isEqualTo(PlanAcceptanceStatus.ACCEPTED);
+        }
+
+        @Test
+        @DisplayName("intentionStatement ausente (null) → no bloquea la aceptación")
+        void shouldAccept_withoutIntentionStatement() {
+            when(planRepository.findById(10L)).thenReturn(Optional.of(plan));
+            when(planRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            PlanResponse response = planService.acceptPlan(10L, "papa@familia.com", null);
+
+            assertThat(response.acceptanceStatus()).isEqualTo("ACCEPTED");
+            assertThat(response.intentionStatement()).isNull();
+        }
+
+        @Test
+        @DisplayName("Plan ya ACCEPTED → re-aceptar actualiza los campos en vez de fallar (idempotente)")
+        void shouldReaccept_existingAcceptedPlan_withoutError() {
+            plan.setAcceptanceStatus(PlanAcceptanceStatus.ACCEPTED);
+            plan.setAcceptedBy("mama@familia.com");
+            plan.setIntentionStatement("Primera declaración.");
+            when(planRepository.findById(10L)).thenReturn(Optional.of(plan));
+            when(planRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            PlanResponse response = planService.acceptPlan(10L, "papa@familia.com", "Declaración actualizada.");
+
+            assertThat(response.acceptanceStatus()).isEqualTo("ACCEPTED");
+            assertThat(response.acceptedBy()).isEqualTo("papa@familia.com");
+            assertThat(response.intentionStatement()).isEqualTo("Declaración actualizada.");
+        }
+
+        @Test
+        @DisplayName("ID inexistente → RuntimeException")
+        void shouldThrow_whenNotFound() {
+            when(planRepository.findById(99L)).thenReturn(Optional.empty());
+
+            assertThatThrownBy(() -> planService.acceptPlan(99L, "mama@familia.com", null))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessageContaining("99");
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
     //  completeTask()
     // ═══════════════════════════════════════════════════════════════════
 

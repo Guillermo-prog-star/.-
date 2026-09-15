@@ -22,28 +22,13 @@
         <jjwt.version>0.12.6</jjwt.version>
         <springdoc.version>2.8.5</springdoc.version>
         <lombok.version>1.18.36</lombok.version>
+        <hapi-fhir.version>8.10.0</hapi-fhir.version>
         <jacoco.version>0.8.12</jacoco.version>
-        <!-- SonarCloud -->
-        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-        <sonar.organization>guillermo-prog-star</sonar.organization>
-        <sonar.projectKey>Guillermo-prog-star_if-full</sonar.projectKey>
-        <sonar.projectName>Integrity Family — Backend</sonar.projectName>
-        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-        <sonar.coverage.jacoco.xmlReportPaths>
-            ${project.build.directory}/site/jacoco/jacoco.xml
-        </sonar.coverage.jacoco.xmlReportPaths>
-        <sonar.exclusions>
-            **/domain/**/*,
-            **/config/**/*,
-            **/dto/**/*,
-            **/*Application.java,
-            **/exception/**/*,
-            **/domain/repository/**/*
-        </sonar.exclusions>
-        <sonar.cpd.exclusions>
-            **/dto/**/*,
-            **/domain/**/*
-        </sonar.cpd.exclusions>
+        <!-- Umbral mínimo de cobertura de líneas exigido por el profile `ci`
+             (quality.yml: `mvn verify -P ci`). Cobertura real 2026-09-06: 68.9% líneas.
+             Piso puesto en 0.65 (~4 pt de holgura). Subir en escalón cuando suba la
+             cobertura real; nunca bajar sin justificación. -->
+        <jacoco.line.coverage.min>0.65</jacoco.line.coverage.min>
     </properties>
 
     <dependencies>
@@ -114,15 +99,14 @@
             <version>${springdoc.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
             <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
 
         <dependency>
@@ -147,6 +131,20 @@
         </dependency>
 
         <dependency>
+            <groupId>com.networknt</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>1.0.88</version>
+        </dependency>
+
+        <!-- Fase 4 del programa de interoperabilidad: solo el modelo de recursos R4
+             y el parser JSON (no el servidor FHIR completo, no se necesita todavía). -->
+        <dependency>
+            <groupId>ca.uhn.hapi.fhir</groupId>
+            <artifactId>hapi-fhir-structures-r4</artifactId>
+            <version>${hapi-fhir.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
@@ -161,26 +159,6 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
-
-        <!-- Testcontainers: MySQL real en tests de integración -->
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers</artifactId>
-            <version>1.20.4</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>mysql</artifactId>
-            <version>1.20.4</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>junit-jupiter</artifactId>
-            <version>1.20.4</version>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -189,7 +167,6 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <jvmArguments>-Dfile.encoding=UTF-8</jvmArguments>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
@@ -198,122 +175,71 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <!-- argLine se sobreescribe en CI por JaCoCo para inyectar el agente -->
-                    <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
-                    <systemPropertyVariables>
-                        <spring.profiles.active>test</spring.profiles.active>
-                    </systemPropertyVariables>
-                </configuration>
-            </plugin>
 
-            <!-- ── JaCoCo: cobertura de código ───────────────────────── -->
+            <!-- JaCoCo: instrumenta los tests y emite el XML que consume SonarCloud.
+                 Siempre activo (prepare-agent + report). El gate que ROMPE el build
+                 vive en el profile `ci` (abajo). -->
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <version>${jacoco.version}</version>
-                <configuration>
-                    <excludes>
-                        <!-- Excluir clases sin lógica testeable -->
-                        <exclude>**/domain/**/*</exclude>
-                        <exclude>**/config/**/*</exclude>
-                        <exclude>**/dto/**/*</exclude>
-                        <exclude>**/*Application.class</exclude>
-                        <exclude>**/exception/**/*</exclude>
-                        <exclude>**/domain/repository/**/*</exclude>
-                    </excludes>
-                </configuration>
                 <executions>
                     <execution>
-                        <id>prepare-agent</id>
-                        <goals><goal>prepare-agent</goal></goals>
+                        <id>jacoco-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
                     </execution>
                     <execution>
-                        <id>report</id>
+                        <id>jacoco-report</id>
                         <phase>verify</phase>
-                        <goals><goal>report</goal></goals>
-                    </execution>
-                    <execution>
-                        <id>check</id>
-                        <phase>verify</phase>
-                        <goals><goal>check</goal></goals>
-                        <configuration>
-                            <rules>
-                                <rule>
-                                    <element>BUNDLE</element>
-                                    <limits>
-                                        <!-- Umbral conservador inicial: 40% -->
-                                        <!-- Subir a 60% cuando coverage real lo alcance -->
-                                        <limit>
-                                            <counter>LINE</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.40</minimum>
-                                        </limit>
-                                        <limit>
-                                            <counter>BRANCH</counter>
-                                            <value>COVEREDRATIO</value>
-                                            <minimum>0.30</minimum>
-                                        </limit>
-                                    </limits>
-                                </rule>
-                            </rules>
-                            <!-- Desactivar fallo en local para no bloquear mvn verify rápido -->
-                            <!-- En CI se activa con -Djacoco.skip=false -->
-                            <skip>${jacoco.skip}</skip>
-                        </configuration>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
                     </execution>
                 </executions>
-            </plugin>
-
-            <!-- ── SonarQube Maven plugin ─────────────────────────────── -->
-            <plugin>
-                <groupId>org.sonarsource.scanner.maven</groupId>
-                <artifactId>sonar-maven-plugin</artifactId>
-                <version>4.0.0.4121</version>
             </plugin>
         </plugins>
     </build>
 
     <profiles>
-        <!-- Perfil CI: activa el quality gate de JaCoCo -->
+        <!-- Profile `ci`: usado por .github/workflows/quality.yml (`mvn verify -P ci`).
+             Añade el gate de cobertura de líneas (jacoco:check, haltOnFailure). -->
         <profile>
             <id>ci</id>
-            <properties>
-                <jacoco.skip>false</jacoco.skip>
-            </properties>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-surefire-plugin</artifactId>
-                        <configuration>
-                            <!-- Repetir argLine para que JaCoCo agent se inyecte correctamente -->
-                            <argLine>@{argLine} -Dfile.encoding=UTF-8</argLine>
-                            <systemPropertyVariables>
-                                <spring.profiles.active>test</spring.profiles.active>
-                            </systemPropertyVariables>
-                            <!-- Doble exclusión: por @Tag (JUnit5) y por path (Surefire) -->
-                            <excludedGroups>integration</excludedGroups>
-                            <excludes>
-                                <exclude>**/integration/*</exclude>
-                            </excludes>
-                        </configuration>
+                        <groupId>org.jacoco</groupId>
+                        <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${jacoco.version}</version>
+                        <executions>
+                            <execution>
+                                <id>jacoco-check</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                                <configuration>
+                                    <haltOnFailure>true</haltOnFailure>
+                                    <rules>
+                                        <rule>
+                                            <element>BUNDLE</element>
+                                            <limits>
+                                                <limit>
+                                                    <counter>LINE</counter>
+                                                    <value>COVEREDRATIO</value>
+                                                    <minimum>${jacoco.line.coverage.min}</minimum>
+                                                </limit>
+                                            </limits>
+                                        </rule>
+                                    </rules>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-        <!-- Perfil local: omite el quality gate para no bloquear dev -->
-        <profile>
-            <id>local</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <jacoco.skip>true</jacoco.skip>
-            </properties>
         </profile>
     </profiles>
 </project>

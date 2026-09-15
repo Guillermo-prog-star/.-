@@ -8,6 +8,7 @@ import { MemberListPageComponent } from './member-list-page.component';
 import { ApiService } from '../../core/services/api.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { AuthService } from '../../core/services/auth.service';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -27,6 +28,8 @@ function buildComponent(signalFamilyId = 0, role: 'ADMIN' | 'USER' = 'USER') {
     { user: signal({ role } as any) }
   );
 
+  const scrollPolicySpy = jasmine.createSpyObj<ScrollPolicyService>('ScrollPolicyService', ['set', 'reset']);
+
   TestBed.configureTestingModule({
     imports: [MemberListPageComponent],
     providers: [
@@ -35,7 +38,8 @@ function buildComponent(signalFamilyId = 0, role: 'ADMIN' | 'USER' = 'USER') {
       provideHttpClientTesting(),
       { provide: ApiService, useValue: { base: API_BASE } as ApiService },
       { provide: FamilyStateService, useValue: familyStateSpy },
-      { provide: AuthService, useValue: authServiceSpy }
+      { provide: AuthService, useValue: authServiceSpy },
+      { provide: ScrollPolicyService, useValue: scrollPolicySpy }
     ],
     schemas: [NO_ERRORS_SCHEMA]
   });
@@ -84,18 +88,7 @@ describe('MemberListPageComponent', () => {
       httpMock.verify();
     });
 
-    it('usa localStorage como fallback cuando la señal vale 0', () => {
-      const { component, httpMock } = buildComponent(0);
-      localStorage.setItem('selectedFamilyId', '77');
-
-      expect(component.familyId).toBe(77);
-
-      localStorage.removeItem('selectedFamilyId');
-      httpMock.verify();
-    });
-
-    it('devuelve null si la señal es 0 y localStorage no tiene valor', () => {
-      localStorage.removeItem('selectedFamilyId');
+    it('devuelve null cuando la señal vale 0', () => {
       const { component, httpMock } = buildComponent(0);
 
       expect(component.familyId).toBeNull();
@@ -238,19 +231,32 @@ describe('MemberListPageComponent', () => {
   // ═══════════════════════════════════════════════════════════════════════
 
   describe('remove()', () => {
-    it('confirm=false → no hace DELETE', fakeAsync(() => {
+    it('remove() marca pendingDeleteId sin hacer DELETE todavía', fakeAsync(() => {
       const { fixture, component, httpMock } = buildComponent();
       fixture.detectChanges();
       httpMock.expectOne(`${API_BASE}/members/mine`).flush({ data: [] });
       tick();
 
-      spyOn(window, 'confirm').and.returnValue(false);
       component.remove(5);
 
+      expect(component.pendingDeleteId).toBe(5);
       httpMock.verify(); // no debe haber petición DELETE
     }));
 
-    it('confirm=true → DELETE + recarga lista', fakeAsync(() => {
+    it('cancelRemove() limpia pendingDeleteId sin hacer DELETE', fakeAsync(() => {
+      const { fixture, component, httpMock } = buildComponent();
+      fixture.detectChanges();
+      httpMock.expectOne(`${API_BASE}/members/mine`).flush({ data: [] });
+      tick();
+
+      component.remove(5);
+      component.cancelRemove();
+
+      expect(component.pendingDeleteId).toBeNull();
+      httpMock.verify();
+    }));
+
+    it('confirmRemove() → DELETE + recarga lista', fakeAsync(() => {
       const { fixture, component, httpMock } = buildComponent();
       fixture.detectChanges();
       httpMock.expectOne(`${API_BASE}/members/mine`).flush({
@@ -258,9 +264,10 @@ describe('MemberListPageComponent', () => {
       });
       tick();
 
-      spyOn(window, 'confirm').and.returnValue(true);
       component.remove(5);
+      component.confirmRemove();
 
+      expect(component.pendingDeleteId).toBeNull();
       httpMock.expectOne(`${API_BASE}/members/5`).flush({});
       tick();
 

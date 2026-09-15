@@ -4,6 +4,7 @@ import com.integrityfamily.weeklyplan.domain.WeeklyPlan;
 import com.integrityfamily.weeklyplan.service.WeeklyPlanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,11 +23,13 @@ public class WeeklyPlanController {
 
     private final WeeklyPlanService service;
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @GetMapping
     public ResponseEntity<List<WeeklyPlan>> getAll(@PathVariable Long familyId) {
         return ResponseEntity.ok(service.getAll(familyId));
     }
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @PutMapping("/{phase}")
     public ResponseEntity<WeeklyPlan> save(
             @PathVariable Long familyId,

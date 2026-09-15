@@ -458,6 +458,25 @@ class PromptGeneratorTest {
                     family("Test"), Map.of("HABITOS", 55.5), "BAJO");
             assertThat(result).contains("HABITOS");
         }
+
+        @Test
+        @DisplayName("sin dimensiones aún (familia sin evaluar) → prompt de bienvenida cálida, sin persona urgente ni 'riesgo'")
+        void noDimensionsYet_usesWelcomePromptInsteadOfUrgentSentinel() {
+            String result = generator.buildDashboardInsightPrompt(family("Familia Nueva"), Map.of(), "LOW");
+
+            assertThat(result).doesNotContain("Guardián Sentinel");
+            assertThat(result).doesNotContain("ACCIONES DE CONTENCIÓN");
+            assertThat(result).doesNotContain("Nivel de Riesgo");
+            assertThat(result).contains("Familia Nueva");
+        }
+
+        @Test
+        @DisplayName("dimensiones null (familia sin evaluar) → misma rama de bienvenida cálida")
+        void nullDimensions_usesWelcomePrompt() {
+            String result = generator.buildDashboardInsightPrompt(family("Test"), null, "LOW");
+
+            assertThat(result).doesNotContain("Guardián Sentinel");
+        }
     }
 
     // ── buildMissionGenerationPrompt ─────────────────────────────────────────

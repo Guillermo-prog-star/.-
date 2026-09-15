@@ -16,6 +16,7 @@ import { FamilyListPageComponent } from './family-list-page.component';
 import { FamilyStateService } from '../../core/services/family-state.service';
 import { Family } from '../../core/models/models';
 import { ApiService } from '../../core/services/api.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 
 // ─── Stubs ───────────────────────────────────────────────────────────────────
 
@@ -36,8 +37,12 @@ describe('FamilyListPageComponent', () => {
   beforeEach(() => {
     fsSpy = jasmine.createSpyObj<FamilyStateService>(
       'FamilyStateService',
-      ['setFamilyId'],
+      ['setFamilyId', 'setFamily', 'setMilestone'],
       { currentFamilyId: signal(1) }
+    );
+
+    const flowSpy = jasmine.createSpyObj<TransformationFlowService>(
+      'TransformationFlowService', ['loadFromBackend']
     );
 
     TestBed.configureTestingModule({
@@ -46,7 +51,8 @@ describe('FamilyListPageComponent', () => {
         provideHttpClient(withInterceptorsFromDi()),
         provideHttpClientTesting(),
         provideRouter([]),
-        { provide: FamilyStateService, useValue: fsSpy }
+        { provide: FamilyStateService, useValue: fsSpy },
+        { provide: TransformationFlowService, useValue: flowSpy }
       ],
       schemas: [NO_ERRORS_SCHEMA]
     });
@@ -69,10 +75,10 @@ describe('FamilyListPageComponent', () => {
       const fixture = TestBed.createComponent(FamilyListPageComponent);
       fixture.detectChanges();
 
-      httpMock.expectOne('/api/families').flush({ data: FAMILIES_STUB });
+      httpMock.expectOne('/api/families/mine').flush({ data: FAMILIES_STUB[0] });
       tick();
 
-      expect(fixture.componentInstance.families.length).toBe(2);
+      expect(fixture.componentInstance.families.length).toBe(1);
       expect(fixture.componentInstance.loading).toBeFalse();
     }));
 
@@ -80,7 +86,7 @@ describe('FamilyListPageComponent', () => {
       const fixture = TestBed.createComponent(FamilyListPageComponent);
       fixture.detectChanges();
 
-      httpMock.expectOne('/api/families').flush('Server Error',
+      httpMock.expectOne('/api/families/mine').flush('Server Error',
         { status: 500, statusText: 'Internal Server Error' }
       );
       tick();
@@ -95,23 +101,23 @@ describe('FamilyListPageComponent', () => {
   // ═══════════════════════════════════════════════════════════════════════════
 
   describe('select()', () => {
-    it('llama setFamilyId con id y nombre de la familia', fakeAsync(() => {
+    it('llama setFamily con la familia seleccionada', fakeAsync(() => {
       const fixture = TestBed.createComponent(FamilyListPageComponent);
       spyOn(router, 'navigate');
       fixture.detectChanges();
-      httpMock.expectOne('/api/families').flush({ data: [] });
+      httpMock.expectOne('/api/families/mine').flush({ data: [] });
       tick();
 
       fixture.componentInstance.select(FAMILIES_STUB[0]);
 
-      expect(fsSpy.setFamilyId).toHaveBeenCalledWith(1, 'Familia López');
+      expect(fsSpy.setFamily).toHaveBeenCalledWith(FAMILIES_STUB[0]);
     }));
 
     it('navega a /members tras seleccionar familia', fakeAsync(() => {
       const fixture = TestBed.createComponent(FamilyListPageComponent);
       const navigateSpy = spyOn(router, 'navigate');
       fixture.detectChanges();
-      httpMock.expectOne('/api/families').flush({ data: [] });
+      httpMock.expectOne('/api/families/mine').flush({ data: [] });
       tick();
 
       fixture.componentInstance.select(FAMILIES_STUB[0]);
@@ -128,7 +134,7 @@ describe('FamilyListPageComponent', () => {
     it('id === currentFamilyId → true', fakeAsync(() => {
       const fixture = TestBed.createComponent(FamilyListPageComponent);
       fixture.detectChanges();
-      httpMock.expectOne('/api/families').flush({ data: [] });
+      httpMock.expectOne('/api/families/mine').flush({ data: [] });
       tick();
 
       expect(fixture.componentInstance.isSelected(FAMILIES_STUB[0])).toBeTrue();
@@ -137,7 +143,7 @@ describe('FamilyListPageComponent', () => {
     it('id !== currentFamilyId → false', fakeAsync(() => {
       const fixture = TestBed.createComponent(FamilyListPageComponent);
       fixture.detectChanges();
-      httpMock.expectOne('/api/families').flush({ data: [] });
+      httpMock.expectOne('/api/families/mine').flush({ data: [] });
       tick();
 
       expect(fixture.componentInstance.isSelected(FAMILIES_STUB[1])).toBeFalse();

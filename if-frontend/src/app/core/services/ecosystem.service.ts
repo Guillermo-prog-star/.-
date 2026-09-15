@@ -3,7 +3,16 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-export type NetworkType = 'FAMILIAR' | 'INSTITUTIONAL' | 'COMMUNITY' | 'TERRITORIAL';
+export type NetworkType = 'FAMILIAR' | 'PROFESSIONAL' | 'INSTITUTIONAL' | 'COMMUNITY' | 'TERRITORIAL';
+
+export interface RegisterParticipantRequest {
+  name: string;
+  networkType: NetworkType;
+  description: string;
+  contactEmail: string;
+  contactPhone: string;
+  website: string;
+}
 export type LinkStatus   = 'INVITED' | 'ACTIVE' | 'SUSPENDED' | 'REVOKED';
 
 export interface EcosystemParticipant {
@@ -104,5 +113,27 @@ export class EcosystemService {
 
   getAuditLog(familyId: number): Observable<AuditEntry[]> {
     return this.http.get<AuditEntry[]>(`${this.base}/families/${familyId}/ecosystem/audit`);
+  }
+
+  registerParticipant(req: RegisterParticipantRequest): Observable<EcosystemParticipant> {
+    return this.http.post<EcosystemParticipant>(`${this.base}/ecosystem/participants`, req);
+  }
+
+  updateParticipant(id: number, req: RegisterParticipantRequest): Observable<EcosystemParticipant> {
+    return this.http.put<EcosystemParticipant>(`${this.base}/ecosystem/participants/${id}`, req);
+  }
+
+  deleteParticipant(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/ecosystem/participants/${id}`);
+  }
+
+  updateLink(familyId: number, linkId: number, payload: {
+    objective?: string;
+    responsibilities?: string;
+    validFrom?: string | null;
+    validUntil?: string | null;
+    accessScope?: Partial<EcosystemAccessScope>;
+  }): Observable<EcosystemLink> {
+    return this.http.put<EcosystemLink>(`${this.base}/families/${familyId}/ecosystem/links/${linkId}`, payload);
   }
 }

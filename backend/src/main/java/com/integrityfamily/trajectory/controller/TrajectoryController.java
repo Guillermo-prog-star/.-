@@ -4,6 +4,7 @@ import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.domain.RiskMacrodomain;
 import com.integrityfamily.domain.TrajectoryStatus;
 import com.integrityfamily.trajectory.dto.TrajectoryDtos.*;
+import com.integrityfamily.trajectory.service.SafetyProtocolService;
 import com.integrityfamily.trajectory.service.TrajectoryService;
 import com.integrityfamily.trajectory.service.TrajectorySuggestionService;
 import com.integrityfamily.trajectory.service.TrajectorySuggestionService.TrajectorySuggestion;
@@ -22,6 +23,7 @@ public class TrajectoryController {
 
     private final TrajectoryService trajectoryService;
     private final TrajectorySuggestionService suggestionService;
+    private final SafetyProtocolService safetyProtocolService;
 
     // ─── Bank endpoints ───────────────────────────────────────────────────────
 
@@ -96,6 +98,33 @@ public class TrajectoryController {
             @PathVariable Long id,
             @RequestBody IndicatorRequest request) {
         return ApiResponse.ok(trajectoryService.upsertIndicator(id, request));
+    }
+
+    // ─── Protocolo de seguridad ────────────────────────────────────────────────
+
+    @PostMapping("/family/{id}/safety-protocol")
+    @PreAuthorize("@familySecurity.checkFamilyTrajectory(#id)")
+    public ApiResponse<SafetyProtocolDto> activateSafetyProtocol(
+            @PathVariable Long id,
+            @RequestBody ActivateSafetyProtocolRequest request,
+            @AuthenticationPrincipal UserDetails principal) {
+        String email = principal != null ? principal.getUsername() : "system";
+        return ApiResponse.ok(safetyProtocolService.activate(id, request, email));
+    }
+
+    @GetMapping("/family/{id}/safety-protocol")
+    @PreAuthorize("@familySecurity.checkFamilyTrajectory(#id)")
+    public ApiResponse<List<SafetyProtocolDto>> getSafetyProtocols(@PathVariable Long id) {
+        return ApiResponse.ok(safetyProtocolService.getByFamilyTrajectory(id));
+    }
+
+    @PostMapping("/family/{id}/safety-protocol/{activationId}/close")
+    @PreAuthorize("@familySecurity.canCloseSafetyProtocol(#id)")
+    public ApiResponse<SafetyProtocolDto> closeSafetyProtocol(
+            @PathVariable Long id,
+            @PathVariable Long activationId,
+            @RequestBody CloseSafetyProtocolRequest request) {
+        return ApiResponse.ok(safetyProtocolService.close(id, activationId, request));
     }
 
     // ─── Sugerencias automáticas ──────────────────────────────────────────────

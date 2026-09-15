@@ -16,7 +16,7 @@ public class EvaluationDtos {
 
         public record AnswerDto(
                         @NotNull Long questionId,
-                        @NotNull @Min(1) @Max(5) Integer value,
+                        @NotNull @Min(0) @Max(5) Integer value,
                         // Soporte para legado del frontend
                         Integer answerValue) {
                 public Integer getEffectiveValue() {
@@ -38,8 +38,9 @@ public class EvaluationDtos {
                         List<DimensionScoreDto> dimensionScores,
                         Double healthyIndex,   // antes: globalScore — renombrado para coincidir con el contrato frontend
                         Long riskSnapshotId,
-                        String aiReport,
                         Boolean hasCrisis,
+                        Double inc, // Nivel lineal retrocompatible
+                        com.integrityfamily.domain.NeuroProfile neuroProfile, // Nuevo perfil neuro-fenomenológico vectorial
                         // Nuevos campos RISK_ALGO_V1 Taxonomía v2
                         Boolean simulationSuspected,
                         Boolean relapseDetected,
@@ -64,6 +65,8 @@ public class EvaluationDtos {
                         LocalDateTime startedAt,
                         LocalDateTime finalizedAt,
                         Double icf,
+                        Double inc, // Nivel lineal retrocompatible
+                        com.integrityfamily.domain.NeuroProfile neuroProfile, // Nuevo perfil neuro-fenomenológico
                         String riskLevel,
                         String criticalDimension) {
         }

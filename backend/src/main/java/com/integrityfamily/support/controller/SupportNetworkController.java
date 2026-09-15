@@ -3,6 +3,7 @@ package com.integrityfamily.support.controller;
 import com.integrityfamily.support.domain.SupportSpecialty;
 import com.integrityfamily.support.dto.SupportNetworkDtos.*;
 import com.integrityfamily.support.repository.SupportNetworkMemberRepository;
+import com.integrityfamily.support.service.ProfessionalFollowUpDraftService;
 import com.integrityfamily.support.service.SupportNetworkService;
 import com.integrityfamily.common.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class SupportNetworkController {
 
     private final SupportNetworkService service;
     private final SupportNetworkMemberRepository memberRepository;
+    private final ProfessionalFollowUpDraftService followUpDraftService;
 
     // ─────────────────────────────────────────────────────────────────────
     // Catálogo de profesionales (cualquier usuario autenticado puede consultar)
@@ -86,6 +88,50 @@ public class SupportNetworkController {
         return ResponseEntity.ok(service.revoke(familyId, req, principal.getUsername()));
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // Panel del profesional — mis familias, mi perfil, vista de datos
+    // ─────────────────────────────────────────────────────────────────────
+
+    @GetMapping("/api/support/my-families")
+    public ResponseEntity<List<AssignmentResponse>> getMyFamilies(@AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.getMyAssignments(principal.getUsername()));
+    }
+
+    @GetMapping("/api/support/my-assignments")
+    public ResponseEntity<List<AssignmentResponse>> getMyAssignments(@AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.getMyAssignments(principal.getUsername()));
+    }
+
+    @GetMapping("/api/support/my-profile")
+    public ResponseEntity<ProfessionalResponse> getMyProfile(@AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.getMyProfile(principal.getUsername()));
+    }
+
+    @PutMapping("/api/support/my-profile")
+    public ResponseEntity<ProfessionalResponse> updateMyProfile(
+            @RequestBody UpdateProfileRequest req,
+            @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.updateMyProfile(principal.getUsername(), req));
+    }
+
+    @GetMapping("/api/families/{familyId}/support/data-view")
+    public ResponseEntity<FamilyDataView> getDataView(
+            @PathVariable Long familyId,
+            @RequestParam Long assignmentId,
+            @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.getDataView(familyId, assignmentId, principal.getUsername()));
+    }
+
+    /** El profesional genera un borrador de nota de seguimiento (ADR-006) */
+    @PostMapping("/api/families/{familyId}/support/follow-up-drafts")
+    @PreAuthorize("hasAnyRole('THERAPIST','ORIENTADOR','ADMIN')")
+    public ResponseEntity<FollowUpDraftResponse> generateFollowUpDraft(
+            @PathVariable Long familyId,
+            @RequestParam Long assignmentId,
+            @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(followUpDraftService.generate(familyId, assignmentId, principal.getUsername()));
+    }
+
     /** El profesional deja una nota clínica */
     @PostMapping("/api/families/{familyId}/support/notes")
     @PreAuthorize("hasAnyRole('THERAPIST','ORIENTADOR','ADMIN')")
@@ -94,7 +140,14 @@ public class SupportNetworkController {
             @RequestBody AddNoteRequest req,
             @AuthenticationPrincipal UserDetails principal) {
         Long supportMemberId = resolveSupportMemberId(principal.getUsername());
-        return ResponseEntity.ok(service.addNote(familyId, req, supportMemberId));
+        return ResponseEntity.ok(service.addNote(familyId, req, principal.getUsername(), supportMemberId));
+    }
+
+    @GetMapping("/api/support/assignments/{assignmentId}/access-log")
+    public ResponseEntity<List<com.integrityfamily.support.dto.SupportNetworkDtos.AccessLogEntry>> getAccessLog(
+            @PathVariable Long assignmentId,
+            @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.getAccessLog(assignmentId, principal.getUsername()));
     }
 
     private Long resolveSupportMemberId(String email) {

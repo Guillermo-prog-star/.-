@@ -5,6 +5,7 @@ import com.integrityfamily.guardian.dto.*;
 import com.integrityfamily.guardian.service.GuardianBriefingService;
 import com.integrityfamily.guardian.service.GuardianService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
@@ -30,6 +31,7 @@ public class GuardianController {
     private final GuardianService guardianService;
     private final GuardianBriefingService guardianBriefingService;
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @GetMapping
     public ApiResponse<GuardianStatusResponse> getStatus(
             @PathVariable Long familyId,
@@ -37,11 +39,13 @@ public class GuardianController {
         return ApiResponse.ok(guardianService.getStatus(familyId, memberId));
     }
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @GetMapping("/briefing")
     public ApiResponse<GuardianBriefingResponse> getBriefing(@PathVariable Long familyId) {
         return ApiResponse.ok(guardianBriefingService.getBriefing(familyId));
     }
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @PostMapping("/reengage/{targetMemberId}")
     public ApiResponse<String> reengageMember(
             @PathVariable Long familyId,
@@ -49,6 +53,7 @@ public class GuardianController {
         return ApiResponse.ok(guardianBriefingService.generateReengagementMessage(familyId, targetMemberId));
     }
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @PostMapping("/vote")
     public ApiResponse<GuardianStatusResponse> vote(
             @PathVariable Long familyId,
@@ -56,6 +61,7 @@ public class GuardianController {
         return ApiResponse.ok(guardianService.vote(familyId, request));
     }
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @PostMapping("/confirm")
     public ApiResponse<GuardianStatusResponse> confirm(
             @PathVariable Long familyId,
@@ -63,6 +69,7 @@ public class GuardianController {
         return ApiResponse.ok(guardianService.confirmGuardian(familyId, memberId));
     }
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @PostMapping("/missions")
     public ApiResponse<MissionDto> activateMission(
             @PathVariable Long familyId,
@@ -70,6 +77,7 @@ public class GuardianController {
         return ApiResponse.ok(guardianService.activateMission(familyId, request));
     }
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @PostMapping("/missions/{missionId}/complete")
     public ApiResponse<MissionDto> completeMission(
             @PathVariable Long familyId,
@@ -78,6 +86,7 @@ public class GuardianController {
         return ApiResponse.ok(guardianService.completeMission(familyId, missionId, guardianMemberId));
     }
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @GetMapping("/missions")
     public ApiResponse<List<MissionDto>> getMissions(@PathVariable Long familyId) {
         return ApiResponse.ok(guardianService.getMissions(familyId));

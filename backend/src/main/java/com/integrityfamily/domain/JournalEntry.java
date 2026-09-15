@@ -28,6 +28,20 @@ public class JournalEntry {
     @JoinColumn(name = "family_id", nullable = false)
     private Family family;
 
+    /** Autor del relato (ADR-012). Null = entrada generada por sistema/IA, sin autor humano. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private FamilyMember member;
+
+    /** Clave opaca asignada por el cliente para vincular relatos del mismo evento real (ADR-012, H2). */
+    @Column(name = "perceived_event_key", length = 64)
+    private String perceivedEventKey;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visibility", nullable = false, length = 20)
+    @Builder.Default
+    private EntryVisibility visibility = EntryVisibility.PRIVATE;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "origin", nullable = false, length = 30)
     private JournalOrigin origin; // RISK, PLAN, TASK, CRISIS

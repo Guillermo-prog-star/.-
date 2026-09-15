@@ -18,7 +18,9 @@ public class TrajectoryDtos {
         String description,
         String earlySignals,
         String potentialEvolution,
-        String severityDefault
+        String severityDefault,
+        Boolean requiresSafetyProtocol,
+        String contextualCriticalityRule
     ) {}
 
     public record FamilyTrajectoryDto(
@@ -82,4 +84,29 @@ public class TrajectoryDtos {
         java.util.Map<String, List<TrajectoryBankItem>> byMacrodomain,
         int totalTrajectories
     ) {}
+
+    // ─── Protocolo de seguridad ─────────────────────────────────────────────────
+
+    public record SafetyProtocolDto(
+        Long id,
+        Long familyTrajectoryId,
+        Long responsibleId,
+        String responsibleName,
+        String initialAction,
+        LocalDate followUpDate,
+        Long supportAssignmentId,
+        boolean closed,
+        String resolutionNotes,
+        String activatedBy,
+        LocalDateTime createdAt,
+        LocalDateTime closedAt
+    ) {}
+
+    public record ActivateSafetyProtocolRequest(
+        Long responsibleId,
+        String initialAction,
+        LocalDate followUpDate
+    ) {}
+
+    public record CloseSafetyProtocolRequest(String resolutionNotes) {}
 }

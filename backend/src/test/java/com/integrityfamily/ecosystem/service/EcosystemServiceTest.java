@@ -11,6 +11,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.integrityfamily.auth.service.EmailService;
+import com.integrityfamily.domain.repository.UserRepository;
+import com.integrityfamily.domain.repository.RoleRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +32,10 @@ class EcosystemServiceTest {
     @Mock EcosystemParticipantRepository participantRepository;
     @Mock FamilyEcosystemLinkRepository linkRepository;
     @Mock EcosystemAuditService auditService;
+    @Mock EmailService emailService;
+    @Mock UserRepository userRepository;
+    @Mock RoleRepository roleRepository;
+    @Mock PasswordEncoder passwordEncoder;
 
     @InjectMocks EcosystemService service;
 
@@ -92,7 +100,7 @@ class EcosystemServiceTest {
             req.setNetworkType(NetworkType.INSTITUTIONAL);
             req.setContactEmail("rector@sanmarcos.edu");
 
-            when(participantRepository.existsByNameAndNetworkType("Colegio San Marcos", NetworkType.INSTITUTIONAL))
+            when(participantRepository.existsByNameAndNetworkTypeAndDescriptionAndContactEmail("Colegio San Marcos", NetworkType.INSTITUTIONAL, null, "rector@sanmarcos.edu"))
                     .thenReturn(false);
             when(participantRepository.save(any())).thenAnswer(inv -> {
                 EcosystemParticipant p = inv.getArgument(0);
@@ -107,18 +115,58 @@ class EcosystemServiceTest {
             verify(participantRepository).save(any());
         }
 
-        @Test @DisplayName("lanza CONFLICT si el nombre ya existe en ese tipo de red")
+        @Test @DisplayName("lanza CONFLICT si el nombre, red, descripcion y email ya existen")
         void lanza_conflict_si_nombre_duplicado() {
             RegisterParticipantRequest req = new RegisterParticipantRequest();
             req.setName("Duplicado");
             req.setNetworkType(NetworkType.COMMUNITY);
+            req.setDescription("Desc");
+            req.setContactEmail("email");
 
-            when(participantRepository.existsByNameAndNetworkType("Duplicado", NetworkType.COMMUNITY))
+            when(participantRepository.existsByNameAndNetworkTypeAndDescriptionAndContactEmail("Duplicado", NetworkType.COMMUNITY, "Desc", "email"))
                     .thenReturn(true);
 
             assertThatThrownBy(() -> service.registerParticipant(req))
                     .isInstanceOf(BusinessException.class)
-                    .hasMessageContaining("Ya existe un participante");
+                    .hasMessageContaining("Ya existe un participante registrado");
+        }
+    }
+
+    @Nested @DisplayName("updateParticipant() & deleteParticipant()")
+    class UpdateAndDeleteParticipant {
+
+        @Test @DisplayName("actualiza un participante existente correctamente")
+        void actualiza_participante() {
+            EcosystemParticipant existing = participant(NetworkType.INSTITUTIONAL);
+            RegisterParticipantRequest req = new RegisterParticipantRequest();
+            req.setName("Nuevo Nombre");
+            req.setNetworkType(NetworkType.INSTITUTIONAL);
+            req.setDescription("Nueva Desc");
+            req.setContactEmail("nuevo@email.com");
+
+            when(participantRepository.findById(PARTICIPANT_ID)).thenReturn(Optional.of(existing));
+            when(participantRepository.existsByNameAndNetworkTypeAndDescriptionAndContactEmailAndIdNot(
+                    "Nuevo Nombre", NetworkType.INSTITUTIONAL, "Nueva Desc", "nuevo@email.com", PARTICIPANT_ID))
+                    .thenReturn(false);
+            when(participantRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            ParticipantResponse resp = service.updateParticipant(PARTICIPANT_ID, req);
+
+            assertThat(resp.getName()).isEqualTo("Nuevo Nombre");
+            assertThat(resp.getDescription()).isEqualTo("Nueva Desc");
+            verify(participantRepository).save(any());
+        }
+
+        @Test @DisplayName("desactiva un participante (borrado lógico)")
+        void desactiva_participante() {
+            EcosystemParticipant existing = participant(NetworkType.PROFESSIONAL);
+            when(participantRepository.findById(PARTICIPANT_ID)).thenReturn(Optional.of(existing));
+            when(participantRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            service.deleteParticipant(PARTICIPANT_ID);
+
+            assertThat(existing.isActive()).isFalse();
+            verify(participantRepository).save(existing);
         }
     }
 
@@ -276,6 +324,36 @@ class EcosystemServiceTest {
             assertThatThrownBy(() -> service.link(FAMILY_ID, req, EMAIL))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("ya está vinculado");
+        }
+    }
+
+    @Nested @DisplayName("updateLink()")
+    class UpdateLink {
+
+        @Test @DisplayName("actualiza detalles de conexión correctamente")
+        void actualiza_detalles_conexion() {
+            LinkRequest req = new LinkRequest();
+            req.setObjective("Nuevo Objetivo");
+            req.setResponsibilities("Nuevas Responsabilidades");
+            req.setValidFrom(LocalDate.of(2026, 1, 1));
+            req.setValidUntil(LocalDate.of(2026, 12, 31));
+
+            EcosystemAccessScopeDto scope = new EcosystemAccessScopeDto();
+            scope.setCanViewIcfScore(true);
+            req.setAccessScope(scope);
+
+            FamilyEcosystemLink link = invitedLink(participant(NetworkType.PROFESSIONAL));
+            when(linkRepository.findById(LINK_ID)).thenReturn(Optional.of(link));
+            when(linkRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+            LinkResponse resp = service.updateLink(FAMILY_ID, LINK_ID, req, EMAIL);
+
+            assertThat(resp.getObjective()).isEqualTo("Nuevo Objetivo");
+            assertThat(resp.getResponsibilities()).isEqualTo("Nuevas Responsabilidades");
+            assertThat(resp.getValidFrom()).isEqualTo(LocalDate.of(2026, 1, 1));
+            assertThat(resp.getValidUntil()).isEqualTo(LocalDate.of(2026, 12, 31));
+            assertThat(link.isCanViewIcfScore()).isTrue();
+            verify(linkRepository).save(any());
         }
     }
 

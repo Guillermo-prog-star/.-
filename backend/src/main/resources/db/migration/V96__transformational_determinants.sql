@@ -1,0 +1,128 @@
+-- V96: Modelo de Determinantes Transformacionales de la Familia (borrador, hipótesis en validación)
+--
+-- Añade una capa causal/de intervención por ENCIMA del Banco de Trayectorias de Riesgo (V75),
+-- sin modificar risk_trajectories ni su columna macrodomain (que sigue describiendo el
+-- fenómeno observable). Los 4 determinantes son un marco teórico propuesto, no un hecho
+-- validado empíricamente todavía.
+--
+-- La validación manual de los 9 macrodominios mostró que solo 3 (RELACIONES_PAREJA,
+-- ECONOMIA_FAMILIAR, LEGADO) mapean 1:1 a un único determinante. Los otros 6 son
+-- crosscutting (ej. SALUD_MENTAL, ADICCIONES) o se dividen dentro del propio macrodominio
+-- (ej. GOBERNANZA). Por eso el mapeo se hace a nivel de TRAYECTORIA individual (no de
+-- macrodomain) y permite múltiples determinantes por trayectoria vía risk_trajectory_determinants,
+-- con role PRIMARY/SECONDARY para distinguir el eje dominante del contribuyente.
+
+CREATE TABLE IF NOT EXISTS transformational_determinants (
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    code        VARCHAR(30)  NOT NULL UNIQUE,
+    name        VARCHAR(100) NOT NULL,
+    description TEXT
+);
+
+INSERT INTO transformational_determinants (code, name, description) VALUES
+('PATRIMONIO', 'Patrimonio Familiar', 'Lo heredado y construido: historia, valores, identidad, narrativas, legado.'),
+('ENTORNO', 'Entorno', 'Condiciones externas: vivienda, economía, escuela, trabajo, barrio, tecnología.'),
+('DINAMICA', 'Dinámica Familiar', 'Interacciones cotidianas: comunicación, límites, autoridad, cooperación.'),
+('ECOSISTEMA_APOYO', 'Ecosistema de Apoyo', 'Recursos y acompañamiento: redes, profesionales, instituciones, IA.');
+
+CREATE TABLE IF NOT EXISTS risk_trajectory_determinants (
+    id              BIGINT AUTO_INCREMENT PRIMARY KEY,
+    trajectory_id   BIGINT      NOT NULL,
+    determinant_id  BIGINT      NOT NULL,
+    role            VARCHAR(10) NOT NULL DEFAULT 'PRIMARY',
+    CONSTRAINT fk_rtd_trajectory  FOREIGN KEY (trajectory_id)  REFERENCES risk_trajectories(id)              ON DELETE CASCADE,
+    CONSTRAINT fk_rtd_determinant FOREIGN KEY (determinant_id) REFERENCES transformational_determinants(id) ON DELETE CASCADE,
+    CONSTRAINT uq_rtd_trajectory_determinant UNIQUE (trajectory_id, determinant_id),
+    INDEX idx_rtd_trajectory   (trajectory_id),
+    INDEX idx_rtd_determinant  (determinant_id)
+);
+
+-- ─── Seed: mapeo trayectoria → determinante(s), 36 trayectorias de V75 ──────────
+-- role = PRIMARY  → eje de intervención dominante
+-- role = SECONDARY → eje contribuyente (trayectoria crosscutting)
+
+INSERT INTO risk_trajectory_determinants (trajectory_id, determinant_id, role)
+SELECT rt.id, td.id, v.role
+FROM (
+    -- RELACIONES_PAREJA → DINAMICA
+    SELECT 'DIVORCIO_SEPARACION' AS code, 'DINAMICA' AS det, 'PRIMARY' AS role
+    UNION ALL SELECT 'INFIDELIDAD', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'VIOLENCIA_INTRAFAMILIAR', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'VIOLENCIA_ECONOMICA', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'VIOLENCIA_ECONOMICA', 'ENTORNO', 'SECONDARY'
+    UNION ALL SELECT 'CRISIS_PAREJA', 'DINAMICA', 'PRIMARY'
+
+    -- CRIANZA_ADOLESCENCIA → mezcla ENTORNO/DINAMICA/ECOSISTEMA_APOYO
+    UNION ALL SELECT 'CONSUMO_MARIHUANA', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'CONSUMO_MARIHUANA', 'ECOSISTEMA_APOYO', 'SECONDARY'
+    UNION ALL SELECT 'CONSUMO_ALCOHOL_ADOLESCENTE', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'CONSUMO_ALCOHOL_ADOLESCENTE', 'ECOSISTEMA_APOYO', 'SECONDARY'
+    UNION ALL SELECT 'DELINCUENCIA_JUVENIL', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'DELINCUENCIA_JUVENIL', 'ENTORNO', 'SECONDARY'
+    UNION ALL SELECT 'DESERCION_ESCOLAR', 'ENTORNO', 'PRIMARY'
+    UNION ALL SELECT 'DESERCION_ESCOLAR', 'DINAMICA', 'SECONDARY'
+    UNION ALL SELECT 'BAJO_RENDIMIENTO_ACADEMICO', 'ENTORNO', 'PRIMARY'
+    UNION ALL SELECT 'BAJO_RENDIMIENTO_ACADEMICO', 'DINAMICA', 'SECONDARY'
+    UNION ALL SELECT 'EMBARAZO_ADOLESCENTE', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'EMBARAZO_ADOLESCENTE', 'ENTORNO', 'SECONDARY'
+    UNION ALL SELECT 'ACOSO_ESCOLAR', 'ENTORNO', 'PRIMARY'
+    UNION ALL SELECT 'ACOSO_ESCOLAR', 'DINAMICA', 'SECONDARY'
+    UNION ALL SELECT 'CIBERACOSO', 'ENTORNO', 'PRIMARY'
+    UNION ALL SELECT 'CIBERACOSO', 'DINAMICA', 'SECONDARY'
+    UNION ALL SELECT 'USO_PROBLEMATICO_VIDEOJUEGOS', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'USO_PROBLEMATICO_VIDEOJUEGOS', 'ENTORNO', 'SECONDARY'
+    UNION ALL SELECT 'USO_PROBLEMATICO_REDES', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'USO_PROBLEMATICO_REDES', 'ENTORNO', 'SECONDARY'
+
+    -- SALUD_MENTAL → fenómeno emergente, ECOSISTEMA_APOYO/PATRIMONIO/DINAMICA según el caso
+    UNION ALL SELECT 'IDEACION_SUICIDA', 'ECOSISTEMA_APOYO', 'PRIMARY'
+    UNION ALL SELECT 'IDEACION_SUICIDA', 'DINAMICA', 'SECONDARY'
+    UNION ALL SELECT 'AUTOLESIONES', 'ECOSISTEMA_APOYO', 'PRIMARY'
+    UNION ALL SELECT 'AUTOLESIONES', 'DINAMICA', 'SECONDARY'
+    UNION ALL SELECT 'TRASTORNO_ALIMENTACION', 'ECOSISTEMA_APOYO', 'PRIMARY'
+    UNION ALL SELECT 'TRASTORNO_ALIMENTACION', 'PATRIMONIO', 'SECONDARY'
+    UNION ALL SELECT 'DUELO_COMPLICADO', 'PATRIMONIO', 'PRIMARY'
+    UNION ALL SELECT 'DUELO_COMPLICADO', 'ECOSISTEMA_APOYO', 'SECONDARY'
+    UNION ALL SELECT 'AISLAMIENTO_SOCIAL', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'AISLAMIENTO_SOCIAL', 'ECOSISTEMA_APOYO', 'SECONDARY'
+    UNION ALL SELECT 'IDENTIDAD_GENERO', 'PATRIMONIO', 'PRIMARY'
+    UNION ALL SELECT 'IDENTIDAD_GENERO', 'DINAMICA', 'SECONDARY'
+
+    -- ADICCIONES → fenómeno emergente, DINAMICA como eje dominante de intervención
+    UNION ALL SELECT 'CONSUMO_ALCOHOL_ADULTO', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'CONSUMO_ALCOHOL_ADULTO', 'ECOSISTEMA_APOYO', 'SECONDARY'
+    UNION ALL SELECT 'CONSUMO_OTRAS_SUSTANCIAS', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'CONSUMO_OTRAS_SUSTANCIAS', 'ECOSISTEMA_APOYO', 'SECONDARY'
+    UNION ALL SELECT 'LUDOPATIA', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'LUDOPATIA', 'ENTORNO', 'SECONDARY'
+    UNION ALL SELECT 'CONSUMO_TABACO', 'DINAMICA', 'PRIMARY'
+
+    -- EDUCACION_DESARROLLO → PATRIMONIO (identidad/proyecto de vida)
+    UNION ALL SELECT 'JOVEN_SIN_PROYECTO', 'PATRIMONIO', 'PRIMARY'
+    UNION ALL SELECT 'JOVEN_SIN_PROYECTO', 'ENTORNO', 'SECONDARY'
+
+    -- ECONOMIA_FAMILIAR → ENTORNO (encaje limpio)
+    UNION ALL SELECT 'ENDEUDAMIENTO_FAMILIAR', 'ENTORNO', 'PRIMARY'
+    UNION ALL SELECT 'DESEMPLEO_PROLONGADO', 'ENTORNO', 'PRIMARY'
+    UNION ALL SELECT 'EMPRENDIMIENTO_FAMILIAR', 'ENTORNO', 'PRIMARY'
+    UNION ALL SELECT 'EMPRENDIMIENTO_FAMILIAR', 'DINAMICA', 'SECONDARY'
+
+    -- GOBERNANZA → se divide entre DINAMICA (estilo de autoridad) y PATRIMONIO (herencias)
+    UNION ALL SELECT 'CRIANZA_PERMISIVA', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'CRIANZA_AUTORITARIA', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'CONFLICTOS_HERENCIAS', 'PATRIMONIO', 'PRIMARY'
+    UNION ALL SELECT 'CONFLICTOS_HERENCIAS', 'DINAMICA', 'SECONDARY'
+
+    -- ADULTO_MAYOR → crosscutting DINAMICA/ENTORNO/ECOSISTEMA_APOYO
+    UNION ALL SELECT 'ABANDONO_ADULTO_MAYOR', 'DINAMICA', 'PRIMARY'
+    UNION ALL SELECT 'ABANDONO_ADULTO_MAYOR', 'ECOSISTEMA_APOYO', 'SECONDARY'
+    UNION ALL SELECT 'DEPENDENCIA_ADULTO_MAYOR', 'ENTORNO', 'PRIMARY'
+    UNION ALL SELECT 'DEPENDENCIA_ADULTO_MAYOR', 'ECOSISTEMA_APOYO', 'SECONDARY'
+
+    -- LEGADO → PATRIMONIO (encaje limpio)
+    UNION ALL SELECT 'RUPTURA_GENERACIONAL', 'PATRIMONIO', 'PRIMARY'
+    UNION ALL SELECT 'MIGRACION_INTEGRANTE', 'PATRIMONIO', 'PRIMARY'
+    UNION ALL SELECT 'MIGRACION_INTEGRANTE', 'ENTORNO', 'SECONDARY'
+) v
+JOIN risk_trajectories rt ON rt.code = v.code
+JOIN transformational_determinants td ON td.code = v.det;

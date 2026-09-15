@@ -12,4 +12,6 @@ public interface FamilySupportAssignmentRepository extends JpaRepository<FamilyS
     List<FamilySupportAssignment> findByFamilyIdAndStatus(Long familyId, AssignmentStatus status);
     Optional<FamilySupportAssignment> findByFamilyIdAndSupportMemberId(Long familyId, Long supportMemberId);
     boolean existsByFamilyIdAndSupportMemberIdAndStatusNot(Long familyId, Long supportMemberId, AssignmentStatus status);
+    List<FamilySupportAssignment> findBySupportMemberIdAndStatus(Long supportMemberId, AssignmentStatus status);
+    List<FamilySupportAssignment> findBySupportMemberId(Long supportMemberId);
 }

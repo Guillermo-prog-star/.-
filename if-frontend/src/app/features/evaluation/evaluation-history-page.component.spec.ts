@@ -6,6 +6,7 @@ import { of, throwError } from 'rxjs';
 import { EvaluationHistoryPageComponent } from './evaluation-history-page.component';
 import { AssessmentService } from '../../core/services/assessment.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 import { EvaluationHistory, TimelineEntryDto } from '../../core/models/models';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -15,7 +16,7 @@ const FAMILY_ID = 42;
 function buildComponent(signalFamilyId = FAMILY_ID) {
   const familyStateSpy = jasmine.createSpyObj<FamilyStateService>(
     'FamilyStateService', [],
-    { currentFamilyId: signal(signalFamilyId) }
+    { currentFamilyId: signal(signalFamilyId), currentFamilyName: signal('Familia Test') }
   );
   const assessmentSpy = jasmine.createSpyObj<AssessmentService>(
     'AssessmentService', {
@@ -24,12 +25,15 @@ function buildComponent(signalFamilyId = FAMILY_ID) {
     }
   );
 
+  const scrollPolicySpy = jasmine.createSpyObj<ScrollPolicyService>('ScrollPolicyService', ['set', 'reset']);
+
   TestBed.configureTestingModule({
     imports: [EvaluationHistoryPageComponent],
     providers: [
       provideRouter([]),
       { provide: AssessmentService, useValue: assessmentSpy },
-      { provide: FamilyStateService, useValue: familyStateSpy }
+      { provide: FamilyStateService, useValue: familyStateSpy },
+      { provide: ScrollPolicyService, useValue: scrollPolicySpy }
     ],
     schemas: [NO_ERRORS_SCHEMA]
   });

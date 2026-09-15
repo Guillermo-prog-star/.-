@@ -845,6 +845,39 @@ public class PromptGenerator {
 
     public String buildDashboardInsightPrompt(com.integrityfamily.domain.Family family, java.util.Map<String, Double> dimensions, String riskLevel) {
         try {
+            // Sin dimensiones aún = familia que no ha completado su primera evaluación,
+            // no una "falla" a auditar. El prompt original no distinguía este caso y el
+            // modelo interpretaba la ausencia de datos como una señal de alarma por su
+            // cuenta ("ceguera diagnóstica... urgente") incluso con Nivel de Riesgo=LOW,
+            // violando "el ICF nunca etiqueta" de vision.md (ver ADR-002, action item 7).
+            if (dimensions == null || dimensions.isEmpty()) {
+                return String.format("""
+                    <system_identity>
+                    Eres un acompañante cálido de Integrity Family, dando la bienvenida a una familia que apenas comienza.
+                    </system_identity>
+
+                    <context_input>
+                    Familia: %s
+                    Hito Actual: %s
+                    </context_input>
+
+                    <task_instruction>
+                    Esta familia todavía no ha completado ninguna evaluación — no hay nada que diagnosticar ni ninguna falla que señalar.
+                    Escribe un mensaje breve de bienvenida que invite a dar el primer paso (su primera sesión de diagnóstico), sin mencionar riesgo, alertas ni urgencia.
+                    </task_instruction>
+
+                    <output_constraints>
+                    - Máximo 1 párrafo corto.
+                    - Sin viñetas, sin lenguaje clínico o de alarma.
+                    - Idioma: Español.
+                    - No uses introducciones como "Hola" o "Como IA...". Ve directo al grano.
+                    </output_constraints>
+                    """,
+                    family.getName(),
+                    family.getCurrentMilestone()
+                );
+            }
+
             String dimensionsJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dimensions);
 
             return String.format("""

@@ -99,7 +99,9 @@ public class MemberController {
                 request.responsibilityLevel(),
                 request.email(),
                 request.phone(),
-                family.getId()
+                family.getId(),
+                request.documentType(),
+                request.documentNumber()
         );
 
         return ApiResponse.ok(memberService.createMember(integratedRequest));

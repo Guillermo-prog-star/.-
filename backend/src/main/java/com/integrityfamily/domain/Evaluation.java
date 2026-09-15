@@ -50,6 +50,15 @@ public class Evaluation {
     private Boolean hasCrisis = false;
 
     private Double icf; // Índice Saludable General (healthyIndex)
+    private Double inc; // inc_legacy_summary: Índice transitorio (Q2 + Q3)
+    
+    // Vector Neurofenomenológico
+    private Double somaticAwareness;
+    private Double emotionalAwareness;
+    private Double cognitiveAwareness;
+    private Double impulsiveAwareness;
+    private Double pauseCapacity;
+    private Double integrationScore;
 
     @Column(length = 30)
     private String riskLevel; // LOW, MODERATE, HIGH, CRITICAL

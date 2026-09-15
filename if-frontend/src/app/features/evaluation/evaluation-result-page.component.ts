@@ -137,6 +137,70 @@ export class EvaluationResultPageComponent implements OnInit {
     return icons[label ?? ''] ?? '🔷';
   }
 
+  // ── NeuroProfile Narratives ──
+
+  getSomaticDesc(score: number): string {
+    if (!score) return 'No evaluado.';
+    if (score >= 80) return 'Alta sensibilidad para detectar tensiones corporales.';
+    if (score >= 50) return 'Consciencia corporal intermitente.';
+    return 'Dificultad para notar señales somáticas antes de reaccionar.';
+  }
+
+  getEmotionalDesc(score: number): string {
+    if (!score) return 'No evaluado.';
+    if (score >= 80) return 'Gran claridad para identificar y nombrar emociones.';
+    if (score >= 50) return 'Reconocimiento emocional parcial.';
+    return 'Tendencia a confundir o ignorar el estado emocional.';
+  }
+
+  getCognitiveDesc(score: number): string {
+    if (!score) return 'No evaluado.';
+    if (score >= 80) return 'Alta capacidad para observar el flujo de pensamientos.';
+    if (score >= 50) return 'Identificación ocasional de narrativas mentales.';
+    return 'Fusión fuerte con los pensamientos automáticos.';
+  }
+
+  getIntegrationDesc(score: number): string {
+    if (!score) return 'No evaluado.';
+    if (score >= 80) return 'Alta capacidad de pausa y alineación intencional.';
+    if (score >= 50) return 'Integración moderada entre sensación y acción.';
+    return 'Baja conexión entre consciencia y comportamiento final.';
+  }
+
+  getNeuroSynthesis(): string {
+    const profile = this.result?.neuroProfile;
+    if (!profile) return 'La síntesis neurofenomenológica está siendo procesada...';
+    
+    const somatic = profile.somaticAwareness || 0;
+    const cognitive = profile.cognitiveAwareness || 0;
+    const integration = profile.integrationScore || 0;
+    
+    let part1 = '';
+    if (somatic > cognitive + 10) {
+      part1 = 'Cuando aparece un conflicto familiar, normalmente tu cuerpo detecta la tensión antes que tus pensamientos.';
+    } else if (cognitive > somatic + 10) {
+      part1 = 'Tu mente tiende a procesar y narrar las situaciones rápidamente, a veces desconectándose de las señales iniciales del cuerpo.';
+    } else {
+      part1 = 'Ante un conflicto familiar, logras percibir simultáneamente tanto tus señales corporales como tus pensamientos.';
+    }
+
+    let part2 = '';
+    if (integration < 60) {
+      part2 = 'Sin embargo, esa señal suele convertirse rápidamente en una reacción automática antes de que aparezca una pausa consciente. Esto explica por qué, aunque comprendes la importancia del diálogo, en momentos de presión terminas reaccionando de forma impulsiva.';
+    } else {
+      part2 = 'Afortunadamente, logras crear un espacio de pausa saludable entre lo que sientes y cómo respondes. Esto te permite actuar con mayor intención en lugar de dejarte llevar por la reacción automática.';
+    }
+
+    let part3 = '';
+    if (integration < 60) {
+      part3 = 'Tus próximas misiones buscarán ampliar esa ventana entre la señal corporal y tu respuesta final.';
+    } else {
+      part3 = 'Tus próximas misiones se enfocarán en consolidar esta consciencia plena y expandirla a los demás miembros del hogar.';
+    }
+
+    return `${part1} ${part2} ${part3}`;
+  }
+
   goToPlans(): void {
     // Diagnóstico completado → el plan se auto-genera → avanzar onboarding
     this.flow.advanceOnboarding('plan-generated');

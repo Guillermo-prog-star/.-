@@ -10,6 +10,7 @@ import com.integrityfamily.domain.repository.MemberRepository;
 import com.integrityfamily.domain.repository.QuestionRepository;
 import com.integrityfamily.assessment.service.AssessmentAnswerService;
 import com.integrityfamily.domain.repository.EvaluationAnswerRepository;
+import com.integrityfamily.domain.repository.HypothesisEvidenceRepository;
 import com.integrityfamily.risk.service.RiskAlgoV1Engine;
 import com.integrityfamily.risk.service.RiskService;
 import com.integrityfamily.milestone.service.MilestoneService;
@@ -76,6 +77,15 @@ public class EvaluationService {
     private final AlertEngine alertEngine;
     private final UserNotificationService userNotificationService;
     private final com.integrityfamily.risk.service.LongitudinalStateService longitudinalStateService;
+    private final HypothesisEvidenceRepository hypothesisEvidenceRepository;
+
+    /** Identificador y versión de la hipótesis de Interrupción Deliberativa (ADR-007). */
+    private static final String DELIBERATIVE_INTERRUPTION_HYPOTHESIS = "DELIBERATIVE_INTERRUPTION_HYPOTHESIS";
+    private static final String DELIBERATIVE_INTERRUPTION_HYPOTHESIS_VERSION = "v1";
+
+    /** Identificador y versión del proxy de precisión anticipatoria intra-sesión (ADR-008). */
+    private static final String PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS = "PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS";
+    private static final String PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS_VERSION = "v1";
 
     public List<Evaluation> findAll() {
         return evaluationRepository.findAll();
@@ -164,6 +174,14 @@ public class EvaluationService {
                 if (a.questionId() == null) continue;
                 Question q = questionMap.get(a.questionId());
                 if (q == null) continue;
+                
+                Integer val = a.getEffectiveValue();
+                if (val != null && val == 0) {
+                    if (!"NEURO_AWARENESS".equals(q.getType()) || !"ENTRY".equalsIgnoreCase(q.getPhase())) {
+                        throw new IllegalArgumentException("El valor 0 solo está permitido para preguntas NEURO_AWARENESS en fase ENTRY. Pregunta inválida: " + q.getQuestionKey());
+                    }
+                }
+                
                 EvaluationAnswer answer = new EvaluationAnswer();
                 answer.setEvaluation(existing);
                 answer.setQuestionKey(q.getQuestionKey() != null ? q.getQuestionKey() : "Q-" + q.getId());
@@ -190,6 +208,20 @@ public class EvaluationService {
         RiskAlgoV1Engine.AlgoResult algo = riskAlgoV1Engine.compute(effectiveAnswers, currentMilestone);
 
         existing.setIcf(algo.healthyIndex());
+        existing.setInc(algo.inc());
+        if (algo.neuroProfile() != null) {
+            existing.setSomaticAwareness(algo.neuroProfile().getSomaticAwareness());
+            existing.setEmotionalAwareness(algo.neuroProfile().getEmotionalAwareness());
+            existing.setCognitiveAwareness(algo.neuroProfile().getCognitiveAwareness());
+            existing.setImpulsiveAwareness(algo.neuroProfile().getImpulsiveAwareness());
+            existing.setPauseCapacity(algo.neuroProfile().getPauseCapacity());
+            existing.setIntegrationScore(algo.neuroProfile().getIntegrationScore());
+            recordPauseCapacityEvidence(
+                    existing.getFamily().getId(),
+                    algo.neuroProfile().getPauseCapacity(),
+                    existing.getAlgorithmVersion(),
+                    existing.getFinalizedAt());
+        }
         existing.setRiskLevel(algo.riskLevel());
         existing.setCriticalDimension(algo.criticalDimension());
         existing.setHasCrisis(algo.hasCrisis());
@@ -221,6 +253,12 @@ public class EvaluationService {
         Evaluation saved = evaluationRepository.save(existing);
         log.info("[EVALUATION-ALGO] Evaluacion persistida. {} | {}", algo.summary(),
                 explanationPipeline.buildTechnicalSummary(algo));
+
+        // ADR-008: proxy de precisión anticipatoria (THINK vs. AFTERMATH) — después del save
+        // porque en el flujo clásico las EvaluationAnswer del request solo se persisten
+        // (cascade) al guardar `existing`; sin @Transactional en este método, una relectura
+        // anterior a este punto no las vería.
+        recordPredictiveAccuracyEvidence(saved.getFamily().getId(), saved.getId(), saved.getFinalizedAt());
 
         // IF-CIS: Registro de inferencia epistemológicamente estable (ICF_CALC base)
         try {
@@ -264,8 +302,9 @@ public class EvaluationService {
                         .collect(Collectors.toList()),
                 algo.healthyIndex(),
                 null,   // riskSnapshotId — lo llena RiskService async
-                saved.getSpiritualSynthesis(),
                 algo.hasCrisis(),
+                algo.inc(),
+                algo.neuroProfile(),
                 algo.simulationSuspected(),
                 algo.relapseDetected(),
                 algo.suggestedMissionGenerator(),
@@ -334,6 +373,92 @@ public class EvaluationService {
 
         Evaluation saved = evaluationRepository.save(eval);
         processPostFinalization(saved, null);
+    }
+
+    /**
+     * Escribe una observación cruda de Interrupción Deliberativa en hypothesis_evidence (ADR-007).
+     * Nunca actualiza una fila existente — cada llamada inserta una nueva.
+     * Solo se invoca cuando neuroProfile != null (evaluación con preguntas neuro-conductuales) —
+     * pauseCapacity es un double primitivo y nunca es null, así que llamar esto fuera de ese
+     * guard escribiría 0.0 como si fuera "ausencia de pausa" en vez de "no se preguntó".
+     */
+    private void recordPauseCapacityEvidence(Long familyId, double pauseCapacity, String algorithmVersion, LocalDateTime observedAt) {
+        hypothesisEvidenceRepository.save(HypothesisEvidence.builder()
+                .hypothesis(DELIBERATIVE_INTERRUPTION_HYPOTHESIS)
+                .hypothesisVersion(DELIBERATIVE_INTERRUPTION_HYPOTHESIS_VERSION)
+                .subjectType("FAMILY")
+                .subjectId(familyId)
+                .measurementType("PAUSE_CAPACITY")
+                .measurementValue(pauseCapacity)
+                .instrument(algorithmVersion != null ? algorithmVersion : "RISK_ALGO_V1")
+                .instrumentVersion("1")
+                .source(EvidenceSource.AUTOMATIC)
+                .observedAt(observedAt != null ? observedAt : LocalDateTime.now())
+                .build());
+    }
+
+    /**
+     * ADR-008: por cada escenario (parent_key) de esta evaluación con respuesta registrada
+     * tanto en fase THINK como en fase AFTERMATH, escribe el par de observaciones crudas en
+     * hypothesis_evidence. Si falta cualquiera de las dos fases para un escenario, no se
+     * escribe nada para ese escenario — un par incompleto no es una observación válida.
+     * score_value == rubric_level siempre en el banco SCENARIO_V1_2 (V89-V95, verificado),
+     * así que EvaluationAnswer.score ya es directamente el rubric_level, sin volver a
+     * consultar question_options.
+     */
+    private void recordPredictiveAccuracyEvidence(Long familyId, Long evaluationId, LocalDateTime observedAt) {
+        List<EvaluationAnswer> answers = evaluationAnswerRepository.findByEvaluationIdOrderByAnsweredAtAsc(evaluationId);
+
+        List<Long> questionIds = answers.stream()
+                .map(EvaluationAnswer::getQuestionId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, Question> questionById = questionRepository.findAllById(questionIds).stream()
+                .collect(Collectors.toMap(Question::getId, q -> q));
+
+        Map<String, Integer> thinkByParentKey = new HashMap<>();
+        Map<String, Integer> aftermathByParentKey = new HashMap<>();
+
+        for (EvaluationAnswer a : answers) {
+            Question q = questionById.get(a.getQuestionId());
+            if (q == null || q.getParentKey() == null || a.getScore() == null) continue;
+            if ("THINK".equals(q.getPhase())) thinkByParentKey.put(q.getParentKey(), a.getScore());
+            if ("AFTERMATH".equals(q.getPhase())) aftermathByParentKey.put(q.getParentKey(), a.getScore());
+        }
+
+        for (Map.Entry<String, Integer> entry : thinkByParentKey.entrySet()) {
+            String parentKey = entry.getKey();
+            Integer thinkScore = entry.getValue();
+            Integer aftermathScore = aftermathByParentKey.get(parentKey);
+            if (aftermathScore == null) continue; // par incompleto — no se escribe nada (ADR-008 Decisión 3)
+
+            hypothesisEvidenceRepository.save(HypothesisEvidence.builder()
+                    .hypothesis(PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS)
+                    .hypothesisVersion(PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS_VERSION)
+                    .subjectType("FAMILY")
+                    .subjectId(familyId)
+                    .measurementType("ANTICIPATED_THREAT_LEVEL")
+                    .measurementValue(thinkScore.doubleValue())
+                    .instrument(parentKey)
+                    .instrumentVersion("1.2.0")
+                    .source(EvidenceSource.AUTOMATIC)
+                    .observedAt(observedAt != null ? observedAt : LocalDateTime.now())
+                    .build());
+
+            hypothesisEvidenceRepository.save(HypothesisEvidence.builder()
+                    .hypothesis(PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS)
+                    .hypothesisVersion(PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS_VERSION)
+                    .subjectType("FAMILY")
+                    .subjectId(familyId)
+                    .measurementType("OUTCOME_SEVERITY_LEVEL")
+                    .measurementValue(aftermathScore.doubleValue())
+                    .instrument(parentKey)
+                    .instrumentVersion("1.2.0")
+                    .source(EvidenceSource.AUTOMATIC)
+                    .observedAt(observedAt != null ? observedAt : LocalDateTime.now())
+                    .build());
+        }
     }
 
     private void processPostFinalization(Evaluation saved, RiskAlgoV1Engine.AlgoResult algo) {

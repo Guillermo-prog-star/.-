@@ -1,0 +1,100 @@
+<div class="vitality-container">
+
+  <div class="vitality-header">
+    <h1 class="vitality-title">🌿 Bienestar Biológico</h1>
+    <p class="vitality-subtitle">Sueño, ejercicio, nutrición y descanso — la base sobre la que se sostiene todo lo demás.</p>
+  </div>
+
+  @if (familyMembers.length > 1) {
+    <div class="member-selector">
+      <label for="member-select">Registrando para:</label>
+      <select id="member-select" [(ngModel)]="selectedMemberId" (ngModelChange)="onMemberChange()">
+        @for (m of familyMembers; track m.id) {
+          <option [value]="m.id">{{ m.fullName }}</option>
+        }
+      </select>
+    </div>
+  }
+
+  @if (!loadingMembers && familyMembers.length === 0) {
+    <div class="empty-state">No hay miembros registrados en esta familia todavía.</div>
+  }
+
+  @if (selectedMemberId) {
+
+    <!-- Índice de Recuperación (Semáforo) -->
+    <div class="recovery-card" [style.background]="semaphoreBg(recovery?.semaphore)" [style.borderColor]="semaphoreColor(recovery?.semaphore)">
+      <div class="recovery-dot" [style.background]="semaphoreColor(recovery?.semaphore)"></div>
+      <div class="recovery-info">
+        <div class="recovery-label">{{ semaphoreLabel(recovery?.semaphore) }}</div>
+        @if (recovery?.recoveryIndex !== null && recovery?.recoveryIndex !== undefined) {
+          <div class="recovery-score">Índice de recuperación (últimos 7 días): <strong>{{ recovery!.recoveryIndex }}</strong> / 100</div>
+        } @else {
+          <div class="recovery-score">Registra al menos un día para ver tu índice de recuperación.</div>
+        }
+      </div>
+    </div>
+
+    <!-- Formulario de registro diario -->
+    <div class="log-form">
+      <h3 class="form-title">Registro de hoy</h3>
+
+      <div class="form-grid">
+        <div class="form-field">
+          <label>😴 Horas de sueño</label>
+          <input type="number" min="0" max="14" step="0.5" [(ngModel)]="form.sleepHours" placeholder="ej. 7.5" />
+        </div>
+
+        <div class="form-field">
+          <label>🌙 Calidad del sueño</label>
+          <select [(ngModel)]="form.sleepQuality">
+            <option [ngValue]="null">— Sin registrar —</option>
+            @for (opt of scaleOptions; track opt.value) {
+              <option [ngValue]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label>🏃 Minutos de ejercicio</label>
+          <input type="number" min="0" max="300" step="5" [(ngModel)]="form.exerciseMinutes" placeholder="ej. 30" />
+        </div>
+
+        <div class="form-field">
+          <label>🥗 Calidad de la alimentación</label>
+          <select [(ngModel)]="form.nutritionQuality">
+            <option [ngValue]="null">— Sin registrar —</option>
+            @for (opt of scaleOptions; track opt.value) {
+              <option [ngValue]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label>📱 Minutos de pantalla antes de dormir</label>
+          <input type="number" min="0" max="300" step="5" [(ngModel)]="form.screenTimeBeforeBedMinutes" placeholder="ej. 20" />
+        </div>
+
+        <div class="form-field">
+          <label>🔋 Nivel de fatiga</label>
+          <select [(ngModel)]="form.fatigueLevel">
+            <option [ngValue]="null">— Sin registrar —</option>
+            @for (opt of fatigueOptions; track opt.value) {
+              <option [ngValue]="opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <p class="form-hint">Puedes registrar solo lo que quieras hoy — no hace falta completar todo el panel.</p>
+
+      @if (errorMessage) { <div class="form-message error">{{ errorMessage }}</div> }
+      @if (successMessage) { <div class="form-message success">{{ successMessage }}</div> }
+
+      <button class="save-btn" [disabled]="saving || !hasAnyValue()" (click)="saveLog()">
+        {{ saving ? 'Guardando…' : '💾 Guardar registro de hoy' }}
+      </button>
+    </div>
+  }
+
+</div>

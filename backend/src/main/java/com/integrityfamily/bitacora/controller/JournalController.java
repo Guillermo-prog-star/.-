@@ -3,12 +3,15 @@ package com.integrityfamily.bitacora.controller;
 import com.integrityfamily.bitacora.dto.JournalDtos.*;
 import com.integrityfamily.bitacora.service.JournalService;
 import com.integrityfamily.common.dto.ApiResponse;
+import com.integrityfamily.common.security.SecurityValidator;
 import com.integrityfamily.domain.*;
+import com.integrityfamily.domain.repository.MemberRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 
 /**
@@ -21,6 +24,8 @@ import java.util.List;
 public class JournalController {
 
     private final JournalService journalService;
+    private final SecurityValidator securityValidator;
+    private final MemberRepository memberRepository;
 
     @PostMapping("/tasks/{taskId}/evidence")
     @Operation(summary = "Subir evidencia de tarea", description = "Registra una confirmación contextualizada (foto, texto, etc.) de que una acción/misión fue completada.")
@@ -38,14 +43,19 @@ public class JournalController {
 
     @PostMapping("/journal")
     @Operation(summary = "Crear entrada de bitácora", description = "Registra de forma híbrida (estructurada y narrativa) un hito en la transformación familiar.")
-    public ApiResponse<JournalEntry> createJournal(@RequestBody JournalCreateRequest request) {
-        return ApiResponse.ok(journalService.createJournal(request));
+    public ApiResponse<JournalEntry> createJournal(@RequestBody JournalCreateRequest request, Principal principal) {
+        // Autor real resuelto del principal autenticado (ADR-012).
+        Long authorMemberId = principal != null
+                ? memberRepository.findByEmail(principal.getName()).map(FamilyMember::getId).orElse(null)
+                : null;
+        return ApiResponse.ok(journalService.createJournal(request, authorMemberId));
     }
 
     @GetMapping("/families/{familyId}/legacy-timeline")
     @Operation(summary = "Obtener línea de tiempo longitudinal", description = "Devuelve el historial evolutivo completo ordenado por fecha (evidencias, reflexiones, aprendizajes y bitácoras).")
-    public ApiResponse<List<TimelineEntryDto>> getTimeline(@PathVariable Long familyId) {
-        return ApiResponse.ok(journalService.getTimeline(familyId));
+    public ApiResponse<List<TimelineEntryDto>> getTimeline(@PathVariable Long familyId, Principal principal) {
+        Long viewerMemberId = securityValidator.resolveViewerMemberId(familyId, principal);
+        return ApiResponse.ok(journalService.getTimeline(familyId, viewerMemberId));
     }
 
     @GetMapping("/families/{familyId}/metrics")

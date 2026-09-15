@@ -79,9 +79,9 @@ export class RegisterPageComponent {
       this.auth.register(payload).subscribe({
         next: (res: any) => {
           this.loading = false;
-          // Si obtuvo una familia, ir al dashboard; si no, a crear familia
+          // Si obtuvo una familia, ir al Hogar Digital; si no, a crear familia
           const familyId = res?.user?.familyId || res?.familyId;
-          this.router.navigate(familyId ? ['/dashboard'] : ['/families/create']);
+          this.router.navigate(familyId ? ['/family-home'] : ['/families/create']);
         },
         error: (e: any) => {
           this.loading = false;
@@ -112,7 +112,7 @@ export class RegisterPageComponent {
         next: (res: any) => {
           this.loading = false;
           // El nuevo admin de familia siempre tiene familyId asignado
-          this.router.navigate(['/dashboard']);
+          this.router.navigate(['/family-home']);
         },
         error: (e: any) => {
           this.loading = false;

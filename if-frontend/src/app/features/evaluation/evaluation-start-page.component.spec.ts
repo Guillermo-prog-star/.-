@@ -45,7 +45,7 @@ function buildComponent(signalFamilyId = FAMILY_ID) {
   return { fixture, component, router, httpMock };
 }
 
-/** Flush the two GET requests fired on init (members + history). */
+/** Flush the three GET requests fired on init (members + history + pillar progress). */
 function flushInit(
   httpMock: HttpTestingController,
   familyId = FAMILY_ID,
@@ -56,6 +56,8 @@ function flushInit(
     .flush({ data: members });
   httpMock.expectOne(`${API_BASE}/assessments/family/${familyId}/history`)
     .flush({ data: history });
+  httpMock.expectOne(`${API_BASE}/assessments/pillar-progress?familyId=${familyId}`)
+    .flush({ data: null });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -122,6 +124,8 @@ describe('EvaluationStartPageComponent', () => {
       httpMock.expectOne(`${API_BASE}/members/family/${FAMILY_ID}`).flush({ data: [] });
       httpMock.expectOne(`${API_BASE}/assessments/family/${FAMILY_ID}/history`)
         .flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+      httpMock.expectOne(`${API_BASE}/assessments/pillar-progress?familyId=${FAMILY_ID}`)
+        .flush({ data: null });
       tick();
 
       expect(component.pendingEvalId).toBeNull();
@@ -133,6 +137,8 @@ describe('EvaluationStartPageComponent', () => {
 
       httpMock.expectOne(`${API_BASE}/members/family/${FAMILY_ID}`).flush({ data: [] });
       httpMock.expectOne(`${API_BASE}/assessments/family/${FAMILY_ID}/history`).flush(null);
+      httpMock.expectOne(`${API_BASE}/assessments/pillar-progress?familyId=${FAMILY_ID}`)
+        .flush({ data: null });
       tick();
 
       expect(component.pendingEvalId).toBeNull();
@@ -144,16 +150,14 @@ describe('EvaluationStartPageComponent', () => {
   // ═══════════════════════════════════════════════════════════════════════
 
   describe('start()', () => {
-    it('familyId=0 → alert y redirige a /families sin POST', fakeAsync(() => {
+    it('familyId=0 → redirige a /families sin POST', fakeAsync(() => {
       const { fixture, component, router, httpMock } = buildComponent(0);
       fixture.detectChanges();
       tick();
-      spyOn(window, 'alert');
 
       component.start();
       tick();
 
-      expect(window.alert).toHaveBeenCalled();
       expect(router.navigate).toHaveBeenCalledWith(['/families']);
       httpMock.expectNone(`${API_BASE}/assessments/start`);
     }));
@@ -169,7 +173,7 @@ describe('EvaluationStartPageComponent', () => {
 
       const req = httpMock.expectOne(`${API_BASE}/assessments/start`);
       expect(req.request.method).toBe('POST');
-      expect(req.request.body).toEqual({ familyId: FAMILY_ID, memberId: 3 });
+      expect(req.request.body).toEqual({ familyId: FAMILY_ID, memberId: 3, pillarName: 'reconocimiento' });
       req.flush({ data: { id: 101 } });
       tick();
     }));
@@ -185,7 +189,7 @@ describe('EvaluationStartPageComponent', () => {
         .flush({ data: { id: 101 } });
       tick();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/evaluations', 101, 'form']);
+      expect(router.navigate).toHaveBeenCalledWith(['/evaluations', 101, 'form'], jasmine.any(Object));
       expect(component.loading).toBeFalse();
     }));
 
@@ -199,7 +203,7 @@ describe('EvaluationStartPageComponent', () => {
       httpMock.expectOne(`${API_BASE}/assessments/start`).flush({ id: 202 });
       tick();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/evaluations', 202, 'form']);
+      expect(router.navigate).toHaveBeenCalledWith(['/evaluations', 202, 'form'], jasmine.any(Object));
     }));
 
     it('loading=true durante la petición, false al completar', fakeAsync(() => {

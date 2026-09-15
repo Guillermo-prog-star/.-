@@ -198,11 +198,11 @@ export class TransformationFlowService {
           case 'choose-guardian': return `/guardian/${familyId}/election`;
           case 'diagnosis': return '/evaluations/start';
           case 'plan-generated': return '/plans';
-          case 'completed': return '/dashboard';
-          default: return '/dashboard';
+          case 'completed': return '/family-home';
+          default: return '/family-home';
         }
       }),
-      catchError(() => of('/dashboard'))
+      catchError(() => of('/family-home'))
     );
   }
 

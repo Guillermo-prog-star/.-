@@ -38,10 +38,21 @@ interface PillarCard {
         <div class="es-icon">◈</div>
         <div>
           <h1 class="es-title">Diagnóstico Familiar</h1>
-          <p class="es-sub">
-            1000 preguntas · 3 pilares · 20 por sesión ·
-            <span class="es-sessions">{{ pillarProgress()?.completedSessions ?? 0 }} sesiones completadas</span>
-          </p>
+          @if ((pillarProgress()?.completedSessions ?? 0) === 0) {
+            <!-- Narrativa antes que mecánica (ADR-002, action item 8): la primera vez
+                 que una familia llega aquí, "1000 preguntas · 3 pilares" comunica una
+                 tarea, no una invitación. -->
+            <p class="es-sub es-narrative">
+              Durante los próximos meses iremos conociendo mejor a su familia. Hoy solo les
+              proponemos una primera conversación. No es un examen, no hay respuestas
+              correctas ni incorrectas.
+            </p>
+          } @else {
+            <p class="es-sub">
+              1000 preguntas · 3 pilares · 20 por sesión ·
+              <span class="es-sessions">{{ pillarProgress()?.completedSessions ?? 0 }} sesiones completadas</span>
+            </p>
+          }
         </div>
       </div>
 
@@ -177,6 +188,7 @@ interface PillarCard {
     .es-title    { font-size: 24px; font-weight: 800; color: #fff; margin: 0 0 4px; }
     .es-sub      { font-size: 13px; color: rgba(255,255,255,0.4); margin: 0; }
     .es-sessions { color: #6366f1; font-weight: 700; }
+    .es-narrative { font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.6); max-width: 560px; }
 
     .no-family   { text-align: center; padding: 60px 20px; }
     .nf-icon     { font-size: 48px; margin-bottom: 16px; }

@@ -1,5 +1,6 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { signal } from '@angular/core';
 import { of, throwError } from 'rxjs';
 
@@ -7,6 +8,7 @@ import { FamilyGratitudeComponent } from './family-gratitude.component';
 import { FamilyGratitudeService } from './family-gratitude.service';
 import { AuthService, AuthUser } from '../../core/services/auth.service';
 import { FamilyGratitude } from './family-gratitude.model';
+import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
 
 // ─── Stubs ───────────────────────────────────────────────────────────────────
 
@@ -37,11 +39,15 @@ function buildComponent(user: AuthUser | null = USER_STUB) {
     'AuthService', [], { user: signal(user) }
   );
 
+  const scrollPolicySpy = jasmine.createSpyObj<ScrollPolicyService>('ScrollPolicyService', ['set', 'reset']);
+
   TestBed.configureTestingModule({
     imports: [FamilyGratitudeComponent],
     providers: [
+      provideRouter([]),
       { provide: FamilyGratitudeService, useValue: serviceSpy },
-      { provide: AuthService,            useValue: authSpy }
+      { provide: AuthService,            useValue: authSpy },
+      { provide: ScrollPolicyService,    useValue: scrollPolicySpy }
     ],
     schemas: [NO_ERRORS_SCHEMA]
   });

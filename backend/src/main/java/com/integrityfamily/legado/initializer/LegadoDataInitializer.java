@@ -205,9 +205,12 @@ public class LegadoDataInitializer implements CommandLineRunner {
                         .sortOrder(7).build()
         );
 
-        valueRepo.saveAll(valores);
-
-        log.info(">>>> [LEGADO] ✓ Legado sembrado — Constitución, Misión/Visión, Historia, " +
-                 "Carta al Futuro y {} valores familiares.", valores.size());
+        if (valueRepo.findByFamilyIdOrderBySortOrder(family.getId()).isEmpty()) {
+            valueRepo.saveAll(valores);
+            log.info(">>>> [LEGADO] ✓ Legado sembrado — Constitución, Misión/Visión, Historia, " +
+                     "Carta al Futuro y {} valores familiares.", valores.size());
+        } else {
+            log.info(">>>> [LEGADO] Valores ya existentes, se omite semilla.");
+        }
     }
 }

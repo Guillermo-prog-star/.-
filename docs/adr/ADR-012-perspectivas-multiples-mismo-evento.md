@@ -66,3 +66,37 @@ Frente a extender `consent` para cubrir visibilidad intra-familia: técnicamente
 3. [x] Capa de lectura — `findVisibleToMember(familyId, viewerMemberId)` en `JournalEntryRepository`/`CriticalDayRepository`, resuelto vía `SecurityValidator.resolveViewerMemberId` (bypass admin/creador, filtro por autor para el resto). Aplicado en los 3 puntos de exposición real verificados: `CrisisController.getHistory`, `FamilyTimelineController.getTimeline`, `JournalController.getTimeline`. Autoría real conectada en creación (`CrisisController.reportCrisis`, `JournalController.createJournal`, antes pasaban autor `null` hardcodeado). Verificado: compilación limpia + 53 tests en verde (`CrisisServiceImplTest`, `JournalServiceTest`, `FamilyTimelineServiceTest`, `SecurityValidatorTest`). Consumidores `context`/`twin`/`movie` no exponen texto crudo de member a member — no requerían el filtro, ver Trade-off Analysis para el alcance verificado.
 4. [x] `docs/vision.md` — agregado el Principio de Altura de Observación (H1-H5) como marco conceptual bajo CCSF, citando este ADR como el único punto donde H2 tiene mecanismo real; H1/H3/H4/H5 documentados como lectura de módulos ya existentes (mismo patrón que ADR-011 con IF-CAM), no como fases nuevas.
 5. [ ] (Diferido, sin consumidor todavía) Endpoint de agregación por `perceived_event_key` y síntesis IA multi-perspectiva — no construir hasta que exista uso real de la clave con ≥2 miembros.
+
+## Amendment 1 — sin bypass de admin/creador para lo PRIVATE (2026-11-15)
+
+**Cambio de criterio sobre el Action Item 3.** La versión original daba a
+`ROLE_ADMIN` y al creador de la familia un bypass total
+(`resolveViewerMemberId` → `null` → "ver todo") en las tres lecturas que
+exponen texto de un miembro a otro: `JournalController.getTimeline`,
+`CrisisController.getHistory` y `FamilyTimelineController.getTimeline`. Con
+eso, "PRIVATE" no era privado frente al creador, que suele ser un padre o
+una madre.
+
+**Ahora** `SecurityValidator.resolveViewerMemberId` devuelve siempre el
+`FamilyMember` propio del principal (búsqueda por email sin distinguir
+mayúsculas), o `null` si no tiene perfil de miembro. En
+`JournalEntryRepository`/`CriticalDayRepository.findVisibleToMember` se
+quitó la cláusula `:viewerMemberId IS NULL`, así que `null` significa "solo
+lo compartido y lo que no tiene autor", nunca "ver todo". Es la misma regla
+que el diario biográfico (ADR-017).
+
+**Qué no cambia:**
+- `validateFamilyOwnership` sigue dando al admin y al creador el acceso a la
+  familia y al resto de sus datos. Solo cambia la visibilidad entre miembros
+  de lo PRIVATE.
+- Los motores de riesgo y de alertas y el contexto de IA leen los
+  repositorios directamente, sin este filtro (verificado: ningún consumidor
+  de `guardian`, `risk` ni `context` llama a `findVisibleToMember`). La
+  detección de riesgo no pierde información.
+- Si algo debe verse, el autor lo marca `SHARED_WITH_FAMILY`. Ante un riesgo
+  vital, el camino es el protocolo de seguridad (V98), no leer lo privado
+  de otra persona.
+
+Origen: es precondición de ADR-018 (Amendment 2), que agrega a
+`JournalEntry` campos de interpretación y señal corporal. Verificado: suite
+completa en verde, con 2 tests nuevos en `SecurityValidatorTest`.

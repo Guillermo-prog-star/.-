@@ -161,6 +161,50 @@ tiempo extra de conversación. Una comparación válida debe igualar tiempo y
 atención entre grupos y medir resultados posteriores (cumplimiento,
 reparación), no solo la satisfacción inmediata.
 
+## Amendment 2 — libertad para disentir, necesidad y privacidad real (2026-11-15)
+
+Origen: una segunda propuesta de aplicación ("observar → contrastar →
+actuar → revisar"). Casi todo ya está cubierto por la decisión y el
+Amendment 1. Aporta tres cosas nuevas:
+
+**1. Libertad para disentir como cuarta medida.** Que haya menos discusiones
+puede significar acuerdo o puede significar miedo a expresarse. El silencio
+o la obediencia no son indicadores de armonía. Se agrega
+`measurement_type = FREE_TO_DISAGREE` (1–5) a las medidas por participante
+en `hypothesis_evidence`, que pasan a ser cuatro. La práctica se considera
+útil solo si `FELT_HEARD` y `FREE_TO_DISAGREE` suben o se mantienen sin que
+suba `PERCEIVED_PRESSURE`. La percepción de **seguridad física** no se mide
+como una escala 1–5: si aparece una amenaza, coerción o violencia, la
+práctica se detiene y se pasa al protocolo de seguridad (V98,
+`safety_protocol_activations`), que exige confirmación humana.
+
+**2. "Esto necesito" va en el texto, no en el schema.** El paso *Elegir* se
+presenta en la UI como "¿Qué necesito y qué acción elijo?" y se guarda en
+`reflection`. No se agrega columna.
+
+**3. Precondición de privacidad — RESUELTA (2026-11-15, ADR-012 Amendment 1).**
+Pertenecer a la misma familia no debe dar acceso automático a un registro
+personal. Al escribir este amendment sí lo daba:
+`JournalEntryRepository.findVisibleToMember` trataba `viewerMemberId IS NULL`
+como bypass, y `SecurityValidator.resolveViewerMemberId` devolvía null para el
+creador de la familia y para `ROLE_ADMIN` (ADR-012). El mismo patrón estaba en
+`CriticalDayRepository` y en `FamilyTimelineController`. Con eso, la
+`interpretation` y el `body_signal` marcados como PRIVATE los habría leído el
+creador de la familia.
+
+Se quitó el bypass con el mismo criterio que en el diario biográfico
+(ADR-017): lo PRIVATE solo lo ve su autor. Antes se verificó que ni
+`guardian` ni `risk` ni `context` dependen de ese acceso. Ver ADR-012
+Amendment 1. V114 ya no está bloqueada por privacidad; solo falta aprobar
+este ADR.
+
+**Ritmo de la práctica:** es breve y voluntaria, vinculada a un episodio que
+la persona elige, y se puede omitir cualquier pregunta (todas las columnas
+nuevas son NULL). No se pide foto ni grabación como evidencia: basta con
+registrar si conversaron y qué acordaron. La IA no interviene en la primera
+versión. Se incorpora solo cuando haya una necesidad demostrada y un
+criterio para evaluar sus errores.
+
 ## Alcance explícitamente excluido
 
 - **Ningún vínculo con hipótesis físicas.** La conversación de la que
@@ -196,5 +240,5 @@ reparación), no solo la satisfacción inmediata.
 Hipótesis: separar observación, interpretación y acción facilita algunos
 acuerdos sin aumentar la presión percibida. Hoy no hay resultados en las
 familias participantes. La práctica se considera útil solo si, en las
-familias que la usan, `FELT_HEARD` sube o se mantiene sin que suba
+familias que la usan, `FELT_HEARD` y `FREE_TO_DISAGREE` suben o se mantienen sin que suba
 `PERCEIVED_PRESSURE`.

@@ -17,12 +17,12 @@ public interface JournalEntryRepository extends JpaRepository<JournalEntry, Long
     /**
      * Filtro de visibilidad (ADR-012, H2): visible si esta compartida con la
      * familia, si no tiene autor (generada por sistema/IA), o si el autor es
-     * el propio viewer. viewerMemberId null = sin filtrar (bypass admin/creador,
-     * ver SecurityValidator.resolveViewerMemberId).
+     * el propio viewer. Sin bypass para admin/creador (ADR-012 Amendment):
+     * viewerMemberId null → `j.member.id = NULL` es falso en SQL → solo ve lo
+     * compartido y lo que no tiene autor.
      */
     @Query("SELECT j FROM JournalEntry j WHERE j.family.id = :familyId " +
-           "AND (:viewerMemberId IS NULL " +
-           "     OR j.visibility = com.integrityfamily.domain.EntryVisibility.SHARED_WITH_FAMILY " +
+           "AND (j.visibility = com.integrityfamily.domain.EntryVisibility.SHARED_WITH_FAMILY " +
            "     OR j.member IS NULL " +
            "     OR j.member.id = :viewerMemberId) " +
            "ORDER BY j.createdAt DESC")

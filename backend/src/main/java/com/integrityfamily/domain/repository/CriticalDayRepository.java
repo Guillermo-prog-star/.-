@@ -14,12 +14,12 @@ public interface CriticalDayRepository extends JpaRepository<CriticalDay, Long> 
     /**
      * Filtro de visibilidad (ADR-012, H2): visible si esta compartida con la
      * familia, si no tiene autor (ej. SENTINEL_ALERT generada por IA), o si
-     * el autor es el propio viewer. viewerMemberId null = sin filtrar
-     * (bypass admin/creador, ver SecurityValidator.resolveViewerMemberId).
+     * el autor es el propio viewer. Sin bypass para admin/creador (ADR-012
+     * Amendment): viewerMemberId null → `c.memberId = NULL` es falso en SQL
+     * → solo ve lo compartido y lo que no tiene autor.
      */
     @Query("SELECT c FROM CriticalDay c WHERE c.familyId = :familyId " +
-           "AND (:viewerMemberId IS NULL " +
-           "     OR c.visibility = com.integrityfamily.domain.EntryVisibility.SHARED_WITH_FAMILY " +
+           "AND (c.visibility = com.integrityfamily.domain.EntryVisibility.SHARED_WITH_FAMILY " +
            "     OR c.memberId IS NULL " +
            "     OR c.memberId = :viewerMemberId) " +
            "ORDER BY c.createdAt DESC")

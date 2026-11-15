@@ -67,29 +67,16 @@ public class SecurityValidator {
      * visibilidad por autoria (ADR-012, H2 -- JournalEntry/CriticalDay
      * PRIVATE por defecto).
      *
-     * Retorna null para ROLE_ADMIN o el creador de la familia: mismo bypass
-     * que validateFamilyOwnership ya les da sobre el resto de datos de la
-     * familia (this ADR no restringe ese acceso preexistente, solo gobierna
-     * visibilidad miembro-a-miembro). null se interpreta en el repositorio
-     * como "sin filtrar, ver todo".
+     * Sin bypass para ROLE_ADMIN ni para el creador de la familia (ADR-012
+     * Amendment, 2026-11-15): lo PRIVATE solo lo ve su autor. Retorna el id
+     * del FamilyMember propio del principal, o null si no tiene perfil de
+     * miembro; en los repositorios null significa "solo lo compartido", nunca
+     * "ver todo". validateFamilyOwnership sigue gobernando el acceso a la familia.
      */
     public Long resolveViewerMemberId(Long familyId, Principal principal) {
         validateFamilyOwnership(familyId, principal);
 
-        String userEmail = principal.getName();
-
-        User user = userRepository.findByEmailIgnoreCase(userEmail).orElse(null);
-        if (user != null && user.getRoles().stream().anyMatch(r -> "ROLE_ADMIN".equals(r.getName()))) {
-            return null;
-        }
-
-        Family family = familyRepository.findById(familyId)
-                .orElseThrow(() -> new NotFoundException("Familia no encontrada"));
-        if (family.getCreatedBy() != null && family.getCreatedBy().getEmail().equals(userEmail)) {
-            return null;
-        }
-
-        return memberRepository.findByEmail(userEmail)
+        return memberRepository.findByEmailIgnoreCase(principal.getName())
                 .map(FamilyMember::getId)
                 .orElse(null);
     }

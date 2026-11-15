@@ -28,7 +28,6 @@ public class PlanService {
 
     private final ImprovementPlanRepository planRepository;
     private final PlanTaskRepository planTaskRepository;
-    private final FamilyLogbookEntryRepository logbookEntryRepository;
     private final EvaluationRepository evaluationRepository;
     private final PlanTemplateRepository planTemplateRepository;
     private final PlanTemplateActivityRepository planTemplateActivityRepository;
@@ -395,51 +394,11 @@ public class PlanService {
             participationService.record(task.getPlan().getFamily().getId(), responsibleId, ParticipationEventType.MISSION_COMPLETED);
         }
 
-        // [SDD SPEC: Sentinel Auto-Evidence Engine]
+        // Marcar una tarea como completada NO genera evidencia ni entradas de bitácora.
+        // Antes se fabricaba una entrada RESOLVED firmada por SENTINEL_AUTO_AI que afirmaba
+        // "ejecución exitosa", comprensión de la familia y puntos de ICF que no se sumaban.
+        // La evidencia y la bitácora las escribe la familia.
         if (completed && task.getPlan() != null && task.getPlan().getFamily() != null) {
-            try {
-                com.integrityfamily.domain.Family family = task.getPlan().getFamily();
-                
-                String situation = "Ejecución exitosa de la Misión Clínica: " + task.getTitle();
-                String difficultyDetected = task.getRiesgoAsociado() != null && !task.getRiesgoAsociado().isBlank() ? 
-                        task.getRiesgoAsociado() : "Prevención de riesgos en la dimensión " + (task.getDimension() != null ? task.getDimension() : "INTEGRIDAD");
-                String emotionIdentified = task.getDimension() != null && !task.getDimension().isBlank() ? 
-                        task.getDimension() : "EMOCIONES";
-                String understanding = task.getObjetivo() != null && !task.getObjetivo().isBlank() ? 
-                        task.getObjetivo() : "La familia comprende la importancia de consolidar este hábito de cambio.";
-                String correctionAction = task.getAccionConcreta() != null && !task.getAccionConcreta().isBlank() ? 
-                        task.getAccionConcreta() : "Realización de las actividades pautadas en el plan.";
-                String familyAgreement = task.getIndicadorCumplimiento() != null && !task.getIndicadorCumplimiento().isBlank() ? 
-                        task.getIndicadorCumplimiento() : "Sostener el hábito en las prácticas cotidianas.";
-                
-                String evidenceDesc = String.format(
-                        "[EVIDENCIA AUTOMÁTICA SENTINEL v4.5]: Microacción completada con éxito. Requisito de evidencia cumplido: '%s'. Impacto de +%d puntos sumados al ICF.",
-                        task.getEvidenciaRequerida() != null && !task.getEvidenciaRequerida().isBlank() ? task.getEvidenciaRequerida() : "Registro clínico de plan de acción",
-                        task.getImpactoIcf() != null ? task.getImpactoIcf() : 10
-                );
-
-                FamilyLogbookEntry evidenceEntry = FamilyLogbookEntry.builder()
-                        .family(family)
-                        .situation(situation)
-                        .difficultyDetected(difficultyDetected)
-                        .emotionIdentified(emotionIdentified)
-                        .understanding(understanding)
-                        .correctionAction(correctionAction)
-                        .familyAgreement(familyAgreement)
-                        .progressEvidence(evidenceDesc)
-                        .status(LogbookStatus.RESOLVED)
-                        .createdBy("SENTINEL_AUTO_AI")
-                        .resolvedBy("SENTINEL_AUTO_AI")
-                        .createdAt(LocalDateTime.now())
-                        .resolvedAt(LocalDateTime.now())
-                        .build();
-
-                logbookEntryRepository.save(evidenceEntry);
-                log.info("🎯 [AUTO-EVIDENCE] Entrada de bitácora registrada automáticamente para la tarea ID: {}", id);
-            } catch (Exception e) {
-                log.error("❌ Error en generación automática de evidencia: {}", e.getMessage());
-            }
-
             // Publicar evento para WebSockets / Desacoplamiento
             Map<String, Object> payload = new java.util.HashMap<>();
             payload.put("taskId", savedTask.getId());

@@ -264,4 +264,28 @@ class PlanGenerationServiceTest {
             verify(evaluationRepository).findById(42L);
         }
     }
+
+    @Nested
+    @DisplayName("success_indicator de la microacción")
+    class SuccessIndicator {
+
+        @Test
+        @DisplayName("se deserializa desde el JSON de la IA")
+        void deserializesSuccessIndicator() throws Exception {
+            String json = "{\"title\":\"Cena\",\"success_indicator\":\"Cenamos juntos sin celulares una vez\"}";
+
+            PlanGenerationService.MicroActionDto dto =
+                    new ObjectMapper().readValue(json, PlanGenerationService.MicroActionDto.class);
+
+            assertThat(dto.successIndicator()).isEqualTo("Cenamos juntos sin celulares una vez");
+        }
+
+        @Test
+        @DisplayName("ausente o en blanco → null, nunca un indicador genérico inventado")
+        void blankBecomesNull() {
+            assertThat(PlanGenerationService.blankToNull(null)).isNull();
+            assertThat(PlanGenerationService.blankToNull("   ")).isNull();
+            assertThat(PlanGenerationService.blankToNull(" Terminado cuando X ")).isEqualTo("Terminado cuando X");
+        }
+    }
 }

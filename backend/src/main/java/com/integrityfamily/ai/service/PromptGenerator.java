@@ -1408,6 +1408,7 @@ public class PromptGenerator {
                              "duration_minutes": 20,
                              "participants": ["PADRE", "MADRE", "HIJO"],
                              "evidence_type": "PHOTO | TEXT | AUDIO",
+                             "success_indicator": "Terminado cuando: algo observable que la familia pueda reconocer (ej: 'cenamos juntos sin celulares al menos una vez'). Nunca 'completar la acción' ni un estado interno ('se sintieron conectados')",
                              "fase": "RECONOCIMIENTO | AMOR | ENTREGA",
                              "dimension": "EMOCIONES | COMUNICACION | HABITOS | TIEMPOS",
                              "pillar_name": "reconocimiento | amor | entrega",

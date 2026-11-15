@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**
@@ -31,8 +32,8 @@ import static org.mockito.Mockito.*;
  *
  * Cubre: findAllPlans(), findByFamilyId(), findPlanById() (notFound),
  * createPlan(), updatePlan() (notFound y éxito), deletePlan(),
- * completeTask() (éxito con auto-evidence, error silenciado en logbook,
- * error silenciado en RabbitMQ, marcado como incompleto → sin logbook)
+ * completeTask() (éxito sin evidencia fabricada, error silenciado en RabbitMQ,
+ * marcado como incompleto → sin evento)
  * y findTaskById() / deleteTask().
  */
 @ExtendWith(MockitoExtension.class)
@@ -313,19 +314,18 @@ class PlanServiceTest {
         }
 
         @Test
-        @DisplayName("completed=true → persiste tarea como completada y crea entrada de bitácora")
-        void shouldComplete_andCreateLogbookEntry() {
+        @DisplayName("completed=true → persiste la tarea, publica el evento y NO fabrica entrada de bitácora")
+        void shouldComplete_withoutFabricatingLogbookEntry() {
             when(planTaskRepository.findById(5L)).thenReturn(Optional.of(task));
             when(planTaskRepository.save(any())).thenReturn(task);
-            // logbookEntryRepository.save() retorna entidad — Mockito devuelve null por defecto (OK)
-            lenient().doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), (Object) any());
 
             planService.completeTask(5L, true);
 
             ArgumentCaptor<PlanTask> taskCaptor = ArgumentCaptor.forClass(PlanTask.class);
             verify(planTaskRepository).save(taskCaptor.capture());
             assertThat(taskCaptor.getValue().isCompleted()).isTrue();
-            verify(logbookEntryRepository).save(any(FamilyLogbookEntry.class));
+            verify(rabbitTemplate).convertAndSend(anyString(), eq("task.completed"), (Object) any());
+            verifyNoInteractions(logbookEntryRepository);
         }
 
         @Test
@@ -341,15 +341,13 @@ class PlanServiceTest {
         }
 
         @Test
-        @DisplayName("Error en logbook → no propaga (try-catch silencia el error)")
-        void shouldNotPropagate_whenLogbookFails() {
+        @DisplayName("Error en RabbitMQ → no propaga")
+        void shouldNotPropagate_whenBrokerFails() {
             when(planTaskRepository.findById(5L)).thenReturn(Optional.of(task));
             when(planTaskRepository.save(any())).thenReturn(task);
-            doThrow(new RuntimeException("DB down"))
-                    .when(logbookEntryRepository).save(any());
-            lenient().doNothing().when(rabbitTemplate).convertAndSend(anyString(), anyString(), (Object) any());
+            doThrow(new RuntimeException("broker down"))
+                    .when(rabbitTemplate).convertAndSend(anyString(), anyString(), (Object) any());
 
-            // No debe lanzar aunque el logbook falle
             PlanTaskResponse result = planService.completeTask(5L, true);
             assertThat(result).isNotNull();
         }

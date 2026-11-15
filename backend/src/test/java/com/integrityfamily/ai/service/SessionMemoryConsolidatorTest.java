@@ -49,7 +49,8 @@ class SessionMemoryConsolidatorTest {
             {
               "themes": ["comunicación", "confianza"],
               "emotionalSummary": "Sesión constructiva",
-              "memberState": "ENGAGED",
+              "sessionTone": "PROGRESS_REPORTED",
+              "memberState": "RESISTANT",
               "progressSignals": ["avance notable"],
               "recommendedFollowUp": "Continuar ejercicio de escucha",
               "importanceScore": 0.8
@@ -143,6 +144,20 @@ class SessionMemoryConsolidatorTest {
                     && FamilyMemory.MemoryType.EPISODIC.equals(m.getMemoryType())
                     && SessionMemoryConsolidator.SEMANTIC_KEY.equals(m.getSemanticKey())
                     && Long.valueOf(SESSION_ID).equals(m.getSourceId())));
+        }
+
+        @Test
+        @DisplayName("guarda sessionTone y descarta memberState (etiqueta sobre la persona, ADR-018)")
+        void storesSessionTone_dropsMemberState() {
+            AiContext ctx = mock(AiContext.class);
+            stubHappyPath(ctx);
+
+            consolidator.consolidate(SESSION_ID, FAM_ID, ctx);
+
+            verify(memoryRepository).save(argThat(m ->
+                    m.getContent().contains("\"sessionTone\":\"PROGRESS_REPORTED\"")
+                    && !m.getContent().contains("memberState")
+                    && !m.getContent().contains("RESISTANT")));
         }
 
         @Test

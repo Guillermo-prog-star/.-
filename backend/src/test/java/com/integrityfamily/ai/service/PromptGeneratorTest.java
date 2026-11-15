@@ -178,6 +178,53 @@ class PromptGeneratorTest {
             assertThat(result).contains("importanceScore");
             assertThat(result).contains("emotionalSummary");
         }
+
+        @Test
+        @DisplayName("pide sessionTone (describe la sesión) y no etiquetas sobre la persona")
+        void requestsSessionTone_notPersonLabels() {
+            String result = generator.buildSessionSynthesisPrompt(
+                    List.of("texto"), "HIJO", "Juan", "GENERAL", "STABLE");
+
+            assertThat(result).contains("sessionTone");
+            assertThat(result).doesNotContain("memberState");
+            assertThat(result).doesNotContain("RESISTANT");
+        }
+    }
+
+    // ── Reglas anti-atribución (ADR-018) ─────────────────────────────────────
+
+    @Nested
+    @DisplayName("reglas anti-atribución")
+    class AntiAttributionRules {
+
+        @Test
+        @DisplayName("contexto null → igual incluye safety_rules con la regla de no adjudicar intenciones")
+        void nullContext_includesSafetyRules() {
+            String result = generator.buildPrompt("hola", null);
+
+            assertThat(result).contains("<safety_rules>");
+            assertThat(result).contains("No adjudiques intenciones");
+        }
+
+        @Test
+        @DisplayName("modo familia incluye la regla de no decidir entre versiones sin evidencia")
+        void familyMode_includesPerspectiveRule() {
+            AiContext ctx = mock(AiContext.class);
+
+            String result = generator.buildFamilyMentorPrompt("hola", ctx);
+
+            assertThat(result).contains("No adjudiques intenciones");
+            assertThat(result).contains("no decidas cuál es la verdadera sin evidencia");
+        }
+
+        @Test
+        @DisplayName("una agresión relatada no se reencuadra como error de interpretación")
+        void aggressionIsNotReframedAsInterpretation() {
+            String result = generator.buildFamilyMentorPrompt("hola", mock(AiContext.class));
+
+            assertThat(result).contains("NO lo trates como un error de interpretación");
+            assertThat(result).contains("prioriza la protección");
+        }
     }
 
     // ── buildGuardianMentorPrompt ────────────────────────────────────────────

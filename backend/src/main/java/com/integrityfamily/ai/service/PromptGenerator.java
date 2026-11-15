@@ -37,6 +37,11 @@ public class PromptGenerator {
         1. Si detectas ideación suicida, violencia física inminente o abuso, prioriza números de emergencia y contención inmediata antes de cualquier otra respuesta.
         2. No proporciones consejos médicos o legales vinculantes.
         3. Mantén siempre un tono empático, protector y de calma ante situaciones de alta tensión.
+        4. No adjudiques intenciones a otro miembro de la familia ("lo hace para molestarte", "no le importa"). Puedes ayudar a distinguir lo ocurrido de lo interpretado y sugerir preguntarle directamente.
+        5. Si hay versiones distintas de un mismo episodio, no decidas cuál es la verdadera sin evidencia: reconoce cada perspectiva y señala qué información falta.
+        6. No conviertas una interpretación, ni tuya ni del usuario, en un diagnóstico de la persona o de la familia.
+        7. Si el usuario relata un insulto, una amenaza o una agresión, NO lo trates como un error de interpretación ("no es el insulto, es tu interpretación"). Cada persona responde por su conducta: valida el daño y prioriza la protección (regla 1) antes de cualquier ejercicio de reflexión.
+        8. No infieras estados cerebrales, hormonales ni fisiológicos (cortisol, "tu amígdala", etc.) a partir de un relato, ni presentes la calma como prueba de que algo salió bien.
         </safety_rules>
         """;
 
@@ -61,7 +66,7 @@ public class PromptGenerator {
     public String buildPrompt(String userMessage, AiContext context) {
         if (context == null) {
             log.warn("[PROMPT] Contexto NULL para: {}", userMessage);
-            return String.format("%s\n\n<user_input>%s</user_input>", MENTOR_IDENTITY, userMessage);
+            return String.format("%s\n%s\n\n<user_input>%s</user_input>", MENTOR_IDENTITY, SAFETY_RULES, userMessage);
         }
 
         if (context.activeMember() != null && context.activeMember().isGuardian()) {
@@ -763,12 +768,23 @@ public class PromptGenerator {
 
             {
               "themes": ["máximo 3 temas observados"],
-              "emotionalSummary": "1-2 oraciones sobre el estado emocional del miembro",
-              "memberState": "OPEN | STRUGGLING | IMPROVING | RESISTANT | NEUTRAL",
+              "emotionalSummary": "1-2 oraciones sobre lo que el miembro expresó sentir, cerca de sus propias palabras",
+              "sessionTone": "EXPLORATORY | DIFFICULT | PROGRESS_REPORTED | BRIEF | NEUTRAL",
               "progressSignals": ["señal positiva o de riesgo observada, puede ser []"],
               "recommendedFollowUp": "una microacción de seguimiento para la próxima sesión, o null",
               "importanceScore": 0.1-1.0
             }
+
+            Describe la CONVERSACIÓN, no a la persona (ADR-018):
+            - No atribuyas rasgos, intenciones ni "resistencia" al miembro ni a otros familiares.
+            - Una sola conversación no basta para caracterizar a nadie.
+
+            Criterio de sessionTone (describe la sesión, no al miembro):
+            - EXPLORATORY: la conversación exploró un tema o pregunta abierta
+            - DIFFICULT: se habló de algo que el miembro expresó como doloroso o difícil
+            - PROGRESS_REPORTED: el miembro relató un avance o un logro
+            - BRIEF: conversación muy corta para sacar conclusiones
+            - NEUTRAL: ninguno de los anteriores
 
             Criterio de importanceScore:
             - 0.9-1.0: señales de crisis o breakthrough transformador

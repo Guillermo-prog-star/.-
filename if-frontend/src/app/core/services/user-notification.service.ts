@@ -46,7 +46,8 @@ export class UserNotificationService {
   }
 
   typeIcon(type: string): string {
-    return type === 'EVIDENCE_VALIDATED' ? '✅'
+    return type === 'EVIDENCE_FEEDBACK'  ? '💬'
+         : type === 'EVIDENCE_VALIDATED' ? '✅'
          : type === 'EVIDENCE_REJECTED'  ? '❌'
          : type === 'MILESTONE_UP'        ? '🎉'
          : type === 'PLAN_ASSIGNED'       ? '📋'

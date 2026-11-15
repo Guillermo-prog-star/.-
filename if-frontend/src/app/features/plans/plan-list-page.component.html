@@ -720,9 +720,6 @@
 
                       <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #8b949e; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px; margin-top: 6px;">
                         <span>Enviado por: <strong style="color: #c9d1d9;">{{ evidence.submittedBy }}</strong></span>
-                        @if (evidence.status === 'VALIDATED') {
-                          <span [style.color]="getEmotionDetails(evidence.emotion).color" style="font-weight: bold;">Puntaje: {{ evidence.humanScore || evidence.aiScore || 90 | number:'1.0-0' }}%</span>
-                        }
                       </div>
 
                       <!-- PORTAL DE CONTEMPLACIÓN INLINE -->

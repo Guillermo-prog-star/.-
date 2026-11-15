@@ -3,7 +3,6 @@ package com.integrityfamily.ai.messaging;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.integrityfamily.ai.provider.AiProvider;
-import com.integrityfamily.checklist.service.TaskEvidenceService;
 import com.integrityfamily.common.config.RabbitConfig;
 import com.integrityfamily.common.event.SystemEvent;
 import com.integrityfamily.common.service.UserNotificationService;
@@ -17,153 +16,141 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * SDD SPEC 6.9: Consumidor de Eventos para el Análisis Cognitivo Asíncrono de Evidencias.
- * Integra la evaluación clínica de Claude con la automatización del flujo conductual.
+ * Comentario asíncrono de la IA sobre una evidencia enviada por la familia.
+ *
+ * <p>La IA <b>no califica, no aprueba y no rechaza</b> evidencias. Antes este
+ * consumidor asignaba un puntaje 0–100 y validaba o rechazaba solo (≥ 70), lo
+ * que convertía un resultado desfavorable en "incumplimiento" y un texto breve
+ * en "incoherencia conductual". Ahora solo envía a la familia un comentario
+ * descriptivo como notificación:
+ * <ul>
+ *   <li>no modifica el texto que escribió la familia ({@code description});</li>
+ *   <li>no escribe {@code aiScore} ni cambia el estado de la evidencia o de la tarea;</li>
+ *   <li>la validación, si se usa, sigue siendo humana ({@code POST /api/evidences/{id}/validate|reject});</li>
+ *   <li>la ubicación de la evidencia no se envía al proveedor de IA.</li>
+ * </ul>
+ * Si la IA falla no se reintenta: el comentario es opcional.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EvidenceAnalysisConsumer {
 
+    static final String NOTIFICATION_TYPE = "EVIDENCE_FEEDBACK";
+    private static final int MAX_FEEDBACK_CHARS = 400;
+
     private final TaskEvidenceRepository taskEvidenceRepository;
-    private final TaskEvidenceService taskEvidenceService;
     private final AiProvider aiProvider;
     private final UserNotificationService userNotificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Transactional
+    @Transactional // push() persiste la notificación
     @RabbitListener(queues = RabbitConfig.EVIDENCE_ANALYSIS_QUEUE)
     public void onEvidenceSubmitted(SystemEvent event) {
-        log.info("🤖 [SENTINEL-AI] Iniciando análisis cognitivo asíncrono para evento de evidencia de la familia: {}", event.familyId());
-
         try {
-            // 1. Extraer ID de la evidencia de manera segura
-            Long evidenceId = null;
-            if (event.payload() instanceof Number) {
-                evidenceId = ((Number) event.payload()).longValue();
-            } else if (event.payload() instanceof String) {
-                evidenceId = Long.parseLong((String) event.payload());
-            }
-
+            Long evidenceId = extractEvidenceId(event.payload());
             if (evidenceId == null) {
-                log.error("❌ [SENTINEL-AI] El payload del evento no contiene un ID de evidencia válido.");
+                log.error("❌ [EVIDENCE-AI] El payload del evento no contiene un ID de evidencia válido.");
                 return;
             }
 
-            // 2. Cargar evidencia de la base de datos
             TaskEvidence evidence = taskEvidenceRepository.findById(evidenceId).orElse(null);
             if (evidence == null) {
-                log.warn("⚠️ [SENTINEL-AI] Evidencia con ID '{}' no encontrada en base de datos. Abortando análisis.", evidenceId);
+                log.warn("⚠️ [EVIDENCE-AI] Evidencia ID '{}' no encontrada. Sin comentario.", evidenceId);
                 return;
             }
-
             PlanTask task = evidence.getTask();
             if (task == null) {
-                log.warn("⚠️ [SENTINEL-AI] Tarea asociada a la evidencia ID '{}' es nula. Abortando.", evidenceId);
+                log.warn("⚠️ [EVIDENCE-AI] Evidencia ID '{}' sin tarea asociada. Sin comentario.", evidenceId);
                 return;
             }
 
-            log.info("🔍 [SENTINEL-AI] Evidencia ID '{}' cargada. Tarea: '{}' | Familia: '{}'", 
-                    evidenceId, task.getTitle(), evidence.getFamily().getName());
+            String feedback = parseFeedback(aiProvider.generateRawResponse(buildPrompt(task, evidence)));
+            if (feedback == null) {
+                log.warn("⚠️ [EVIDENCE-AI] Respuesta sin comentario utilizable para evidencia ID '{}'.", evidenceId);
+                return;
+            }
 
-            // 3. Construir el Prompt Clínico para Claude
-            String prompt = String.format("""
-                Eres Sentinel AI, el motor de inteligencia artificial clínica y conductual de la plataforma Integrity Family.
-                Tu tarea es evaluar la coherencia, asimilación conductual y autenticidad de la evidencia suministrada por una familia para una misión (tarea) de su Plan de Transformación.
-                
-                INFORMACIÓN DE LA MISIÓN:
-                - Título de la Misión: %s
-                - Acción Concreta Requerida: %s
-                - Indicador de Cumplimiento: %s
-                - Evidencia Solicitada: %s
-                - Dimensión: %s
-                
-                EVIDENCIA SUMINISTRADA POR LA FAMILIA:
-                - Tipo de Evidencia: %s
-                - Título del Envío: %s
-                - Descripción: %s
-                - Contenido de Texto / Reflexión: %s
-                - Emoción reportada: %s
-                - Ubicación: %s
-                - Capturado por: %s
-
-                Por favor, realiza un análisis conductual riguroso enfocado en la asimilación real de la dinámica de cambio familiar.
-                Determina si lo enviado demuestra de forma creíble que se ha ejecutado la acción concreta y se cumple con el indicador solicitado.
-                
-                Debes responder ÚNICAMENTE con un objeto JSON válido que contenga la siguiente estructura (no agregues texto de introducción o de despedida, solo responde con el objeto JSON):
-                {
-                  "score": (un número decimal entre 0.0 y 100.0 que mida el grado de cumplimiento),
-                  "coherence": (booleano true si el score es >= 70.0, false de lo contrario),
-                  "feedback": "Tu análisis clínico constructivo detallado en español dirigido a la familia (máximo 400 caracteres)"
-                }
-                """,
-                task.getTitle() != null ? task.getTitle() : "Sin título",
-                task.getAccionConcreta() != null ? task.getAccionConcreta() : "Sin acción concreta",
-                task.getIndicadorCumplimiento() != null ? task.getIndicadorCumplimiento() : "Sin indicador",
-                task.getEvidenciaRequerida() != null ? task.getEvidenciaRequerida() : "Sin evidencia requerida",
-                task.getDimension() != null ? task.getDimension() : "General",
-                evidence.getEvidenceType().name(),
-                evidence.getTitle() != null ? evidence.getTitle() : "Sin título",
-                evidence.getDescription() != null ? evidence.getDescription() : "Sin descripción",
-                evidence.getTextContent() != null ? evidence.getTextContent() : "Sin contenido de texto",
-                evidence.getEmotion() != null ? evidence.getEmotion() : "No especificada",
-                (evidence.getLatitude() != null && evidence.getLongitude() != null)
-                        ? String.format("%.4f, %.4f", evidence.getLatitude(), evidence.getLongitude())
-                        : "No compartida",
-                evidence.getMemberName() != null ? evidence.getMemberName() : evidence.getSubmittedBy()
+            userNotificationService.push(
+                    evidence.getFamily(), null,
+                    NOTIFICATION_TYPE,
+                    "Un comentario sobre su registro",
+                    String.format("Sobre \"%s\": %s", task.getTitle(), feedback)
             );
-
-            // 4. Invocar a Claude de forma síncrona dentro de este hilo asíncrono
-            log.info("🤖 [SENTINEL-AI] Invocando motor de Claude para análisis cognitivo...");
-            String jsonResponse = aiProvider.generateRawResponse(prompt).trim();
-
-            // Limpiar bloques de markdown si la IA los incluye
-            if (jsonResponse.startsWith("```")) {
-                jsonResponse = jsonResponse.replaceAll("^```json\\s*", "");
-                jsonResponse = jsonResponse.replaceAll("^```\\s*", "");
-                jsonResponse = jsonResponse.replaceAll("\\s*```$", "");
-                jsonResponse = jsonResponse.trim();
-            }
-
-            log.info("🤖 [SENTINEL-AI] Respuesta de Claude recibida: {}", jsonResponse);
-
-            // 5. Parsear el resultado JSON de Claude
-            JsonNode node = objectMapper.readTree(jsonResponse);
-            double score = node.path("score").asDouble(0.0);
-            boolean coherence = node.path("coherence").asBoolean(false);
-            String feedback = node.path("feedback").asText("Evidencia procesada por el motor de inteligencia artificial.");
-
-            // 6. Sellar la Evidencia (Validar o Rechazar automáticamente)
-            evidence.setAiScore(score);
-            evidence.setDescription("[Retroalimentación de Sentinel AI: " + feedback + "]\n\n" + 
-                    (evidence.getDescription() != null ? evidence.getDescription() : ""));
-            taskEvidenceRepository.save(evidence);
-
-            if (coherence) {
-                taskEvidenceService.validateEvidence(evidenceId, score, "Sentinel AI");
-                log.info("✅ [SENTINEL-AI] Evidencia ID '{}' aprobada con éxito. Score: {}", evidenceId, score);
-                userNotificationService.push(
-                    evidence.getFamily(), null,
-                    "EVIDENCE_VALIDATED",
-                    "Evidencia aprobada ✅",
-                    String.format("La misión \"%s\" fue validada por Sentinel AI con %.0f puntos. %s",
-                        task.getTitle(), score, feedback)
-                );
-            } else {
-                taskEvidenceService.rejectEvidence(evidenceId, "Sentinel AI");
-                log.warn("❌ [SENTINEL-AI] Evidencia ID '{}' desaprobada por incoherencia conductual. Score: {}", evidenceId, score);
-                userNotificationService.push(
-                    evidence.getFamily(), null,
-                    "EVIDENCE_REJECTED",
-                    "Evidencia no aprobada ❌",
-                    String.format("La evidencia para \"%s\" fue rechazada (%.0f pts). %s",
-                        task.getTitle(), score, feedback)
-                );
-            }
+            log.info("💬 [EVIDENCE-AI] Comentario enviado para evidencia ID '{}'.", evidenceId);
 
         } catch (Exception e) {
-            log.error("❌ [SENTINEL-AI] Error crítico durante el análisis asíncrono de la evidencia: {}", e.getMessage(), e);
-            throw new RuntimeException("Fallo en EvidenceAnalysisConsumer al procesar análisis cognitivo", e);
+            // El comentario es opcional: no se propaga para no reencolar el mensaje indefinidamente.
+            log.error("❌ [EVIDENCE-AI] No se pudo generar el comentario de la evidencia: {}", e.getMessage(), e);
         }
+    }
+
+    private static Long extractEvidenceId(Object payload) {
+        if (payload instanceof Number n) return n.longValue();
+        if (payload instanceof String s) {
+            try { return Long.parseLong(s.trim()); } catch (NumberFormatException ignored) { return null; }
+        }
+        return null;
+    }
+
+    static String buildPrompt(PlanTask task, TaskEvidence evidence) {
+        return String.format("""
+            Eres el acompañante de Integrity Family. Una familia registró cómo le fue con una práctica de su plan.
+            Escribe un comentario breve para la familia.
+
+            PRÁCTICA:
+            - Título: %s
+            - Acción propuesta: %s
+            - Dimensión: %s
+
+            LO QUE REGISTRÓ LA FAMILIA:
+            - Título: %s
+            - Descripción: %s
+            - Texto / reflexión: %s
+            - Emoción reportada: %s
+
+            REGLAS:
+            1. No califiques, no puntúes y no digas si la práctica "se cumplió", "se aprobó" o "es coherente".
+               No eres quien valida el registro.
+            2. Un resultado desfavorable o un registro breve no es una ejecución incorrecta ni un fracaso.
+            3. Describe la conducta o la situación, nunca a la persona. No uses etiquetas ni diagnósticos
+               ("resistente", "evitativo", "incoherente", "irresponsable") ni infieras estados cerebrales o clínicos.
+            4. Reconoce una cosa concreta que la familia contó y haz como máximo UNA pregunta abierta que
+               ayude a revisar o ajustar la práctica (por ejemplo, qué la dificultó o qué cambiarían).
+            5. Si el texto menciona violencia, amenaza, autolesión o riesgo para alguien, no comentes la práctica:
+               invita a buscar apoyo inmediato y a usar el protocolo de seguridad de la plataforma.
+            6. Español, tono cercano, máximo 400 caracteres.
+
+            Responde ÚNICAMENTE con un objeto JSON: {"feedback": "..."}
+            """,
+            orDefault(task.getTitle(), "Sin título"),
+            orDefault(task.getAccionConcreta(), "Sin acción descrita"),
+            orDefault(task.getDimension(), "General"),
+            orDefault(evidence.getTitle(), "Sin título"),
+            orDefault(evidence.getDescription(), "Sin descripción"),
+            orDefault(evidence.getTextContent(), "Sin texto"),
+            orDefault(evidence.getEmotion(), "No especificada")
+        );
+    }
+
+    String parseFeedback(String raw) {
+        if (raw == null) return null;
+        String json = raw.trim()
+                .replaceAll("^```json\\s*", "")
+                .replaceAll("^```\\s*", "")
+                .replaceAll("\\s*```$", "")
+                .trim();
+        try {
+            JsonNode node = objectMapper.readTree(json);
+            String feedback = node.path("feedback").asText("").trim();
+            if (feedback.isEmpty()) return null;
+            return feedback.length() > MAX_FEEDBACK_CHARS ? feedback.substring(0, MAX_FEEDBACK_CHARS) : feedback;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String orDefault(String value, String fallback) {
+        return value != null && !value.isBlank() ? value : fallback;
     }
 }

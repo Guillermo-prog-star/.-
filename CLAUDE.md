@@ -291,7 +291,8 @@ Dashboard: https://sonarcloud.io/project/overview?id=Guillermo-prog-star_if-full
 - V111 — `plan_acceptance_status` (ADR-010, Fase 0b): columnas de aceptación sobre `plans` (hoy `ImprovementPlan` se activa sin confirmación de la familia). No tabla nueva: la invariante "1 plan activo por familia" ya garantiza que no hay historial.
 - V112 — perspectivas múltiples sobre un mismo evento (H2, ADR-012): agrega autor a `journal_entries` (solo tenía `family_id`) y formaliza `critical_days.member_id` — existía en producción solo vía `ddl-auto=update`, ninguna migración lo declaraba sobre un schema Flyway puro.
 - V113 — Diario guiado biográfico (módulo nuevo `biography`, ADR-017): `biography_questions` (catálogo fijo y global, 12 capítulos, ~75 preguntas) + `biography_answers` (una fila por miembro+pregunta, autoría siempre humana y resuelta del principal, nunca del cliente). Solo DDL — el catálogo se siembra por `BiographyQuestionDataInitializer` (Java, idempotente), no por SQL crudo en la migración, para no repetir el defecto de V75/V100-V101 (seed de banco de preguntas directo por SQL con valores que no coincidían con el enum Java real). Reutiliza el enum existente `EntryVisibility` para visibilidad; agrega `EpistemicSource` (`OBSERVED`/`TOLD_BY_OTHER`/`DOCUMENT`/`UNCERTAIN`) como nuevo enum genérico en `domain`.
-- Última migración: **V113**. Próximo número disponible: **V114** (verificar con `ls src/main/resources/db/migration/ | sort -V | tail -1` antes de crear una nueva).
+- V114 — `sprint_dailies.attempt_status` (VARCHAR NULL, enum `AttemptStatus`: `NO_OPPORTUNITY`/`NOT_ATTEMPTED`/`ATTEMPTED_UNFAVORABLE`/`ATTEMPTED_FAVORABLE`): separa en el check-in diario "no hubo oportunidad" de "no se intentó" y de "intentado sin resultado favorable" (antes mezclados en texto libre). NULL = no respondido, sin backfill.
+- Última migración: **V114**. Próximo número disponible: **V115** (verificar con `ls src/main/resources/db/migration/ | sort -V | tail -1` antes de crear una nueva).
 
 ---
 
@@ -308,7 +309,7 @@ Dashboard: https://sonarcloud.io/project/overview?id=Guillermo-prog-star_if-full
 Integrity Family es una plataforma de acompañamiento familiar que:
 - Calcula el **ICF (Índice de Cohesión Familiar)** — 0–100, 4 dimensiones: emociones, comunicación, hábitos, tiempos
 - Genera **planes de mejora** personalizados con IA (Claude)
-- Conduce **sprints familiares** de 7–21 días con misiones y dailies
+- Conduce **sprints familiares** de 7 o 15 días (`SprintService` solo acepta esos dos valores) con misiones y dailies
 - Detecta **días críticos / crisis** y activa protocolos de resiliencia
 - Construye **documentales familiares** (fuente: misiones, eventos espontáneos, memorias)
 - Mantiene un **gemelo digital** de la familia para simulación y predicción

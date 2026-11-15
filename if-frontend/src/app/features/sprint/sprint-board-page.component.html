@@ -195,6 +195,13 @@
           </select>
         </div>
         <div class="sb-field">
+          <label>Ayer, con la práctica del sprint… (opcional)</label>
+          <select [(ngModel)]="dailyAttempt">
+            <option value="">Prefiero no indicarlo</option>
+            <option *ngFor="let opt of attemptStatusOptions" [value]="opt.value">{{ opt.text }}</option>
+          </select>
+        </div>
+        <div class="sb-field">
           <label>Tu nombre</label>
           <input type="text" [(ngModel)]="dailyMember" placeholder="¿Quién registra?">
         </div>

@@ -1,3 +1,4 @@
+import { AttemptStatus } from '../../../domain/constants/attemptStatusDomain';
 export interface CreateSprintRequest {
   objective: string;
   riskDimension: string;
@@ -14,6 +15,7 @@ export interface CreateDailyCheckinRequest {
   resolutionText: string;
   emotionalIndicator: string;
   memberName: string;
+  attemptStatus?: AttemptStatus | null;
 }
 
 export interface CloseSprintRequest {
@@ -44,6 +46,7 @@ export interface SprintDailyResponse {
   blockagesText: string;
   resolutionText: string;
   emotionalIndicator?: string;
+  attemptStatus?: AttemptStatus | null;
   createdAt: string;
 }
 

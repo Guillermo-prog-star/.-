@@ -313,8 +313,26 @@ class SprintServiceTest {
                     "Ningún bloqueo.",
                     "Sin resolución pendiente.",
                     "HAPPY",
-                    "William"
+                    "William",
+                    null
             );
+        }
+
+        @Test
+        @DisplayName("Persiste el attemptStatus recibido (V114)")
+        void shouldPersistAttemptStatus() {
+            CreateDailyCheckinRequest req = new CreateDailyCheckinRequest(
+                    "Ayer no hubo desacuerdo en la cena.", "Hoy lo intento si aparece.",
+                    "Ninguno", "Ninguna", "CALM", "William",
+                    com.integrityfamily.domain.AttemptStatus.NO_OPPORTUNITY);
+            when(sprintRepository.findById(10L)).thenReturn(Optional.of(activeSprint));
+            when(dailyRepository.existsBySprintIdAndMemberNameAndCheckinDate(
+                    10L, "William", LocalDate.now())).thenReturn(false);
+            when(dailyRepository.save(any(SprintDaily.class))).thenAnswer(i -> i.getArgument(0));
+
+            SprintDailyResponse result = service.submitDailyCheckin(10L, req);
+
+            assertThat(result.attemptStatus()).isEqualTo(com.integrityfamily.domain.AttemptStatus.NO_OPPORTUNITY);
         }
 
         @Test
@@ -339,6 +357,7 @@ class SprintServiceTest {
 
             assertThat(result.memberName()).isEqualTo("William");
             assertThat(result.emotionalIndicator()).isEqualTo("HAPPY");
+            assertThat(result.attemptStatus()).isNull();
         }
 
         @Test

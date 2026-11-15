@@ -40,6 +40,11 @@ public class SprintDaily {
     @Column(name = "emotional_indicator", length = 50)
     private String emotionalIndicator; // e.g. HAPPY, CALM, TIRED, STRESSED
 
+    /** V114 — null = no respondido (también todos los check-ins previos). */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "attempt_status", length = 30)
+    private AttemptStatus attemptStatus;
+
     @Builder.Default
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

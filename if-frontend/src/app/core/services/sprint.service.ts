@@ -1,3 +1,4 @@
+import { AttemptStatus } from '../../../domain/constants/attemptStatusDomain';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -20,6 +21,7 @@ export interface SprintDaily {
   blockagesText: string;
   resolutionText: string;
   emotionalIndicator: string;
+  attemptStatus?: AttemptStatus | null;
   createdAt: string;
 }
 
@@ -69,6 +71,7 @@ export interface CreateDailyRequest {
   resolutionText: string;
   emotionalIndicator: string;
   memberName: string;
+  attemptStatus?: AttemptStatus | null;
 }
 
 export interface CloseSprintRequest {

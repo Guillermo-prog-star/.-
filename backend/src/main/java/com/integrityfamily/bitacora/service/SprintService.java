@@ -147,6 +147,7 @@ public class SprintService {
                 .blockagesText(request.blockagesText())
                 .resolutionText(request.resolutionText())
                 .emotionalIndicator(request.emotionalIndicator())
+                .attemptStatus(request.attemptStatus())
                 .build();
 
         SprintDaily savedDaily = dailyRepository.save(daily);
@@ -372,6 +373,7 @@ public class SprintService {
                 daily.getBlockagesText(),
                 daily.getResolutionText(),
                 daily.getEmotionalIndicator(),
+                daily.getAttemptStatus(),
                 daily.getCreatedAt()
         );
     }

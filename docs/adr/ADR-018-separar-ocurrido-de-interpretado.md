@@ -64,7 +64,7 @@ escucha y presión percibida.
   `perceivedEventKey` para cruzar perspectivas y un origen (`origin`). Es
   el lugar natural para un episodio relacional.
 
-**Migración V114** (solo DDL, columnas NULL, sin backfill; Amendment 1 agrega `body_signal`, Amendment 3 agrega `explicit_responses`):
+**Migración (próximo número libre; V114 la tomó `sprint_dailies.attempt_status`)** (solo DDL, columnas NULL, sin backfill; Amendment 1 agrega `body_signal`, Amendment 3 agrega `explicit_responses`):
 
 | Columna | Pregunta de la bitácora |
 |---|---|
@@ -126,7 +126,7 @@ criterios: **evidencia, utilidad y responsabilidad**. La utilidad no
 reemplaza a la evidencia: una creencia falsa puede tranquilizar y una
 información verdadera puede incomodar.
 
-**Una columna más en V114:** `body_signal` (TEXT NULL), "¿qué noto en el
+**Una columna más en la misma migración:** `body_signal` (TEXT NULL), "¿qué noto en el
 cuerpo?", separada de `emotion` ("¿cómo lo nombro?"). Así la bitácora queda
 en 6 pasos:
 
@@ -195,7 +195,7 @@ creador de la familia.
 Se quitó el bypass con el mismo criterio que en el diario biográfico
 (ADR-017): lo PRIVATE solo lo ve su autor. Antes se verificó que ni
 `guardian` ni `risk` ni `context` dependen de ese acceso. Ver ADR-012
-Amendment 1. V114 ya no está bloqueada por privacidad; solo falta aprobar
+Amendment 1. La migración ya no está bloqueada por privacidad; solo falta aprobar
 este ADR.
 
 **Ritmo de la práctica:** es breve y voluntaria, vinculada a un episodio que
@@ -241,7 +241,7 @@ además del texto libre, una respuesta explícita que se guarda tal cual:
 | `DECLINED` | "Prefiero no compartir" |
 | `NOT_HELPFUL` | "No funcionó" (solo en los pasos Revisar y Comprobar) |
 
-En V114 esto se agrega como una sola columna JSON NULL,
+En esa migración esto se agrega como una sola columna JSON NULL,
 `explicit_responses` (mapa paso → respuesta), en vez de una columna por
 paso. NULL sigue significando "no respondido". `DECLINED` nunca se muestra
 a otros miembros como si fuera una respuesta.

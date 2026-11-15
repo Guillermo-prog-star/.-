@@ -1,5 +1,7 @@
 package com.integrityfamily.bitacora.dto;
 
+import com.integrityfamily.domain.AttemptStatus;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,7 +23,8 @@ public class SprintDtos {
             String blockagesText,
             String resolutionText,
             String emotionalIndicator,
-            String memberName
+            String memberName,
+            AttemptStatus attemptStatus
     ) {}
 
     public record CloseSprintRequest(
@@ -52,6 +55,7 @@ public class SprintDtos {
             String blockagesText,
             String resolutionText,
             String emotionalIndicator,
+            AttemptStatus attemptStatus,
             LocalDateTime createdAt
     ) {}
 

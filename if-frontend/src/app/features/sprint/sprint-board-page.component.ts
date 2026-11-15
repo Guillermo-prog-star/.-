@@ -10,6 +10,7 @@ import {
   CreateDailyRequest, CloseSprintRequest
 } from '../../core/services/sprint.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { AttemptStatus, ATTEMPT_STATUS_OPTIONS } from '../../../domain/constants/attemptStatusDomain';
 
 type View = 'board' | 'daily-form' | 'close-form' | 'create-form' | 'history' | 'retro';
 
@@ -82,6 +83,8 @@ export class SprintBoardPageComponent implements OnInit {
   dailyResolution = '';
   dailyEmotion   = 'BIEN';
   dailyMember    = '';
+  dailyAttempt: AttemptStatus | '' = '';
+  readonly attemptStatusOptions = ATTEMPT_STATUS_OPTIONS;
 
   // Close sprint
   closeWell       = '';
@@ -131,7 +134,8 @@ export class SprintBoardPageComponent implements OnInit {
       blockagesText:    this.dailyBlockage,
       resolutionText:   this.dailyResolution,
       emotionalIndicator: this.dailyEmotion,
-      memberName:       this.dailyMember
+      memberName:       this.dailyMember,
+      attemptStatus:    this.dailyAttempt || null
     };
     this.sprintSvc.submitDaily(s.id, req).subscribe({
       next: () => {
@@ -223,7 +227,7 @@ export class SprintBoardPageComponent implements OnInit {
   private resetDailyForm() {
     this.dailyYesterday = ''; this.dailyToday = '';
     this.dailyBlockage  = ''; this.dailyResolution = '';
-    this.dailyEmotion = 'BIEN'; this.dailyMember = '';
+    this.dailyEmotion = 'BIEN'; this.dailyMember = ''; this.dailyAttempt = '';
   }
 
   statusLabel(status: string): string {

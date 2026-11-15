@@ -26,6 +26,7 @@ import {
   CloseSprintRequest
 } from './sprint.model';
 import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
+import { AttemptStatus, ATTEMPT_STATUS_OPTIONS, attemptStatusText } from '../../../domain/constants/attemptStatusDomain';
 
 type TabMode = 'LOGBOOK' | 'SPRINT' | 'HISTORY';
 type FilterMode = 'ALL' | LogbookStatus;
@@ -55,6 +56,7 @@ interface DailyFormState {
   resolutionText: string;
   emotionalIndicator: string;
   memberName: string;
+  attemptStatus: AttemptStatus | null;
 }
 
 interface RetroFormState {
@@ -93,7 +95,8 @@ const EMPTY_DAILY_FORM: DailyFormState = {
   blockagesText: '',
   resolutionText: '',
   emotionalIndicator: 'HAPPY',
-  memberName: ''
+  memberName: '',
+  attemptStatus: null
 };
 
 const EMPTY_RETRO_FORM: RetroFormState = {
@@ -810,6 +813,19 @@ const EMPTY_RETRO_FORM: RetroFormState = {
               </div>
             </div>
 
+            <!-- V114: estado del intento (opcional) -->
+            <div>
+              <label class="block text-[9px] uppercase tracking-widest text-white/40 font-black mb-2">🔁 Ayer, con la práctica del sprint… (opcional)</label>
+              <select class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white/90 text-xs focus:outline-none focus:border-indigo-500/50 transition-all"
+                      [value]="dailyForm().attemptStatus ?? ''"
+                      (change)="setAttemptStatus($any($event.target).value)">
+                <option value="">Prefiero no indicarlo</option>
+                @for (opt of attemptStatusOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.text }}</option>
+                }
+              </select>
+            </div>
+
             <!-- Daily Fields: Ayer, Hoy, Bloqueos -->
             <div class="space-y-4">
               <div>
@@ -888,6 +904,9 @@ const EMPTY_RETRO_FORM: RetroFormState = {
                     <div>
                       <span class="block text-xs font-bold text-white/95">{{ d.memberName }}</span>
                       <span class="block text-[9px] text-white/30">{{ d.checkinDate | date:'dd MMM yyyy' }}</span>
+                      @if (attemptText(d.attemptStatus)) {
+                      <span class="block text-[9px] text-indigo-300/70">🔁 {{ attemptText(d.attemptStatus) }}</span>
+                      }
                     </div>
                   </div>
                   <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[8px] uppercase tracking-widest font-black rounded border border-indigo-500/20">
@@ -1344,6 +1363,9 @@ export class FamilyLogbookComponent implements OnInit {
 
   readonly sprintHistory   = signal<SprintResponse[]>([]);
   readonly loadingHistory  = signal(false);
+
+  readonly attemptStatusOptions = ATTEMPT_STATUS_OPTIONS;
+  readonly attemptText = attemptStatusText;
 
   readonly moods = [
     { value: 'HAPPY', icon: '😊 Alegre' },
@@ -1866,6 +1888,10 @@ export class FamilyLogbookComponent implements OnInit {
     this.dailyForm.update(d => ({ ...d, [field]: value }));
   }
 
+  setAttemptStatus(value: string): void {
+    this.dailyForm.update(d => ({ ...d, attemptStatus: (value || null) as AttemptStatus | null }));
+  }
+
   submitDaily(): void {
     const active = this.activeSprint();
     if (!active) return;
@@ -1885,7 +1911,8 @@ export class FamilyLogbookComponent implements OnInit {
       blockagesText: d.blockagesText || 'Ninguno',
       resolutionText: d.resolutionText || 'Ninguna',
       emotionalIndicator: d.emotionalIndicator,
-      memberName: d.memberName
+      memberName: d.memberName,
+      attemptStatus: d.attemptStatus
     };
 
     this.sprintService.submitDaily(active.id, req).subscribe({

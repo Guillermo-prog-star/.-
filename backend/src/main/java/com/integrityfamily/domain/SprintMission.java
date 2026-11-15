@@ -22,7 +22,7 @@ public class SprintMission {
     private String description;
 
     @Column(nullable = false, length = 30)
-    private String status; // PENDING, COMPLETED
+    private String status; // ver SprintMissionStatus
 
     @Column(name = "completed_at")
     private LocalDateTime completedAt;

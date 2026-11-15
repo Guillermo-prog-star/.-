@@ -101,28 +101,55 @@ public class SprintService {
 
     @Transactional
     public SprintResponse toggleMission(Long sprintId, Long missionId) {
-        log.info("🎯 [SPRINT] Cambiando estado de misión ID: {} en sprint ID: {}", missionId, sprintId);
-        
-        FamilySprint sprint = sprintRepository.findById(sprintId)
-                .orElseThrow(() -> new BusinessException("Sprint no encontrado con ID: " + sprintId, "SPRINT_NOT_FOUND", HttpStatus.NOT_FOUND));
+        log.info("🎯 [SPRINT] Alternando misión ID: {} en sprint ID: {}", missionId, sprintId);
+        FamilySprint sprint = findSprint(sprintId);
+        SprintMission mission = findMissionInSprint(sprintId, missionId);
 
-        SprintMission mission = missionRepository.findById(missionId)
-                .orElseThrow(() -> new BusinessException("Misión no encontrada con ID: " + missionId, "MISSION_NOT_FOUND", HttpStatus.NOT_FOUND));
-
-        if (!mission.getSprint().getId().equals(sprintId)) {
-            throw new BusinessException("La misión no pertenece a este sprint.", "MISSION_NOT_IN_SPRINT", HttpStatus.BAD_REQUEST);
-        }
-
-        if ("PENDING".equals(mission.getStatus())) {
-            mission.setStatus("COMPLETED");
-            mission.setCompletedAt(LocalDateTime.now());
-        } else {
-            mission.setStatus("PENDING");
-            mission.setCompletedAt(null);
-        }
+        // COMPLETED vuelve a PENDING; cualquier otro estado (pendiente, cambiada,
+        // pospuesta) se marca como completado.
+        applyMissionStatus(mission, SprintMissionStatus.COMPLETED.is(mission.getStatus())
+                ? SprintMissionStatus.PENDING : SprintMissionStatus.COMPLETED);
 
         missionRepository.save(mission);
         return mapToSprintResponse(sprint);
+    }
+
+    /**
+     * Fija explícitamente el estado de una misión. Permite registrar que un plan
+     * "cambió por acuerdo" o se "pospuso" sin que cuente como incumplimiento.
+     */
+    @Transactional
+    public SprintResponse setMissionStatus(Long sprintId, Long missionId, SprintMissionStatus status) {
+        if (status == null) {
+            throw new BusinessException("El estado de la misión es obligatorio.", "MISSION_STATUS_REQUIRED", HttpStatus.BAD_REQUEST);
+        }
+        log.info("🎯 [SPRINT] Misión ID: {} en sprint ID: {} → {}", missionId, sprintId, status);
+        FamilySprint sprint = findSprint(sprintId);
+        SprintMission mission = findMissionInSprint(sprintId, missionId);
+
+        applyMissionStatus(mission, status);
+
+        missionRepository.save(mission);
+        return mapToSprintResponse(sprint);
+    }
+
+    private FamilySprint findSprint(Long sprintId) {
+        return sprintRepository.findById(sprintId)
+                .orElseThrow(() -> new BusinessException("Sprint no encontrado con ID: " + sprintId, "SPRINT_NOT_FOUND", HttpStatus.NOT_FOUND));
+    }
+
+    private SprintMission findMissionInSprint(Long sprintId, Long missionId) {
+        SprintMission mission = missionRepository.findById(missionId)
+                .orElseThrow(() -> new BusinessException("Misión no encontrada con ID: " + missionId, "MISSION_NOT_FOUND", HttpStatus.NOT_FOUND));
+        if (!mission.getSprint().getId().equals(sprintId)) {
+            throw new BusinessException("La misión no pertenece a este sprint.", "MISSION_NOT_IN_SPRINT", HttpStatus.BAD_REQUEST);
+        }
+        return mission;
+    }
+
+    private static void applyMissionStatus(SprintMission mission, SprintMissionStatus status) {
+        mission.setStatus(status.name());
+        mission.setCompletedAt(status == SprintMissionStatus.COMPLETED ? LocalDateTime.now() : null);
     }
 
     @Transactional
@@ -183,8 +210,10 @@ public class SprintService {
         }
 
         // 1. Calcular Consistencia Evolutiva (1-10)
-        int completedMissionsCount = (int) missions.stream().filter(m -> "COMPLETED".equals(m.getStatus())).count();
-        double missionRatio = missions.isEmpty() ? 1.0 : (double) completedMissionsCount / missions.size();
+        // Cambiadas por acuerdo y pospuestas no son incumplimiento: salen del denominador.
+        long completedMissionsCount = missions.stream().filter(m -> SprintMissionStatus.COMPLETED.is(m.getStatus())).count();
+        long committedMissionsCount = missions.stream().filter(m -> SprintMissionStatus.countsAsCommitted(m.getStatus())).count();
+        double missionRatio = committedMissionsCount == 0 ? 1.0 : (double) completedMissionsCount / committedMissionsCount;
         
         // Cumplimiento misiones: hasta 4 puntos
         double missionPoints = missionRatio * 4.0;
@@ -244,6 +273,26 @@ public class SprintService {
         return mapToSprintResponse(sprint);
     }
 
+    private static String missionMark(String status) {
+        if (SprintMissionStatus.COMPLETED.is(status)) return "✓";
+        if (SprintMissionStatus.CHANGED_BY_AGREEMENT.is(status)) return "cambiada por acuerdo";
+        if (SprintMissionStatus.POSTPONED.is(status)) return "pospuesta";
+        return " ";
+    }
+
+    /** Conteo descriptivo: completadas, pendientes, cambiadas por acuerdo y pospuestas, por separado. */
+    static String missionSummary(List<SprintMission> missions) {
+        long completed = 0, changed = 0, postponed = 0, pending = 0;
+        for (SprintMission m : missions) {
+            if (SprintMissionStatus.COMPLETED.is(m.getStatus())) completed++;
+            else if (SprintMissionStatus.CHANGED_BY_AGREEMENT.is(m.getStatus())) changed++;
+            else if (SprintMissionStatus.POSTPONED.is(m.getStatus())) postponed++;
+            else pending++;
+        }
+        return String.format("Completadas: %d | Pendientes: %d | Cambiadas por acuerdo: %d | Pospuestas: %d",
+                completed, pending, changed, postponed);
+    }
+
     private String generateAiSprintFeedback(
             FamilySprint sprint,
             List<SprintMission> missions,
@@ -257,8 +306,11 @@ public class SprintService {
 
             StringBuilder mText = new StringBuilder();
             for (SprintMission m : missions) {
-                mText.append(String.format("- [%s] %s\n", "COMPLETED".equals(m.getStatus()) ? "✓" : " ", m.getDescription()));
+                mText.append(String.format("- [%s] %s\n", missionMark(m.getStatus()), m.getDescription()));
             }
+            mText.append(missionSummary(missions))
+                 .append("\n(Una misión cambiada por acuerdo o pospuesta NO es un incumplimiento: ")
+                 .append("la familia decidió ajustar el plan. No la trates como fallo.)\n");
 
             StringBuilder dText = new StringBuilder();
             int limit = Math.min(10, dailies.size());

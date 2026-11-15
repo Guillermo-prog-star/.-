@@ -175,6 +175,7 @@ class NombreServicioTest {
 **Gotchas conocidos:**
 - `SprintService` tiene 3 dependencias nuevas: `AuditService`, `TaskEvidenceRepository`, `PlanTaskRepository` — todos deben mockearse
 - `TaskEvidenceService` requiere mock de `AuditService`
+- `SprintMission.status` sigue siendo `String` (VARCHAR(30)); los valores válidos los define `SprintMissionStatus` (`PENDING`, `COMPLETED`, `CHANGED_BY_AGREEMENT`, `POSTPONED`). Cambiada por acuerdo y pospuesta **no son incumplimiento**: salen del denominador de cumplimiento (consistencyScore, progreso en `FamilyContextEngine`, porcentaje del frontend vía `missionStatusDomain.ts`) y se muestran aparte. Endpoint: `PUT /api/sprints/{sprintId}/missions/{missionId}/status`
 - `DocumentarySourceType` enum: valores son `MISSION`, `SPONTANEOUS`, `MEMORY`, `SPRINT_CLOSURE`, `PILLAR_CLOSURE` (NO `MISSION_BASED`)
 - `FamilyDocumentaryDTO` es clase `@Data` de Lombok, usar `getTitle()` (NO record con `title()`)
 - `FamilyIcfRecalculatedEvent` tiene exactamente 10 campos (sin `convivencia`)

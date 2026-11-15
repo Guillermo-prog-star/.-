@@ -188,8 +188,11 @@ public class FamilyContextEngine {
                     .map(sprint -> {
                         List<SprintMission> missions = sprint.getMissions();
                         if (missions.isEmpty()) return null;
-                        long done = missions.stream().filter(m -> "COMPLETED".equals(m.getStatus())).count();
-                        return (double) done / missions.size() * 100.0;
+                        // Cambiadas por acuerdo y pospuestas no cuentan como incumplimiento.
+                        long done = missions.stream().filter(m -> SprintMissionStatus.COMPLETED.is(m.getStatus())).count();
+                        long committed = missions.stream().filter(m -> SprintMissionStatus.countsAsCommitted(m.getStatus())).count();
+                        if (committed == 0) return null;
+                        return (double) done / committed * 100.0;
                     }).orElse(null);
         } catch (Exception e) {
             log.warn("[CTX] No se pudo calcular progreso del sprint: {}", e.getMessage());

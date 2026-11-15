@@ -1,3 +1,5 @@
+import { MissionStatus } from '../../../domain/constants/missionStatusDomain';
+
 import { AttemptStatus } from '../../../domain/constants/attemptStatusDomain';
 export interface CreateSprintRequest {
   objective: string;
@@ -33,7 +35,7 @@ export interface CloseSprintRequest {
 export interface SprintMissionResponse {
   id: number;
   description: string;
-  status: 'PENDING' | 'COMPLETED';
+  status: MissionStatus;
   completedAt?: string;
 }
 

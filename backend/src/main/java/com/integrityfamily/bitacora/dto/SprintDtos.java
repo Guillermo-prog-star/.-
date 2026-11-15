@@ -1,6 +1,7 @@
 package com.integrityfamily.bitacora.dto;
 
 import com.integrityfamily.domain.AttemptStatus;
+import com.integrityfamily.domain.SprintMissionStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -38,6 +39,8 @@ public class SprintDtos {
             Integer positiveInteractions,
             Integer emotionalPersistence
     ) {}
+
+    public record UpdateMissionStatusRequest(SprintMissionStatus status) {}
 
     public record SprintMissionResponse(
             Long id,

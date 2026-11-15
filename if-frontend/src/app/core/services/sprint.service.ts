@@ -1,4 +1,5 @@
 import { AttemptStatus } from '../../../domain/constants/attemptStatusDomain';
+import { MissionStatus } from '../../../domain/constants/missionStatusDomain';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -110,6 +111,11 @@ export class SprintService {
 
   toggleMission(sprintId: number, missionId: number): Observable<Sprint> {
     return this.http.put<any>(`${this.base()}/${sprintId}/missions/${missionId}/toggle`, {})
+      .pipe(map(r => r.data));
+  }
+
+  setMissionStatus(sprintId: number, missionId: number, status: MissionStatus): Observable<Sprint> {
+    return this.http.put<any>(`${this.base()}/${sprintId}/missions/${missionId}/status`, { status })
       .pipe(map(r => r.data));
   }
 

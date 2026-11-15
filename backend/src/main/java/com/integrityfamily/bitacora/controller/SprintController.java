@@ -48,6 +48,16 @@ public class SprintController {
         return ApiResponse.ok(sprintService.toggleMission(sprintId, missionId));
     }
 
+    @PutMapping("/{sprintId}/missions/{missionId}/status")
+    @Operation(summary = "Fijar el estado de una misión (PENDING, COMPLETED, CHANGED_BY_AGREEMENT, POSTPONED)")
+    public ApiResponse<SprintResponse> setMissionStatus(
+            @PathVariable Long sprintId,
+            @PathVariable Long missionId,
+            @RequestBody UpdateMissionStatusRequest request
+    ) {
+        return ApiResponse.ok(sprintService.setMissionStatus(sprintId, missionId, request.status()));
+    }
+
     @PostMapping("/{sprintId}/dailies")
     @Operation(summary = "Registrar un Check-In Diario (Daily de Conciencia)")
     public ApiResponse<SprintDailyResponse> submitDaily(

@@ -293,6 +293,51 @@ class SprintServiceTest {
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("no pertenece a este sprint");
         }
+
+        private void mockMissionLookupAndResponse() {
+            when(sprintRepository.findById(10L)).thenReturn(Optional.of(activeSprint));
+            when(missionRepository.findById(5L)).thenReturn(Optional.of(pendingMission));
+            when(missionRepository.save(any(SprintMission.class))).thenReturn(pendingMission);
+            when(missionRepository.findBySprintId(10L)).thenReturn(List.of(pendingMission));
+            when(dailyRepository.findBySprintIdOrderByCheckinDateDesc(10L)).thenReturn(List.of());
+            when(retrospectiveRepository.findBySprintId(10L)).thenReturn(Optional.empty());
+        }
+
+        @Test
+        @DisplayName("POSTPONED → toggle la marca como COMPLETED")
+        void shouldToggle_postponedToCompleted() {
+            pendingMission.setStatus("POSTPONED");
+            mockMissionLookupAndResponse();
+
+            service.toggleMission(10L, 5L);
+
+            assertThat(pendingMission.getStatus()).isEqualTo("COMPLETED");
+            assertThat(pendingMission.getCompletedAt()).isNotNull();
+        }
+
+        @Test
+        @DisplayName("setMissionStatus(CHANGED_BY_AGREEMENT) desde COMPLETED limpia completedAt")
+        void shouldSetChangedByAgreement_andClearCompletedAt() {
+            pendingMission.setStatus("COMPLETED");
+            pendingMission.setCompletedAt(LocalDateTime.now().minusHours(1));
+            mockMissionLookupAndResponse();
+
+            SprintResponse result = service.setMissionStatus(10L, 5L, SprintMissionStatus.CHANGED_BY_AGREEMENT);
+
+            assertThat(pendingMission.getStatus()).isEqualTo("CHANGED_BY_AGREEMENT");
+            assertThat(pendingMission.getCompletedAt()).isNull();
+            assertThat(result.missions()).extracting(SprintMissionResponse::status)
+                    .containsExactly("CHANGED_BY_AGREEMENT");
+        }
+
+        @Test
+        @DisplayName("setMissionStatus(null) lanza BusinessException sin tocar la misión")
+        void shouldThrow_whenStatusIsNull() {
+            assertThatThrownBy(() -> service.setMissionStatus(10L, 5L, null))
+                    .isInstanceOf(BusinessException.class)
+                    .hasMessageContaining("obligatorio");
+            verify(missionRepository, never()).save(any());
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -398,6 +443,11 @@ class SprintServiceTest {
 
         /** misiones completadas, misiones totales, dailies registrados */
         private void mockSprintData(int completedMissions, int totalMissions, int dailyCount) {
+            mockSprintData(completedMissions, totalMissions, dailyCount, List.of());
+        }
+
+        /** extraStatuses: misiones adicionales con estos estados (ej. CHANGED_BY_AGREEMENT). */
+        private void mockSprintData(int completedMissions, int totalMissions, int dailyCount, List<String> extraStatuses) {
             // SprintService requiere dailies O evidencias para cerrar el sprint
             // Si no hay dailies, simulamos que hay evidencia vía missionTaskId
             if (dailyCount == 0) {
@@ -413,6 +463,11 @@ class SprintServiceTest {
                 missions.add(SprintMission.builder()
                         .id((long)(i + 1)).sprint(activeSprint)
                         .description("Misión " + i).status(status).build());
+            }
+            for (String extra : extraStatuses) {
+                missions.add(SprintMission.builder()
+                        .id((long)(missions.size() + 1)).sprint(activeSprint)
+                        .description("Misión ajustada").status(extra).build());
             }
             when(missionRepository.findBySprintId(10L)).thenReturn(missions);
 
@@ -483,6 +538,27 @@ class SprintServiceTest {
             ArgumentCaptor<SprintRetrospective> captor = ArgumentCaptor.forClass(SprintRetrospective.class);
             verify(retrospectiveRepository).save(captor.capture());
             assertThat(captor.getValue().getConsistencyScore()).isEqualTo(9);
+        }
+
+        @Test
+        @DisplayName("Cambiadas por acuerdo y pospuestas no cuentan como incumplimiento")
+        void shouldExcludeChangedAndPostponed_fromMissionRatio() {
+            // 2 completadas + 1 cambiada + 1 pospuesta → ratio = 2/2 = 1.0 → 4 puntos
+            // (si contaran como incumplidas: 2/4 → 2 puntos → score 2)
+            // dailyPoints = 0; emotionalPoints = 0.2 + 0.1 = 0.3 → total 4.3 → 4
+            mockSprintData(2, 2, 0, List.of("CHANGED_BY_AGREEMENT", "POSTPONED"));
+            ArgumentCaptor<String> promptCaptor = ArgumentCaptor.forClass(String.class);
+            when(aiProvider.generateResponse(promptCaptor.capture(), any())).thenReturn("AI feedback");
+
+            service.closeSprintAndCreateRetrospective(10L, retroWith(1, 9));
+
+            ArgumentCaptor<SprintRetrospective> captor = ArgumentCaptor.forClass(SprintRetrospective.class);
+            verify(retrospectiveRepository).save(captor.capture());
+            assertThat(captor.getValue().getConsistencyScore()).isEqualTo(4);
+            assertThat(promptCaptor.getValue())
+                    .contains("Completadas: 2 | Pendientes: 0 | Cambiadas por acuerdo: 1 | Pospuestas: 1")
+                    .contains("[cambiada por acuerdo]")
+                    .contains("NO es un incumplimiento");
         }
 
         @Test

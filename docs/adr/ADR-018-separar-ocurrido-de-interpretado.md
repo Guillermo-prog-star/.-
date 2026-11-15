@@ -273,6 +273,52 @@ corporal no decide verdad ni conveniencia (Amendment 1). La pausa nunca
 sirve para exigir serenidad ni silenciar una queja (`SAFETY_RULES` regla
 7). Nada de esto modifica el ICF ni los niveles de conciencia.
 
+## Amendment 4 — la frase como interfaz y "¿cambió mi interpretación?" (2026-11-15)
+
+Origen: una guía práctica del mismo recorrido aplicada a un conflicto
+cotidiano (platos sin lavar → "no le importa la familia").
+
+**1. La interfaz principal es una sola frase para completar.** La UI
+presenta el registro como:
+
+> «Estoy concluyendo ___ porque observé ___. Me falta saber ___. Lo
+> comprobaré mediante ___. Mientras tanto, haré ___».
+
+| Hueco | Campo |
+|---|---|
+| Estoy concluyendo ___ | `interpretation` |
+| porque observé ___ | `observations` |
+| Me falta saber ___ | `alternative_explanation` (incluye lo que falta saber) |
+| Lo comprobaré mediante ___ | `reflection` (plan de comprobación) |
+| Mientras tanto, haré ___ | `reflection` (acción elegida) |
+
+El schema no cambia, solo la presentación. Los pasos con señal corporal y
+emoción (Amendment 1) quedan como un "agregar más" opcional, no como
+preguntas obligatorias. Las respuestas explícitas del Amendment 3 siguen
+disponibles en cada hueco.
+
+**2. Nueva medida para el paso Revisar: `INTERPRETATION_REVISED`.**
+"¿La comprobación cambió mi interpretación?", con cuatro respuestas: sí /
+en parte / no / no llegué a comprobar. Se registra en `hypothesis_evidence`
+(`subject_type = 'FAMILY_MEMBER'`, misma hipótesis
+`ANTES_DE_CONCLUIR_PREGUNTA`).
+
+- **Un "no" no es un fracaso.** A veces la comprobación confirma la primera
+  interpretación, y eso también es pensamiento crítico: se cuestiona tanto
+  la acusación como la explicación favorable ("que sea posible no significa
+  que haya ocurrido").
+- Por eso es un **dato, no un criterio de éxito**. Si se premiara el "sí",
+  la práctica enseñaría a cambiar de opinión para quedar bien.
+- Lo que interesa medir es que la comprobación **pudo** cambiar la
+  decisión. "No llegué a comprobar" se distingue de "no cambió".
+
+**3. Tono de la pregunta al otro.** La guía de la UI propone preguntas que
+no presuponen la respuesta ("¿Qué pasó? ¿Qué habías entendido del
+acuerdo?"), no preguntas que acusan ("¿Por qué no lo hiciste?"). En
+relaciones asimétricas (padre/hijo) esto importa especialmente: la pregunta
+abierta no debe convertirse en un interrogatorio. La respuesta del otro
+aporta información, pero no es una prueba definitiva.
+
 ## Alcance explícitamente excluido
 
 - **Ningún vínculo con hipótesis físicas.** La conversación de la que

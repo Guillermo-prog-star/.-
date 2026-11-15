@@ -64,7 +64,7 @@ escucha y presión percibida.
   `perceivedEventKey` para cruzar perspectivas y un origen (`origin`). Es
   el lugar natural para un episodio relacional.
 
-**Migración V114** (solo DDL, columnas NULL, sin backfill; Amendment 1 agrega `body_signal`):
+**Migración V114** (solo DDL, columnas NULL, sin backfill; Amendment 1 agrega `body_signal`, Amendment 3 agrega `explicit_responses`):
 
 | Columna | Pregunta de la bitácora |
 |---|---|
@@ -204,6 +204,74 @@ nuevas son NULL). No se pide foto ni grabación como evidencia: basta con
 registrar si conversaron y qué acordaron. La IA no interviene en la primera
 versión. Se incorpora solo cuando haya una necesidad demostrada y un
 criterio para evaluar sus errores.
+
+## Amendment 3 — no usar las micro-simulaciones, respuestas explícitas y pausa como comparador (2026-11-15)
+
+Origen: una propuesta de integrar la observación corporal en la secuencia
+de micro-simulación `NOTICE → THINK → ACT → AFTERMATH → EFFECT`.
+
+**1. La práctica no se registra en las micro-simulaciones.** Esa secuencia
+ya existe, pero es un **instrumento de evaluación** (`SCENARIO_V1_2`,
+V89–V95, 22 escenarios con las 5 fases): situaciones hipotéticas o
+recordadas, opciones cerradas puntuadas con `rubric_level` 1–5, y `EFFECT`
+autoinformado en la misma sesión. Esta práctica registra episodios reales,
+con texto libre, sin puntaje, y un seguimiento días después. Mezclarlas
+tendría dos efectos:
+
+- Contaminaría `PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS` (ADR-008), que compara
+  `THINK` con `AFTERMATH` dentro de una sola sesión. Con episodios reales y
+  seguimiento diferido se mezclarían dos poblaciones distintas.
+- Convertiría una práctica voluntaria en una evaluación permanente, justo la
+  vigilancia que este ADR quiere evitar.
+
+Se mantiene el registro en `JournalEntry`. La UI puede usar **el mismo
+vocabulario** (Notar → Interpretar → Elegir → Revisar → Comprobar) para que
+la familia reconozca el recorrido, sin compartir tablas, preguntas ni
+puntajes con la evaluación.
+
+**2. Respuestas explícitas, no un NULL ambiguo.** En el diseño original un
+campo NULL podía significar "omití la pregunta" o "no noté nada", y para
+cualquier análisis son datos distintos. Cada paso de la práctica acepta,
+además del texto libre, una respuesta explícita que se guarda tal cual:
+
+| Respuesta explícita | Significa |
+|---|---|
+| `NONE_NOTICED` | "No identifico ninguna señal" (es un dato, no una ausencia) |
+| `UNKNOWN` | "No sé" |
+| `DECLINED` | "Prefiero no compartir" |
+| `NOT_HELPFUL` | "No funcionó" (solo en los pasos Revisar y Comprobar) |
+
+En V114 esto se agrega como una sola columna JSON NULL,
+`explicit_responses` (mapa paso → respuesta), en vez de una columna por
+paso. NULL sigue significando "no respondido". `DECLINED` nunca se muestra
+a otros miembros como si fuera una respuesta.
+
+**3. Comparador de validación: pausa sola contra pausa con observación
+corporal.** Es más fuerte que el comparador del Amendment 1 (igualar tiempo
+de conversación), porque aísla el componente corporal. Se registra como una
+hipótesis propia en `hypothesis_evidence`:
+
+- `hypothesis = 'BODY_SIGNAL_PAUSE_HYPOTHESIS'`, `hypothesis_version = '0.1'`.
+- Se relaciona con `DELIBERATIVE_INTERRUPTION_HYPOTHESIS` (ADR-007,
+  `pauseCapacity`) sin duplicarla. ADR-007 mide la capacidad de pausa en
+  la evaluación; esta hipótesis compara si **agregar** la observación
+  corporal a una pausa acordada cambia los resultados de episodios reales.
+- Contexto: solo desacuerdos cotidianos de baja intensidad. Una amenaza,
+  coerción o violencia sale del experimento y va al protocolo de seguridad
+  (V98).
+- Medidas de conducta, reportadas por cada participante:
+  `CONVERSATION_RESUMED`, `INSULTS_OR_INTERRUPTIONS`, `AGREEMENT_REACHED`
+  y `AGREEMENT_KEPT` (este último en el seguimiento).
+- Medidas de aceptación: `PRACTICE_COMFORT` y `PRACTICE_USEFUL`.
+- La calma subjetiva se registra como un resultado **separado**, nunca como
+  criterio de éxito.
+
+**Se mantiene, sin cambios:** los sensores y la VFC se posponen hasta que
+haya una necesidad concreta (su asociación con la función ejecutiva es
+pequeña y no justifica una calificación individual ni familiar). La señal
+corporal no decide verdad ni conveniencia (Amendment 1). La pausa nunca
+sirve para exigir serenidad ni silenciar una queja (`SAFETY_RULES` regla
+7). Nada de esto modifica el ICF ni los niveles de conciencia.
 
 ## Alcance explícitamente excluido
 

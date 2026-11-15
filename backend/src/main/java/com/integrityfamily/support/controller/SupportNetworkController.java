@@ -52,17 +52,20 @@ public class SupportNetworkController {
     // ─────────────────────────────────────────────────────────────────────
 
     @GetMapping("/api/families/{familyId}/support")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<FamilySupportSummary> getSummary(@PathVariable Long familyId) {
         return ResponseEntity.ok(service.getSummary(familyId));
     }
 
     @GetMapping("/api/families/{familyId}/support/active")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<List<AssignmentResponse>> getActive(@PathVariable Long familyId) {
         return ResponseEntity.ok(service.getActive(familyId));
     }
 
     /** La familia invita a un profesional */
     @PostMapping("/api/families/{familyId}/support/invite")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<AssignmentResponse> invite(
             @PathVariable Long familyId,
             @RequestBody InviteRequest req,
@@ -72,6 +75,7 @@ public class SupportNetworkController {
 
     /** La familia otorga consentimiento explícito */
     @PostMapping("/api/families/{familyId}/support/consent")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<AssignmentResponse> consent(
             @PathVariable Long familyId,
             @RequestBody ConsentRequest req,
@@ -81,6 +85,7 @@ public class SupportNetworkController {
 
     /** La familia revoca el acceso — sin necesidad de justificación */
     @PostMapping("/api/families/{familyId}/support/revoke")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<AssignmentResponse> revoke(
             @PathVariable Long familyId,
             @RequestBody RevokeRequest req,

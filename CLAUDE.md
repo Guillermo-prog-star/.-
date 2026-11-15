@@ -90,6 +90,7 @@ if-full/
 | `timeline` | FamilyTimelineService — línea de tiempo familiar |
 | `legado` | LegacyService — legado intergeneracional |
 | `lineage` | LineageService — árbol genealógico extendido |
+| `biography` | BiographyService — diario guiado biográfico (12 capítulos, primera persona, ADR-017) |
 | `dna` | FamilyDnaService — ADN cultural/emocional de la familia |
 | `tree` | FamilyTreeService — árbol familiar visual |
 | `lts` | LongitudinalStateService — estado histórico de la familia |
@@ -289,7 +290,8 @@ Dashboard: https://sonarcloud.io/project/overview?id=Guillermo-prog-star_if-full
 - V110 — `daily_vitality_log` (ADR-009, Fase 4 base biológica): única fase del método externo de 8 sin cobertura digital. Todos los campos numéricos NULL-ables (registro parcial por día).
 - V111 — `plan_acceptance_status` (ADR-010, Fase 0b): columnas de aceptación sobre `plans` (hoy `ImprovementPlan` se activa sin confirmación de la familia). No tabla nueva: la invariante "1 plan activo por familia" ya garantiza que no hay historial.
 - V112 — perspectivas múltiples sobre un mismo evento (H2, ADR-012): agrega autor a `journal_entries` (solo tenía `family_id`) y formaliza `critical_days.member_id` — existía en producción solo vía `ddl-auto=update`, ninguna migración lo declaraba sobre un schema Flyway puro.
-- Última migración: **V112**. Próximo número disponible: **V113** (verificar con `ls src/main/resources/db/migration/ | sort -V | tail -1` antes de crear una nueva).
+- V113 — Diario guiado biográfico (módulo nuevo `biography`, ADR-017): `biography_questions` (catálogo fijo y global, 12 capítulos, ~75 preguntas) + `biography_answers` (una fila por miembro+pregunta, autoría siempre humana y resuelta del principal, nunca del cliente). Solo DDL — el catálogo se siembra por `BiographyQuestionDataInitializer` (Java, idempotente), no por SQL crudo en la migración, para no repetir el defecto de V75/V100-V101 (seed de banco de preguntas directo por SQL con valores que no coincidían con el enum Java real). Reutiliza el enum existente `EntryVisibility` para visibilidad; agrega `EpistemicSource` (`OBSERVED`/`TOLD_BY_OTHER`/`DOCUMENT`/`UNCERTAIN`) como nuevo enum genérico en `domain`.
+- Última migración: **V113**. Próximo número disponible: **V114** (verificar con `ls src/main/resources/db/migration/ | sort -V | tail -1` antes de crear una nueva).
 
 ---
 

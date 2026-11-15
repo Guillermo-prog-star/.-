@@ -311,6 +311,9 @@ import { filter } from 'rxjs/operators';
             <span class="nav-icon">🌿</span><span class="nav-text">Linaje Generacional</span>
             @if (isGrowing('/lineage')) { <span class="nav-growing" [title]="growingTooltip('/lineage')">🌱</span> }
           </a>
+          <a routerLink="/biography" class="nav-item nav-biography" routerLinkActive="active">
+            <span class="nav-icon">📖</span><span class="nav-text">Nuestra Historia</span>
+          </a>
         </div>
 
         <div class="divider"></div>

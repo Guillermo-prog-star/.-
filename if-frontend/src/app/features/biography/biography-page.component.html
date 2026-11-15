@@ -1,0 +1,133 @@
+<div class="biography-page">
+  <header class="biography-header glass-premium">
+    <div class="biography-header__icon">📖</div>
+    <div>
+      <h1>Nuestra Historia</h1>
+      <p>Diario guiado biográfico — 12 capítulos para narrar, en primera persona, la historia de vida de un miembro.</p>
+    </div>
+  </header>
+
+  @if (!isOwnDiary && !loading() && !errorMessage()) {
+    <div class="biography-banner glass-premium">
+      Estás viendo el diario de otro miembro de la familia. Solo se muestran las respuestas que decidió compartir.
+    </div>
+  }
+
+  @if (loading()) {
+    <div class="biography-state glass-premium">Cargando el diario guiado…</div>
+  } @else if (errorMessage() && chapters().length === 0) {
+    <div class="biography-state biography-state--error glass-premium">{{ errorMessage() }}</div>
+  } @else {
+    @if (errorMessage()) {
+      <div class="biography-inline-error">{{ errorMessage() }}</div>
+    }
+
+    <div class="biography-chapters">
+      @for (chapter of chapters(); track chapter.chapterNumber) {
+        <section class="biography-chapter glass-premium">
+          <button type="button" class="biography-chapter__header" (click)="toggleChapter(chapter.chapterNumber)">
+            <span class="biography-chapter__title">
+              <span class="biography-chapter__number">{{ chapter.chapterNumber }}</span>
+              {{ chapter.chapterTitle }}
+            </span>
+            <span class="biography-chapter__progress">
+              {{ chapter.answeredCount }}/{{ chapter.questions.length }} respondidas
+              <span class="biography-chapter__chevron" [class.open]="expandedChapter() === chapter.chapterNumber">▾</span>
+            </span>
+          </button>
+
+          @if (expandedChapter() === chapter.chapterNumber) {
+            <div class="biography-chapter__body">
+              @for (qvm of chapter.questions; track qvm.question.id) {
+                @if (isOwnDiary || qvm.answer) {
+                <article class="biography-question">
+                  <p class="biography-question__prompt">{{ qvm.question.promptText }}</p>
+                  @if (qvm.question.deepenText) {
+                    <p class="biography-question__deepen">Para profundizar: {{ qvm.question.deepenText }}</p>
+                  }
+
+                  @if (editingQuestionId() === qvm.question.id) {
+                    <div class="biography-answer-form">
+                      <textarea
+                        rows="4"
+                        placeholder="Escribe tu respuesta…"
+                        [(ngModel)]="draft.answerText"
+                        name="answerText-{{ qvm.question.id }}"
+                      ></textarea>
+
+                      <div class="biography-answer-form__row">
+                        <label>
+                          Fuente
+                          <select [(ngModel)]="draft.epistemicSource" name="epistemicSource-{{ qvm.question.id }}">
+                            <option [ngValue]="null">—</option>
+                            @for (opt of epistemicSourceOptions; track opt) {
+                              <option [ngValue]="opt">{{ epistemicSourceLabels[opt] }}</option>
+                            }
+                          </select>
+                        </label>
+
+                        <label>
+                          Visibilidad
+                          <select [(ngModel)]="draft.visibility" name="visibility-{{ qvm.question.id }}">
+                            @for (opt of visibilityOptions; track opt) {
+                              <option [ngValue]="opt">{{ visibilityLabels[opt] }}</option>
+                            }
+                          </select>
+                        </label>
+
+                        <label>
+                          Confianza (0-100)
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            [(ngModel)]="draft.confidenceLevel"
+                            name="confidenceLevel-{{ qvm.question.id }}"
+                          />
+                        </label>
+                      </div>
+
+                      <label class="biography-answer-form__checkbox">
+                        <input type="checkbox" [(ngModel)]="draft.completed" name="completed-{{ qvm.question.id }}" />
+                        Marcar como completa
+                      </label>
+
+                      <div class="biography-answer-form__actions">
+                        <button type="button" class="btn-secondary" (click)="cancelEdit()">Cancelar</button>
+                        <button type="button" class="btn-primary" [disabled]="saving()" (click)="saveAnswer(chapter, qvm)">
+                          {{ saving() ? 'Guardando…' : 'Guardar' }}
+                        </button>
+                      </div>
+                    </div>
+                  } @else if (qvm.answer) {
+                    <div class="biography-answer">
+                      <p class="biography-answer__text">{{ qvm.answer.answerText }}</p>
+                      <div class="biography-answer__meta">
+                        @if (qvm.answer.epistemicSource) {
+                          <span class="biography-badge">{{ epistemicSourceLabels[qvm.answer.epistemicSource] }}</span>
+                        }
+                        <span class="biography-badge">{{ visibilityLabels[qvm.answer.visibility] }}</span>
+                        @if (qvm.answer.completedAt) {
+                          <span class="biography-badge biography-badge--done">Completa</span>
+                        }
+                      </div>
+                      @if (isOwnDiary) {
+                        <div class="biography-answer__actions">
+                          <button type="button" class="btn-link" (click)="startEdit(qvm)">Editar</button>
+                          <button type="button" class="btn-link btn-link--danger" (click)="deleteAnswer(chapter, qvm)">Borrar</button>
+                        </div>
+                      }
+                    </div>
+                  } @else if (isOwnDiary) {
+                    <button type="button" class="btn-secondary" (click)="startEdit(qvm)">Responder</button>
+                  }
+                </article>
+                }
+              }
+            </div>
+          }
+        </section>
+      }
+    </div>
+  }
+</div>

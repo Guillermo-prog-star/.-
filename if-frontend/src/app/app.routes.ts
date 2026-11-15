@@ -192,6 +192,20 @@ export const routes: Routes = [
           .then(m => m.LineagePageComponent)
       },
 
+      // ── Nuestra Historia (diario guiado biográfico) ───────────────────
+      {
+        path: 'biography',
+        title: 'Nuestra Historia',
+        loadComponent: () => import('./features/biography/biography-page.component')
+          .then(m => m.BiographyPageComponent)
+      },
+      {
+        path: 'biography/members/:memberId',
+        title: 'Nuestra Historia',
+        loadComponent: () => import('./features/biography/biography-page.component')
+          .then(m => m.BiographyPageComponent)
+      },
+
       // ── Legado Familiar ──────────────────────────────────────────────
       {
         path: 'legado',

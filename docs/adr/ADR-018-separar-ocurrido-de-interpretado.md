@@ -319,6 +319,61 @@ relaciones asimétricas (padre/hijo) esto importa especialmente: la pregunta
 abierta no debe convertirse en un interrogatorio. La respuesta del otro
 aporta información, pero no es una prueba definitiva.
 
+## Amendment 5 — cuando la conclusión lleva a una medida sobre otra persona (2026-11-15)
+
+Origen: una propuesta inspirada en el análisis del juicio de Hannah Arendt,
+aplicada a una decisión familiar («Vamos a quitarle el celular porque es
+irresponsable»). Sus pasos de hecho, interpretación, perspectiva y contraste
+ya están cubiertos por la decisión y los Amendments 1–4. Aporta un caso que
+no estaba modelado: la conclusión ya no solo orienta la acción propia, sino
+que **decide una medida que recae sobre otra persona** (quitar un permiso,
+una sanción, una restricción). Esto es más delicado cuando quien decide
+tiene más autoridad que la persona afectada (padre o madre frente a hijo).
+
+**1. Dos preguntas adicionales en el hueco "Mientras tanto, haré ___".**
+Cuando la acción elegida es una medida sobre otra persona, la UI agrega:
+
+| Pregunta | Paso | Campo |
+|---|---|---|
+| ¿Es proporcional a lo que observé? | Juicio | `reflection` |
+| ¿Cuándo la revisamos y cómo se repara si nos equivocamos? | Responsabilidad | `reflection` |
+
+El schema no cambia y no hay un enum de "tipo de acción". La persona marca
+en la UI si su acción afecta a otro y entonces aparecen las dos preguntas;
+siguen siendo respuestas propias en texto, con las respuestas explícitas del
+Amendment 3 disponibles ("no lo sé todavía" es válida). La pregunta de
+reparación cierra con el `learning` existente ("¿qué corresponde mantener,
+reparar o cambiar?").
+
+**2. La posibilidad de cuestionar la medida se mide con lo que ya existe.**
+El criterio de calidad de la propuesta, que la persona con menos autoridad
+pueda cuestionar las razones y cambiar la decisión, es `FREE_TO_DISAGREE`
+(Amendment 2) más `INTERPRETATION_REVISED` (Amendment 4). No se agrega una
+medida nueva. La pregunta guía de la UI es: «¿Qué razón de la persona
+afectada estaríamos dispuestos a escuchar hasta cambiar nuestra decisión?»
+Igual que en el Amendment 4, que la decisión no cambie no es un fracaso: el
+dato que importa es si pudo cambiar.
+
+**3. Límites para el consultor de IA (se suman al punto 4 de la Decisión).**
+- La IA **no evalúa si una medida es proporcional ni la avala**. Solo hace
+  las preguntas. Si opinara, la práctica se convertiría en una forma de
+  justificar castigos con apariencia de pensamiento crítico.
+- La IA no sugiere sanciones ni medidas sobre otra persona.
+- Si la medida descrita implica castigo físico, amenaza, aislamiento o
+  privación de cuidados básicos, no se continúa la práctica: aplica la regla
+  del Amendment 2 y se ofrece el protocolo de seguridad (V98), que exige
+  confirmación humana.
+
+**4. Arendt queda como fondo conceptual, no como contenido del producto.**
+La UI no cita a Arendt ni menciona a Eichmann o la "banalidad del mal". La
+síntesis de origen contiene precisiones históricas discutibles (por ejemplo,
+que Eichmann "había renunciado por completo a pensar décadas atrás") y una
+plataforma familiar no debe enseñar a interpretar la propia familia con
+analogías de ese tipo. Lo que se toma es una idea operativa: ninguna
+costumbre, autoridad o herramienta sustituye la responsabilidad de examinar
+cómo una decisión afecta a otra persona. Pensar mejor no garantiza actuar
+mejor, y por eso estas preguntas son un apoyo, no una certificación.
+
 ## Alcance explícitamente excluido
 
 - **Ningún vínculo con hipótesis físicas.** La conversación de la que

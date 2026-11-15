@@ -5,7 +5,6 @@ import com.integrityfamily.bitacora.service.JournalService;
 import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.common.security.SecurityValidator;
 import com.integrityfamily.domain.*;
-import com.integrityfamily.domain.repository.MemberRepository;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ public class JournalController {
 
     private final JournalService journalService;
     private final SecurityValidator securityValidator;
-    private final MemberRepository memberRepository;
 
     @PostMapping("/tasks/{taskId}/evidence")
     @Operation(summary = "Subir evidencia de tarea", description = "Registra una confirmación contextualizada (foto, texto, etc.) de que una acción/misión fue completada.")
@@ -44,10 +42,9 @@ public class JournalController {
     @PostMapping("/journal")
     @Operation(summary = "Crear entrada de bitácora", description = "Registra de forma híbrida (estructurada y narrativa) un hito en la transformación familiar.")
     public ApiResponse<JournalEntry> createJournal(@RequestBody JournalCreateRequest request, Principal principal) {
-        // Autor real resuelto del principal autenticado (ADR-012).
-        Long authorMemberId = principal != null
-                ? memberRepository.findByEmail(principal.getName()).map(FamilyMember::getId).orElse(null)
-                : null;
+        // Valida pertenencia a la familia y resuelve el autor real del principal
+        // autenticado (ADR-012), nunca del cuerpo de la petición.
+        Long authorMemberId = securityValidator.resolveViewerMemberId(request.familyId(), principal);
         return ApiResponse.ok(journalService.createJournal(request, authorMemberId));
     }
 

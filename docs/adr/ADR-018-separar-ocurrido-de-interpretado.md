@@ -2,7 +2,7 @@
 
 ## Estado
 
-Propuesto. Pendiente de aprobación antes de tocar código o crear la migración.
+Aprobado (2026-11-15). Migración aplicada como **V115** (`journal_entries`: `interpretation`, `alternative_explanation`, `body_signal`, `explicit_responses`). Pendiente: UI del diario (frase del Amendment 4), registro de medidas en `hypothesis_evidence` y regla de prompt del punto 4.
 
 ## Contexto
 
@@ -64,7 +64,7 @@ escucha y presión percibida.
   `perceivedEventKey` para cruzar perspectivas y un origen (`origin`). Es
   el lugar natural para un episodio relacional.
 
-**Migración (próximo número libre; V114 la tomó `sprint_dailies.attempt_status`)** (solo DDL, columnas NULL, sin backfill; Amendment 1 agrega `body_signal`, Amendment 3 agrega `explicit_responses`):
+**Migración V115** (solo DDL, columnas NULL, sin backfill; Amendment 1 agrega `body_signal`, Amendment 3 agrega `explicit_responses`):
 
 | Columna | Pregunta de la bitácora |
 |---|---|

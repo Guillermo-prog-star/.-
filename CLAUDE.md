@@ -11,7 +11,7 @@ Proyecto de transformación familiar con IA adaptativa. Backend Spring Boot + Fr
 |---|---|
 | Backend | Java 17 · Spring Boot 3.4.3 · Maven |
 | Frontend | Angular 17.3 · TypeScript 5.4 · NGINX |
-| Base de datos | MySQL 8.4 · Flyway (V1→V112, huecos en V61 y V88) |
+| Base de datos | MySQL 8.4 · Flyway (V1→V115, huecos en V61 y V88) |
 | Mensajería | RabbitMQ 3 (CloudAMQP en prod) |
 | IA | Claude API (Anthropic) vía `ClaudeAiService` |
 | Auth | JWT (jjwt 0.12.6) + Spring Security |
@@ -33,7 +33,7 @@ if-full/
 │   │   └── [44 módulos]/     # Ver mapa de módulos abajo
 │   ├── src/test/             # ~199 clases de test (JUnit 5 + Mockito strict)
 │   └── src/main/resources/
-│       └── db/migration/     # Migraciones Flyway V1–V112 (110 archivos; faltan V61, V88)
+│       └── db/migration/     # Migraciones Flyway V1–V115 (113 archivos; faltan V61, V88)
 ├── if-frontend/              # Angular SPA (Puerto 4200)
 ├── scripts/
 │   ├── backup-mysql.sh       # Backup con rotación
@@ -293,7 +293,8 @@ Dashboard: https://sonarcloud.io/project/overview?id=Guillermo-prog-star_if-full
 - V112 — perspectivas múltiples sobre un mismo evento (H2, ADR-012): agrega autor a `journal_entries` (solo tenía `family_id`) y formaliza `critical_days.member_id` — existía en producción solo vía `ddl-auto=update`, ninguna migración lo declaraba sobre un schema Flyway puro.
 - V113 — Diario guiado biográfico (módulo nuevo `biography`, ADR-017): `biography_questions` (catálogo fijo y global, 12 capítulos, ~75 preguntas) + `biography_answers` (una fila por miembro+pregunta, autoría siempre humana y resuelta del principal, nunca del cliente). Solo DDL — el catálogo se siembra por `BiographyQuestionDataInitializer` (Java, idempotente), no por SQL crudo en la migración, para no repetir el defecto de V75/V100-V101 (seed de banco de preguntas directo por SQL con valores que no coincidían con el enum Java real). Reutiliza el enum existente `EntryVisibility` para visibilidad; agrega `EpistemicSource` (`OBSERVED`/`TOLD_BY_OTHER`/`DOCUMENT`/`UNCERTAIN`) como nuevo enum genérico en `domain`.
 - V114 — `sprint_dailies.attempt_status` (VARCHAR NULL, enum `AttemptStatus`: `NO_OPPORTUNITY`/`NOT_ATTEMPTED`/`ATTEMPTED_UNFAVORABLE`/`ATTEMPTED_FAVORABLE`): separa en el check-in diario "no hubo oportunidad" de "no se intentó" y de "intentado sin resultado favorable" (antes mezclados en texto libre). NULL = no respondido, sin backfill.
-- Última migración: **V114**. Próximo número disponible: **V115** (verificar con `ls src/main/resources/db/migration/ | sort -V | tail -1` antes de crear una nueva).
+- V115 — ADR-018 (aprobado): `journal_entries.interpretation`, `alternative_explanation`, `body_signal` (TEXT NULL) y `explicit_responses` (JSON NULL, mapa `JournalStep` → `ExplicitResponse`: `NONE_NOTICED`/`UNKNOWN`/`DECLINED`/`NOT_HELPFUL`; `NOT_HELPFUL` solo en `REFLECTION`/`LEARNING`). Separa lo observado de lo interpretado; ausencia de clave = no respondido. `POST /api/journal` acepta además `visibility` (por defecto PRIVATE) y `perceivedEventKey`, y valida pertenencia a la familia. No altera ICF, riesgo ni Ruta de Conciencia.
+- Última migración: **V115**. Próximo número disponible: **V116** (verificar con `ls src/main/resources/db/migration/ | sort -V | tail -1` antes de crear una nueva).
 
 ---
 

@@ -1,5 +1,8 @@
 package com.integrityfamily.bitacora.dto;
 
+import com.integrityfamily.domain.EntryVisibility;
+import com.integrityfamily.domain.ExplicitResponse;
+import com.integrityfamily.domain.JournalStep;
 import java.time.LocalDateTime;
 import java.util.Map;
 import lombok.Builder;
@@ -37,7 +40,15 @@ public class JournalDtos {
         String title,
         String reflection,
         String learning,
-        String observations
+        String observations,
+        // ADR-018 (V115) -- todos opcionales
+        String interpretation,
+        String alternativeExplanation,
+        String bodySignal,
+        Map<JournalStep, ExplicitResponse> explicitResponses,
+        // ADR-012 -- null = PRIVATE (por defecto, solo el autor lo ve)
+        EntryVisibility visibility,
+        String perceivedEventKey
     ) {}
 
     @Builder

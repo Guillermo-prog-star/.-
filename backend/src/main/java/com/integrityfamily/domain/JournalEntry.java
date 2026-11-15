@@ -74,6 +74,25 @@ public class JournalEntry {
     @Column(columnDefinition = "TEXT")
     private String observations;
 
+    /** ADR-018 (V115): "¿qué estoy concluyendo?" -- separado de lo observado. */
+    @Column(columnDefinition = "TEXT")
+    private String interpretation;
+
+    /** ADR-018 (V115): "¿qué me falta saber / qué otra explicación considero?" */
+    @Column(name = "alternative_explanation", columnDefinition = "TEXT")
+    private String alternativeExplanation;
+
+    /** ADR-018 Amendment 1 (V115): "¿qué noto en el cuerpo?" -- se registra, no decide. */
+    @Column(name = "body_signal", columnDefinition = "TEXT")
+    private String bodySignal;
+
+    /**
+     * ADR-018 Amendment 3 (V115): mapa JSON {@link JournalStep} -> {@link ExplicitResponse}.
+     * Ausencia de clave = no respondido. Se lee/escribe vía {@code JournalService}.
+     */
+    @Column(name = "explicit_responses", columnDefinition = "JSON")
+    private String explicitResponses;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     @Builder.Default

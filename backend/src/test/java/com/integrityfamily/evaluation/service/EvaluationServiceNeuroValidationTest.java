@@ -8,6 +8,7 @@ import com.integrityfamily.domain.repository.EvaluationAnswerRepository;
 import com.integrityfamily.domain.repository.EvaluationRepository;
 import com.integrityfamily.domain.repository.QuestionRepository;
 import com.integrityfamily.dto.EvaluationDtos;
+import com.integrityfamily.evaluation.service.post.PostFinalizationPipeline;
 import com.integrityfamily.risk.service.RiskAlgoV1Engine;
 import com.integrityfamily.scanner.service.DeterministicExplanationPipeline;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +46,8 @@ public class EvaluationServiceNeuroValidationTest {
     private EvaluationRepository evaluationRepository;
     @Mock
     private DeterministicExplanationPipeline explanationPipeline;
+    @Mock
+    private PostFinalizationPipeline postFinalizationPipeline;
 
     @InjectMocks
     private EvaluationService evaluationService;

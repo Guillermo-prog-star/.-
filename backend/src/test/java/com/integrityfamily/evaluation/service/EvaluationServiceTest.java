@@ -1,19 +1,11 @@
 package com.integrityfamily.evaluation.service;
 
-import com.integrityfamily.ai.service.AiService;
-import com.integrityfamily.analytics.service.FamilyProgressAnalyticsService;
 import com.integrityfamily.assessment.service.AssessmentAnswerService;
-import com.integrityfamily.cognitive.service.*;
-import com.integrityfamily.common.service.UserNotificationService;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import com.integrityfamily.dto.EvaluationDtos;
-import com.integrityfamily.milestone.service.MilestoneService;
-import com.integrityfamily.plan.service.PlanGenerationService;
-import com.integrityfamily.plan.service.PlanTaskService;
-import com.integrityfamily.risk.service.LongitudinalStateService;
+import com.integrityfamily.evaluation.service.post.PostFinalizationPipeline;
 import com.integrityfamily.risk.service.RiskAlgoV1Engine;
-import com.integrityfamily.risk.service.RiskService;
 import com.integrityfamily.scanner.repository.InferenceRecordRepository;
 import com.integrityfamily.scanner.service.AlertEngine;
 import com.integrityfamily.scanner.service.DeterministicExplanationPipeline;
@@ -28,7 +20,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -62,26 +53,13 @@ class EvaluationServiceTest {
     // ── Services ──────────────────────────────────────────────────────
     @Mock AssessmentAnswerService         assessmentAnswerService;
     @Mock RiskAlgoV1Engine                riskAlgoV1Engine;
-    @Mock RiskService                     riskService;
-    @Mock RabbitTemplate                  rabbitTemplate;
-    @Mock MilestoneService                milestoneService;
-    @Mock AiService                       aiService;
-    @Mock PlanTaskService                 planTaskService;
-    @Mock PlanGenerationService           planGenerationService;
-    @Mock FamilyProgressAnalyticsService  familyProgressAnalyticsService;
-    @Mock FamilyMemoryService             familyMemoryService;
-    @Mock FamilySkillEngine               familySkillEngine;
-    @Mock FamilyReflectionService         familyReflectionService;
-    @Mock NarrativeEvolutionEngine        narrativeEvolutionEngine;
-    @Mock FamilyIdentityGraphService      familyIdentityGraphService;
     @Mock DeterministicExplanationPipeline explanationPipeline;
     @Mock InferenceRecordService          inferenceRecordService;
     @Mock InferenceRecordRepository       inferenceRecordRepository;
     @Mock RuleExecutionEngine             ruleExecutionEngine;
     @Mock AlertEngine                     alertEngine;
-    @Mock UserNotificationService         userNotificationService;
-    @Mock LongitudinalStateService        longitudinalStateService;
     @Mock HypothesisEvidenceRepository    hypothesisEvidenceRepository;
+    @Mock PostFinalizationPipeline        postFinalizationPipeline;
 
     @InjectMocks
     EvaluationService evaluationService;

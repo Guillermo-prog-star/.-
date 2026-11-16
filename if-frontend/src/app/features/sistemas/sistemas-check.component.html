@@ -1,0 +1,79 @@
+<section class="sif-card">
+  <h2>Prueba de 4 semanas</h2>
+  <p class="sif-muted">Sirve para ver si el sistema funciona, no para calificar a la familia. Dos preguntas salen de las revisiones guardadas. La del compromiso sin registrar solo la puede responder quien la vivió.</p>
+</section>
+
+@if (check(); as data) {
+  <section class="sif-card">
+    <p class="sif-meta">Del {{ formatDate(data.windowStart) }} al {{ formatDate(data.windowEnd) }}</p>
+    <p>
+      <span class="sif-mark" [class.yes]="data.weeklyReviewsMet" [class.no]="!data.weeklyReviewsMet">
+        {{ data.weeklyReviewsMet ? 'Sí' : 'Todavía no' }}
+      </span>
+      — ¿Hiciste al menos 3 de las 4 revisiones semanales?
+      Van {{ data.weeksWithWeeklyReview }} de {{ data.weeksInWindow }}.
+    </p>
+    <p>
+      <span class="sif-mark" [class.yes]="data.captureEmptiedEveryWeek" [class.no]="!data.captureEmptiedEveryWeek">
+        {{ data.captureEmptiedEveryWeek ? 'Sí' : 'Todavía no' }}
+      </span>
+      — ¿La captura se vació al menos una vez por semana?
+    </p>
+
+    <div class="sif-weeks">
+      @for (week of data.weeks; track week.start) {
+        <div class="sif-week">
+          <span>{{ formatDate(week.start) }} – {{ formatDate(week.end) }}</span>
+          <span class="sif-mark" [class.yes]="week.weeklyReviewDone" [class.no]="!week.weeklyReviewDone">
+            Semanal {{ week.weeklyReviewDone ? 'hecha' : 'pendiente' }}
+          </span>
+          <span class="sif-mark" [class.yes]="week.captureEmptied" [class.no]="!week.captureEmptied">
+            Captura {{ week.captureEmptied ? 'vacía' : 'sin vaciar' }}
+          </span>
+        </div>
+      }
+    </div>
+  </section>
+
+  <form class="sif-card sif-form" (ngSubmit)="save()">
+    <fieldset class="sif-field">
+      <legend>¿Llegó algún compromiso a la fecha sin estar registrado?</legend>
+      <label class="sif-choice">
+        <input type="radio" name="unregistered" value="si" [(ngModel)]="answer" />
+        Sí, llegó alguno
+      </label>
+      <label class="sif-choice">
+        <input type="radio" name="unregistered" value="no" [(ngModel)]="answer" />
+        No
+      </label>
+    </fieldset>
+    @if (error()) { <p class="sif-error" role="alert">{{ error() }}</p> }
+    @if (notice()) { <p class="sif-ok">{{ notice() }}</p> }
+    <div class="sif-actions">
+      <button class="sif-btn sif-btn--primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Guardando…' : 'Guardar respuesta' }}
+      </button>
+      <a class="sif-link" routerLink="/sistemas/revision/semanal">Hacer la semanal</a>
+    </div>
+  </form>
+
+  @if (data.savedChecks.length) {
+    <section class="sif-card">
+      <h2>Respuestas anteriores</h2>
+      <ul class="sif-list">
+        @for (saved of data.savedChecks; track saved.id) {
+          <li>
+            {{ formatDate(saved.windowEnd) }} —
+            semanales en {{ saved.weeksWithWeeklyReview }} semanas,
+            captura {{ saved.captureEmptiedEveryWeek ? 'vacía cada semana' : 'no vacía cada semana' }},
+            compromiso sin registrar: {{ saved.unregisteredCommitment ? 'sí' : 'no' }}.
+          </li>
+        }
+      </ul>
+    </section>
+  }
+} @else if (loading()) {
+  <div class="sif-state">Calculando las últimas cuatro semanas…</div>
+} @else {
+  <div class="sif-state sif-error">{{ error() || 'No fue posible calcular la prueba.' }}</div>
+}

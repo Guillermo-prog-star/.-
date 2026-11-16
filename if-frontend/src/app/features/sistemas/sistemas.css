@@ -1,0 +1,211 @@
+.sistemas-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 8px 4px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.sif-header, .sif-card, .sif-banner, .sif-state {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+
+.sif-header {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 22px 24px;
+}
+
+.sif-header__icon { font-size: 2rem; line-height: 1; }
+
+p.sif-ok { color: #86efac; background: none; border: 0; box-shadow: none; padding: 0; }
+
+legend { color: inherit; }
+
+.sif-header h1, .sif-card h2, .sif-card h3, .sif-level-head h2 { margin: 0; color: #fff; }
+
+.sif-level-head h2 { font-size: 1.25rem; }
+
+.sif-header h1 { font-size: 1.6rem; font-weight: 750; letter-spacing: -0.02em; }
+
+.sif-header p, .sif-muted { margin: 6px 0 0; color: rgba(255, 255, 255, 0.62); font-size: 0.95rem; line-height: 1.5; }
+
+.sif-tabs, .sif-kindbar, .sif-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sif-tabs a, .sif-kindbar a, .sif-filters button, .sif-btn, .sif-link {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: none;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 650;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.sif-tabs a.active, .sif-kindbar a.active, .sif-filters button.active {
+  color: #fff;
+  background: rgba(99, 102, 241, 0.22);
+  border-color: rgba(129, 140, 248, 0.55);
+}
+
+.sif-card { padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; }
+
+.sif-card h2 { font-size: 1.15rem; }
+.sif-card h3 { font-size: 1.02rem; }
+
+.sif-level { display: flex; flex-direction: column; gap: 12px; }
+
+.sif-kicker {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+  font-weight: 700;
+}
+
+.sif-badge {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.15);
+  color: #fcd34d;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.sif-meta { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 0.82rem; color: rgba(255, 255, 255, 0.55); }
+
+.sif-where {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.sif-links { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.sif-btn--primary {
+  background: #4f46e5;
+  border-color: #6366f1;
+  color: #fff;
+}
+
+.sif-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.sif-form { display: flex; flex-direction: column; gap: 14px; }
+
+.sif-field, .sif-check, .sif-choice { display: flex; flex-direction: column; gap: 6px; font-size: 0.92rem; }
+
+.sif-choice, .sif-check {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: flex-start;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.sif-choice input,
+.sif-check input {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+
+.sif-title-btn {
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  padding: 0;
+  cursor: pointer;
+}
+
+.sif-field input, .sif-field textarea, .sif-field select {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.25);
+  color: #fff;
+  font: inherit;
+  padding: 10px 12px;
+}
+
+.sif-field textarea { min-height: 88px; resize: vertical; }
+
+.sif-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.sif-row--decision { grid-template-columns: 1.4fr 1fr auto; }
+
+.sif-row--objective { grid-template-columns: 1.2fr 1.2fr 0.8fr auto; }
+
+.sif-icon-btn {
+  border: 0;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 6px;
+}
+
+.sif-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+.sif-error { color: #fca5a5; font-size: 0.9rem; }
+
+.sif-ok {
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(22, 163, 74, 0.08);
+}
+
+.sif-list { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 6px; }
+
+.sif-weeks { display: flex; flex-direction: column; gap: 8px; }
+
+.sif-week {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.sif-mark { font-weight: 700; }
+.sif-mark.yes { color: #86efac; }
+.sif-mark.no { color: #fca5a5; }
+
+.sif-state { padding: 28px; text-align: center; color: rgba(255, 255, 255, 0.65); }
+
+.sif-steps { margin: 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 8px; }
+
+@media (max-width: 720px) {
+  .sif-row, .sif-row--decision, .sif-row--objective, .sif-week { grid-template-columns: 1fr; }
+  .sif-header { padding: 18px; }
+}

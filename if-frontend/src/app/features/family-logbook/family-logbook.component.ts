@@ -26,6 +26,8 @@ import {
   CloseSprintRequest
 } from './sprint.model';
 import { ScrollPolicyService } from '../../shared/directives/scroll-policy.service';
+import { AttemptStatus, ATTEMPT_STATUS_OPTIONS, attemptStatusText } from '../../../domain/constants/attemptStatusDomain';
+import { MissionStatus, MISSION_STATUS_TEXT, countMissions, missionProgressPercent } from '../../../domain/constants/missionStatusDomain';
 
 type TabMode = 'LOGBOOK' | 'SPRINT' | 'HISTORY';
 type FilterMode = 'ALL' | LogbookStatus;
@@ -55,6 +57,7 @@ interface DailyFormState {
   resolutionText: string;
   emotionalIndicator: string;
   memberName: string;
+  attemptStatus: AttemptStatus | null;
 }
 
 interface RetroFormState {
@@ -93,7 +96,8 @@ const EMPTY_DAILY_FORM: DailyFormState = {
   blockagesText: '',
   resolutionText: '',
   emotionalIndicator: 'HAPPY',
-  memberName: ''
+  memberName: '',
+  attemptStatus: null
 };
 
 const EMPTY_RETRO_FORM: RetroFormState = {
@@ -810,6 +814,19 @@ const EMPTY_RETRO_FORM: RetroFormState = {
               </div>
             </div>
 
+            <!-- V114: estado del intento (opcional) -->
+            <div>
+              <label class="block text-[9px] uppercase tracking-widest text-white/40 font-black mb-2">🔁 Ayer, con la práctica del sprint… (opcional)</label>
+              <select class="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white/90 text-xs focus:outline-none focus:border-indigo-500/50 transition-all"
+                      [value]="dailyForm().attemptStatus ?? ''"
+                      (change)="setAttemptStatus($any($event.target).value)">
+                <option value="">Prefiero no indicarlo</option>
+                @for (opt of attemptStatusOptions; track opt.value) {
+                <option [value]="opt.value">{{ opt.text }}</option>
+                }
+              </select>
+            </div>
+
             <!-- Daily Fields: Ayer, Hoy, Bloqueos -->
             <div class="space-y-4">
               <div>
@@ -888,6 +905,9 @@ const EMPTY_RETRO_FORM: RetroFormState = {
                     <div>
                       <span class="block text-xs font-bold text-white/95">{{ d.memberName }}</span>
                       <span class="block text-[9px] text-white/30">{{ d.checkinDate | date:'dd MMM yyyy' }}</span>
+                      @if (attemptText(d.attemptStatus)) {
+                      <span class="block text-[9px] text-indigo-300/70">🔁 {{ attemptText(d.attemptStatus) }}</span>
+                      }
                     </div>
                   </div>
                   <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[8px] uppercase tracking-widest font-black rounded border border-indigo-500/20">
@@ -934,8 +954,11 @@ const EMPTY_RETRO_FORM: RetroFormState = {
             <div class="space-y-1.5 pt-2">
               <div class="flex justify-between text-[10px] font-bold text-white/70">
                 <span>Avance Misiones</span>
-                <span>{{ getCompletedMissionsCount(sprint.missions) }} de {{ sprint.missions.length }} ({{ getMissionsProgressPercent(sprint.missions) }}%)</span>
+                <span>{{ getCompletedMissionsCount(sprint.missions) }} de {{ getCommittedMissionsCount(sprint.missions) }} ({{ getMissionsProgressPercent(sprint.missions) }}%)</span>
               </div>
+              @if (missionAdjustmentsText(sprint.missions); as adj) {
+              <p class="text-[9px] text-amber-300/70">{{ adj }} — no cuentan como incumplimiento.</p>
+              }
               <div class="h-2 bg-white/5 rounded-full overflow-hidden">
                 <div class="h-full bg-indigo-500 transition-all duration-500 rounded-full"
                      [style.width.%]="getMissionsProgressPercent(sprint.missions)"></div>
@@ -967,6 +990,24 @@ const EMPTY_RETRO_FORM: RetroFormState = {
                   <span class="block text-[8px] text-emerald-500/60 mt-1 uppercase tracking-wider">
                     Cumplido el {{ m.completedAt | date:'dd MMM HH:mm' }}
                   </span>
+                  }
+                  @if (m.status === 'CHANGED_BY_AGREEMENT' || m.status === 'POSTPONED') {
+                  <span class="block text-[8px] text-amber-300/80 mt-1 uppercase tracking-wider">
+                    {{ missionStatusText(m.status) }}
+                  </span>
+                  }
+                  @if (m.status !== 'COMPLETED') {
+                  <div class="flex flex-wrap gap-2 mt-2">
+                    @if (m.status === 'PENDING') {
+                    <button type="button" class="text-[9px] px-2 py-0.5 rounded-md border border-white/10 text-white/50 hover:text-white/80"
+                            (click)="setMissionStatus(sprint.id, m, 'CHANGED_BY_AGREEMENT', $event)">Cambió por acuerdo</button>
+                    <button type="button" class="text-[9px] px-2 py-0.5 rounded-md border border-white/10 text-white/50 hover:text-white/80"
+                            (click)="setMissionStatus(sprint.id, m, 'POSTPONED', $event)">Posponer</button>
+                    } @else {
+                    <button type="button" class="text-[9px] px-2 py-0.5 rounded-md border border-white/10 text-white/50 hover:text-white/80"
+                            (click)="setMissionStatus(sprint.id, m, 'PENDING', $event)">Volver a pendiente</button>
+                    }
+                  </div>
                   }
                 </div>
               </div>
@@ -1344,6 +1385,9 @@ export class FamilyLogbookComponent implements OnInit {
 
   readonly sprintHistory   = signal<SprintResponse[]>([]);
   readonly loadingHistory  = signal(false);
+
+  readonly attemptStatusOptions = ATTEMPT_STATUS_OPTIONS;
+  readonly attemptText = attemptStatusText;
 
   readonly moods = [
     { value: 'HAPPY', icon: '😊 Alegre' },
@@ -1855,6 +1899,26 @@ export class FamilyLogbookComponent implements OnInit {
     });
   }
 
+  setMissionStatus(sprintId: number, mission: SprintMissionResponse, status: MissionStatus, event: Event): void {
+    event.stopPropagation();
+    this.sprintService.setMissionStatus(sprintId, mission.id, status).subscribe({
+      next: res => this.activeSprint.set(res),
+      error: () => this.error.set('No se pudo cambiar el estado de la misión.')
+    });
+  }
+
+  missionStatusText(status: MissionStatus): string {
+    return MISSION_STATUS_TEXT[status] ?? status;
+  }
+
+  missionAdjustmentsText(missions: SprintMissionResponse[]): string {
+    const c = countMissions(missions);
+    const parts: string[] = [];
+    if (c.changed) parts.push(`${c.changed} cambiada${c.changed > 1 ? 's' : ''} por acuerdo`);
+    if (c.postponed) parts.push(`${c.postponed} pospuesta${c.postponed > 1 ? 's' : ''}`);
+    return parts.join(' · ');
+  }
+
   toggleDailyForm(): void {
     this.showDailyForm.update(v => !v);
     if (!this.showDailyForm()) {
@@ -1864,6 +1928,10 @@ export class FamilyLogbookComponent implements OnInit {
 
   patchDailyForm(field: keyof DailyFormState, value: string): void {
     this.dailyForm.update(d => ({ ...d, [field]: value }));
+  }
+
+  setAttemptStatus(value: string): void {
+    this.dailyForm.update(d => ({ ...d, attemptStatus: (value || null) as AttemptStatus | null }));
   }
 
   submitDaily(): void {
@@ -1885,7 +1953,8 @@ export class FamilyLogbookComponent implements OnInit {
       blockagesText: d.blockagesText || 'Ninguno',
       resolutionText: d.resolutionText || 'Ninguna',
       emotionalIndicator: d.emotionalIndicator,
-      memberName: d.memberName
+      memberName: d.memberName,
+      attemptStatus: d.attemptStatus
     };
 
     this.sprintService.submitDaily(active.id, req).subscribe({
@@ -1998,13 +2067,16 @@ export class FamilyLogbookComponent implements OnInit {
   }
 
   getCompletedMissionsCount(missions: SprintMissionResponse[]): number {
-    return missions.filter(m => m.status === 'COMPLETED').length;
+    return countMissions(missions).completed;
+  }
+
+  /** Completadas + pendientes: cambiadas por acuerdo y pospuestas no cuentan como incumplimiento. */
+  getCommittedMissionsCount(missions: SprintMissionResponse[]): number {
+    return countMissions(missions).committed;
   }
 
   getMissionsProgressPercent(missions: SprintMissionResponse[]): number {
-    if (!missions || missions.length === 0) return 0;
-    const completed = this.getCompletedMissionsCount(missions);
-    return Math.round((completed / missions.length) * 100);
+    return missionProgressPercent(missions);
   }
 
   formatAiResponse(text: string): string {

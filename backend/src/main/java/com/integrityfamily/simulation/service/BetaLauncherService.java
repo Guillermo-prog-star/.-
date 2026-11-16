@@ -33,7 +33,7 @@ public class BetaLauncherService {
 
         log.info(">>>> [SIMULACIÓN] Iniciando Nodo Alfa para: {}", family.getName());
 
-        // SDD: Sincronización Estricta con el Record (6 parámetros exactos)
+        // SDD: Sincronización Estricta con el Record (8 parámetros exactos)
         MemberRequest leader = new MemberRequest(
                 "L?der de Prueba",    // fullName
                 "PADRE",              // roleType
@@ -42,7 +42,9 @@ public class BetaLauncherService {
                 5,                    // responsibilityLevel
                 null,                 // email
                 null,                 // phone
-                familyId              // familyId
+                familyId,             // familyId
+                null,                 // documentType
+                null                  // documentNumber
         );
 
         // SDD: Llamada al servicio simplificada para evitar errores de firma

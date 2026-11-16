@@ -74,8 +74,54 @@
           </div>
         </div>
 
-        <!-- Barras por dimensión -->
-        @if (result.dimensionScores.length) {
+        <!-- Barras por dimensión / NeuroProfile -->
+        @if (result.neuroProfile) {
+          <div class="er-dims" style="margin-top: 24px;">
+            <h3 style="font-size: 1.1rem; color: #1e293b; margin-bottom: 16px;">Perfil Neurofenomenológico</h3>
+            
+            <div class="er-dim-item">
+              <div class="er-dim-header">
+                <span class="er-dim-name" style="color: #6366f1">1. Somático</span>
+                <strong class="er-dim-score" style="color: #6366f1">{{ result.neuroProfile.somaticAwareness | number:'1.0-0' }}%</strong>
+              </div>
+              <div class="er-dim-bar-track"><div class="er-dim-bar" [style.width.%]="result.neuroProfile.somaticAwareness" style="background: #6366f1"></div></div>
+              <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">{{ getSomaticDesc(result.neuroProfile.somaticAwareness) }}</p>
+            </div>
+
+            <div class="er-dim-item">
+              <div class="er-dim-header">
+                <span class="er-dim-name" style="color: #ec4899">2. Emocional</span>
+                <strong class="er-dim-score" style="color: #ec4899">{{ result.neuroProfile.emotionalAwareness | number:'1.0-0' }}%</strong>
+              </div>
+              <div class="er-dim-bar-track"><div class="er-dim-bar" [style.width.%]="result.neuroProfile.emotionalAwareness" style="background: #ec4899"></div></div>
+              <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">{{ getEmotionalDesc(result.neuroProfile.emotionalAwareness) }}</p>
+            </div>
+
+            <div class="er-dim-item">
+              <div class="er-dim-header">
+                <span class="er-dim-name" style="color: #eab308">3. Cognitivo</span>
+                <strong class="er-dim-score" style="color: #eab308">{{ result.neuroProfile.cognitiveAwareness | number:'1.0-0' }}%</strong>
+              </div>
+              <div class="er-dim-bar-track"><div class="er-dim-bar" [style.width.%]="result.neuroProfile.cognitiveAwareness" style="background: #eab308"></div></div>
+              <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">{{ getCognitiveDesc(result.neuroProfile.cognitiveAwareness) }}</p>
+            </div>
+
+            <div class="er-dim-item">
+              <div class="er-dim-header">
+                <span class="er-dim-name" style="color: #14b8a6">4. Pausa & Integración</span>
+                <strong class="er-dim-score" style="color: #14b8a6">{{ result.neuroProfile.integrationScore | number:'1.0-0' }}%</strong>
+              </div>
+              <div class="er-dim-bar-track"><div class="er-dim-bar" [style.width.%]="result.neuroProfile.integrationScore" style="background: #14b8a6"></div></div>
+              <p style="font-size: 0.85rem; color: #64748b; margin-top: 4px;">{{ getIntegrationDesc(result.neuroProfile.integrationScore) }}</p>
+            </div>
+
+            <!-- INC Legacy Secundario -->
+            <div style="margin-top: 24px; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; font-size: 0.85rem; color: #64748b;">
+              <strong>Métrica Transitoria (INC):</strong> {{ result.inc | number:'1.0-0' }}% - Nivel de Consciencia Lineal (Legacy)
+            </div>
+
+          </div>
+        } @else if (result.dimensionScores.length) {
           <div class="er-dims">
             @for (dim of dimConfig; track dim.key) {
               <div class="er-dim-item">
@@ -97,8 +143,10 @@
 
         <!-- Síntesis -->
         <div class="er-card er-card-synthesis">
-          <div class="er-card-label er-label-blue">◉ Diagnóstico Consciente</div>
-          @if (result.spiritualSynthesis) {
+          <div class="er-card-label er-label-blue">◉ Síntesis Neurofenomenológica</div>
+          @if (result.neuroProfile) {
+            <p class="er-synthesis-text">{{ getNeuroSynthesis() }}</p>
+          } @else if (result.spiritualSynthesis) {
             <p class="er-synthesis-text">{{ result.spiritualSynthesis }}</p>
           } @else {
             <p class="er-muted">La síntesis cualitativa está siendo procesada…</p>

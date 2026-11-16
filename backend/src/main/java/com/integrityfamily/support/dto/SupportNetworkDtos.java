@@ -112,4 +112,67 @@ public class SupportNetworkDtos {
         private int activeProfessionals;
         private List<AssignmentResponse> assignments;
     }
+
+    // ── Vista filtrada de datos familiares para profesional ───────────────
+
+    @Data @Builder
+    public static class FamilyDataView {
+        private Long familyId;
+        private String familyName;
+        private Long assignmentId;
+        private SupportSpecialty specialty;
+        private int accessLevel;
+        // ICF
+        private Double icfScore;
+        private String icfLabel;
+        private String icfDirection;
+        // Riesgo
+        private String riskLevel;
+        private Boolean sentinelActive;
+        // Plan
+        private Boolean planSummaryAvailable;
+        // Sprint
+        private Boolean hasActiveSprint;
+        private String activeSprintStatus;
+        // Crisis
+        private Boolean crisisHistoryAvailable;
+    }
+
+    // ── Actualización de perfil del profesional ───────────────────────────
+
+    @Data
+    public static class UpdateProfileRequest {
+        private String fullName;
+        private String phone;
+        private String bio;
+        private String institutionName;
+        private String licenseNumber;
+    }
+
+    // ── Borrador de nota de seguimiento profesional (ADR-006) ──────────────
+
+    @Data @Builder
+    public static class FollowUpDraftResponse {
+        private Long draftId;
+        private Long familyId;
+        private Long assignmentId;
+        private LocalDateTime generatedAt;
+        private String generatorType;
+        private String templateVersion;
+        private String narrativeText;
+        private List<String> warnings;
+    }
+
+    // ── Log de accesos del profesional ────────────────────────────────────
+
+    @Builder
+    @Data
+    public static class AccessLogEntry {
+        private Long id;
+        private Long assignmentId;
+        private String actorEmail;
+        private String action;
+        private String detail;
+        private LocalDateTime createdAt;
+    }
 }

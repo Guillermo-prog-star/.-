@@ -10,19 +10,26 @@ export class FamilyStateService {
   private readonly familyNameSignal = signal<string>(this.getInitialFamilyName());
   // Signal para el código de familia (ej. IF-CO-QUI-2026-0001)
   private readonly familyCodeSignal = signal<string>(localStorage.getItem('selectedFamilyCode') ?? '');
+  // Signal para el identificador público (UUID) de la familia — contrato IFRM-D Family Home
+  private readonly homeIdSignal = signal<string>(localStorage.getItem('selectedFamilyHomeId') ?? '');
   // Signal para el ID del miembro autenticado en la familia activa
   private readonly memberIdSignal   = signal<number | null>(this.getInitialMemberId());
   // Signal para el hito actual de la familia (W1, M1, M3, …)
   private readonly milestoneSignal  = signal<string>(localStorage.getItem('currentMilestone') ?? '');
+  // Signal para el modo observador del profesional
+  private readonly isObservingSignal = signal<boolean>(localStorage.getItem('isObserving') === 'true');
+  // Signal para la asignación/vínculo del profesional observador
+  private readonly assignmentIdSignal = signal<number | null>(this.getInitialAssignmentId());
 
   // Exponemos los signals de solo lectura para componentes reactivos
   public readonly currentFamilyId   = this.familyIdSignal.asReadonly();
   public readonly currentFamilyName = this.familyNameSignal.asReadonly();
   public readonly currentFamilyCode = this.familyCodeSignal.asReadonly();
-  /** ID del miembro autenticado dentro de la familia seleccionada. Null si no se ha resuelto aún. */
+  public readonly currentHomeId = this.homeIdSignal.asReadonly();
   public readonly currentMemberId   = this.memberIdSignal.asReadonly();
-  /** Código del hito familiar activo (W1, M1, M3 …). Cadena vacía si no se ha seleccionado familia. */
   public readonly currentMilestone  = this.milestoneSignal.asReadonly();
+  public readonly isObserving        = this.isObservingSignal.asReadonly();
+  public readonly currentAssignmentId = this.assignmentIdSignal.asReadonly();
 
   constructor() { }
 
@@ -43,21 +50,43 @@ export class FamilyStateService {
   }
 
   /**
+   * Identificador público (UUID) de la familia activa, usado por el contrato
+   * IFRM-D Family Home. Vacío si la familia activa aún no trae `homeId`
+   * (ver FamilyResponse.homeId en el backend).
+   */
+  getSelectedHomeId(): string {
+    return this.homeIdSignal();
+  }
+
+  /**
    * SDD Spec: Única Fuente de Verdad para Identidad Familiar.
    * Centraliza la persistencia reactiva y local en una operación atómica.
    */
   setFamily(family: any): void {
     if (!family || !family.id) return;
-    
+
     this.familyIdSignal.set(family.id);
     const familyName = family.name ?? 'Familia';
     const familyCode = family.familyCode || '';
+    const homeId = family.homeId ?? '';
     this.familyNameSignal.set(familyName);
     this.familyCodeSignal.set(familyCode);
+    this.homeIdSignal.set(homeId);
 
     localStorage.setItem('selectedFamilyId', family.id.toString());
     localStorage.setItem('selectedFamilyName', familyName);
     localStorage.setItem('selectedFamilyCode', familyCode);
+    if (homeId) {
+      localStorage.setItem('selectedFamilyHomeId', homeId);
+    } else {
+      localStorage.removeItem('selectedFamilyHomeId');
+    }
+    // currentMilestone viaja en FamilyResponse — se sincroniza aquí para que
+    // esté disponible en cualquier flujo que llame setFamily() (login, registro,
+    // Hogar Digital), no solo donde alguien llame setMilestone() explícitamente.
+    if (family.currentMilestone) {
+      this.setMilestone(family.currentMilestone);
+    }
   }
 
   /**
@@ -85,6 +114,25 @@ export class FamilyStateService {
     localStorage.setItem('currentMilestone', milestone);
   }
 
+  setObserving(observing: boolean): void {
+    this.isObservingSignal.set(observing);
+    localStorage.setItem('isObserving', observing.toString());
+  }
+
+  setAssignmentId(id: number | null): void {
+    this.assignmentIdSignal.set(id);
+    if (id !== null) {
+      localStorage.setItem('selectedAssignmentId', id.toString());
+    } else {
+      localStorage.removeItem('selectedAssignmentId');
+    }
+  }
+
+  private getInitialAssignmentId(): number | null {
+    const saved = localStorage.getItem('selectedAssignmentId');
+    return saved ? Number(saved) : null;
+  }
+
   /**
    * Reinicia la familia seleccionada (útil para cerrar sesión).
    * Limpia también el miembro y el hito asociados a la familia.
@@ -93,13 +141,19 @@ export class FamilyStateService {
     this.familyIdSignal.set(0);
     this.familyNameSignal.set('');
     this.familyCodeSignal.set('');
+    this.homeIdSignal.set('');
     this.memberIdSignal.set(null);
     this.milestoneSignal.set('');
+    this.isObservingSignal.set(false);
+    this.assignmentIdSignal.set(null);
     localStorage.removeItem('selectedFamilyId');
     localStorage.removeItem('selectedFamilyName');
     localStorage.removeItem('selectedFamilyCode');
+    localStorage.removeItem('selectedFamilyHomeId');
     localStorage.removeItem('currentMemberId');
     localStorage.removeItem('currentMilestone');
+    localStorage.removeItem('isObserving');
+    localStorage.removeItem('selectedAssignmentId');
   }
 
   private getInitialMemberId(): number | null {

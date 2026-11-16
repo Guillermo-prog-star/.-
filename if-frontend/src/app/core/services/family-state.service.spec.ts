@@ -104,6 +104,22 @@ describe('FamilyStateService', () => {
       expect(service.currentFamilyName()).toBe('Segunda');
       expect(localStorage.getItem('selectedFamilyId')).toBe('2');
     });
+
+    it('debe capturar homeId cuando el backend lo envía', () => {
+      const homeId = '11111111-2222-3333-4444-555555555555';
+      service.setFamily({ id: 42, name: 'Familia Lopez', homeId });
+
+      expect(service.currentHomeId()).toBe(homeId);
+      expect(service.getSelectedHomeId()).toBe(homeId);
+      expect(localStorage.getItem('selectedFamilyHomeId')).toBe(homeId);
+    });
+
+    it('debe dejar homeId vacío si el backend no lo envía (compatibilidad hacia atrás)', () => {
+      service.setFamily({ id: 42, name: 'Familia Lopez' });
+
+      expect(service.currentHomeId()).toBe('');
+      expect(localStorage.getItem('selectedFamilyHomeId')).toBeNull();
+    });
   });
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -139,6 +155,14 @@ describe('FamilyStateService', () => {
       localStorage.setItem('selectedFamilyCode', 'LOPEZ-001');
       service.clearFamily();
       expect(localStorage.getItem('selectedFamilyCode')).toBeNull();
+    });
+
+    it('debe resetear currentHomeId y eliminar selectedFamilyHomeId de localStorage', () => {
+      service.setFamily({ id: 42, name: 'Familia Lopez', homeId: '11111111-2222-3333-4444-555555555555' });
+      service.clearFamily();
+
+      expect(service.currentHomeId()).toBe('');
+      expect(localStorage.getItem('selectedFamilyHomeId')).toBeNull();
     });
   });
 

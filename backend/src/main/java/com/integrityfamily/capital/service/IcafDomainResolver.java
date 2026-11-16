@@ -161,14 +161,16 @@ public class IcafDomainResolver {
     private double resolveIntegracion(FamilyLongitudinalState state) {
         int consciousnessLevel = state.getConsciousnessLevel() != null ? state.getConsciousnessLevel() : 3;
         int inactivityDays     = state.getInactivityDays()     != null ? state.getInactivityDays()     : 0;
-        // consciousnessLevel 1=Plena (100) … 5=Inconsciente (20)
+        
+        // consciousnessLevel 5=Plena (100) … 1=Inconsciente (20)
         double base = switch (consciousnessLevel) {
-            case 1 -> 90.0;
-            case 2 -> 75.0;
+            case 5 -> 90.0;
+            case 4 -> 75.0;
             case 3 -> 60.0;
-            case 4 -> 40.0;
+            case 2 -> 40.0;
             default -> 25.0;
         };
+        
         // Descuento por inactividad: -2 por cada día, máx -30
         double descuento = Math.min(inactivityDays * 2.0, 30.0);
         return clamp(base - descuento);

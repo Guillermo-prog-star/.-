@@ -138,13 +138,6 @@ export class MissionDetailPageComponent implements OnInit {
     return status === 'VALIDATED' ? 'status-ok' : status === 'REJECTED' ? 'status-no' : 'status-wait';
   }
 
-  scoreColor(score: number | null): string {
-    if (score == null) return '';
-    if (score >= 70) return 'score-high';
-    if (score >= 40) return 'score-mid';
-    return 'score-low';
-  }
-
   dimensionColor(dim: string): string {
     const d = (dim ?? '').toUpperCase();
     if (d.includes('COMUNICACION') || d.includes('COMUNICACIÓN')) return 'dim-blue';

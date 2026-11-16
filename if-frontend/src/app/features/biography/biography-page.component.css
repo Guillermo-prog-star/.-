@@ -1,0 +1,302 @@
+.biography-page {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.glass-premium {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+}
+
+.biography-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 24px;
+  border-color: var(--if-legacy-border);
+}
+
+.biography-header__icon {
+  font-size: 2.25rem;
+  line-height: 1;
+}
+
+.biography-header h1 {
+  margin: 0 0 4px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--if-legacy-bright);
+}
+
+.biography-header p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.9rem;
+}
+
+.biography-banner {
+  padding: 14px 20px;
+  border-color: var(--if-legacy-border);
+  background: var(--if-legacy-faint);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.9rem;
+}
+
+.biography-state {
+  padding: 32px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.biography-state--error {
+  color: #fca5a5;
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.biography-inline-error {
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  font-size: 0.85rem;
+}
+
+.biography-chapters {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.biography-chapter {
+  overflow: hidden;
+  border-color: var(--if-legacy-border);
+}
+
+.biography-chapter__header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.biography-chapter__header:hover {
+  background: var(--if-legacy-faint);
+}
+
+.biography-chapter__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 600;
+}
+
+.biography-chapter__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--if-legacy-soft);
+  color: var(--if-legacy-bright);
+  font-size: 0.8rem;
+}
+
+.biography-chapter__progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.biography-chapter__chevron {
+  transition: transform 0.2s ease;
+}
+
+.biography-chapter__chevron.open {
+  transform: rotate(180deg);
+}
+
+.biography-chapter__body {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-top: 1px solid var(--if-legacy-border);
+}
+
+.biography-question {
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.biography-question__prompt {
+  margin: 0;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.biography-question__deepen {
+  margin: 0;
+  font-size: 0.82rem;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.biography-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.biography-answer__text {
+  margin: 0;
+  white-space: pre-wrap;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.5;
+}
+
+.biography-answer__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.biography-badge {
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--if-legacy-soft);
+  color: var(--if-legacy-bright);
+}
+
+.biography-badge--done {
+  background: rgba(34, 197, 94, 0.15);
+  color: #86efac;
+}
+
+.biography-answer__actions {
+  display: flex;
+  gap: 14px;
+}
+
+.biography-answer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--if-legacy-border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.biography-answer-form textarea {
+  width: 100%;
+  resize: vertical;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.biography-answer-form__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.biography-answer-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.biography-answer-form select,
+.biography-answer-form input[type='number'] {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 7px 9px;
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.biography-answer-form__checkbox {
+  flex-direction: row !important;
+  align-items: center;
+  gap: 8px !important;
+}
+
+.biography-answer-form__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.btn-primary,
+.btn-secondary {
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+.btn-primary {
+  background: var(--if-legacy);
+  color: #1a1203;
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: var(--if-legacy-border);
+  color: var(--if-legacy-bright);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.8rem;
+  color: var(--if-legacy-bright);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.btn-link--danger {
+  color: #fca5a5;
+}

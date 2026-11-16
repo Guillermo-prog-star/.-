@@ -57,10 +57,10 @@ public class AnalyticsServiceImpl implements AnalyticsService {
 
     // ── Nivel de consciencia (misma escala que RiskService: 1=mín → 5=máx) ──
     private static int deriveConsciousnessLevel(double icf) {
-        if (icf < 20) return 1;
-        if (icf < 40) return 2;
-        if (icf < 60) return 3;
-        if (icf < 80) return 4;
+        if (icf < 35) return 1;
+        if (icf < 55) return 2;
+        if (icf < 70) return 3;
+        if (icf < 85) return 4;
         return 5;
     }
 

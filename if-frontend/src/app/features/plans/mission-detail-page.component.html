@@ -199,19 +199,6 @@
                 <h4 class="md-ev-title">{{ ev.title }}</h4>
                 <p class="md-ev-by">Por {{ ev.submittedBy }}</p>
 
-                @if (ev.aiScore != null) {
-                  <div class="md-ev-score-row">
-                    <span class="md-ev-score-label">Score Sentinel AI</span>
-                    <div class="md-ev-score-bar">
-                      <div class="md-ev-score-fill" [ngClass]="scoreColor(ev.aiScore)"
-                           [style.width.%]="ev.aiScore"></div>
-                    </div>
-                    <span class="md-ev-score-num" [ngClass]="scoreColor(ev.aiScore)">
-                      {{ ev.aiScore | number:'1.0-0' }}/100
-                    </span>
-                  </div>
-                }
-
                 @if (ev.description) {
                   <p class="md-ev-desc">{{ ev.description }}</p>
                 }

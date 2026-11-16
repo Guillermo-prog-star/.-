@@ -169,14 +169,13 @@
               <div class="detail-item highlight-evidence p-16 rounded-12 mt-12" 
                    [style.borderLeftColor]="getEmotionDetails(ev.emotion).color" 
                    style="background: rgba(255, 255, 255, 0.01); border-left: 3px solid #58a6ff; padding: 16px; border-radius: 12px; margin-top: 12px; border-top: 1px solid rgba(255,255,255,0.03); border-right: 1px solid rgba(255,255,255,0.03); border-bottom: 1px solid rgba(255,255,255,0.03);">
-                <span class="detail-lbl success small" [style.color]="getEmotionDetails(ev.emotion).color" style="display: block; color: #58a6ff; font-weight: bold; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">🧠 Diagnóstico de Coherencia Conductual (Sentinel AI)</span>
+                <span class="detail-lbl success small" [style.color]="getEmotionDetails(ev.emotion).color" style="display: block; color: #58a6ff; font-weight: bold; font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.5px;">Lo que registraron</span>
                 <p class="text-white mb-0" style="margin-top: 6px; font-size: 13px; line-height: 1.5; opacity: 0.95; white-space: pre-line;">{{ ev.description }}</p>
               </div>
             </div>
           </div>
           
           <div class="evidence-footer mt-16 text-right" style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; opacity: 0.8; font-size: 11.5px; border-top: 1px solid rgba(255,255,255,0.04); padding-top: 12px;">
-            <span [style.color]="getEmotionDetails(ev.emotion).color" style="color: #58a6ff; font-weight: bold; font-size: 12px;">Puntaje Clínico: {{ ev.aiScore }}/100</span>
             <span class="text-muted" style="color: #8b949e;">Liderado por: <strong style="color: #c9d1d9;">{{ ev.submittedBy }}</strong></span>
           </div>
 

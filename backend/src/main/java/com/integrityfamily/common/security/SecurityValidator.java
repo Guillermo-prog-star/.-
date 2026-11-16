@@ -61,6 +61,25 @@ public class SecurityValidator {
             throw new AccessDeniedException("Cuenta inactiva");
         }
     }
+
+    /**
+     * Resuelve el FamilyMember del principal autenticado, para filtrar
+     * visibilidad por autoria (ADR-012, H2 -- JournalEntry/CriticalDay
+     * PRIVATE por defecto).
+     *
+     * Sin bypass para ROLE_ADMIN ni para el creador de la familia (ADR-012
+     * Amendment, 2026-11-15): lo PRIVATE solo lo ve su autor. Retorna el id
+     * del FamilyMember propio del principal, o null si no tiene perfil de
+     * miembro; en los repositorios null significa "solo lo compartido", nunca
+     * "ver todo". validateFamilyOwnership sigue gobernando el acceso a la familia.
+     */
+    public Long resolveViewerMemberId(Long familyId, Principal principal) {
+        validateFamilyOwnership(familyId, principal);
+
+        return memberRepository.findByEmailIgnoreCase(principal.getName())
+                .map(FamilyMember::getId)
+                .orElse(null);
+    }
 }
 
 

@@ -28,6 +28,20 @@ public class JournalEntry {
     @JoinColumn(name = "family_id", nullable = false)
     private Family family;
 
+    /** Autor del relato (ADR-012). Null = entrada generada por sistema/IA, sin autor humano. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private FamilyMember member;
+
+    /** Clave opaca asignada por el cliente para vincular relatos del mismo evento real (ADR-012, H2). */
+    @Column(name = "perceived_event_key", length = 64)
+    private String perceivedEventKey;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "visibility", nullable = false, length = 20)
+    @Builder.Default
+    private EntryVisibility visibility = EntryVisibility.PRIVATE;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "origin", nullable = false, length = 30)
     private JournalOrigin origin; // RISK, PLAN, TASK, CRISIS
@@ -59,6 +73,25 @@ public class JournalEntry {
 
     @Column(columnDefinition = "TEXT")
     private String observations;
+
+    /** ADR-018 (V115): "¿qué estoy concluyendo?" -- separado de lo observado. */
+    @Column(columnDefinition = "TEXT")
+    private String interpretation;
+
+    /** ADR-018 (V115): "¿qué me falta saber / qué otra explicación considero?" */
+    @Column(name = "alternative_explanation", columnDefinition = "TEXT")
+    private String alternativeExplanation;
+
+    /** ADR-018 Amendment 1 (V115): "¿qué noto en el cuerpo?" -- se registra, no decide. */
+    @Column(name = "body_signal", columnDefinition = "TEXT")
+    private String bodySignal;
+
+    /**
+     * ADR-018 Amendment 3 (V115): mapa JSON {@link JournalStep} -> {@link ExplicitResponse}.
+     * Ausencia de clave = no respondido. Se lee/escribe vía {@code JournalService}.
+     */
+    @Column(name = "explicit_responses", columnDefinition = "JSON")
+    private String explicitResponses;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)

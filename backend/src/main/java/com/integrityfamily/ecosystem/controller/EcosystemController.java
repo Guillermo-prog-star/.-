@@ -45,19 +45,37 @@ public class EcosystemController {
         return ResponseEntity.ok(service.registerParticipant(req));
     }
 
+    @PutMapping("/api/ecosystem/participants/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ParticipantResponse> update(
+            @PathVariable Long id,
+            @RequestBody RegisterParticipantRequest req) {
+        return ResponseEntity.ok(service.updateParticipant(id, req));
+    }
+
+    @DeleteMapping("/api/ecosystem/participants/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        service.deleteParticipant(id);
+        return ResponseEntity.noContent().build();
+    }
+
     // ── Ecosistema de una familia ─────────────────────────────────────────
 
     @GetMapping("/api/families/{familyId}/ecosystem")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<FamilyEcosystemSummary> getSummary(@PathVariable Long familyId) {
         return ResponseEntity.ok(service.getSummary(familyId));
     }
 
     @GetMapping("/api/families/{familyId}/ecosystem/active")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<List<LinkResponse>> getActive(@PathVariable Long familyId) {
         return ResponseEntity.ok(service.getActiveLinks(familyId));
     }
 
     @GetMapping("/api/families/{familyId}/ecosystem/network")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<List<LinkResponse>> getByNetwork(
             @PathVariable Long familyId,
             @RequestParam NetworkType networkType) {
@@ -68,6 +86,7 @@ public class EcosystemController {
 
     /** La familia vincula un participante a su ecosistema */
     @PostMapping("/api/families/{familyId}/ecosystem/links")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<LinkResponse> link(
             @PathVariable Long familyId,
             @RequestBody LinkRequest req,
@@ -75,8 +94,20 @@ public class EcosystemController {
         return ResponseEntity.ok(service.link(familyId, req, principal.getUsername()));
     }
 
+    /** La familia edita los detalles de una conexión existente */
+    @PutMapping("/api/families/{familyId}/ecosystem/links/{linkId}")
+    @PreAuthorize("@familySecurity.check(#familyId)")
+    public ResponseEntity<LinkResponse> updateLink(
+            @PathVariable Long familyId,
+            @PathVariable Long linkId,
+            @RequestBody LinkRequest req,
+            @AuthenticationPrincipal UserDetails principal) {
+        return ResponseEntity.ok(service.updateLink(familyId, linkId, req, principal.getUsername()));
+    }
+
     /** La familia otorga consentimiento explícito */
     @PostMapping("/api/families/{familyId}/ecosystem/consent")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<LinkResponse> consent(
             @PathVariable Long familyId,
             @RequestBody ConsentRequest req,
@@ -86,6 +117,7 @@ public class EcosystemController {
 
     /** La familia revoca el vínculo — sin justificación obligatoria */
     @PostMapping("/api/families/{familyId}/ecosystem/revoke")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<LinkResponse> revoke(
             @PathVariable Long familyId,
             @RequestBody RevokeRequest req,
@@ -111,15 +143,17 @@ public class EcosystemController {
 
     /** La familia ve quién accedió a qué y cuándo */
     @GetMapping("/api/families/{familyId}/ecosystem/audit")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<List<AuditLogEntry>> getAuditLog(@PathVariable Long familyId) {
         return ResponseEntity.ok(auditService.getAuditLog(familyId));
     }
 
     /** Historial de acceso de un vínculo específico */
     @GetMapping("/api/families/{familyId}/ecosystem/links/{linkId}/audit")
+    @PreAuthorize("@familySecurity.check(#familyId)")
     public ResponseEntity<List<AuditLogEntry>> getLinkAuditLog(
             @PathVariable Long familyId,
             @PathVariable Long linkId) {
-        return ResponseEntity.ok(auditService.getAuditLogByLink(linkId));
+        return ResponseEntity.ok(auditService.getAuditLogByLink(linkId, familyId));
     }
 }

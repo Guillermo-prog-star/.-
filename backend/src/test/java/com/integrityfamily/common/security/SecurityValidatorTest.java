@@ -125,6 +125,38 @@ class SecurityValidatorTest {
     }
 
     // ═══════════════════════════════════════════════════════════════
+    //  resolveViewerMemberId — sin bypass para lo PRIVATE (ADR-012 Amendment)
+    // ═══════════════════════════════════════════════════════════════
+
+    @Nested
+    @DisplayName("resolveViewerMemberId()")
+    class ResolveViewerMemberId {
+
+        @Test
+        @DisplayName("ROLE_ADMIN sin perfil de miembro → null (solo verá lo compartido), ya no 'ver todo'")
+        void admin_returnsNull_noBypass() {
+            Role adminRole = Role.builder().name("ROLE_ADMIN").build();
+            when(userRepository.findByEmailIgnoreCase(EMAIL))
+                    .thenReturn(Optional.of(User.builder().email(EMAIL).roles(List.of(adminRole)).build()));
+            when(memberRepository.findByEmailIgnoreCase(EMAIL)).thenReturn(Optional.empty());
+
+            org.assertj.core.api.Assertions.assertThat(validator.resolveViewerMemberId(FAM_ID, principal)).isNull();
+        }
+
+        @Test
+        @DisplayName("creador que también es miembro → su propio memberId (ve lo suyo, no lo PRIVATE de otros)")
+        void creatorWhoIsMember_returnsOwnMemberId() {
+            family.setCreatedBy(User.builder().email(EMAIL).build());
+            when(userRepository.findByEmailIgnoreCase(EMAIL)).thenReturn(Optional.of(regularUser));
+            when(familyRepository.findById(FAM_ID)).thenReturn(Optional.of(family));
+            when(memberRepository.findByEmailIgnoreCase(EMAIL))
+                    .thenReturn(Optional.of(FamilyMember.builder().id(77L).family(family).build()));
+
+            org.assertj.core.api.Assertions.assertThat(validator.resolveViewerMemberId(FAM_ID, principal)).isEqualTo(77L);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     //  Familia no encontrada
     // ═══════════════════════════════════════════════════════════════
 

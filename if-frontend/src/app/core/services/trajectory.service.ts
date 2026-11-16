@@ -14,6 +14,9 @@ import {
   TimelineEventRequest,
   IndicatorRequest,
   RiskMacrodomain,
+  SafetyProtocolDto,
+  ActivateSafetyProtocolRequest,
+  CloseSafetyProtocolRequest,
 } from '../models/trajectory.model';
 
 @Injectable({ providedIn: 'root' })
@@ -83,5 +86,25 @@ export class TrajectoryService {
     return this.http.get<ApiResponse<TrajectorySuggestion[]>>(
       `${this.api.base}/trajectories/family/${familyId}/suggestions`
     ).pipe(map(r => r.data ?? []));
+  }
+
+  activateSafetyProtocol(familyTrajectoryId: number, request: ActivateSafetyProtocolRequest): Observable<SafetyProtocolDto> {
+    return this.http.post<ApiResponse<SafetyProtocolDto>>(
+      `${this.api.base}/trajectories/family/${familyTrajectoryId}/safety-protocol`,
+      request
+    ).pipe(map(r => r.data!));
+  }
+
+  getSafetyProtocols(familyTrajectoryId: number): Observable<SafetyProtocolDto[]> {
+    return this.http.get<ApiResponse<SafetyProtocolDto[]>>(
+      `${this.api.base}/trajectories/family/${familyTrajectoryId}/safety-protocol`
+    ).pipe(map(r => r.data ?? []));
+  }
+
+  closeSafetyProtocol(familyTrajectoryId: number, activationId: number, request: CloseSafetyProtocolRequest): Observable<SafetyProtocolDto> {
+    return this.http.post<ApiResponse<SafetyProtocolDto>>(
+      `${this.api.base}/trajectories/family/${familyTrajectoryId}/safety-protocol/${activationId}/close`,
+      request
+    ).pipe(map(r => r.data!));
   }
 }

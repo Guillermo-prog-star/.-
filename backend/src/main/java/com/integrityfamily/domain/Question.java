@@ -22,6 +22,10 @@ public class Question {
     @Column(name = "question_key", unique = true)
     private String questionKey; // Q-EMO-REAC-023, REC_EMO_001, etc.
 
+    @Column(name = "parent_key", length = 100)
+    private String parentKey; // Agrupa Q1, Q2, Q3
+
+
     @Column(nullable = false, length = 500)
     private String text;
 
@@ -107,4 +111,8 @@ public class Question {
     /** Dominio ICaF: confianza | bienestar_emocional | autonomia | ... */
     @Column(name = "icaf_domain", length = 30)
     private String icafDomain;
+
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @Builder.Default
+    private java.util.List<QuestionOption> options = new java.util.ArrayList<>();
 }

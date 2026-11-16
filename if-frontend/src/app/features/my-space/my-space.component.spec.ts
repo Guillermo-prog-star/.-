@@ -1,5 +1,7 @@
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { NO_ERRORS_SCHEMA } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { MySpaceComponent } from './my-space.component';
@@ -20,9 +22,19 @@ function buildComponent() {
     }
   );
 
+  const httpSpy = jasmine.createSpyObj<HttpClient>('HttpClient', ['get', 'post', 'put', 'delete']);
+  httpSpy.get.and.returnValue(of(null));
+  httpSpy.post.and.returnValue(of(null));
+  httpSpy.put.and.returnValue(of(null));
+  httpSpy.delete.and.returnValue(of(null));
+
   TestBed.configureTestingModule({
     imports: [MySpaceComponent],
-    providers: [{ provide: MySpaceService, useValue: mySpaceSpy }],
+    providers: [
+      provideRouter([]),
+      { provide: HttpClient, useValue: httpSpy },
+      { provide: MySpaceService, useValue: mySpaceSpy }
+    ],
     schemas: [NO_ERRORS_SCHEMA]
   });
 
@@ -77,31 +89,29 @@ describe('MySpaceComponent', () => {
   // ═══════════════════════════════════════════════════════════════════════
 
   describe('saveEntry()', () => {
-    it('título vacío → alert y no llama createEntry', fakeAsync(() => {
+    it('título vacío → errorMessage y no llama createEntry', fakeAsync(() => {
       const { fixture, component, mySpaceSpy } = buildComponent();
       fixture.detectChanges();
       tick();
-      spyOn(window, 'alert');
 
       component.newEntry.title = '';
       component.newEntry.content = 'Algo';
       component.saveEntry();
 
-      expect(window.alert).toHaveBeenCalled();
+      expect(component.errorMessage).toBeTruthy();
       expect(mySpaceSpy.createEntry).not.toHaveBeenCalled();
     }));
 
-    it('contenido vacío → alert y no llama createEntry', fakeAsync(() => {
+    it('contenido vacío → errorMessage y no llama createEntry', fakeAsync(() => {
       const { fixture, component, mySpaceSpy } = buildComponent();
       fixture.detectChanges();
       tick();
-      spyOn(window, 'alert');
 
       component.newEntry.title = 'Título';
       component.newEntry.content = '';
       component.saveEntry();
 
-      expect(window.alert).toHaveBeenCalled();
+      expect(component.errorMessage).toBeTruthy();
       expect(mySpaceSpy.createEntry).not.toHaveBeenCalled();
     }));
 
@@ -122,6 +132,7 @@ describe('MySpaceComponent', () => {
       expect(mySpaceSpy.createEntry).toHaveBeenCalledWith(
         jasmine.objectContaining({ title: 'Mi reflexión', content: 'Texto interesante' })
       );
+      tick(3500); // drena el setTimeout de successMessage
     }));
 
     it('éxito → resetea el formulario a valores por defecto', fakeAsync(() => {
@@ -139,6 +150,7 @@ describe('MySpaceComponent', () => {
       expect(component.newEntry.content).toBe('');
       expect(component.newEntry.emotionalState).toBe('NEUTRAL');
       expect(component.newEntry.category).toBe('REFLEXION');
+      tick(3500); // drena el setTimeout de successMessage
     }));
 
     it('éxito → recarga las entradas (llama getEntries de nuevo)', fakeAsync(() => {
@@ -152,6 +164,7 @@ describe('MySpaceComponent', () => {
 
       // detectChanges → 1, saveEntry → 1 más = al menos 2 llamadas
       expect(mySpaceSpy.getEntries.calls.count()).toBeGreaterThan(1);
+      tick(3500); // drena el setTimeout de successMessage
     }));
 
     it('error en createEntry → loading=false y no resetea el formulario', fakeAsync(() => {

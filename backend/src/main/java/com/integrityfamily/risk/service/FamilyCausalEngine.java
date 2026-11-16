@@ -274,19 +274,19 @@ public class FamilyCausalEngine {
     }
 
     private int deriveConsciousnessLevel(double icf) {
-        if (icf >= 85) return 1; // Plena
-        if (icf >= 70) return 2; // Madura
+        if (icf >= 85) return 5; // Plena
+        if (icf >= 70) return 4; // Madura
         if (icf >= 55) return 3; // Consciente
-        if (icf >= 35) return 4; // Reactiva
-        return 5;                 // Inconsciente
+        if (icf >= 35) return 2; // Reactiva
+        return 1;                 // Inconsciente
     }
 
     private String deriveConsciousnessLabel(int level) {
         return switch (level) {
-            case 1 -> "Plena";
-            case 2 -> "Madurando";
+            case 5 -> "Plena";
+            case 4 -> "Madurando";
             case 3 -> "Consciente";
-            case 4 -> "Reactiva";
+            case 2 -> "Reactiva";
             default -> "Inconsciente";
         };
     }

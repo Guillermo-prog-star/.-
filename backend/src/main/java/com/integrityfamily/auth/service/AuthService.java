@@ -10,6 +10,9 @@ import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.RoleRepository;
 import com.integrityfamily.domain.repository.PasswordResetTokenRepository;
 import com.integrityfamily.security.JwtTokenProvider;
+import com.integrityfamily.familyhome.security.FamilyIdentifierBridge;
+import com.integrityfamily.ecosystem.repository.FamilyEcosystemLinkRepository;
+import com.integrityfamily.ecosystem.domain.EcosystemLinkStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -45,6 +48,8 @@ public class AuthService {
     private final AuditService auditService;
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
+    private final FamilyEcosystemLinkRepository linkRepository;
+    private final FamilyIdentifierBridge idBridge;
 
     @Transactional(noRollbackFor = Exception.class)
     public LoginResponse login(LoginRequest request, String ip, String ua) {
@@ -56,6 +61,16 @@ public class AuthService {
             User user = userRepository.findByEmail(request.email())
                     .orElseThrow(() -> new BusinessException("Usuario no encontrado", "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
 
+            // Auto-asignar rol profesional si posee vínculos activos de ecosistema
+            if (linkRepository.existsByParticipantContactEmailAndStatus(user.getEmail(), EcosystemLinkStatus.ACTIVE)) {
+                Role proRole = roleRepository.findByName("ROLE_THERAPIST").orElse(null);
+                if (proRole != null && !user.getRoles().contains(proRole)) {
+                    user.getRoles().add(proRole);
+                    user = userRepository.save(user);
+                    log.info("[AUTH] Se asignó automáticamente ROLE_THERAPIST a {} por tener un vínculo activo en el ecosistema", user.getEmail());
+                }
+            }
+
             // [MULTI-TENANT] Cada usuario pertenece a su propia familia (o es ROLE_ADMIN global)
             // No hay restricción por código de familia — el aislamiento lo garantiza FamilySecurityEvaluator
             log.info("[AUTH] Login exitoso para {} — familia: {}", request.email(),
@@ -63,7 +78,7 @@ public class AuthService {
 
             String token = jwtTokenProvider.generate(user);
             RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId());
-            com.integrityfamily.auth.dto.UserResponse userDto = com.integrityfamily.auth.dto.UserResponse.from(user);
+            com.integrityfamily.auth.dto.UserResponse userDto = com.integrityfamily.auth.dto.UserResponse.from(user, idBridge);
 
             return new com.integrityfamily.auth.dto.LoginResponse(token, refreshToken.getToken(), 3600000L, userDto);
         } catch (Exception e) {
@@ -98,7 +113,7 @@ public class AuthService {
 
         String token = jwtTokenProvider.generate(saved);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(saved.getId());
-        com.integrityfamily.auth.dto.UserResponse userDto = com.integrityfamily.auth.dto.UserResponse.from(saved);
+        com.integrityfamily.auth.dto.UserResponse userDto = com.integrityfamily.auth.dto.UserResponse.from(saved, idBridge);
 
         log.info("[AUTH] Usuario registrado exitosamente: {}", request.email());
         return new com.integrityfamily.auth.dto.LoginResponse(token, refreshToken.getToken(), 3600000L, userDto);
@@ -155,7 +170,7 @@ public class AuthService {
 
         String token = jwtTokenProvider.generate(savedUser);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(savedUser.getId());
-        com.integrityfamily.auth.dto.UserResponse userDto = com.integrityfamily.auth.dto.UserResponse.from(savedUser);
+        com.integrityfamily.auth.dto.UserResponse userDto = com.integrityfamily.auth.dto.UserResponse.from(savedUser, idBridge);
 
         log.info("[AUTH] Familia '{}' registrada exitosamente con código: {} — Admin: {}",
                 request.familyName(), familyCode, request.email());
@@ -166,7 +181,7 @@ public class AuthService {
     public UserResponse me(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new BusinessException("Usuario no encontrado", "USER_NOT_FOUND", HttpStatus.NOT_FOUND));
-        return UserResponse.from(user);
+        return UserResponse.from(user, idBridge);
     }
 
     @Transactional
@@ -246,7 +261,7 @@ public class AuthService {
 
         User user = refreshToken.getUser();
         String token = jwtTokenProvider.generate(user);
-        com.integrityfamily.auth.dto.UserResponse userDto = com.integrityfamily.auth.dto.UserResponse.from(user);
+        com.integrityfamily.auth.dto.UserResponse userDto = com.integrityfamily.auth.dto.UserResponse.from(user, idBridge);
 
         return new LoginResponse(token, refreshToken.getToken(), 3600000L, userDto);
     }

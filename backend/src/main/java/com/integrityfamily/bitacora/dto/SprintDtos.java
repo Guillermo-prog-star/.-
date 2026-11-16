@@ -1,5 +1,8 @@
 package com.integrityfamily.bitacora.dto;
 
+import com.integrityfamily.domain.AttemptStatus;
+import com.integrityfamily.domain.SprintMissionStatus;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -21,7 +24,8 @@ public class SprintDtos {
             String blockagesText,
             String resolutionText,
             String emotionalIndicator,
-            String memberName
+            String memberName,
+            AttemptStatus attemptStatus
     ) {}
 
     public record CloseSprintRequest(
@@ -35,6 +39,8 @@ public class SprintDtos {
             Integer positiveInteractions,
             Integer emotionalPersistence
     ) {}
+
+    public record UpdateMissionStatusRequest(SprintMissionStatus status) {}
 
     public record SprintMissionResponse(
             Long id,
@@ -52,6 +58,7 @@ public class SprintDtos {
             String blockagesText,
             String resolutionText,
             String emotionalIndicator,
+            AttemptStatus attemptStatus,
             LocalDateTime createdAt
     ) {}
 

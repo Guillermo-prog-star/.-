@@ -59,6 +59,12 @@ public class TrajectoryService {
         RiskTrajectory traj = trajectoryRepo.findByCode(code)
             .orElseThrow(() -> new IllegalArgumentException("Trayectoria no encontrada: " + code));
 
+        Optional<FamilyRiskTrajectory> existing = familyTrajectoryRepo.findByFamilyIdAndTrajectoryId(familyId, traj.getId());
+        if (existing.isPresent()) {
+            log.info("Trayectoria {} ya estaba asignada a la familia {}", code, familyId);
+            return toFamilyDto(existing.get());
+        }
+
         FamilyRiskTrajectory frt = FamilyRiskTrajectory.builder()
             .family(family)
             .trajectory(traj)
@@ -67,10 +73,13 @@ public class TrajectoryService {
             .assignedBy(assignedBy)
             .build();
         FamilyTrajectoryDto dto = toFamilyDto(familyTrajectoryRepo.save(frt));
-        notificationService.push(family, null, "TRAJECTORY_DETECTED",
-            "Trayectoria de riesgo detectada",
+        boolean protocolo = Boolean.TRUE.equals(traj.getRequiresSafetyProtocol());
+        notificationService.push(family, null,
+            protocolo ? "TRAJECTORY_DETECTED_SAFETY_PROTOCOL" : "TRAJECTORY_DETECTED",
+            protocolo ? "🔴 Trayectoria con protocolo de seguridad detectada" : "Trayectoria de riesgo detectada",
             "Se ha registrado una nueva trayectoria: " + traj.getName()
-            + ". Severidad: " + traj.getSeverityDefault() + ".");
+            + ". Severidad: " + traj.getSeverityDefault() + "."
+            + (protocolo ? " Requiere protocolo de seguridad: responsable, acción y seguimiento obligatorios." : ""));
         return dto;
     }
 
@@ -174,8 +183,13 @@ public class TrajectoryService {
             if (frt.getDetectedAt() != null) {
                 sb.append(" desde ").append(frt.getDetectedAt().toLocalDate());
             }
-            if ("CRITICAL".equals(t.getSeverityDefault()) || "HIGH".equals(t.getSeverityDefault())) {
+            if (Boolean.TRUE.equals(t.getRequiresSafetyProtocol())) {
+                sb.append(" 🔴 PROTOCOLO DE SEGURIDAD OBLIGATORIO");
+            } else if ("CRITICAL".equals(t.getSeverityDefault()) || "HIGH".equals(t.getSeverityDefault())) {
                 sb.append(" ⚠️");
+            }
+            if (t.getContextualCriticalityRule() != null && !t.getContextualCriticalityRule().isBlank()) {
+                sb.append("\n    Evaluar condición de criticidad: ").append(t.getContextualCriticalityRule());
             }
             if (frt.getNotes() != null && !frt.getNotes().isBlank()) {
                 sb.append("\n    Notas: ").append(frt.getNotes());
@@ -212,7 +226,8 @@ public class TrajectoryService {
 
     private TrajectoryBankItem toItem(RiskTrajectory t) {
         return new TrajectoryBankItem(t.getId(), t.getCode(), t.getName(), t.getMacrodomain(),
-            t.getDescription(), t.getEarlySignals(), t.getPotentialEvolution(), t.getSeverityDefault());
+            t.getDescription(), t.getEarlySignals(), t.getPotentialEvolution(), t.getSeverityDefault(),
+            t.getRequiresSafetyProtocol(), t.getContextualCriticalityRule());
     }
 
     private FamilyTrajectoryDto toFamilyDto(FamilyRiskTrajectory frt) {

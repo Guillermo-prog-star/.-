@@ -4,12 +4,9 @@ import com.integrityfamily.assessment.service.AssessmentAnswerService;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.domain.repository.*;
 import com.integrityfamily.dto.EvaluationDtos;
-import com.integrityfamily.plan.service.PlanGenerationService;
-import com.integrityfamily.plan.service.PlanTaskService;
+import com.integrityfamily.evaluation.service.post.PostFinalizationContext;
+import com.integrityfamily.evaluation.service.post.PostFinalizationPipeline;
 import com.integrityfamily.risk.service.RiskAlgoV1Engine;
-import com.integrityfamily.risk.service.RiskService;
-import com.integrityfamily.milestone.service.MilestoneService;
-import com.integrityfamily.ai.service.AiService;
 import com.integrityfamily.scanner.service.DeterministicExplanationPipeline;
 import com.integrityfamily.scanner.service.InferenceRecordService;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,7 +18,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -45,14 +41,9 @@ public class EvaluationServiceConsciousTest {
     @Mock private QuestionRepository             questionRepository;
     @Mock private AssessmentAnswerService        assessmentAnswerService;
     @Mock private RiskAlgoV1Engine               riskAlgoV1Engine;
-    @Mock private RiskService                    riskService;
-    @Mock private RabbitTemplate                 rabbitTemplate;
-    @Mock private MilestoneService               milestoneService;
-    @Mock private AiService                      aiService;
-    @Mock private PlanTaskService                planTaskService;
-    @Mock private PlanGenerationService          planGenerationService;
     @Spy  private DeterministicExplanationPipeline explanationPipeline = new DeterministicExplanationPipeline();
     @Mock private InferenceRecordService         inferenceRecordService;
+    @Mock private PostFinalizationPipeline       postFinalizationPipeline;
 
     @InjectMocks
     private EvaluationService evaluationService;
@@ -123,7 +114,8 @@ public class EvaluationServiceConsciousTest {
         // PADRE + MODERADO → plantilla específica con "tensiones intermitentes"
         assertTrue(result.getSpiritualSynthesis().contains("tensiones intermitentes"));
 
-        // Verificar que se llamó a PlanTaskService (misiones automáticas)
-        verify(planTaskService, times(1)).generateTasksFromDiagnosis(any(Evaluation.class));
+        // ADR-020 (corte B): las misiones automáticas ya no las dispara EvaluationService sino un paso
+        // del pipeline (DiagnosisTasksStep, ver PostFinalizationStepsTest). Aquí se verifica la delegación.
+        verify(postFinalizationPipeline, times(1)).run(any(PostFinalizationContext.class));
     }
 }

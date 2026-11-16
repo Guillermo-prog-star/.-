@@ -51,4 +51,42 @@ public class EmailService {
         log.info("[email-stub] Invitation sent to {} ({}) to join family '{}' [Code: {}]",
                 email, name, familyName, familyCode);
     }
+
+    public void sendEcosystemInvitation(String toEmail, String participantName, String familyName, String objective) {
+        sendEcosystemInvitation(toEmail, participantName, familyName, objective, null);
+    }
+
+    public void sendEcosystemInvitation(String toEmail, String participantName, String familyName, String objective, String tempPassword) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Invitación a unirse al Ecosistema de Apoyo - Integrity Family");
+            
+            StringBuilder text = new StringBuilder();
+            text.append("Hola ").append(participantName).append(",\n\n")
+                .append("La familia \"").append(familyName).append("\" te ha invitado a formar parte de su Ecosistema de Apoyo en Integrity Family.\n\n")
+                .append("Objetivo de la relación: ").append(objective != null ? objective : "Acompañamiento familiar").append("\n\n")
+                .append("Para ver y gestionar los datos a los que tienes acceso, por favor inicia sesión en nuestra plataforma:\n")
+                .append(frontendUrl).append("/auth/login\n\n");
+
+            if (tempPassword != null && !tempPassword.isEmpty()) {
+                text.append("Se ha creado una cuenta profesional automáticamente para ti.\n")
+                    .append("Tus credenciales de acceso son:\n")
+                    .append("Usuario: ").append(toEmail).append("\n")
+                    .append("Contraseña temporal: ").append(tempPassword).append("\n\n")
+                    .append("Te recomendamos cambiar tu contraseña una vez que ingreses.\n\n");
+            }
+
+            text.append("Saludos,\n")
+                .append("El equipo de Integrity Family");
+
+            message.setText(text.toString());
+            
+            mailSender.send(message);
+            log.info("[EmailService] Correo de invitación al ecosistema enviado a: {}", toEmail);
+        } catch (Exception e) {
+            log.error("[EmailService] Error enviando correo de invitación al ecosistema a: {}", toEmail, e);
+        }
+    }
 }

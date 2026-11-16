@@ -99,7 +99,9 @@ public class SessionMemoryConsolidator {
 
         addIfPresent(content, synthesis, "themes");
         addTextIfPresent(content, synthesis, "emotionalSummary");
-        addTextIfPresent(content, synthesis, "memberState");
+        // sessionTone describe la conversación, no a la persona (ADR-018). Un "memberState"
+        // residual en la respuesta del modelo (etiqueta sobre la persona) se descarta a propósito.
+        addTextIfPresent(content, synthesis, "sessionTone");
         addIfPresent(content, synthesis, "progressSignals");
         if (synthesis.has("recommendedFollowUp") && !synthesis.get("recommendedFollowUp").isNull()) {
             content.put("recommendedFollowUp", synthesis.get("recommendedFollowUp").asText());

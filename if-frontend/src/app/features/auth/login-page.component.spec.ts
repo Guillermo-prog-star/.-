@@ -7,6 +7,7 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 import { LoginPageComponent } from './login-page.component';
 import { AuthService, AuthUser } from '../../core/services/auth.service';
+import { TransformationFlowService } from '../../core/services/transformation-flow.service';
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
@@ -18,12 +19,21 @@ function buildAuthSpy(user: AuthUser | null = null) {
   );
 }
 
-function buildComponent(authSpy: jasmine.SpyObj<AuthService>) {
+function buildFlowSpy() {
+  const spy = jasmine.createSpyObj<TransformationFlowService>(
+    'TransformationFlowService', ['getRouteForNextStep']
+  );
+  spy.getRouteForNextStep.and.returnValue(of('/dashboard'));
+  return spy;
+}
+
+function buildComponent(authSpy: jasmine.SpyObj<AuthService>, flowSpy = buildFlowSpy()) {
   TestBed.configureTestingModule({
     imports: [LoginPageComponent],
     providers: [
       provideRouter([]),
-      { provide: AuthService, useValue: authSpy }
+      { provide: AuthService, useValue: authSpy },
+      { provide: TransformationFlowService, useValue: flowSpy }
     ],
     schemas: [NO_ERRORS_SCHEMA]
   });
@@ -32,8 +42,9 @@ function buildComponent(authSpy: jasmine.SpyObj<AuthService>) {
   const component = fixture.componentInstance;
   const router = TestBed.inject(Router);
   spyOn(router, 'navigate').and.returnValue(Promise.resolve(true));
+  spyOn(router, 'navigateByUrl').and.returnValue(Promise.resolve(true));
   fixture.detectChanges();
-  return { fixture, component, router };
+  return { fixture, component, router, flowSpy };
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -93,14 +104,15 @@ describe('LoginPageComponent', () => {
       };
       const auth = buildAuthSpy(user);
       auth.login.and.returnValue(of({ token: 'tok' }));
-      const { component, router } = buildComponent(auth);
+      const { component, router, flowSpy } = buildComponent(auth);
 
       component.email = 'w@if.com';
       component.password = 'pass123';
       component.submit();
       tick();
 
-      expect(router.navigate).toHaveBeenCalledWith(['/dashboard']);
+      expect(flowSpy.getRouteForNextStep).toHaveBeenCalledWith(42);
+      expect(router.navigateByUrl).toHaveBeenCalledWith('/dashboard');
     }));
 
     it('debe navegar a /families/create cuando el usuario NO tiene familyId', fakeAsync(() => {

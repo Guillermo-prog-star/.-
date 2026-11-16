@@ -1,6 +1,5 @@
 package com.integrityfamily.evaluation.service;
 
-import com.integrityfamily.ai.service.AiService;
 import com.integrityfamily.domain.*;
 import com.integrityfamily.dto.EvaluationDtos;
 import com.integrityfamily.domain.repository.EvaluationRepository;
@@ -10,17 +9,10 @@ import com.integrityfamily.domain.repository.MemberRepository;
 import com.integrityfamily.domain.repository.QuestionRepository;
 import com.integrityfamily.assessment.service.AssessmentAnswerService;
 import com.integrityfamily.domain.repository.EvaluationAnswerRepository;
+import com.integrityfamily.domain.repository.HypothesisEvidenceRepository;
+import com.integrityfamily.evaluation.service.post.PostFinalizationContext;
+import com.integrityfamily.evaluation.service.post.PostFinalizationPipeline;
 import com.integrityfamily.risk.service.RiskAlgoV1Engine;
-import com.integrityfamily.risk.service.RiskService;
-import com.integrityfamily.milestone.service.MilestoneService;
-import com.integrityfamily.plan.service.PlanTaskService;
-import com.integrityfamily.plan.service.PlanGenerationService;
-import com.integrityfamily.analytics.service.FamilyProgressAnalyticsService;
-import com.integrityfamily.cognitive.service.FamilyMemoryService;
-import com.integrityfamily.cognitive.service.FamilySkillEngine;
-import com.integrityfamily.cognitive.service.FamilyReflectionService;
-import com.integrityfamily.cognitive.service.NarrativeEvolutionEngine;
-import com.integrityfamily.cognitive.service.FamilyIdentityGraphService;
 import com.integrityfamily.scanner.domain.InferenceRecord;
 import com.integrityfamily.scanner.domain.RuleActivation;
 import com.integrityfamily.scanner.repository.InferenceRecordRepository;
@@ -28,11 +20,9 @@ import com.integrityfamily.scanner.service.AlertEngine;
 import com.integrityfamily.scanner.service.DeterministicExplanationPipeline;
 import com.integrityfamily.scanner.service.InferenceRecordService;
 import com.integrityfamily.common.exception.BusinessException;
-import com.integrityfamily.common.service.UserNotificationService;
 import com.integrityfamily.scanner.service.RuleExecutionEngine;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,25 +47,21 @@ public class EvaluationService {
     private final QuestionRepository          questionRepository;
     private final AssessmentAnswerService     assessmentAnswerService;
     private final RiskAlgoV1Engine            riskAlgoV1Engine;
-    private final RiskService riskService;
-    private final RabbitTemplate rabbitTemplate;
-    private final MilestoneService milestoneService;
-    private final AiService aiService;
-    private final PlanTaskService planTaskService;
-    private final PlanGenerationService planGenerationService;
-    private final FamilyProgressAnalyticsService familyProgressAnalyticsService;
-    private final FamilyMemoryService familyMemoryService;
-    private final FamilySkillEngine familySkillEngine;
-    private final FamilyReflectionService familyReflectionService;
-    private final NarrativeEvolutionEngine narrativeEvolutionEngine;
-    private final FamilyIdentityGraphService familyIdentityGraphService;
     private final DeterministicExplanationPipeline explanationPipeline;
     private final InferenceRecordService inferenceRecordService;
     private final InferenceRecordRepository inferenceRecordRepository;
     private final RuleExecutionEngine ruleExecutionEngine;
     private final AlertEngine alertEngine;
-    private final UserNotificationService userNotificationService;
-    private final com.integrityfamily.risk.service.LongitudinalStateService longitudinalStateService;
+    private final HypothesisEvidenceRepository hypothesisEvidenceRepository;
+    private final PostFinalizationPipeline postFinalizationPipeline;   // ADR-020: efectos posteriores a finalize()
+
+    /** Identificador y versión de la hipótesis de Interrupción Deliberativa (ADR-007). */
+    private static final String DELIBERATIVE_INTERRUPTION_HYPOTHESIS = "DELIBERATIVE_INTERRUPTION_HYPOTHESIS";
+    private static final String DELIBERATIVE_INTERRUPTION_HYPOTHESIS_VERSION = "v1";
+
+    /** Identificador y versión del proxy de precisión anticipatoria intra-sesión (ADR-008). */
+    private static final String PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS = "PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS";
+    private static final String PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS_VERSION = "v1";
 
     public List<Evaluation> findAll() {
         return evaluationRepository.findAll();
@@ -164,6 +150,14 @@ public class EvaluationService {
                 if (a.questionId() == null) continue;
                 Question q = questionMap.get(a.questionId());
                 if (q == null) continue;
+                
+                Integer val = a.getEffectiveValue();
+                if (val != null && val == 0) {
+                    if (!"NEURO_AWARENESS".equals(q.getType()) || !"ENTRY".equalsIgnoreCase(q.getPhase())) {
+                        throw new IllegalArgumentException("El valor 0 solo está permitido para preguntas NEURO_AWARENESS en fase ENTRY. Pregunta inválida: " + q.getQuestionKey());
+                    }
+                }
+                
                 EvaluationAnswer answer = new EvaluationAnswer();
                 answer.setEvaluation(existing);
                 answer.setQuestionKey(q.getQuestionKey() != null ? q.getQuestionKey() : "Q-" + q.getId());
@@ -190,6 +184,20 @@ public class EvaluationService {
         RiskAlgoV1Engine.AlgoResult algo = riskAlgoV1Engine.compute(effectiveAnswers, currentMilestone);
 
         existing.setIcf(algo.healthyIndex());
+        existing.setInc(algo.inc());
+        if (algo.neuroProfile() != null) {
+            existing.setSomaticAwareness(algo.neuroProfile().getSomaticAwareness());
+            existing.setEmotionalAwareness(algo.neuroProfile().getEmotionalAwareness());
+            existing.setCognitiveAwareness(algo.neuroProfile().getCognitiveAwareness());
+            existing.setImpulsiveAwareness(algo.neuroProfile().getImpulsiveAwareness());
+            existing.setPauseCapacity(algo.neuroProfile().getPauseCapacity());
+            existing.setIntegrationScore(algo.neuroProfile().getIntegrationScore());
+            recordPauseCapacityEvidence(
+                    existing.getFamily().getId(),
+                    algo.neuroProfile().getPauseCapacity(),
+                    existing.getAlgorithmVersion(),
+                    existing.getFinalizedAt());
+        }
         existing.setRiskLevel(algo.riskLevel());
         existing.setCriticalDimension(algo.criticalDimension());
         existing.setHasCrisis(algo.hasCrisis());
@@ -221,6 +229,12 @@ public class EvaluationService {
         Evaluation saved = evaluationRepository.save(existing);
         log.info("[EVALUATION-ALGO] Evaluacion persistida. {} | {}", algo.summary(),
                 explanationPipeline.buildTechnicalSummary(algo));
+
+        // ADR-008: proxy de precisión anticipatoria (THINK vs. AFTERMATH) — después del save
+        // porque en el flujo clásico las EvaluationAnswer del request solo se persisten
+        // (cascade) al guardar `existing`; sin @Transactional en este método, una relectura
+        // anterior a este punto no las vería.
+        recordPredictiveAccuracyEvidence(saved.getFamily().getId(), saved.getId(), saved.getFinalizedAt());
 
         // IF-CIS: Registro de inferencia epistemológicamente estable (ICF_CALC base)
         try {
@@ -264,8 +278,9 @@ public class EvaluationService {
                         .collect(Collectors.toList()),
                 algo.healthyIndex(),
                 null,   // riskSnapshotId — lo llena RiskService async
-                saved.getSpiritualSynthesis(),
                 algo.hasCrisis(),
+                algo.inc(),
+                algo.neuroProfile(),
                 algo.simulationSuspected(),
                 algo.relapseDetected(),
                 algo.suggestedMissionGenerator(),
@@ -336,173 +351,100 @@ public class EvaluationService {
         processPostFinalization(saved, null);
     }
 
+    /**
+     * Escribe una observación cruda de Interrupción Deliberativa en hypothesis_evidence (ADR-007).
+     * Nunca actualiza una fila existente — cada llamada inserta una nueva.
+     * Solo se invoca cuando neuroProfile != null (evaluación con preguntas neuro-conductuales) —
+     * pauseCapacity es un double primitivo y nunca es null, así que llamar esto fuera de ese
+     * guard escribiría 0.0 como si fuera "ausencia de pausa" en vez de "no se preguntó".
+     */
+    private void recordPauseCapacityEvidence(Long familyId, double pauseCapacity, String algorithmVersion, LocalDateTime observedAt) {
+        hypothesisEvidenceRepository.save(HypothesisEvidence.builder()
+                .hypothesis(DELIBERATIVE_INTERRUPTION_HYPOTHESIS)
+                .hypothesisVersion(DELIBERATIVE_INTERRUPTION_HYPOTHESIS_VERSION)
+                .subjectType("FAMILY")
+                .subjectId(familyId)
+                .measurementType("PAUSE_CAPACITY")
+                .measurementValue(pauseCapacity)
+                .instrument(algorithmVersion != null ? algorithmVersion : "RISK_ALGO_V1")
+                .instrumentVersion("1")
+                .source(EvidenceSource.AUTOMATIC)
+                .observedAt(observedAt != null ? observedAt : LocalDateTime.now())
+                .build());
+    }
+
+    /**
+     * ADR-008: por cada escenario (parent_key) de esta evaluación con respuesta registrada
+     * tanto en fase THINK como en fase AFTERMATH, escribe el par de observaciones crudas en
+     * hypothesis_evidence. Si falta cualquiera de las dos fases para un escenario, no se
+     * escribe nada para ese escenario — un par incompleto no es una observación válida.
+     * score_value == rubric_level siempre en el banco SCENARIO_V1_2 (V89-V95, verificado),
+     * así que EvaluationAnswer.score ya es directamente el rubric_level, sin volver a
+     * consultar question_options.
+     */
+    private void recordPredictiveAccuracyEvidence(Long familyId, Long evaluationId, LocalDateTime observedAt) {
+        List<EvaluationAnswer> answers = evaluationAnswerRepository.findByEvaluationIdOrderByAnsweredAtAsc(evaluationId);
+
+        List<Long> questionIds = answers.stream()
+                .map(EvaluationAnswer::getQuestionId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        Map<Long, Question> questionById = questionRepository.findAllById(questionIds).stream()
+                .collect(Collectors.toMap(Question::getId, q -> q));
+
+        Map<String, Integer> thinkByParentKey = new HashMap<>();
+        Map<String, Integer> aftermathByParentKey = new HashMap<>();
+
+        for (EvaluationAnswer a : answers) {
+            Question q = questionById.get(a.getQuestionId());
+            if (q == null || q.getParentKey() == null || a.getScore() == null) continue;
+            if ("THINK".equals(q.getPhase())) thinkByParentKey.put(q.getParentKey(), a.getScore());
+            if ("AFTERMATH".equals(q.getPhase())) aftermathByParentKey.put(q.getParentKey(), a.getScore());
+        }
+
+        for (Map.Entry<String, Integer> entry : thinkByParentKey.entrySet()) {
+            String parentKey = entry.getKey();
+            Integer thinkScore = entry.getValue();
+            Integer aftermathScore = aftermathByParentKey.get(parentKey);
+            if (aftermathScore == null) continue; // par incompleto — no se escribe nada (ADR-008 Decisión 3)
+
+            hypothesisEvidenceRepository.save(HypothesisEvidence.builder()
+                    .hypothesis(PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS)
+                    .hypothesisVersion(PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS_VERSION)
+                    .subjectType("FAMILY")
+                    .subjectId(familyId)
+                    .measurementType("ANTICIPATED_THREAT_LEVEL")
+                    .measurementValue(thinkScore.doubleValue())
+                    .instrument(parentKey)
+                    .instrumentVersion("1.2.0")
+                    .source(EvidenceSource.AUTOMATIC)
+                    .observedAt(observedAt != null ? observedAt : LocalDateTime.now())
+                    .build());
+
+            hypothesisEvidenceRepository.save(HypothesisEvidence.builder()
+                    .hypothesis(PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS)
+                    .hypothesisVersion(PROXY_PREDICTIVE_ACCURACY_HYPOTHESIS_VERSION)
+                    .subjectType("FAMILY")
+                    .subjectId(familyId)
+                    .measurementType("OUTCOME_SEVERITY_LEVEL")
+                    .measurementValue(aftermathScore.doubleValue())
+                    .instrument(parentKey)
+                    .instrumentVersion("1.2.0")
+                    .source(EvidenceSource.AUTOMATIC)
+                    .observedAt(observedAt != null ? observedAt : LocalDateTime.now())
+                    .build());
+        }
+    }
+
+    /**
+     * Efectos posteriores a la finalización (ADR-020, corte B). Cada efecto es un
+     * {@code PostFinalizationStep} ordenado por {@code @Order}; este servicio ya no
+     * conoce a los colaboradores cognitivos, de riesgo, de hito, de notificación ni
+     * de mensajería.
+     */
     private void processPostFinalization(Evaluation saved, RiskAlgoV1Engine.AlgoResult algo) {
-        String riskLevel = saved.getRiskLevel() != null ? saved.getRiskLevel() : "MODERADO";
-        try {
-            com.integrityfamily.domain.RiskSnapshot snapshot = riskService.calculateAndCreate(saved.getFamily(), saved.getIcf(), saved.getHasCrisis());
-            if (snapshot != null && snapshot.getRiskLevel() != null) {
-                riskLevel = snapshot.getRiskLevel();
-            }
-
-            // ── SINCRONIZACIÓN LONGITUDINAL ───────────────────────────────────
-            // Cada diagnóstico actualiza la memoria estructural de la familia.
-            // El Consultor IA usará este estado longitudinal en todas sus respuestas.
-            if (algo != null) {
-                // Con resultado completo de RiskAlgoV1 — incluye dimensiones
-                longitudinalStateService.syncFromSnapshot(
-                        saved.getFamily().getId(),
-                        saved.getIcf() != null ? saved.getIcf() : 50.0,
-                        riskLevel,
-                        algo.dimensionScores().getOrDefault("emociones",    50.0),
-                        algo.dimensionScores().getOrDefault("comunicacion", 50.0),
-                        algo.dimensionScores().getOrDefault("habitos",      50.0),
-                        algo.dimensionScores().getOrDefault("tiempos",      50.0)
-                );
-            } else {
-                // Sin dimensiones detalladas — sincroniza solo ICF y riesgo
-                longitudinalStateService.syncFromSnapshot(
-                        saved.getFamily().getId(),
-                        saved.getIcf() != null ? saved.getIcf() : 50.0,
-                        riskLevel, 50.0, 50.0, 50.0, 50.0
-                );
-            }
-            log.info("📊 [EVALUATION] Estado longitudinal sincronizado para familia {} | ICF={} | {}",
-                    saved.getFamily().getId(),
-                    String.format("%.1f", saved.getIcf() != null ? saved.getIcf() : 50.0),
-                    riskLevel);
-        } catch (Exception e) {
-            log.error("⚠️ [EVALUATION] Error al calcular instantánea de riesgo: {}", e.getMessage());
-        }
-
-        try {
-            milestoneService.advanceMilestone(saved.getFamily().getId());
-            log.info("🚀 [EVALUATION] Hito de la familia ID {} avanzado correctamente.", saved.getFamily().getId());
-        } catch (Exception e) {
-            log.warn("⚠️ [EVALUATION] Avance de hito omitido para la familia ID {} (No bloqueante para la evaluación): {}", 
-                    saved.getFamily().getId(), e.getMessage());
-        }
-
-        // Plan generation is triggered exclusively via the "evaluation.completed" RabbitMQ event
-        // published below (PLAN_QUEUE binding in RabbitConfig).  The direct synchronous call
-        // that used to live here caused double generation: once inline, once via the listener.
-        // The listener path is async and already has DLQ retry — no synchronous fallback needed.
-
-        // [DIAGNOSTICO CONSCIENTE] Generar misiones automáticas según rol del miembro
-        try {
-            planTaskService.generateTasksFromDiagnosis(saved);
-            log.info("🎯 [EVALUATION] Misiones automáticas de diagnóstico generadas.");
-        } catch (Exception e) {
-            log.error("⚠️ [EVALUATION] Error al generar misiones de diagnóstico: {}", e.getMessage());
-        }
-
-        // [MEMORIA COGNITIVA] Capturar episodio y consolidar patrón semántico
-        try {
-            familyMemoryService.captureEvaluationMemory(saved);
-            log.info("🧠 [EVALUATION] Memoria episódica capturada en el sistema cognitivo.");
-        } catch (Exception e) {
-            log.error("⚠️ [EVALUATION] Error al capturar memoria cognitiva: {}", e.getMessage());
-        }
-
-        // [SKILL ENGINE] Detectar patrones, aplicar skills y extraer nuevas habilidades
-        try {
-            FamilySkillEngine.SkillEngineResult result =
-                    familySkillEngine.analyze(saved.getFamily().getId(), saved);
-            if (result.hasNewSkill()) {
-                log.info("🌱 [EVALUATION] Nueva habilidad cognitiva extraída: '{}'",
-                        result.newSkillExtracted().getSkillName());
-            }
-            if (result.hasAppliedSkills()) {
-                log.info("⚙️ [EVALUATION] {} skills activadas para esta familia.",
-                        result.appliedSkills().size());
-            }
-        } catch (Exception e) {
-            log.error("⚠️ [EVALUATION] Error en motor de habilidades cognitivas: {}", e.getMessage());
-        }
-
-        // [GRAFO DE IDENTIDAD] Actualizar dinámicas relacionales entre miembros
-        try {
-            FamilyIdentityGraphService.GraphSnapshot graph =
-                    familyIdentityGraphService.updateGraph(saved.getFamily().getId(), saved);
-            log.info("🕸️ [EVALUATION] Grafo de identidad actualizado. Díadas: {} | Cohesión: {} | Conflictos: {}",
-                    graph.totalDyads(), String.format("%.1f", graph.cohesionDensity()), graph.conflictiveEdges());
-        } catch (Exception e) {
-            log.error("⚠️ [EVALUATION] Error en grafo de identidad: {}", e.getMessage());
-        }
-
-        // [NARRATIVA] Evolucionar la historia familiar y detectar puntos de inflexión
-        try {
-            NarrativeEvolutionEngine.NarrativeSnapshot narrative =
-                    narrativeEvolutionEngine.evolve(saved.getFamily().getId(), saved);
-            log.info("📖 [EVALUATION] Narrativa evolucionada. Capítulo #{}: '{}' | Fase: {} | Turning point: {}",
-                    narrative.currentChapter() != null ? narrative.currentChapter().getChapterNumber() : 1,
-                    narrative.currentChapter() != null ? narrative.currentChapter().getTitle() : "—",
-                    narrative.currentPhase(),
-                    narrative.turningPointDetected());
-        } catch (Exception e) {
-            log.error("⚠️ [EVALUATION] Error en motor narrativo: {}", e.getMessage());
-        }
-
-        // [REFLEXIÓN AUTÓNOMA] Autoevaluación del sistema sobre efectividad de intervenciones
-        try {
-            FamilyReflectionService.ReflectionReport report =
-                    familyReflectionService.reflect(saved.getFamily().getId());
-            log.info("🪞 [EVALUATION] Reflexión autónoma completada. Efectividad: {} | Abandono: {}",
-                    report.effectiveness().level(), report.abandonmentRisk().level());
-        } catch (Exception e) {
-            log.error("⚠️ [EVALUATION] Error en reflexión autónoma: {}", e.getMessage());
-        }
-
-        // [ANALYTICS] Análisis de Progreso Longitudinal (Rediseño 6.6)
-        try {
-            familyProgressAnalyticsService.analyzeProgress(saved.getId());
-            log.info("📊 [EVALUATION] Análisis de progreso completado y snapshot guardado.");
-        } catch (Exception e) {
-            log.error("⚠️ [EVALUATION] Error al analizar el progreso: {}", e.getMessage());
-        }
-
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("evaluationId", saved.getId());
-        payload.put("icf", saved.getIcf());
-        payload.put("familyId", saved.getFamily().getId());
-        payload.put("riskLevel", riskLevel);
-
-        com.integrityfamily.common.event.SystemEvent eventObj = 
-            com.integrityfamily.common.event.SystemEvent.of(
-                "evaluation.completed", 
-                saved.getFamily().getId(), 
-                payload, 
-                "SYSTEM"
-            );
-
-        // Notificar a la familia que el diagnóstico está listo
-        try {
-            String riskLabel = switch (riskLevel) {
-                case "BAJO"     -> "Bajo ✅";
-                case "MODERADO" -> "Moderado ⚠️";
-                case "ALTO"     -> "Alto 🔶";
-                case "CRITICO"  -> "Crítico 🔴";
-                default         -> riskLevel;
-            };
-            userNotificationService.push(
-                saved.getFamily(), null,
-                "EVALUATION_DONE",
-                "Diagnóstico completado 📊",
-                String.format("ICF: %.1f | Riesgo: %s | Hito: %s. Revisa tu evolución en el panel clínico.",
-                    saved.getIcf() != null ? saved.getIcf() : 0.0,
-                    riskLabel,
-                    saved.getMilestoneKey() != null ? saved.getMilestoneKey() : "—")
-            );
-        } catch (Exception e) {
-            log.warn("[EVALUATION] Error al crear notificación de diagnóstico: {}", e.getMessage());
-        }
-
-        try {
-            rabbitTemplate.convertAndSend(com.integrityfamily.common.config.RabbitConfig.EXCHANGE_NAME, "evaluation.completed", eventObj);
-            log.info("📧 [EVALUATION] Evento 'evaluation.completed' enviado para familia: {} con riesgo: {}", 
-                    saved.getFamily().getId(), riskLevel);
-        } catch (Exception e) {
-            log.error("❌ [EVALUATION] Error al publicar evento 'evaluation.completed' a RabbitMQ (resiliencia activada): {}", e.getMessage());
-        }
+        postFinalizationPipeline.run(new PostFinalizationContext(saved, algo));
     }
 
     @Transactional

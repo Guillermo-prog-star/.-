@@ -85,6 +85,8 @@ maven_build_error.log
 
 # === Claude Code / AI Sessions ===
 .claude/
+.codex/
+AGENTS.md
 
 # === Python Artifacts ===
 **/__pycache__/
@@ -93,3 +95,7 @@ maven_build_error.log
 
 # MySQL backups (no versionar dumps)
 backups/
+
+# Scripts locales de arranque (contienen secretos de dev inline)
+start-backend.bat
+backend/start-backend.bat

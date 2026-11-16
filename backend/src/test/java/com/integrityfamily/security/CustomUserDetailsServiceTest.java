@@ -110,6 +110,33 @@ class CustomUserDetailsServiceTest {
         }
 
         @Test
+        @DisplayName("Usuario con múltiples roles (ej. USER + THERAPIST) → una authority por rol, no un string unido por comas")
+        void shouldHaveOneAuthorityPerRole_whenUserHasMultipleRoles() {
+            User multiRoleUser = User.builder()
+                    .id(1L)
+                    .email("profesional@integrityfamily.com")
+                    .passwordHash("$2a$10$hashedpassword")
+                    .fullName("Profesional Multi-Rol")
+                    .enabled(true)
+                    .roles(List.of(
+                            Role.builder().id(1L).name("ROLE_USER").build(),
+                            Role.builder().id(2L).name("ROLE_THERAPIST").build()))
+                    .build();
+            when(userRepository.findByEmailIgnoreCase("profesional@integrityfamily.com"))
+                    .thenReturn(Optional.of(multiRoleUser));
+
+            UserDetails details = service.loadUserByUsername("profesional@integrityfamily.com");
+
+            // Regresión: antes se generaba una sola authority "ROLE_USER,ROLE_THERAPIST"
+            // (via User.getRole(), un string unido por comas), que nunca coincidía con
+            // hasRole("THERAPIST") ni con ningún rol individual -- bloqueando a todo
+            // usuario multi-rol de cualquier endpoint con @PreAuthorize.
+            assertThat(details.getAuthorities())
+                    .extracting("authority")
+                    .containsExactlyInAnyOrder("ROLE_USER", "ROLE_THERAPIST");
+        }
+
+        @Test
         @DisplayName("Usuario activo no bloqueado → isAccountNonLocked() = true")
         void shouldBeNonLocked_whenNotLocked() {
             when(userRepository.findByEmailIgnoreCase("william@integrityfamily.com"))

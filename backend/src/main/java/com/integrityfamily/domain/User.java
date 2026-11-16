@@ -81,6 +81,6 @@ public class User {
         if (roles == null || roles.isEmpty()) {
             return "ROLE_USER";
         }
-        return roles.get(0).getName();
+        return String.join(",", roles.stream().map(Role::getName).toList());
     }
 }

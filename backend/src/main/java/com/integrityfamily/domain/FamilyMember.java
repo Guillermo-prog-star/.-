@@ -43,6 +43,7 @@ public class FamilyMember {
     private String email;
 
     @Column
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private String password;
 
     private String phone;
@@ -53,6 +54,19 @@ public class FamilyMember {
 
     @Column(name = "birth_date")
     private LocalDate birthDate;
+
+    /**
+     * Tipo de documento de identidad (CC, TI, RC, CE, PA, NUIP, PEP...).
+     * Ancla de identidad para interoperabilidad (FHIR Patient.identifier / MPI).
+     * Se deja como texto libre a propósito: el catálogo de tipos varía por
+     * institución y la codificación formal es responsabilidad de la capa de
+     * interoperabilidad (interop), no del dominio.
+     */
+    @Column(name = "document_type", length = 20)
+    private String documentType;
+
+    @Column(name = "document_number", length = 30)
+    private String documentNumber;
 
     @Builder.Default
     @Column(nullable = false)

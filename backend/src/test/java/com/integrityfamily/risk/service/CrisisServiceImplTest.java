@@ -301,18 +301,18 @@ class CrisisServiceImplTest {
         @Test
         @DisplayName("sin crisis → lista vacía")
         void noHistory_emptyList() {
-            when(repository.findByFamilyIdOrderByCreatedAtDesc(FAM_ID)).thenReturn(List.of());
+            when(repository.findVisibleToMember(FAM_ID, null)).thenReturn(List.of());
 
-            assertThat(service.getHistory(FAM_ID)).isEmpty();
+            assertThat(service.getHistory(FAM_ID, null)).isEmpty();
         }
 
         @Test
         @DisplayName("con crisis → retorna lista del repo")
         void withHistory_returnsList() {
             CriticalDay cd = CriticalDay.builder().id(1L).familyId(FAM_ID).build();
-            when(repository.findByFamilyIdOrderByCreatedAtDesc(FAM_ID)).thenReturn(List.of(cd));
+            when(repository.findVisibleToMember(FAM_ID, null)).thenReturn(List.of(cd));
 
-            assertThat(service.getHistory(FAM_ID)).hasSize(1);
+            assertThat(service.getHistory(FAM_ID, null)).hasSize(1);
         }
     }
 

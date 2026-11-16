@@ -11,5 +11,6 @@ public interface MemberRepository extends JpaRepository<FamilyMember, Long> {
     List<FamilyMember> findByFamilyId(Long familyId);
     long countByFamilyId(Long familyId);
     Optional<FamilyMember> findByEmail(String email);
+    Optional<FamilyMember> findByEmailIgnoreCase(String email);
     boolean existsByEmail(String email);
 }

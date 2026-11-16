@@ -4,6 +4,7 @@ import com.integrityfamily.common.dto.ApiResponse;
 import com.integrityfamily.participation.dto.ParticipationPulseResponse;
 import com.integrityfamily.participation.service.ParticipationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,7 @@ public class ParticipationController {
 
     private final ParticipationService participationService;
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @GetMapping("/pulse")
     public ApiResponse<ParticipationPulseResponse> getPulse(@PathVariable Long familyId) {
         return ApiResponse.ok(participationService.getPulse(familyId));

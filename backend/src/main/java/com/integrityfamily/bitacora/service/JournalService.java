@@ -31,6 +31,7 @@ public class JournalService {
     private final ReflectionRepository reflectionRepository;
     private final LearningEntryRepository learningEntryRepository;
     private final JournalEntryRepository journalEntryRepository;
+    private final MemberRepository memberRepository;
     private final EventPublisher eventPublisher;
 
     @Transactional
@@ -129,10 +130,17 @@ public class JournalService {
     }
 
     @Transactional
-    public JournalEntry createJournal(JournalCreateRequest req) {
+    public JournalEntry createJournal(JournalCreateRequest req, Long authorMemberId) {
         log.info("📖 [JOURNAL] Registrando entrada de bitácora para familia ID: {}", req.familyId());
         Family family = familyRepository.findById(req.familyId())
                 .orElseThrow(() -> new BusinessException("Familia no encontrada: " + req.familyId(), "FAMILY_NOT_FOUND", HttpStatus.NOT_FOUND));
+
+        // Autor real resuelto del principal autenticado (ADR-012), nunca del
+        // cuerpo de la petición -- evita que un miembro firme una entrada
+        // como si fuera de otro.
+        FamilyMember author = authorMemberId != null
+                ? memberRepository.findById(authorMemberId).orElse(null)
+                : null;
 
         PlanTask task = null;
         if (req.relatedTaskId() != null) {
@@ -148,6 +156,7 @@ public class JournalService {
 
         JournalEntry journal = JournalEntry.builder()
                 .family(family)
+                .member(author)
                 .origin(origin)
                 .riskDimension(req.riskDimension())
                 .emotion(req.emotion())
@@ -158,6 +167,12 @@ public class JournalService {
                 .reflection(req.reflection())
                 .learning(req.learning())
                 .observations(req.observations())
+                .interpretation(req.interpretation())
+                .alternativeExplanation(req.alternativeExplanation())
+                .bodySignal(req.bodySignal())
+                .explicitResponses(writeExplicitResponses(req.explicitResponses()))
+                .visibility(req.visibility() != null ? req.visibility() : EntryVisibility.PRIVATE)
+                .perceivedEventKey(validatePerceivedEventKey(req.perceivedEventKey()))
                 .status(JournalStatus.ACTIVE)
                 .createdAt(LocalDateTime.now())
                 .build();
@@ -171,6 +186,55 @@ public class JournalService {
                 req.emotion(), req.moodAfter(), req.complianceStatus());
 
         return saved;
+    }
+
+    private static final com.fasterxml.jackson.databind.ObjectMapper JSON = new com.fasterxml.jackson.databind.ObjectMapper();
+    private static final int PERCEIVED_EVENT_KEY_MAX = 64;
+
+    /**
+     * Serializa las respuestas explícitas (ADR-018 Amendment 3). Vacío o null -> null
+     * (no respondido). NOT_HELPFUL solo se acepta en los pasos de comprobar y revisar.
+     */
+    static String writeExplicitResponses(Map<JournalStep, ExplicitResponse> responses) {
+        if (responses == null) return null;
+        Map<JournalStep, ExplicitResponse> clean = new EnumMap<>(JournalStep.class);
+        responses.forEach((step, response) -> {
+            if (step == null || response == null) return;
+            if (response == ExplicitResponse.NOT_HELPFUL && !step.allowsNotHelpful()) {
+                throw new BusinessException(
+                        "\"No funcionó\" solo aplica a los pasos de comprobar y revisar, no a " + step + ".",
+                        "INVALID_EXPLICIT_RESPONSE", HttpStatus.BAD_REQUEST);
+            }
+            clean.put(step, response);
+        });
+        if (clean.isEmpty()) return null;
+        try {
+            return JSON.writeValueAsString(clean);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalStateException("No se pudieron serializar las respuestas explícitas", e);
+        }
+    }
+
+    /** Lee {@code explicit_responses}; null o JSON ilegible -> mapa vacío. */
+    public static Map<JournalStep, ExplicitResponse> readExplicitResponses(JournalEntry entry) {
+        if (entry == null || entry.getExplicitResponses() == null) return Map.of();
+        try {
+            return JSON.readValue(entry.getExplicitResponses(),
+                    new com.fasterxml.jackson.core.type.TypeReference<EnumMap<JournalStep, ExplicitResponse>>() {});
+        } catch (Exception e) {
+            log.warn("[JOURNAL] explicit_responses ilegible en entrada {}: {}", entry.getId(), e.getMessage());
+            return Map.of();
+        }
+    }
+
+    private static String validatePerceivedEventKey(String key) {
+        if (key == null || key.isBlank()) return null;
+        String trimmed = key.trim();
+        if (trimmed.length() > PERCEIVED_EVENT_KEY_MAX) {
+            throw new BusinessException("perceivedEventKey no puede superar " + PERCEIVED_EVENT_KEY_MAX + " caracteres.",
+                    "INVALID_PERCEIVED_EVENT_KEY", HttpStatus.BAD_REQUEST);
+        }
+        return trimmed;
     }
 
     /**
@@ -211,7 +275,7 @@ public class JournalService {
     }
 
     @Transactional(readOnly = true)
-    public List<TimelineEntryDto> getTimeline(Long familyId) {
+    public List<TimelineEntryDto> getTimeline(Long familyId, Long viewerMemberId) {
         List<TimelineEntryDto> timeline = new ArrayList<>();
 
         // Evidencias
@@ -255,8 +319,9 @@ public class JournalService {
                     .build());
         }
 
-        // Bitácoras
-        List<JournalEntry> journals = journalEntryRepository.findByFamilyIdOrderByCreatedAtDesc(familyId);
+        // Bitácoras — filtradas por visibilidad (ADR-012): un miembro no ve
+        // las entradas PRIVATE de otro.
+        List<JournalEntry> journals = journalEntryRepository.findVisibleToMember(familyId, viewerMemberId);
         for (JournalEntry j : journals) {
             timeline.add(TimelineEntryDto.builder()
                     .entryType("JOURNAL")

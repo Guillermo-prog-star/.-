@@ -16,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
-import org.springframework.transaction.annotation.Transactional;
 import java.security.Principal;
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +38,6 @@ public class FamilyController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    @Transactional(readOnly = true)
     public ApiResponse<List<FamilyResponse>> getAll() {
         return ApiResponse.ok(familyService.findAll());
     }
@@ -49,7 +47,6 @@ public class FamilyController {
      * Devuelve 404 si no tiene familia, para que el cliente muestre el formulario de creación.
      */
     @GetMapping("/mine")
-    @Transactional(readOnly = true)
     public ApiResponse<FamilyResponse> getMyFamily(Principal principal) {
         if (principal == null) {
             throw new BusinessException("No autenticado", "UNAUTHORIZED", HttpStatus.UNAUTHORIZED);
@@ -93,7 +90,6 @@ public class FamilyController {
 
     @GetMapping("/{id}/journey")
     @PreAuthorize("@familySecurity.check(#id)")
-    @Transactional(readOnly = true)
     public ApiResponse<FamilyJourneyResponse> getJourney(@PathVariable Long id) {
         return ApiResponse.ok(journeyService.evaluate(id));
     }
@@ -106,7 +102,6 @@ public class FamilyController {
 
     @GetMapping("/{id}/journey/history")
     @PreAuthorize("@familySecurity.check(#id)")
-    @Transactional(readOnly = true)
     public ApiResponse<JourneyHistoryResponse> getJourneyHistory(@PathVariable Long id) {
         return ApiResponse.ok(historyService.getHistory(id));
     }

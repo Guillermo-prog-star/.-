@@ -37,6 +37,11 @@ public class PromptGenerator {
         1. Si detectas ideación suicida, violencia física inminente o abuso, prioriza números de emergencia y contención inmediata antes de cualquier otra respuesta.
         2. No proporciones consejos médicos o legales vinculantes.
         3. Mantén siempre un tono empático, protector y de calma ante situaciones de alta tensión.
+        4. No adjudiques intenciones a otro miembro de la familia ("lo hace para molestarte", "no le importa"). Puedes ayudar a distinguir lo ocurrido de lo interpretado y sugerir preguntarle directamente.
+        5. Si hay versiones distintas de un mismo episodio, no decidas cuál es la verdadera sin evidencia: reconoce cada perspectiva y señala qué información falta.
+        6. No conviertas una interpretación, ni tuya ni del usuario, en un diagnóstico de la persona o de la familia.
+        7. Si el usuario relata un insulto, una amenaza o una agresión, NO lo trates como un error de interpretación ("no es el insulto, es tu interpretación"). Cada persona responde por su conducta: valida el daño y prioriza la protección (regla 1) antes de cualquier ejercicio de reflexión.
+        8. No infieras estados cerebrales, hormonales ni fisiológicos (cortisol, "tu amígdala", etc.) a partir de un relato, ni presentes la calma como prueba de que algo salió bien.
         </safety_rules>
         """;
 
@@ -61,7 +66,7 @@ public class PromptGenerator {
     public String buildPrompt(String userMessage, AiContext context) {
         if (context == null) {
             log.warn("[PROMPT] Contexto NULL para: {}", userMessage);
-            return String.format("%s\n\n<user_input>%s</user_input>", MENTOR_IDENTITY, userMessage);
+            return String.format("%s\n%s\n\n<user_input>%s</user_input>", MENTOR_IDENTITY, SAFETY_RULES, userMessage);
         }
 
         if (context.activeMember() != null && context.activeMember().isGuardian()) {
@@ -763,12 +768,23 @@ public class PromptGenerator {
 
             {
               "themes": ["máximo 3 temas observados"],
-              "emotionalSummary": "1-2 oraciones sobre el estado emocional del miembro",
-              "memberState": "OPEN | STRUGGLING | IMPROVING | RESISTANT | NEUTRAL",
+              "emotionalSummary": "1-2 oraciones sobre lo que el miembro expresó sentir, cerca de sus propias palabras",
+              "sessionTone": "EXPLORATORY | DIFFICULT | PROGRESS_REPORTED | BRIEF | NEUTRAL",
               "progressSignals": ["señal positiva o de riesgo observada, puede ser []"],
               "recommendedFollowUp": "una microacción de seguimiento para la próxima sesión, o null",
               "importanceScore": 0.1-1.0
             }
+
+            Describe la CONVERSACIÓN, no a la persona (ADR-018):
+            - No atribuyas rasgos, intenciones ni "resistencia" al miembro ni a otros familiares.
+            - Una sola conversación no basta para caracterizar a nadie.
+
+            Criterio de sessionTone (describe la sesión, no al miembro):
+            - EXPLORATORY: la conversación exploró un tema o pregunta abierta
+            - DIFFICULT: se habló de algo que el miembro expresó como doloroso o difícil
+            - PROGRESS_REPORTED: el miembro relató un avance o un logro
+            - BRIEF: conversación muy corta para sacar conclusiones
+            - NEUTRAL: ninguno de los anteriores
 
             Criterio de importanceScore:
             - 0.9-1.0: señales de crisis o breakthrough transformador
@@ -845,6 +861,39 @@ public class PromptGenerator {
 
     public String buildDashboardInsightPrompt(com.integrityfamily.domain.Family family, java.util.Map<String, Double> dimensions, String riskLevel) {
         try {
+            // Sin dimensiones aún = familia que no ha completado su primera evaluación,
+            // no una "falla" a auditar. El prompt original no distinguía este caso y el
+            // modelo interpretaba la ausencia de datos como una señal de alarma por su
+            // cuenta ("ceguera diagnóstica... urgente") incluso con Nivel de Riesgo=LOW,
+            // violando "el ICF nunca etiqueta" de vision.md (ver ADR-002, action item 7).
+            if (dimensions == null || dimensions.isEmpty()) {
+                return String.format("""
+                    <system_identity>
+                    Eres un acompañante cálido de Integrity Family, dando la bienvenida a una familia que apenas comienza.
+                    </system_identity>
+
+                    <context_input>
+                    Familia: %s
+                    Hito Actual: %s
+                    </context_input>
+
+                    <task_instruction>
+                    Esta familia todavía no ha completado ninguna evaluación — no hay nada que diagnosticar ni ninguna falla que señalar.
+                    Escribe un mensaje breve de bienvenida que invite a dar el primer paso (su primera sesión de diagnóstico), sin mencionar riesgo, alertas ni urgencia.
+                    </task_instruction>
+
+                    <output_constraints>
+                    - Máximo 1 párrafo corto.
+                    - Sin viñetas, sin lenguaje clínico o de alarma.
+                    - Idioma: Español.
+                    - No uses introducciones como "Hola" o "Como IA...". Ve directo al grano.
+                    </output_constraints>
+                    """,
+                    family.getName(),
+                    family.getCurrentMilestone()
+                );
+            }
+
             String dimensionsJson = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(dimensions);
 
             return String.format("""
@@ -1359,6 +1408,7 @@ public class PromptGenerator {
                              "duration_minutes": 20,
                              "participants": ["PADRE", "MADRE", "HIJO"],
                              "evidence_type": "PHOTO | TEXT | AUDIO",
+                             "success_indicator": "Terminado cuando: algo observable que la familia pueda reconocer (ej: 'cenamos juntos sin celulares al menos una vez'). Nunca 'completar la acción' ni un estado interno ('se sintieron conectados')",
                              "fase": "RECONOCIMIENTO | AMOR | ENTREGA",
                              "dimension": "EMOCIONES | COMUNICACION | HABITOS | TIEMPOS",
                              "pillar_name": "reconocimiento | amor | entrega",

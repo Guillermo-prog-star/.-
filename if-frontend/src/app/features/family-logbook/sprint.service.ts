@@ -9,6 +9,7 @@ import {
   SprintResponse,
   SprintDailyResponse
 } from './sprint.model';
+import { MissionStatus } from '../../../domain/constants/missionStatusDomain';
 
 @Injectable({
   providedIn: 'root'
@@ -39,6 +40,12 @@ export class SprintService {
 
   toggleMission(sprintId: number, missionId: number): Observable<SprintResponse> {
     return this.http.put<any>(`${this.baseUrl}/${sprintId}/missions/${missionId}/toggle`, {}).pipe(
+      map(res => res.data)
+    );
+  }
+
+  setMissionStatus(sprintId: number, missionId: number, status: MissionStatus): Observable<SprintResponse> {
+    return this.http.put<any>(`${this.baseUrl}/${sprintId}/missions/${missionId}/status`, { status }).pipe(
       map(res => res.data)
     );
   }

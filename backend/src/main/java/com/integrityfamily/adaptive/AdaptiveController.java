@@ -4,6 +4,7 @@ import com.integrityfamily.common.dto.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,18 +22,21 @@ public class AdaptiveController {
 
     private final AdaptivePlanService adaptivePlanService;
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @GetMapping("/families/{familyId}/adaptive/adjustments")
     @Operation(summary = "Listar ajustes adaptativos de la familia", description = "Devuelve todos los ajustes adaptativos ordenados por fecha descendente.")
     public ApiResponse<List<AdaptiveAdjustmentEntity>> listAdjustments(@PathVariable Long familyId) {
         return ApiResponse.ok(adaptivePlanService.listForFamily(familyId));
     }
 
+    @PreAuthorize("@familySecurity.check(#familyId)")
     @PostMapping("/families/{familyId}/adaptive/evaluate")
     @Operation(summary = "Evaluar métricas y proponer ajustes", description = "Construye el contexto real de la familia y devuelve las propuestas guardadas en adaptive_adjustments con estado PROPOSED.")
     public ApiResponse<List<AdaptiveAdjustmentEntity>> evaluateAdaptive(@PathVariable Long familyId) {
         return ApiResponse.ok(adaptivePlanService.evaluateAndProposeForFamily(familyId));
     }
 
+    @PreAuthorize("@familySecurity.checkAdjustment(#adjustmentId)")
     @PostMapping("/adaptive-adjustments/{adjustmentId}/approve")
     @Operation(summary = "Aprobar ajuste propuesto", description = "Pasa un ajuste de PROPOSED a APPROVED, registrando la auditoría en la Bitácora.")
     public ApiResponse<AdaptiveAdjustmentEntity> approveAdjustment(
@@ -41,6 +45,7 @@ public class AdaptiveController {
         return ApiResponse.ok(adaptivePlanService.approveAdjustment(adjustmentId, approvedBy));
     }
 
+    @PreAuthorize("@familySecurity.checkAdjustment(#adjustmentId)")
     @PostMapping("/adaptive-adjustments/{adjustmentId}/apply")
     @Operation(summary = "Aplicar mutaciones de ajuste", description = "Ejecuta las mutaciones específicas sobre PlanTask (espaciamiento, misiones introductorias o de escucha) y deja entrada automática en Bitácora.")
     public ApiResponse<AdaptiveAdjustmentEntity> applyAdjustment(
@@ -48,6 +53,7 @@ public class AdaptiveController {
         return ApiResponse.ok(adaptivePlanService.applyAdjustment(adjustmentId));
     }
 
+    @PreAuthorize("@familySecurity.checkAdjustment(#adjustmentId)")
     @PostMapping("/adaptive-adjustments/{adjustmentId}/reject")
     @Operation(summary = "Rechazar ajuste propuesto", description = "Marca el ajuste como REJECTED sin aplicar cambios al plan.")
     public ApiResponse<AdaptiveAdjustmentEntity> rejectAdjustment(

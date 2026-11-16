@@ -19,7 +19,7 @@ const API_BASE   = '/api';
 function buildComponent(signalFamilyId = FAMILY_ID) {
   const familyStateSpy = jasmine.createSpyObj<FamilyStateService>(
     'FamilyStateService', [],
-    { currentFamilyId: signal(signalFamilyId) }
+    { currentFamilyId: signal(signalFamilyId), currentFamilyCode: signal('CODE123'), currentFamilyName: signal('Familia Test') }
   );
   const telemetrySpy = jasmine.createSpyObj<TelemetryService>(
     'TelemetryService', ['logEvent']
@@ -65,6 +65,9 @@ function flushInit(
   // Secondary call: loadFamilyEvidences() triggered after plans arrive
   httpMock.expectOne(`${API_BASE}/evidences/family/${familyId}`)
     .flush({ data: [] });
+  // syncSprintDesdeBackend() — SprintService.getActiveSprint()
+  httpMock.expectOne(r => r.url === '/api/sprints/active')
+    .flush({ data: null });
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

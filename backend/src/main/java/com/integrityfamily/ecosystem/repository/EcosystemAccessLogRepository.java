@@ -8,4 +8,5 @@ import java.util.List;
 public interface EcosystemAccessLogRepository extends JpaRepository<EcosystemAccessLog, Long> {
     List<EcosystemAccessLog> findByFamilyIdOrderByCreatedAtDesc(Long familyId);
     List<EcosystemAccessLog> findByLinkIdOrderByCreatedAtDesc(Long linkId);
+    List<EcosystemAccessLog> findByLinkIdAndFamilyIdOrderByCreatedAtDesc(Long linkId, Long familyId);
 }

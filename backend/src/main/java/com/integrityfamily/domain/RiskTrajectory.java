@@ -39,6 +39,12 @@ public class RiskTrajectory {
     @Column(name = "severity_default", nullable = false, length = 20)
     private String severityDefault;
 
+    @Column(name = "requires_safety_protocol", nullable = false)
+    private Boolean requiresSafetyProtocol;
+
+    @Column(name = "contextual_criticality_rule", columnDefinition = "TEXT")
+    private String contextualCriticalityRule;
+
     @Column(nullable = false)
     private Boolean active;
 
@@ -49,5 +55,6 @@ public class RiskTrajectory {
     public void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
         if (active == null) active = true;
+        if (requiresSafetyProtocol == null) requiresSafetyProtocol = false;
     }
 }

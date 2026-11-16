@@ -1,9 +1,16 @@
 import { Injectable, signal, computed, inject, effect } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { interval, switchMap, catchError, of, lastValueFrom } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from './auth.service';
 import { ApiService } from './api.service';
+import { SILENT_ON_401 } from '../interceptors/silent-request.token';
+
+// Este polling de fondo (providedIn:'root', vive toda la sesión de la SPA)
+// no debe poder expulsar al usuario al login si una request en vuelo con
+// un token viejo resuelve en 401 después de un login fresco -- ver
+// silent-request.token.ts.
+const SILENT_CONTEXT = new HttpContext().set(SILENT_ON_401, true);
 
 @Injectable({ providedIn: 'root' })
 export class SentinelCoreService {
@@ -59,7 +66,7 @@ export class SentinelCoreService {
     interval(15000)
       .pipe(
         takeUntilDestroyed(),
-        switchMap(() => this.http.get<any>(`${this.api.base}/admin/analytics/alerts`).pipe(
+        switchMap(() => this.http.get<any>(`${this.api.base}/admin/analytics/alerts`, { context: SILENT_CONTEXT }).pipe(
           catchError(() => of({ data: [] }))
         ))
       )
@@ -78,9 +85,9 @@ export class SentinelCoreService {
     this._loading.set(true);
     try {
       // Uso de lastValueFrom para cumplimiento de estandares RxJS modernos en promesas
-      const statsReq = lastValueFrom(this.http.get<any>(`${this.api.base}/admin/analytics/alpha-stats`));
-      const alertsReq = lastValueFrom(this.http.get<any>(`${this.api.base}/admin/analytics/alerts`));
-      const sentimentReq = lastValueFrom(this.http.get<any>(`${this.api.base}/admin/analytics/sentiment`));
+      const statsReq = lastValueFrom(this.http.get<any>(`${this.api.base}/admin/analytics/alpha-stats`, { context: SILENT_CONTEXT }));
+      const alertsReq = lastValueFrom(this.http.get<any>(`${this.api.base}/admin/analytics/alerts`, { context: SILENT_CONTEXT }));
+      const sentimentReq = lastValueFrom(this.http.get<any>(`${this.api.base}/admin/analytics/sentiment`, { context: SILENT_CONTEXT }));
 
       const [s, a, sen] = await Promise.all([statsReq, alertsReq, sentimentReq]);
 

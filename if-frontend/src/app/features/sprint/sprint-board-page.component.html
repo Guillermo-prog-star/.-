@@ -96,17 +96,32 @@
             <div class="sb-progress-fill" [style.width.%]="missionPct()"></div>
           </div>
           <span class="sb-progress-text">{{ completedMissions() }}/{{ totalMissions() }} misiones</span>
+          <span class="sb-progress-text" *ngIf="missionCounts().changed || missionCounts().postponed">
+            · {{ missionCounts().changed }} cambiadas por acuerdo · {{ missionCounts().postponed }} pospuestas (no son incumplimiento)
+          </span>
         </div>
 
         <!-- Lista de misiones -->
         <ul class="sb-missions">
           <li *ngFor="let m of s.missions; trackBy: trackByMission"
-              class="sb-mission" [class.done]="m.status === 'COMPLETADA'"
+              class="sb-mission" [class.done]="m.status === 'COMPLETED'"
               (click)="s.status === 'ACTIVE' && toggle(m.id)">
-            <div class="sb-check-box" [class.checked]="m.status === 'COMPLETADA'">
-              <ng-container *ngIf="m.status === 'COMPLETADA'">✓</ng-container>
+            <div class="sb-check-box" [class.checked]="m.status === 'COMPLETED'">
+              <ng-container *ngIf="m.status === 'COMPLETED'">✓</ng-container>
             </div>
             <span class="sb-mission-text">{{ m.description }}</span>
+            <span *ngIf="m.status === 'CHANGED_BY_AGREEMENT' || m.status === 'POSTPONED'" class="sb-mission-date">
+              {{ missionStatusText[m.status] }}
+            </span>
+            <ng-container *ngIf="s.status === 'ACTIVE' && m.status !== 'COMPLETED'">
+              <ng-container *ngIf="m.status === 'PENDING'; else backToPending">
+                <button type="button" class="sb-mission-date" (click)="setStatus(m.id, 'CHANGED_BY_AGREEMENT', $event)">Cambió por acuerdo</button>
+                <button type="button" class="sb-mission-date" (click)="setStatus(m.id, 'POSTPONED', $event)">Posponer</button>
+              </ng-container>
+              <ng-template #backToPending>
+                <button type="button" class="sb-mission-date" (click)="setStatus(m.id, 'PENDING', $event)">Volver a pendiente</button>
+              </ng-template>
+            </ng-container>
             <span *ngIf="m.completedAt" class="sb-mission-date">
               {{ m.completedAt | date:'d MMM':'':'es-CO' }}
             </span>
@@ -192,6 +207,13 @@
             <option value="REGULAR">😐 Regular</option>
             <option value="MAL">😔 Mal</option>
             <option value="MUY_MAL">😢 Muy mal</option>
+          </select>
+        </div>
+        <div class="sb-field">
+          <label>Ayer, con la práctica del sprint… (opcional)</label>
+          <select [(ngModel)]="dailyAttempt">
+            <option value="">Prefiero no indicarlo</option>
+            <option *ngFor="let opt of attemptStatusOptions" [value]="opt.value">{{ opt.text }}</option>
           </select>
         </div>
         <div class="sb-field">

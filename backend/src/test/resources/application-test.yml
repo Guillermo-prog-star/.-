@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;NON_KEYWORDS=WHEN
     driver-class-name: org.h2.Driver
     username: sa
     password:
@@ -10,3 +10,12 @@ spring:
     show-sql: false
   flyway:
     enabled: false
+
+integrity:
+  security:
+    jwt:
+      # application.yml ya no trae default; los tests de contexto lo necesitan explicito.
+      secret: dGVzdC1vbmx5LWp3dC1zZWNyZXQtaW50ZWdyaXR5LWZhbWlseS1taW4tMzItYnl0ZXM=
+      expiration-ms: 86400000
+    family-home:
+      id-secret: test-only-family-home-id-secret-not-for-production-use

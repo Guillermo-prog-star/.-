@@ -287,11 +287,11 @@ class IcafDomainResolverTest {
 
         @ParameterizedTest(name = "consciousnessLevel={0} → base={1}")
         @CsvSource({
-            "1, 90.0",
-            "2, 75.0",
+            "1, 25.0",
+            "2, 40.0",
             "3, 60.0",
-            "4, 40.0",
-            "5, 25.0"
+            "4, 75.0",
+            "5, 90.0"
         })
         @DisplayName("base según consciousnessLevel (sin inactividad)")
         void baseByLevel(int level, double expected) {
@@ -308,7 +308,7 @@ class IcafDomainResolverTest {
         }
 
         @Test
-        @DisplayName("descuento por inactividad: 10 días con level=1 → 90 - 20 = 70")
+        @DisplayName("descuento por inactividad: 10 días con level=1 → 25 - 20 = 5")
         void inactivityDiscount() {
             FamilyLongitudinalState s = stateWith(60.0);
             s.setConsciousnessLevel(1);
@@ -319,22 +319,22 @@ class IcafDomainResolverTest {
 
             IcafDomains d = resolver.resolve(FAM_ID);
 
-            assertThat(d.integracion()).isCloseTo(70.0, within(0.01));
+            assertThat(d.integracion()).isCloseTo(5.0, within(0.01));
         }
 
         @Test
-        @DisplayName("descuento máximo de inactividad: 30 días level=2 → 75 - 30 = 45")
+        @DisplayName("descuento máximo de inactividad: 20 días level=2 → 40 - 30(cap) = 10")
         void inactivityMaxCap() {
             FamilyLongitudinalState s = stateWith(60.0);
             s.setConsciousnessLevel(2);
-            s.setInactivityDays(20); // 20*2=40 → cap a 30 → 75-30=45
+            s.setInactivityDays(20); // 20*2=40 → cap a 30 → 40-30=10
             when(longitudinalRepo.findByFamilyId(FAM_ID)).thenReturn(Optional.of(s));
             stubNoAnswers();
             stubResiliencia(50.0);
 
             IcafDomains d = resolver.resolve(FAM_ID);
 
-            assertThat(d.integracion()).isCloseTo(45.0, within(0.01));
+            assertThat(d.integracion()).isCloseTo(10.0, within(0.01));
         }
 
         @Test

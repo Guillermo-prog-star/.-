@@ -21,6 +21,8 @@ export interface TrajectoryBankItem {
   earlySignals: string;
   potentialEvolution: string;
   severityDefault: SeverityLevel;
+  requiresSafetyProtocol?: boolean;
+  contextualCriticalityRule?: string;
 }
 
 export interface TrajectoryBankResponse {
@@ -65,8 +67,34 @@ export interface TrajectorySuggestion {
   name: string;
   macrodomain: string;
   severityDefault: SeverityLevel;
+  requiresSafetyProtocol?: boolean;
   reason: string;
   confidenceScore: number;
+}
+
+export interface SafetyProtocolDto {
+  id: number;
+  familyTrajectoryId: number;
+  responsibleId: number;
+  responsibleName: string;
+  initialAction: string;
+  followUpDate: string;
+  supportAssignmentId?: number;
+  closed: boolean;
+  resolutionNotes?: string;
+  activatedBy?: string;
+  createdAt: string;
+  closedAt?: string;
+}
+
+export interface ActivateSafetyProtocolRequest {
+  responsibleId: number;
+  initialAction: string;
+  followUpDate: string;
+}
+
+export interface CloseSafetyProtocolRequest {
+  resolutionNotes?: string;
 }
 
 export interface AssignTrajectoryRequest {

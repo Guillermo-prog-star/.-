@@ -10,4 +10,6 @@ public interface EcosystemParticipantRepository extends JpaRepository<EcosystemP
     List<EcosystemParticipant> findByActiveTrue();
     List<EcosystemParticipant> findByNetworkTypeAndActiveTrue(NetworkType networkType);
     boolean existsByNameAndNetworkType(String name, NetworkType networkType);
+    boolean existsByNameAndNetworkTypeAndDescriptionAndContactEmail(String name, NetworkType networkType, String description, String contactEmail);
+    boolean existsByNameAndNetworkTypeAndDescriptionAndContactEmailAndIdNot(String name, NetworkType networkType, String description, String contactEmail, Long id);
 }

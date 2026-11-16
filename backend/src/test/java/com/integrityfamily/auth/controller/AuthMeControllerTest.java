@@ -99,7 +99,8 @@ class AuthMeControllerTest {
                 "William Lopez",
                 "ROLE_USER",
                 42L,
-                "Familia Lopez Rivera"
+                "Familia Lopez Rivera",
+                null
         );
         Mockito.when(authService.me("william@integrityfamily.com")).thenReturn(response);
 
@@ -127,6 +128,7 @@ class AuthMeControllerTest {
                 "Administrador Global",
                 "ROLE_ADMIN",
                 null,
+                null,
                 null
         );
         Mockito.when(authService.me("admin@integrityfamily.com")).thenReturn(adminResponse);
@@ -152,7 +154,8 @@ class AuthMeControllerTest {
                 "Consultor Familiar",
                 "ROLE_USER",
                 10L,
-                "Familia Gomez"
+                "Familia Gomez",
+                null
         );
         Mockito.when(authService.me("consultor@integrityfamily.com")).thenReturn(response);
 

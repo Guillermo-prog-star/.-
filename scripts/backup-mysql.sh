@@ -39,12 +39,23 @@ echo "   Destino       : $FILEPATH"
 echo "   Compresión    : $COMPRESS"
 echo ""
 
-# ── Verificar que el contenedor está corriendo ───────────────
-if ! docker ps --format '{{.Names}}' | grep -q "^${DB_CONTAINER}$"; then
-  echo "❌  El contenedor '$DB_CONTAINER' no está activo."
-  echo "    Ejecuta: docker compose up -d"
-  exit 1
-fi
+# ── Esperar a que el contenedor esté corriendo ───────────────
+# Docker Desktop puede seguir iniciando (autostart con el login) cuando
+# esta tarea corre en modo "catch-up" tras un equipo dormido/apagado a
+# las 2 AM — se reintenta antes de rendirse.
+WAIT_SECONDS=300
+INTERVAL=10
+ELAPSED=0
+while ! docker ps --format '{{.Names}}' 2>/dev/null | grep -q "^${DB_CONTAINER}$"; do
+  if (( ELAPSED >= WAIT_SECONDS )); then
+    echo "❌  El contenedor '$DB_CONTAINER' no está activo tras esperar ${WAIT_SECONDS}s."
+    echo "    Ejecuta: docker compose up -d"
+    exit 1
+  fi
+  echo "⏳  Esperando a que Docker/'$DB_CONTAINER' esté listo... (${ELAPSED}s/${WAIT_SECONDS}s)"
+  sleep "$INTERVAL"
+  ELAPSED=$(( ELAPSED + INTERVAL ))
+done
 
 # ── Dump ────────────────────────────────────────────────────
 echo "⏳  Generando dump..."

@@ -188,7 +188,9 @@ public class PlanGenerationService {
                                     .fase(resolvedFase)
                                     .objetivo(mDto.goal()) // Usamos la meta del hito como objetivo
                                     .accionConcreta(tDto.description())
-                                    .indicadorCumplimiento("Completar la acción")
+                                    // Criterio observable de la IA; si no viene, queda vacío
+                                    // (antes se fijaba "Completar la acción", que no dice nada).
+                                    .indicadorCumplimiento(blankToNull(tDto.successIndicator()))
                                     .evidenciaRequerida(tDto.evidenceType())
                                     .impactoIcf(5) // Default impact
                                     .dueDate(LocalDateTime.now().plusDays(daysForMilestone))
@@ -276,6 +278,7 @@ public class PlanGenerationService {
         @JsonProperty("duration_minutes") Integer durationMinutes,
         List<String> participants,
         @JsonProperty("evidence_type") String evidenceType,
+        @JsonProperty("success_indicator") String successIndicator,
         String fase,
         String dimension,
         @JsonProperty("pillar_name") String pillarName,
@@ -302,6 +305,10 @@ public class PlanGenerationService {
         String type,
         String detail
     ) {}
+
+    static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
 
     /**
      * SDD Calendaria Terapéutica: Resuelve los días exactos de vencimiento
@@ -407,10 +414,12 @@ public class PlanGenerationService {
                     ? Map.of("emociones", 60.0, "comunicacion", 55.0, "habitos", 65.0, "tiempos", 70.0)
                     : persistedScores,
                 icf,
+                0.0,    // inc
+                null,   // neuroProfile
                 riskLevel,
                 criticalDim,
-                false,  // simulationSuspected — no disponible en fallback
-                false,  // relapseDetected — no disponible en fallback
+                false,  // simulationSuspected
+                false,  // relapseDetected
                 "ESTABILIZACION_EMOCIONAL",
                 "Reactiva",
                 4,

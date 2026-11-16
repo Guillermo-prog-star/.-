@@ -10,6 +10,8 @@ import com.integrityfamily.domain.repository.FamilyRepository;
 import com.integrityfamily.domain.repository.PasswordResetTokenRepository;
 import com.integrityfamily.domain.repository.RoleRepository;
 import com.integrityfamily.domain.repository.UserRepository;
+import com.integrityfamily.ecosystem.repository.FamilyEcosystemLinkRepository;
+import com.integrityfamily.familyhome.security.FamilyIdentifierBridge;
 import com.integrityfamily.security.JwtTokenProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -64,6 +66,8 @@ class AuthServiceTest {
     @Mock AccountLockService     accountLockService;
     @Mock AuditService           auditService;
     @Mock RefreshTokenService    refreshTokenService;
+    @Mock FamilyEcosystemLinkRepository linkRepository;
+    @Mock FamilyIdentifierBridge idBridge;
 
     @InjectMocks
     AuthService authService;
@@ -104,6 +108,10 @@ class AuthServiceTest {
                 .expiryDate(Instant.now().plusSeconds(604800))
                 .revoked(false)
                 .build();
+
+        // homeId (UUID) se resuelve vía FamilyIdentifierBridge en UserResponse.from();
+        // lenient porque no todos los tests llegan a un usuario con familia asignada.
+        lenient().when(idBridge.toFamilyUuid(anyLong())).thenReturn(UUID.randomUUID());
     }
 
     // ═══════════════════════════════════════════════════════════════════════

@@ -55,8 +55,8 @@ public class EcosystemAuditService {
                 .toList();
     }
 
-    public List<AuditLogEntry> getAuditLogByLink(Long linkId) {
-        return logRepository.findByLinkIdOrderByCreatedAtDesc(linkId)
+    public List<AuditLogEntry> getAuditLogByLink(Long linkId, Long familyId) {
+        return logRepository.findByLinkIdAndFamilyIdOrderByCreatedAtDesc(linkId, familyId)
                 .stream()
                 .map(e -> AuditLogEntry.builder()
                         .id(e.getId()).linkId(e.getLinkId())

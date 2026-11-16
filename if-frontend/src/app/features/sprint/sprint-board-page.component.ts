@@ -10,6 +10,8 @@ import {
   CreateDailyRequest, CloseSprintRequest
 } from '../../core/services/sprint.service';
 import { FamilyStateService } from '../../core/services/family-state.service';
+import { AttemptStatus, ATTEMPT_STATUS_OPTIONS } from '../../../domain/constants/attemptStatusDomain';
+import { MissionStatus, MISSION_STATUS_TEXT, countMissions, missionProgressPercent } from '../../../domain/constants/missionStatusDomain';
 
 type View = 'board' | 'daily-form' | 'close-form' | 'create-form' | 'history' | 'retro';
 
@@ -38,15 +40,12 @@ export class SprintBoardPageComponent implements OnInit {
   // ── Computed ───────────────────────────────────────────────────────────
   familyId = computed(() => this.familySvc.getSelectedFamilyId());
 
-  completedMissions = computed(() =>
-    (this.sprint()?.missions ?? []).filter(m => m.status === 'COMPLETADA').length
-  );
-  totalMissions = computed(() => (this.sprint()?.missions ?? []).length);
-  missionPct    = computed(() =>
-    this.totalMissions() === 0
-      ? 0
-      : Math.round((this.completedMissions() / this.totalMissions()) * 100)
-  );
+  missionCounts     = computed(() => countMissions(this.sprint()?.missions));
+  completedMissions = computed(() => this.missionCounts().completed);
+  // Cambiadas por acuerdo y pospuestas no cuentan como incumplimiento.
+  totalMissions     = computed(() => this.missionCounts().committed);
+  missionPct        = computed(() => missionProgressPercent(this.sprint()?.missions));
+  missionStatusText = MISSION_STATUS_TEXT as Record<string, string>;
 
   daysLeft = computed(() => {
     const s = this.sprint();
@@ -82,6 +81,8 @@ export class SprintBoardPageComponent implements OnInit {
   dailyResolution = '';
   dailyEmotion   = 'BIEN';
   dailyMember    = '';
+  dailyAttempt: AttemptStatus | '' = '';
+  readonly attemptStatusOptions = ATTEMPT_STATUS_OPTIONS;
 
   // Close sprint
   closeWell       = '';
@@ -120,6 +121,17 @@ export class SprintBoardPageComponent implements OnInit {
     });
   }
 
+  setStatus(missionId: number, status: MissionStatus, event: Event) {
+    event.stopPropagation();
+    const s = this.sprint();
+    if (!s || this.busy()) return;
+    this.busy.set(true);
+    this.sprintSvc.setMissionStatus(s.id, missionId, status).subscribe({
+      next: updated => { this.sprint.set(updated); this.busy.set(false); },
+      error: () => { this.busy.set(false); }
+    });
+  }
+
   submitDaily() {
     const s = this.sprint();
     if (!s || this.busy()) return;
@@ -131,7 +143,8 @@ export class SprintBoardPageComponent implements OnInit {
       blockagesText:    this.dailyBlockage,
       resolutionText:   this.dailyResolution,
       emotionalIndicator: this.dailyEmotion,
-      memberName:       this.dailyMember
+      memberName:       this.dailyMember,
+      attemptStatus:    this.dailyAttempt || null
     };
     this.sprintSvc.submitDaily(s.id, req).subscribe({
       next: () => {
@@ -223,7 +236,7 @@ export class SprintBoardPageComponent implements OnInit {
   private resetDailyForm() {
     this.dailyYesterday = ''; this.dailyToday = '';
     this.dailyBlockage  = ''; this.dailyResolution = '';
-    this.dailyEmotion = 'BIEN'; this.dailyMember = '';
+    this.dailyEmotion = 'BIEN'; this.dailyMember = ''; this.dailyAttempt = '';
   }
 
   statusLabel(status: string): string {

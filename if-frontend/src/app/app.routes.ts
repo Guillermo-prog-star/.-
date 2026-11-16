@@ -68,6 +68,16 @@ export const routes: Routes = [
         loadComponent: () => import('./features/portal-familiar/portal-familiar.component').then(m => m.PortalFamiliarComponent)
       },
       {
+        path: 'family-home',
+        title: 'Hogar Digital Familiar',
+        loadComponent: () => import('./features/family-home/family-home-page.component').then(m => m.FamilyHomePageComponent)
+      },
+      {
+        path: 'hud',
+        title: 'HUD Adaptativo',
+        loadComponent: () => import('./features/hud/shell/adaptive-hud-shell.component').then(m => m.AdaptiveHudShellComponent)
+      },
+      {
         path: 'portal/invisible-stories',
         title: 'Historias Invisibles',
         loadComponent: () => import('./features/portal-familiar/invisible-stories/invisible-stories.component').then(m => m.InvisibleStoriesComponent)
@@ -102,6 +112,7 @@ export const routes: Routes = [
         path: 'admin',
         canActivate: [adminGuard],
         children: [
+          { path: 'families', title: 'Familias Registradas', loadComponent: () => import('./features/admin/families/families-list.component').then(m => m.AdminFamiliesListComponent) },
           { path: 'stats', loadComponent: () => import('./features/admin/stats/stats.component').then(m => m.StatsComponent) },
           { path: 'voice-monitor', loadComponent: () => import('./features/admin/voice-monitor/voice-monitor.component').then(m => m.VoiceMonitorComponent) },
           { path: 'sandbox', loadComponent: () => import('./features/admin/sandbox/sandbox.component').then(m => m.SandboxComponent) },
@@ -131,6 +142,7 @@ export const routes: Routes = [
       { path: 'logbook', title: 'Bitácora Familiar', loadComponent: () => import('./features/family-logbook/family-logbook.component').then(m => m.FamilyLogbookComponent) },
       { path: 'gratitude', title: 'Muro de Gratitud', loadComponent: () => import('./features/family-gratitude/family-gratitude.component').then(m => m.FamilyGratitudeComponent) },
       { path: 'my-space', title: 'Mi Espacio', loadComponent: () => import('./features/my-space/my-space.component').then(m => m.MySpaceComponent) },
+      { path: 'vitality', title: 'Bienestar Biológico', loadComponent: () => import('./features/vitality/vitality-page.component').then(m => m.VitalityPageComponent) },
       { path: 'cognitive', title: 'Sistema Cognitivo', loadComponent: () => import('./features/cognitive/cognitive-page.component').then(m => m.CognitivePageComponent) },
       { path: 'profile', title: 'Mi Perfil', loadComponent: () => import('./features/profile/profile-page.component').then(m => m.ProfilePageComponent) },
 
@@ -178,6 +190,20 @@ export const routes: Routes = [
         title: 'Linaje Generacional',
         loadComponent: () => import('./features/lineage/lineage-page.component')
           .then(m => m.LineagePageComponent)
+      },
+
+      // ── Nuestra Historia (diario guiado biográfico) ───────────────────
+      {
+        path: 'biography',
+        title: 'Nuestra Historia',
+        loadComponent: () => import('./features/biography/biography-page.component')
+          .then(m => m.BiographyPageComponent)
+      },
+      {
+        path: 'biography/members/:memberId',
+        title: 'Nuestra Historia',
+        loadComponent: () => import('./features/biography/biography-page.component')
+          .then(m => m.BiographyPageComponent)
       },
 
       // ── Legado Familiar ──────────────────────────────────────────────
@@ -281,7 +307,7 @@ export const routes: Routes = [
           .then(m => m.ProfessionalDashboardComponent)
       },
 
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+      { path: '', redirectTo: 'family-home', pathMatch: 'full' }
     ]
   },
 

@@ -78,7 +78,7 @@ public class RiskAlgoV1Engine {
     );
 
     private static final List<String> CONSCIOUSNESS_LABELS =
-            List.of("Plena", "Madura", "Consciente", "Reactiva", "Inconsciente");
+            List.of("Inconsciente", "Reactiva", "Consciente", "Madura", "Plena");
 
     /** Score máximo en escala 1-5 que se considera "perfección sospechosa" en MIRROR */
     private static final int MIRROR_SUSPICION_THRESHOLD = 5;
@@ -111,6 +111,11 @@ public class RiskAlgoV1Engine {
             return buildEmptyResult(phase);
         }
 
+        int neuroCount = 0;
+        Map<String, Integer> neuroVector = new HashMap<>();
+        double incNeuroSum = 0.0;
+        int incNeuroCount = 0;
+
         // ── Carga en lote — 1 sola query para todas las preguntas ────────────
         List<Long> questionIds = answers.stream()
                 .map(EvaluationDtos.AnswerDto::questionId)
@@ -126,7 +131,7 @@ public class RiskAlgoV1Engine {
                 if (q == null) continue;
 
                 int rawValue       = a.getEffectiveValue();
-                String dim         = normalizeDimension(q.getDimension());
+                String dim         = normalizeDimension(resolveDimensionSource(q));
                 boolean isMirrorType = "MIRROR".equalsIgnoreCase(q.getType());
 
                 // ── Preguntas de control MIRROR (type="MIRROR") ──────────────
@@ -141,6 +146,28 @@ public class RiskAlgoV1Engine {
                         log.debug("[RISK_ALGO_V1] MIRROR sospechoso: {} (valor={})", q.getQuestionKey(), rawValue);
                     }
                     continue; // no contribuye al ICF
+                }
+
+                if ("NEURO_AWARENESS".equalsIgnoreCase(q.getType()) || "SCENARIO_V1_2".equalsIgnoreCase(q.getType())) {
+                    neuroCount++;
+
+                    // Solo Q2 y Q3 (o su equivalente fenomenológico THINK/ACT) aportan al promedio escalar lineal (inc)
+                    if ("TIMING".equalsIgnoreCase(q.getPhase()) || "ACTION".equalsIgnoreCase(q.getPhase())
+                            || "THINK".equalsIgnoreCase(q.getPhase()) || "ACT".equalsIgnoreCase(q.getPhase())) {
+                        incNeuroCount++;
+                        incNeuroSum += rawValue;
+                    }
+
+                    if (q.getOptions() != null) {
+                        q.getOptions().stream()
+                            .filter(opt -> opt.getScoreValue() != null && opt.getScoreValue().equals(rawValue))
+                            .findFirst()
+                            .ifPresent(opt -> {
+                                if (opt.getVectorTag() != null) {
+                                    neuroVector.merge(opt.getVectorTag(), 1, Integer::sum);
+                                }
+                            });
+                    }
                 }
 
                 // ── Normalización 0-100 ──────────────────────────────────────
@@ -179,6 +206,44 @@ public class RiskAlgoV1Engine {
                     ? weightedSum.getOrDefault(dim, 0.0) / total
                     : 100.0; // Sin datos → sin riesgo declarado
             dimensionScores.put(dim, Math.round(score * 100.0) / 100.0);
+        }
+
+        // ── Cálculo del Vector Neurofenomenológico ─────────────────────────
+        com.integrityfamily.domain.NeuroProfile neuroProfile = null;
+        if (neuroCount > 0) {
+            double somatic = neuroVector.getOrDefault("SOMATIC", 0) * 10.0;
+            double emotional = neuroVector.getOrDefault("EMOTIONAL", 0) * 10.0;
+            double cognitive = neuroVector.getOrDefault("COGNITIVE", 0) * 10.0;
+            double impulsive = neuroVector.getOrDefault("IMPULSIVE", 0) * 10.0;
+            double pause = neuroVector.getOrDefault("PAUSE", 0) * 10.0;
+            double agency = neuroVector.getOrDefault("AGENCY", 0) * 10.0;
+            double integration = neuroVector.getOrDefault("INTEGRATION", 0) * 10.0;
+            
+            // Integrar algunas medidas de agencia a la integración
+            double totalIntegration = integration;
+            if (pause > 0) {
+                totalIntegration += (pause * 0.5) + (agency * 0.5);
+            } else {
+                // La integración es incoherente sin capacidad de pausa (se penaliza)
+                totalIntegration *= 0.5;
+            }
+
+            neuroProfile = com.integrityfamily.domain.NeuroProfile.builder()
+                    .somaticAwareness(Math.min(100.0, somatic))
+                    .emotionalAwareness(Math.min(100.0, emotional))
+                    .cognitiveAwareness(Math.min(100.0, cognitive))
+                    .impulsiveAwareness(Math.min(100.0, impulsive))
+                    .pauseCapacity(Math.min(100.0, pause))
+                    .integrationScore(Math.min(100.0, totalIntegration))
+                    .build();
+        }
+
+        // ── Cálculo de INC Retrocompatible ──────────────────────────────────
+        double inc = 0.0;
+        if (incNeuroCount > 0) {
+            double avgScore = incNeuroSum / incNeuroCount;
+            inc = ((avgScore - 1.0) / 4.0) * 100.0;
+            inc = Math.round(inc * 100.0) / 100.0;
         }
 
         // ── ICF ponderado ────────────────────────────────────────────────────
@@ -251,6 +316,8 @@ public class RiskAlgoV1Engine {
         AlgoResult result = new AlgoResult(
                 dimensionScores,
                 icf,
+                inc,
+                neuroProfile,
                 riskLevel,
                 criticalDim,
                 simulationSuspected,
@@ -263,9 +330,9 @@ public class RiskAlgoV1Engine {
                 uncertainty
         );
 
-        log.info("[RISK_ALGO_V1] Resultado: ICF={} | Riesgo={} | CritDim={} | Fase={} | " +
+        log.info("[RISK_ALGO_V1] Resultado: ICF={} | INC={} | Riesgo={} | CritDim={} | Fase={} | " +
                 "Simulacion={} | Recaida={} | Mision={} | Incertidumbre={}({})",
-                icf, riskLevel, criticalDim, phase,
+                icf, consciousnessInt, riskLevel, criticalDim, phase,
                 simulationSuspected, !relapseFlags.isEmpty(), missionGen,
                 uncertainty.total(), uncertainty.level());
 
@@ -295,11 +362,11 @@ public class RiskAlgoV1Engine {
     }
 
     private int computeConsciousnessLevel(double icf) {
-        if (icf >= 85.0) return 1; // Plena
-        if (icf >= 70.0) return 2; // Madura
+        if (icf >= 85.0) return 5; // Plena
+        if (icf >= 70.0) return 4; // Madura
         if (icf >= 55.0) return 3; // Consciente
-        if (icf >= 35.0) return 4; // Reactiva
-        return 5;                   // Inconsciente
+        if (icf >= 35.0) return 2; // Reactiva
+        return 1;                  // Inconsciente
     }
 
     /** Resultado neutral cuando no hay respuestas — evita ICF inflado artificialmente */
@@ -308,7 +375,7 @@ public class RiskAlgoV1Engine {
         DIMENSIONS.forEach(d -> empty.put(d, 50.0)); // Score neutro, no perfecto
         // Alta incertidumbre observacional: cuestionario vacío
         UncertaintyVector neutralU = new UncertaintyVector(0.05, 0.25, 0.10, 1.00, 0.05, 0.40);
-        return new AlgoResult(empty, 50.0, "MODERADO", "emociones",
+        return new AlgoResult(empty, 50.0, 0.0, null, "MODERADO", "emociones",
                 false, false, "ESTABILIZACION_EMOCIONAL", "Reactiva", 4,
                 List.of(), List.of(), neutralU);
     }
@@ -316,7 +383,29 @@ public class RiskAlgoV1Engine {
     private String normalizeDimension(String raw) {
         if (raw == null) return "emociones";
         String d = raw.toLowerCase().trim();
+        // Alias de las micro-simulaciones V1.2: el campo `pillar` usa formas
+        // singulares (tiempo, emocion) que no coinciden con las 4 dimensiones ICF.
+        if (d.equals("tiempo")) d = "tiempos";
+        if (d.equals("emocion")) d = "emociones";
         return DIMENSIONS.contains(d) ? d : "emociones";
+    }
+
+    /**
+     * Para preguntas de micro-simulación (V1.2) el tema real vive en `pillar`
+     * (comunicacion/habitos/tiempo/emocion/...), no en `dimension` — esa columna
+     * quedó fija en "Comportamiento" desde V90. Sin este fallback, RiskAlgoV1Engine
+     * mandaba el 100% de estas respuestas al bucket "emociones" por defecto.
+     *
+     * NOTA: pillares fuera de las 4 dimensiones ICF (normas, conexion, confianza,
+     * responsabilidad, respeto — usados en Batch 2/V93) siguen sin mapeo clínico
+     * definido y caerán en el fallback "emociones" de normalizeDimension() hasta
+     * que se decida a qué dimensión ICF pertenecen.
+     */
+    private String resolveDimensionSource(Question q) {
+        if (q.getPillar() != null && "Comportamiento".equalsIgnoreCase(q.getDimension())) {
+            return q.getPillar();
+        }
+        return q.getDimension();
     }
 
     // ─── Resultado ─────────────────────────────────────────────────────────────
@@ -358,13 +447,14 @@ public class RiskAlgoV1Engine {
      *
      * @param dimensionScores           score 0-100 por dimensión (ponderado por severityWeight)
      * @param healthyIndex              ICF global 0-100
+     * @param inc                       Índice de Nivel de Consciencia 0-100
      * @param riskLevel                 BAJO | MODERADO | ALTO | CRITICO
      * @param criticalDimension         dimensión con menor puntuación
      * @param simulationSuspected       >60% de preguntas MIRROR con valor 5 (perfección irreal)
      * @param relapseDetected           al menos una pregunta detectsRelapse con valor ≤ 2
      * @param suggestedMissionGenerator misión automática recomendada para el plan
      * @param consciousnessLabel        etiqueta del nivel de consciencia familiar
-     * @param consciousnessLevel        nivel 1 (Plena) – 5 (Inconsciente)
+     * @param consciousnessLevel        nivel 5 (Plena) – 1 (Inconsciente)
      * @param relapseFlags              claves de preguntas que dispararon alerta de recaída
      * @param mirrorFlags               claves de preguntas MIRROR con respuesta perfecta sospechosa
      * @param uncertainty               IF-SUM: vector estructural de incertidumbre del diagnóstico
@@ -372,6 +462,8 @@ public class RiskAlgoV1Engine {
     public record AlgoResult(
             Map<String, Double> dimensionScores,
             double healthyIndex,
+            double inc,
+            com.integrityfamily.domain.NeuroProfile neuroProfile,
             String riskLevel,
             String criticalDimension,
             boolean simulationSuspected,
@@ -383,6 +475,24 @@ public class RiskAlgoV1Engine {
             List<String> mirrorFlags,
             UncertaintyVector uncertainty
     ) {
+        public AlgoResult(
+                Map<String, Double> dimensionScores,
+                double healthyIndex,
+                String riskLevel,
+                String criticalDimension,
+                boolean simulationSuspected,
+                boolean relapseDetected,
+                String suggestedMissionGenerator,
+                String consciousnessLabel,
+                int consciousnessLevel,
+                List<String> relapseFlags,
+                List<String> mirrorFlags,
+                UncertaintyVector uncertainty
+        ) {
+            this(dimensionScores, healthyIndex, 0.0, null, riskLevel, criticalDimension,
+                    simulationSuspected, relapseDetected, suggestedMissionGenerator,
+                    consciousnessLabel, consciousnessLevel, relapseFlags, mirrorFlags, uncertainty);
+        }
         public boolean hasCrisis() {
             return "CRITICO".equals(riskLevel) || "ALTO".equals(riskLevel);
         }

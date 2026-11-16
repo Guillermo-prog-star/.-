@@ -58,7 +58,8 @@
           <span>Acciones de hoy (de 1 a 3)</span>
           @for (action of actions; track $index) {
             <div class="sif-row">
-              <input [name]="'action' + $index" maxlength="280" [(ngModel)]="actions[$index]" placeholder="Qué vamos a hacer hoy" />
+              <label class="sif-sr" [attr.for]="'sif-action-' + $index">Acción {{ $index + 1 }}</label>
+              <input [id]="'sif-action-' + $index" [name]="'action' + $index" maxlength="280" [(ngModel)]="actions[$index]" placeholder="Qué vamos a hacer hoy" />
               <button type="button" class="sif-icon-btn" (click)="removeLine(actions, $index)" [disabled]="actions.length === 1" aria-label="Quitar acción">✕</button>
             </div>
           }
@@ -83,7 +84,8 @@
           <span>Prioridades de la semana (como máximo 3)</span>
           @for (priority of priorities; track $index) {
             <div class="sif-row">
-              <input [name]="'priority' + $index" maxlength="280" [(ngModel)]="priorities[$index]" placeholder="Qué podemos completar esta semana" />
+              <label class="sif-sr" [attr.for]="'sif-priority-' + $index">Prioridad {{ $index + 1 }}</label>
+              <input [id]="'sif-priority-' + $index" [name]="'priority' + $index" maxlength="280" [(ngModel)]="priorities[$index]" placeholder="Qué podemos completar esta semana" />
               <button type="button" class="sif-icon-btn" (click)="removeLine(priorities, $index)" [disabled]="priorities.length === 1" aria-label="Quitar prioridad">✕</button>
             </div>
           }
@@ -95,8 +97,10 @@
           <span>Una decisión por proyecto</span>
           @for (project of projects; track $index) {
             <div class="sif-row sif-row--decision">
-              <input [name]="'project' + $index" maxlength="280" [(ngModel)]="project.name" placeholder="Proyecto" />
-              <select [name]="'decision' + $index" [(ngModel)]="project.decision">
+              <label class="sif-sr" [attr.for]="'sif-project-' + $index">Proyecto {{ $index + 1 }}</label>
+              <input [id]="'sif-project-' + $index" [name]="'project' + $index" maxlength="280" [(ngModel)]="project.name" placeholder="Proyecto" />
+              <label class="sif-sr" [attr.for]="'sif-decision-' + $index">Decisión del proyecto {{ $index + 1 }}</label>
+              <select [id]="'sif-decision-' + $index" [name]="'decision' + $index" [(ngModel)]="project.decision">
                 <option value="">Decisión</option>
                 @for (option of decisions; track option.code) {
                   <option [value]="option.code">{{ option.label }}</option>
@@ -119,9 +123,12 @@
           <span>Objetivos (como máximo 5)</span>
           @for (objective of objectives; track $index) {
             <div class="sif-row sif-row--objective">
-              <input [name]="'objective' + $index" maxlength="500" [(ngModel)]="objective.objective" placeholder="Objetivo" />
-              <input [name]="'criterion' + $index" maxlength="500" [(ngModel)]="objective.achievementCriterion" placeholder="Criterio de logro" />
-              <input [name]="'reviewOn' + $index" type="date" [(ngModel)]="objective.reviewOn" aria-label="Fecha de revisión del objetivo" />
+              <label class="sif-sr" [attr.for]="'sif-objective-' + $index">Objetivo {{ $index + 1 }}</label>
+              <input [id]="'sif-objective-' + $index" [name]="'objective' + $index" maxlength="500" [(ngModel)]="objective.objective" placeholder="Objetivo" />
+              <label class="sif-sr" [attr.for]="'sif-criterion-' + $index">Criterio de logro {{ $index + 1 }}</label>
+              <input [id]="'sif-criterion-' + $index" [name]="'criterion' + $index" maxlength="500" [(ngModel)]="objective.achievementCriterion" placeholder="Criterio de logro" />
+              <label class="sif-sr" [attr.for]="'sif-review-on-' + $index">Fecha de revisión del objetivo {{ $index + 1 }}</label>
+              <input [id]="'sif-review-on-' + $index" [name]="'reviewOn' + $index" type="date" [(ngModel)]="objective.reviewOn" />
               <button type="button" class="sif-icon-btn" (click)="removeObjective($index)" [disabled]="objectives.length === 1" aria-label="Quitar objetivo">✕</button>
             </div>
           }
@@ -142,8 +149,10 @@
           <span>¿Qué dejo, reduzco o pospongo?</span>
           @for (adjustment of adjustments; track $index) {
             <div class="sif-row sif-row--decision">
-              <input [name]="'adjustment' + $index" maxlength="280" [(ngModel)]="adjustment.name" placeholder="Qué cambia" />
-              <select [name]="'kind' + $index" [(ngModel)]="adjustment.decision">
+              <label class="sif-sr" [attr.for]="'sif-adjustment-' + $index">Qué cambia {{ $index + 1 }}</label>
+              <input [id]="'sif-adjustment-' + $index" [name]="'adjustment' + $index" maxlength="280" [(ngModel)]="adjustment.name" placeholder="Qué cambia" />
+              <label class="sif-sr" [attr.for]="'sif-kind-' + $index">Dejar, reducir o posponer {{ $index + 1 }}</label>
+              <select [id]="'sif-kind-' + $index" [name]="'kind' + $index" [(ngModel)]="adjustment.decision">
                 <option value="">Dejar, reducir o posponer</option>
                 @for (option of adjustmentKinds; track option.code) {
                   <option [value]="option.code">{{ option.label }}</option>

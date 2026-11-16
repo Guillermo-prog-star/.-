@@ -44,9 +44,9 @@ legend { color: inherit; }
 
 .sif-tabs a, .sif-kindbar a, .sif-filters button, .sif-btn, .sif-link {
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.03);
-  color: rgba(255, 255, 255, 0.78);
+  border: 1px solid #3f3f46;
+  background: #18181b;
+  color: #e4e4e7;
   text-decoration: none;
   font: inherit;
   font-size: 0.86rem;
@@ -57,8 +57,8 @@ legend { color: inherit; }
 
 .sif-tabs a.active, .sif-kindbar a.active, .sif-filters button.active {
   color: #fff;
-  background: rgba(99, 102, 241, 0.22);
-  border-color: rgba(129, 140, 248, 0.55);
+  background: #3730a3;
+  border-color: #818cf8;
 }
 
 .sif-card { padding: 20px 22px; display: flex; flex-direction: column; gap: 12px; }
@@ -82,8 +82,8 @@ legend { color: inherit; }
   width: fit-content;
   padding: 3px 8px;
   border-radius: 999px;
-  background: rgba(245, 158, 11, 0.15);
-  color: #fcd34d;
+  background: #451a03;
+  color: #fde68a;
   font-size: 0.75rem;
   font-weight: 700;
 }
@@ -122,14 +122,6 @@ legend { color: inherit; }
   max-width: 100%;
 }
 
-.sif-choice input,
-.sif-check input {
-  width: 1.05rem;
-  height: 1.05rem;
-  flex: 0 0 auto;
-  margin-top: 3px;
-}
-
 .sif-title-btn {
   border: 0;
   background: transparent;
@@ -145,14 +137,35 @@ legend { color: inherit; }
   width: 100%;
   box-sizing: border-box;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(0, 0, 0, 0.25);
-  color: #fff;
+  border: 1px solid #3f3f46;
+  background: #18181b;
+  color: #fafafa;
   font: inherit;
   padding: 10px 12px;
 }
 
 .sif-field textarea { min-height: 88px; resize: vertical; }
+
+.sif-choice input,
+.sif-check input {
+  width: 1.05rem;
+  height: 1.05rem;
+  flex: 0 0 auto;
+  margin-top: 3px;
+  padding: 0;
+}
+
+.sif-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 
 .sif-row {
   display: grid;

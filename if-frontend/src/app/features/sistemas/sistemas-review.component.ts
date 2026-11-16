@@ -96,53 +96,77 @@ export class SistemasReviewComponent implements OnInit {
   localError(): string | null {
     const kind = this.kind();
     if (!kind) return 'Esa revisión no existe.';
+    const dateError = this.dateError();
+    if (dateError) return dateError;
+    return this.outputError(kind.code);
+  }
+
+  private dateError(): string | null {
     if (!this.reviewDate) return 'La fecha de la revisión es obligatoria.';
     if (this.reviewDate > todayIso()) return 'La revisión no puede quedar en una fecha futura.';
-    const filled = (lines: string[]) => lines.map(line => line.trim()).filter(Boolean);
-    switch (kind.code) {
-      case 'DAILY': {
-        if (!this.captureEmptied) return 'La revisión diaria exige dejar la captura vacía.';
-        if (!this.agendaChecked) return 'La revisión diaria exige comprobar la agenda de hoy.';
-        const actions = filled(this.actions);
-        if (actions.length < 1 || actions.length > 3) return 'La revisión diaria deja de 1 a 3 acciones para hoy.';
-        return null;
-      }
-      case 'WEEKLY': {
-        if (!this.calendarReviewed) return 'La revisión semanal exige marcar el calendario como revisado.';
-        if (!this.tasksPruned) return 'La revisión semanal exige depurar las tareas.';
-        if (!this.commitmentsTransferred) return 'La revisión semanal exige pasar los compromisos de correo o chat a tarea o evento.';
-        const priorities = filled(this.priorities);
-        if (priorities.length < 1 || priorities.length > 3) return 'La revisión semanal deja como máximo 3 prioridades, y al menos una.';
-        return null;
-      }
-      case 'MONTHLY': {
-        if (!this.stageChange) return 'Responde si algún cambio de etapa pasó desapercibido.';
-        const rows = this.projects.filter(row => row.name.trim() || row.decision);
-        if (rows.length === 0) return 'La revisión mensual exige al menos un proyecto.';
-        if (rows.some(row => !row.name.trim() || !row.decision)) {
-          return 'Cada proyecto necesita un nombre y una decisión: continuar, corregir, pausar o cerrar.';
-        }
-        return null;
-      }
-      case 'ANNUAL': {
-        const rows = this.objectives.filter(row => row.objective.trim() || row.achievementCriterion.trim() || row.reviewOn);
-        if (rows.length < 1 || rows.length > 5) return 'La revisión anual guarda pocos objetivos: entre 1 y 5.';
-        if (rows.some(row => !row.objective.trim() || !row.achievementCriterion.trim() || !row.reviewOn)) {
-          return 'Cada objetivo necesita su texto, su criterio de logro y la fecha en que se revisa.';
-        }
-        return null;
-      }
-      case 'CHANGE': {
-        if (!this.changeDescription.trim()) return 'Describe el cambio que disparó el ajuste.';
-        if (!this.whatNoLongerFits.trim()) return 'Escribe qué compromisos ya no caben.';
-        const rows = this.adjustments.filter(row => row.name.trim() || row.decision);
-        if (rows.length === 0) return 'Indica al menos una cosa que dejas, reduces o pospones.';
-        if (rows.some(row => !row.name.trim() || !row.decision)) {
-          return 'Cada ajuste debe decir qué cambias y si lo dejas, lo reduces o lo pospones.';
-        }
-        return null;
-      }
+    return null;
+  }
+
+  private outputError(code: ReviewKind['code']): string | null {
+    switch (code) {
+      case 'DAILY': return this.dailyError();
+      case 'WEEKLY': return this.weeklyError();
+      case 'MONTHLY': return this.monthlyError();
+      case 'ANNUAL': return this.annualError();
+      case 'CHANGE': return this.changeError();
     }
+  }
+
+  private dailyError(): string | null {
+    if (!this.captureEmptied) return 'La revisión diaria exige dejar la captura vacía.';
+    if (!this.agendaChecked) return 'La revisión diaria exige comprobar la agenda de hoy.';
+    return this.countError(this.filled(this.actions), 1, 3, 'La revisión diaria deja de 1 a 3 acciones para hoy.');
+  }
+
+  private weeklyError(): string | null {
+    if (!this.calendarReviewed) return 'La revisión semanal exige marcar el calendario como revisado.';
+    if (!this.tasksPruned) return 'La revisión semanal exige depurar las tareas.';
+    if (!this.commitmentsTransferred) return 'La revisión semanal exige pasar los compromisos de correo o chat a tarea o evento.';
+    return this.countError(this.filled(this.priorities), 1, 3, 'La revisión semanal deja como máximo 3 prioridades, y al menos una.');
+  }
+
+  private monthlyError(): string | null {
+    if (!this.stageChange) return 'Responde si algún cambio de etapa pasó desapercibido.';
+    const rows = this.projects.filter(row => row.name.trim() || row.decision);
+    if (rows.length === 0) return 'La revisión mensual exige al menos un proyecto.';
+    if (rows.some(row => !row.name.trim() || !row.decision)) {
+      return 'Cada proyecto necesita un nombre y una decisión: continuar, corregir, pausar o cerrar.';
+    }
+    return null;
+  }
+
+  private annualError(): string | null {
+    const rows = this.objectives.filter(row => row.objective.trim() || row.achievementCriterion.trim() || row.reviewOn);
+    if (rows.length < 1 || rows.length > 5) return 'La revisión anual guarda pocos objetivos: entre 1 y 5.';
+    if (rows.some(row => !row.objective.trim() || !row.achievementCriterion.trim() || !row.reviewOn)) {
+      return 'Cada objetivo necesita su texto, su criterio de logro y la fecha en que se revisa.';
+    }
+    return null;
+  }
+
+  private changeError(): string | null {
+    if (!this.changeDescription.trim()) return 'Describe el cambio que disparó el ajuste.';
+    if (!this.whatNoLongerFits.trim()) return 'Escribe qué compromisos ya no caben.';
+    const rows = this.adjustments.filter(row => row.name.trim() || row.decision);
+    if (rows.length === 0) return 'Indica al menos una cosa que dejas, reduces o pospones.';
+    if (rows.some(row => !row.name.trim() || !row.decision)) {
+      return 'Cada ajuste debe decir qué cambias y si lo dejas, lo reduces o lo pospones.';
+    }
+    return null;
+  }
+
+  private filled(lines: string[]): string[] {
+    return lines.map(line => line.trim()).filter(Boolean);
+  }
+
+  private countError(values: string[], min: number, max: number, message: string): string | null {
+    if (values.length < min || values.length > max) return message;
+    return null;
   }
 
   save(): void {

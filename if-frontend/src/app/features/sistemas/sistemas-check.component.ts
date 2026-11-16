@@ -54,13 +54,18 @@ export class SistemasCheckComponent implements OnInit {
     });
   }
 
+  private answerFrom(unregistered: boolean | null): 'si' | 'no' | '' {
+    if (unregistered == null) return '';
+    return unregistered ? 'si' : 'no';
+  }
+
   private load(): void {
     this.sistemas.ensureFamily().subscribe({
       next: familyId => {
         this.sistemas.fourWeekCheck(familyId).subscribe({
           next: check => {
             this.check.set(check);
-            this.answer = check.unregisteredCommitment == null ? '' : check.unregisteredCommitment ? 'si' : 'no';
+            this.answer = this.answerFrom(check.unregisteredCommitment);
             this.loading.set(false);
           },
           error: err => {

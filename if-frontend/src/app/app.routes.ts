@@ -307,6 +307,33 @@ export const routes: Routes = [
           .then(m => m.ProfessionalDashboardComponent)
       },
 
+      {
+        path: 'sistemas',
+        title: 'Sistemas IF',
+        loadComponent: () => import('./features/sistemas/sistemas-page.component').then(m => m.SistemasPageComponent),
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./features/sistemas/sistemas-catalog.component').then(m => m.SistemasCatalogComponent)
+          },
+          {
+            path: 'revision/:tipo',
+            title: 'Revisión — Sistemas IF',
+            loadComponent: () => import('./features/sistemas/sistemas-review.component').then(m => m.SistemasReviewComponent)
+          },
+          {
+            path: 'historial',
+            title: 'Historial — Sistemas IF',
+            loadComponent: () => import('./features/sistemas/sistemas-history.component').then(m => m.SistemasHistoryComponent)
+          },
+          {
+            path: 'prueba',
+            title: 'Prueba de 4 semanas — Sistemas IF',
+            loadComponent: () => import('./features/sistemas/sistemas-check.component').then(m => m.SistemasCheckComponent)
+          }
+        ]
+      },
+
       { path: '', redirectTo: 'family-home', pathMatch: 'full' }
     ]
   },

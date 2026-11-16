@@ -1,0 +1,18 @@
+<div class="sistemas-page">
+  <header class="sif-header">
+    <div class="sif-header__icon" aria-hidden="true">🗂️</div>
+    <div>
+      <h1>Sistemas IF</h1>
+      <p>Dónde vive cada cosa y cuándo la revisamos. La familia escribe; el sistema no decide por ella.</p>
+    </div>
+  </header>
+
+  <nav class="sif-tabs" aria-label="Secciones de Sistemas IF">
+    <a routerLink="/sistemas" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Estructura</a>
+    <a routerLink="/sistemas/revision/diaria" [class.active]="onReviews()">Revisiones</a>
+    <a routerLink="/sistemas/historial" routerLinkActive="active">Historial</a>
+    <a routerLink="/sistemas/prueba" routerLinkActive="active">Prueba de 4 semanas</a>
+  </nav>
+
+  <router-outlet />
+</div>

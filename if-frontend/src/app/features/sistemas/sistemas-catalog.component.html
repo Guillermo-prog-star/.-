@@ -1,0 +1,64 @@
+@if (catalog(); as c) {
+  <section class="sif-card">
+    <p class="sif-kicker">Para qué existen</p>
+    <p class="sif-muted">{{ c.problem }}</p>
+    <p>{{ c.failures }}</p>
+    <p class="sif-muted">{{ c.counterargument }}</p>
+  </section>
+
+  @for (level of c.levels; track level.level) {
+    <section class="sif-level">
+      <div class="sif-level-head">
+        <h2>{{ level.title }}</h2>
+        <p class="sif-muted">{{ level.summary }}</p>
+      </div>
+      @for (system of level.systems; track system.number) {
+        <article class="sif-card">
+          <p class="sif-kicker">Sistema {{ system.number }}</p>
+          <h3>{{ system.name }}</h3>
+          @if (system.eventTriggered) {
+            <span class="sif-badge">Se dispara por un cambio, no por calendario</span>
+          }
+          @if (system.duration) {
+            <p class="sif-meta"><span>{{ system.duration }}</span></p>
+          }
+          <p><strong>{{ system.functionLabel }}.</strong> {{ system.functionText }}</p>
+          <p><strong>{{ system.ruleLabel }}.</strong> {{ system.ruleText }}</p>
+          @if (system.outcomeText) {
+            <p><strong>{{ system.outcomeLabel }}.</strong> {{ system.outcomeText }}</p>
+          }
+          <p class="sif-where"><strong>En Integrity Family.</strong> {{ system.whereInIf }}</p>
+          <div class="sif-links">
+            @if (system.reviewPath) {
+              <a class="sif-btn sif-btn--primary" [routerLink]="system.reviewPath">Hacer esta revisión</a>
+            }
+            @for (link of system.links; track link.route + link.label) {
+              @if (link.route !== system.reviewPath) {
+                <a class="sif-link" [routerLink]="link.route">{{ link.label }}</a>
+              }
+            }
+          </div>
+        </article>
+      }
+    </section>
+  }
+
+  <section class="sif-card">
+    <h2>Primer mes</h2>
+    <p class="sif-muted">Al principio bastan la diaria y la semanal. La mensual y la anual se agregan cuando esas dos ya funcionan. El ajuste por cambio solo se hace cuando algo cambia.</p>
+    <ol class="sif-steps">
+      @for (step of c.firstMonth; track step.week) {
+        <li><strong>Semana {{ step.week }}.</strong> {{ step.focus }}</li>
+      }
+    </ol>
+    <p>{{ c.statusNote }}</p>
+    <div class="sif-links">
+      <a class="sif-btn sif-btn--primary" routerLink="/sistemas/revision/diaria">Empezar por la diaria</a>
+      <a class="sif-link" routerLink="/sistemas/prueba">Ver la prueba de 4 semanas</a>
+    </div>
+  </section>
+} @else if (loading()) {
+  <div class="sif-state">Cargando los sistemas…</div>
+} @else {
+  <div class="sif-state sif-error">{{ error() || 'No fue posible cargar los sistemas.' }}</div>
+}

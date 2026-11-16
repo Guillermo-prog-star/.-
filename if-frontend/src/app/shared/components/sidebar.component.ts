@@ -92,6 +92,9 @@ import { filter } from 'rxjs/operators';
               <a routerLink="/plans" class="nav-item" routerLinkActive="active">
                 <span class="nav-icon">📋</span><span class="nav-text">Plan Familiar</span>
               </a>
+              <a routerLink="/sistemas" class="nav-item" routerLinkActive="active">
+                <span class="nav-icon">🗂️</span><span class="nav-text">Sistemas IF</span>
+              </a>
             </div>
 
             <div class="nav-section nav-section--support">
@@ -204,6 +207,9 @@ import { filter } from 'rxjs/operators';
           <a routerLink="/sprint" class="nav-item nav-sprint" routerLinkActive="active">
             <span class="nav-icon">⚡</span><span class="nav-text">Sprint Familiar</span>
             @if (isGrowing('/sprint')) { <span class="nav-growing" [title]="growingTooltip('/sprint')">🌱</span> }
+          </a>
+          <a routerLink="/sistemas" class="nav-item" routerLinkActive="active">
+            <span class="nav-icon">🗂️</span><span class="nav-text">Sistemas IF</span>
           </a>
           <a routerLink="/logbook"                     class="nav-item" routerLinkActive="active">
             <span class="nav-icon">📔</span><span class="nav-text">Bitácora &amp; Daily</span>

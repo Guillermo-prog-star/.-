@@ -1,0 +1,77 @@
+<div class="sif-filters" role="tablist" aria-label="Filtrar revisiones">
+  @for (item of filters; track item.code) {
+    <button type="button" [class.active]="filter() === item.code" (click)="filter.set(item.code)">{{ item.label }}</button>
+  }
+</div>
+
+@if (loading()) {
+  <div class="sif-state">Cargando el historial…</div>
+} @else if (error()) {
+  <div class="sif-state sif-error">{{ error() }}</div>
+} @else if (visible().length === 0) {
+  <div class="sif-state">
+    <p>Todavía no hay revisiones guardadas en esta vista.</p>
+    <a class="sif-btn sif-btn--primary" routerLink="/sistemas/revision/diaria">Hacer la revisión diaria</a>
+  </div>
+} @else {
+  @for (review of visible(); track review.id) {
+    <article class="sif-card">
+      <button type="button" class="sif-title-btn" (click)="toggle(review.id)">
+        {{ review.typeLabel }} · {{ review.periodLabel || formatDate(review.reviewDate) }}
+      </button>
+      <p class="sif-meta">
+        <span>{{ formatDate(review.reviewDate) }}</span>
+        @if (review.authorName) { <span>{{ review.authorName }}</span> }
+      </p>
+      @if (openId() === review.id) {
+        <p>{{ review.rhythmNote }}</p>
+        @if (review.actions.length) {
+          <div>
+            <strong>Acciones de hoy</strong>
+            <ol class="sif-list">
+              @for (action of review.actions; track $index) { <li>{{ action }}</li> }
+            </ol>
+          </div>
+        }
+        @if (review.priorities.length) {
+          <div>
+            <strong>Prioridades</strong>
+            <ol class="sif-list">
+              @for (priority of review.priorities; track $index) { <li>{{ priority }}</li> }
+            </ol>
+          </div>
+        }
+        @if (review.projects.length) {
+          <ul class="sif-list">
+            @for (project of review.projects; track $index) {
+              <li>{{ project.name }} — {{ project.decisionLabel }}</li>
+            }
+          </ul>
+          <p class="sif-muted">
+            Cambio de etapa desapercibido:
+            {{ review.stageChangeUnnoticed ? 'sí' : 'no' }}
+          </p>
+        }
+        @if (review.objectives.length) {
+          <ul class="sif-list">
+            @for (objective of review.objectives; track $index) {
+              <li>
+                {{ objective.objective }}. Criterio: {{ objective.achievementCriterion }}.
+                Se revisa el {{ formatDate(objective.reviewOn) }}.
+              </li>
+            }
+          </ul>
+        }
+        @if (review.changeDescription) {
+          <p><strong>Cambio.</strong> {{ review.changeDescription }}</p>
+          <p><strong>Ya no cabe.</strong> {{ review.whatNoLongerFits }}</p>
+          <ul class="sif-list">
+            @for (adjustment of review.adjustments; track $index) {
+              <li>{{ adjustment.kindLabel }}: {{ adjustment.description }}</li>
+            }
+          </ul>
+        }
+      }
+    </article>
+  }
+}

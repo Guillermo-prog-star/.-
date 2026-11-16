@@ -1,0 +1,181 @@
+<nav class="sif-kindbar" aria-label="Tipo de revisión">
+  @for (item of kinds; track item.slug) {
+    <a [routerLink]="['/sistemas/revision', item.slug]" [class.active]="kind()?.slug === item.slug">{{ item.title }}</a>
+  }
+</nav>
+
+@if (!kind()) {
+  <div class="sif-state">Esa revisión no está entre las cinco. Elige diaria, semanal, mensual, anual o ajuste por cambio.</div>
+} @else {
+  @if (saved(); as done) {
+    <section class="sif-card sif-ok">
+      <h2>Quedó escrito</h2>
+      <p>{{ done.rhythmNote }}</p>
+      <div class="sif-links">
+        <a class="sif-link" routerLink="/sistemas/historial">Ver el historial</a>
+        @if (done.sprintDailyId) {
+          <a class="sif-link" routerLink="/logbook">Ver el check-in en la bitácora</a>
+        } @else if (done.type === 'DAILY' && done.sprintId) {
+          <a class="sif-link" routerLink="/logbook">Registrar el check-in del sprint</a>
+        }
+        @if (done.type === 'WEEKLY' || done.retrospectiveId) {
+          <a class="sif-link" routerLink="/sprint">Abrir el sprint</a>
+        }
+      </div>
+    </section>
+  }
+
+  <form class="sif-card sif-form" (ngSubmit)="save()">
+    <div>
+      <p class="sif-kicker">{{ kind()!.duration }}</p>
+      <h2>{{ kind()!.title }}</h2>
+      <p class="sif-muted">{{ kind()!.hint }}</p>
+    </div>
+
+    <label class="sif-field">
+      @switch (kind()!.code) {
+        @case ('WEEKLY') { Semana del }
+        @case ('MONTHLY') { Fecha de la revisión }
+        @case ('ANNUAL') { Fecha de la revisión }
+        @case ('CHANGE') { Fecha }
+        @default { Fecha }
+      }
+      <input type="date" name="reviewDate" required [(ngModel)]="reviewDate" />
+    </label>
+
+    @switch (kind()!.code) {
+      @case ('DAILY') {
+        <label class="sif-check">
+          <input type="checkbox" name="capture" [(ngModel)]="captureEmptied" />
+          <span>Captura vacía. Cada elemento ya tiene destino: tarea, evento, referencia o descarte.</span>
+        </label>
+        <p class="sif-muted">Para vaciarla, abre la <a routerLink="/logbook">bitácora</a> o <a routerLink="/my-space">Mi Espacio</a>. Si algo toma menos de dos minutos, hazlo ahora.</p>
+        <label class="sif-check">
+          <input type="checkbox" name="agenda" [(ngModel)]="agendaChecked" />
+          <span>Agenda de hoy comprobada.</span>
+        </label>
+        <div class="sif-field">
+          <span>Acciones de hoy (de 1 a 3)</span>
+          @for (action of actions; track $index) {
+            <div class="sif-row">
+              <label class="sif-sr" [attr.for]="'sif-action-' + $index">Acción {{ $index + 1 }}</label>
+              <input [id]="'sif-action-' + $index" [name]="'action' + $index" maxlength="280" [(ngModel)]="actions[$index]" placeholder="Qué vamos a hacer hoy" />
+              <button type="button" class="sif-icon-btn" (click)="removeLine(actions, $index)" [disabled]="actions.length === 1" aria-label="Quitar acción">✕</button>
+            </div>
+          }
+          <button type="button" class="sif-btn" (click)="addLine(actions, 3)" [disabled]="actions.length >= 3">Agregar acción</button>
+        </div>
+      }
+      @case ('WEEKLY') {
+        <label class="sif-check">
+          <input type="checkbox" name="calendar" [(ngModel)]="calendarReviewed" />
+          <span>Calendario de la próxima semana revisado.</span>
+        </label>
+        <label class="sif-check">
+          <input type="checkbox" name="tasks" [(ngModel)]="tasksPruned" />
+          <span>Tareas depuradas: hechas, obsoletas o reprogramadas.</span>
+        </label>
+        <label class="sif-check">
+          <input type="checkbox" name="commitments" [(ngModel)]="commitmentsTransferred" />
+          <span>Compromisos de correo o chat pasados a tarea o evento, o no había ninguno.</span>
+        </label>
+        <p class="sif-muted">El calendario está en el <a routerLink="/sprint">sprint</a> y en la <a routerLink="/transformation/weekly-plan">planeación</a>. Las tareas, en el <a routerLink="/plans">plan</a>.</p>
+        <div class="sif-field">
+          <span>Prioridades de la semana (como máximo 3)</span>
+          @for (priority of priorities; track $index) {
+            <div class="sif-row">
+              <label class="sif-sr" [attr.for]="'sif-priority-' + $index">Prioridad {{ $index + 1 }}</label>
+              <input [id]="'sif-priority-' + $index" [name]="'priority' + $index" maxlength="280" [(ngModel)]="priorities[$index]" placeholder="Qué podemos completar esta semana" />
+              <button type="button" class="sif-icon-btn" (click)="removeLine(priorities, $index)" [disabled]="priorities.length === 1" aria-label="Quitar prioridad">✕</button>
+            </div>
+          }
+          <button type="button" class="sif-btn" (click)="addLine(priorities, 3)" [disabled]="priorities.length >= 3">Agregar prioridad</button>
+        </div>
+      }
+      @case ('MONTHLY') {
+        <div class="sif-field">
+          <span>Una decisión por proyecto</span>
+          @for (project of projects; track $index) {
+            <div class="sif-row sif-row--decision">
+              <label class="sif-sr" [attr.for]="'sif-project-' + $index">Proyecto {{ $index + 1 }}</label>
+              <input [id]="'sif-project-' + $index" [name]="'project' + $index" maxlength="280" [(ngModel)]="project.name" placeholder="Proyecto" />
+              <label class="sif-sr" [attr.for]="'sif-decision-' + $index">Decisión del proyecto {{ $index + 1 }}</label>
+              <select [id]="'sif-decision-' + $index" [name]="'decision' + $index" [(ngModel)]="project.decision">
+                <option value="">Decisión</option>
+                @for (option of decisions; track option.code) {
+                  <option [value]="option.code">{{ option.label }}</option>
+                }
+              </select>
+              <button type="button" class="sif-icon-btn" (click)="removeNamed(projects, $index)" [disabled]="projects.length === 1" aria-label="Quitar proyecto">✕</button>
+            </div>
+          }
+          <button type="button" class="sif-btn" (click)="addNamed(projects, 20)">Agregar proyecto</button>
+        </div>
+        <fieldset class="sif-field">
+          <legend>Una vez por trimestre, dentro de esta revisión: ¿algún cambio de etapa pasó desapercibido?</legend>
+          <label class="sif-choice"><input type="radio" name="stage" value="si" [(ngModel)]="stageChange" /> Sí</label>
+          <label class="sif-choice"><input type="radio" name="stage" value="no" [(ngModel)]="stageChange" /> No</label>
+        </fieldset>
+        <p class="sif-muted">Los hitos M1 y M2 del plan siguen en el <a routerLink="/plans">plan familiar</a>.</p>
+      }
+      @case ('ANNUAL') {
+        <div class="sif-field">
+          <span>Objetivos (como máximo 5)</span>
+          @for (objective of objectives; track $index) {
+            <div class="sif-row sif-row--objective">
+              <label class="sif-sr" [attr.for]="'sif-objective-' + $index">Objetivo {{ $index + 1 }}</label>
+              <input [id]="'sif-objective-' + $index" [name]="'objective' + $index" maxlength="500" [(ngModel)]="objective.objective" placeholder="Objetivo" />
+              <label class="sif-sr" [attr.for]="'sif-criterion-' + $index">Criterio de logro {{ $index + 1 }}</label>
+              <input [id]="'sif-criterion-' + $index" [name]="'criterion' + $index" maxlength="500" [(ngModel)]="objective.achievementCriterion" placeholder="Criterio de logro" />
+              <label class="sif-sr" [attr.for]="'sif-review-on-' + $index">Fecha de revisión del objetivo {{ $index + 1 }}</label>
+              <input [id]="'sif-review-on-' + $index" [name]="'reviewOn' + $index" type="date" [(ngModel)]="objective.reviewOn" />
+              <button type="button" class="sif-icon-btn" (click)="removeObjective($index)" [disabled]="objectives.length === 1" aria-label="Quitar objetivo">✕</button>
+            </div>
+          }
+          <button type="button" class="sif-btn" (click)="addObjective()" [disabled]="objectives.length >= 5">Agregar objetivo</button>
+        </div>
+        <p class="sif-muted">La visión a 3 años y los hitos M12 y M24 siguen en el <a routerLink="/plans">plan</a> y en la <a routerLink="/transformation/route">ruta</a>.</p>
+      }
+      @case ('CHANGE') {
+        <label class="sif-field">
+          Cambio
+          <input name="change" maxlength="240" [(ngModel)]="changeDescription" placeholder="Por ejemplo: mudanza, trabajo nuevo, colegio" />
+        </label>
+        <label class="sif-field">
+          ¿Qué compromisos ya no caben?
+          <textarea name="fits" maxlength="2000" [(ngModel)]="whatNoLongerFits"></textarea>
+        </label>
+        <div class="sif-field">
+          <span>¿Qué dejo, reduzco o pospongo?</span>
+          @for (adjustment of adjustments; track $index) {
+            <div class="sif-row sif-row--decision">
+              <label class="sif-sr" [attr.for]="'sif-adjustment-' + $index">Qué cambia {{ $index + 1 }}</label>
+              <input [id]="'sif-adjustment-' + $index" [name]="'adjustment' + $index" maxlength="280" [(ngModel)]="adjustment.name" placeholder="Qué cambia" />
+              <label class="sif-sr" [attr.for]="'sif-kind-' + $index">Dejar, reducir o posponer {{ $index + 1 }}</label>
+              <select [id]="'sif-kind-' + $index" [name]="'kind' + $index" [(ngModel)]="adjustment.decision">
+                <option value="">Dejar, reducir o posponer</option>
+                @for (option of adjustmentKinds; track option.code) {
+                  <option [value]="option.code">{{ option.label }}</option>
+                }
+              </select>
+              <button type="button" class="sif-icon-btn" (click)="removeNamed(adjustments, $index)" [disabled]="adjustments.length === 1" aria-label="Quitar ajuste">✕</button>
+            </div>
+          }
+          <button type="button" class="sif-btn" (click)="addNamed(adjustments, 12)">Agregar ajuste</button>
+        </div>
+        <p class="sif-muted">Las etapas siguen en la <a routerLink="/transformation/route">ruta</a>. Esta revisión no mueve un hito sola.</p>
+      }
+    }
+
+    @if (error()) {
+      <p class="sif-error" role="alert">{{ error() }}</p>
+    }
+
+    <div class="sif-actions">
+      <button class="sif-btn sif-btn--primary" type="submit" [disabled]="saving()">
+        {{ saving() ? 'Guardando…' : 'Guardar revisión' }}
+      </button>
+      <span class="sif-muted">Solo se guarda si la salida mínima está completa.</span>
+    </div>
+  </form>
+}
